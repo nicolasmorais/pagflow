@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Order {
+  id            String   @id @default(cuid())
+  fullName      String
+  recipient     String?
+  email         String
+  phone         String
+  cpf           String
+  cep           String
+  rua           String
+  numero        String
+  complemento   String?
+  bairro        String
+  cidade        String
+  estado        String
+  referencia    String?
+  status        String   @default("pendente")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  productId     String?
+  paymentStatus String   @default("a cobrar")
+  paymentMethod String?
+  mpPaymentId   String?
+  totalPrice    Float    @default(0)
+  hasBump       Boolean  @default(false)
+  trackingCode  String?
+  product       Product? @relation(fields: [productId], references: [id])
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  name       String
+  price      Float
+  imageUrl   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  commission Float    @default(0)
+  orders     Order[]
+}
