@@ -5,19 +5,22 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { method, cardData, orderData, brickData } = body;
+        const { method, cardData, orderData, brickData, orderId } = body;
+
+        // Reading selectedBumpIds from either orderData or body root
+        const selectedBumpIds = orderData?.selectedBumpIds || body.selectedBumpIds || orderData?.selectedBumps || [];
 
         const fullName = orderData.nome || orderData.fullName;
         const phone = orderData.telefone || orderData.phone;
-        const price = Number(orderData.price);
+        const price = Number(orderData.price) || 0;
 
         // 0. Buscar produto para ter o nome
-        const product = await prisma.product.findUnique({
+        const product = orderData.productId ? await prisma.product.findUnique({
             where: { id: orderData.productId }
-        });
+        }) : null;
 
-        // 1. Criar pedido no Banco de Dados
-        const orderDataToCreate: any = {
+        // 1. Preparar dados do pedido
+        const orderDataToSave: any = {
             fullName: fullName || "Cliente PagFlow",
             recipient: orderData.destinatario || fullName || "Destinatário",
             email: orderData.email || "",
@@ -35,13 +38,21 @@ export async function POST(req: NextRequest) {
             paymentStatus: 'processando',
             paymentMethod: method === 'pix' ? 'pix' : 'credito',
             totalPrice: price,
-            hasBump: !!orderData.hasBump,
-            product: (product && orderData.productId) ? { connect: { id: orderData.productId } } : undefined
+            hasBump: Array.isArray(selectedBumpIds) && selectedBumpIds.length > 0,
+            selectedBumps: Array.isArray(selectedBumpIds) ? selectedBumpIds : [],
+            product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined
         };
-
-        const order = await (prisma.order as any).create({
-            data: orderDataToCreate
-        });
+        let order;
+        if (orderId) {
+            order = await prisma.order.update({
+                where: { id: orderId },
+                data: orderDataToSave
+            });
+        } else {
+            order = await prisma.order.create({
+                data: orderDataToSave
+            });
+        }
 
         // 2. Processar Pagamento Mercado Pago
         const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
@@ -154,11 +165,17 @@ export async function POST(req: NextRequest) {
         });
 
     } catch (error: any) {
-        console.error("Payment API Error:", error);
+        console.error("PAYMENT API ERROR DETAIL:", error);
+
+        // Return detailed error for debugging if it's an invocation error
+        let finalError = error.message || "Ocorreu um erro ao processar o pagamento.";
+        if (finalError.includes("invocation")) {
+            finalError = `${finalError} - Verifique se todos os campos obrigatórios estão preenchidos corretamente.`;
+        }
+
         return NextResponse.json({
             success: false,
-            error: error.message || 'Falha ao processar pagamento',
-            cause: error.cause || null
+            error: finalError
         }, { status: 500 });
     }
 }

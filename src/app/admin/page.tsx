@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { TrendingUp, Users, Package, Clock, ShoppingBag, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { TrendingUp, Users, Package, Clock, ShoppingBag, ArrowUpRight, ArrowDownRight, DollarSign, UserX } from 'lucide-react'
 import Link from 'next/link'
 
 const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, value: string | number, icon: any, color: string, trend?: string }) => (
@@ -32,14 +32,20 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 
 export default async function SummaryPage() {
     const orders = await prisma.order.findMany({
+        where: { NOT: { paymentStatus: 'abandonado' } },
         orderBy: { createdAt: 'desc' },
         take: 5
     })
 
-    const totalOrders = await prisma.order.count()
-    const pendingCount = await prisma.order.count({ where: { status: 'pendente' } })
-    const completedCount = await prisma.order.count({ where: { status: 'atendido' } })
-    const uniqueCustomers = new Set((await prisma.order.findMany({ select: { email: true } })).map(o => o.email)).size
+    const totalSales = await prisma.order.count({ where: { NOT: { paymentStatus: 'abandonado' } } })
+    const abandonedCount = await prisma.order.count({ where: { paymentStatus: 'abandonado' } })
+    const completedCount = await prisma.order.count({ where: { paymentStatus: 'pago' } })
+    const revenueRes = await prisma.order.aggregate({
+        _sum: { totalPrice: true },
+        where: { paymentStatus: 'pago' }
+    })
+    const totalRevenue = revenueRes._sum.totalPrice || 0
+    const uniqueCustomers = new Set((await prisma.order.findMany({ select: { email: true }, where: { NOT: { paymentStatus: 'abandonado' } } })).map(o => o.email)).size
 
     return (
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
@@ -47,24 +53,24 @@ export default async function SummaryPage() {
             {/* Dashboard Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
                 <StatCard
+                    title="Faturamento (Pago)"
+                    value={`R$ ${totalRevenue.toFixed(2)}`}
+                    icon={DollarSign}
+                    color="#10b981"
+                    trend="+15%"
+                />
+                <StatCard
                     title="Vendas Totais"
-                    value={totalOrders}
+                    value={totalSales}
                     icon={TrendingUp}
                     color="#6366f1"
                     trend="+12%"
                 />
                 <StatCard
-                    title="Aguardando"
-                    value={pendingCount}
-                    icon={Clock}
+                    title="Abandonados"
+                    value={abandonedCount}
+                    icon={UserX}
                     color="#f59e0b"
-                />
-                <StatCard
-                    title="Entregues"
-                    value={completedCount}
-                    icon={Package}
-                    color="#10b981"
-                    trend="+5%"
                 />
                 <StatCard
                     title="Clientes Ativos"
@@ -83,7 +89,7 @@ export default async function SummaryPage() {
                 <div className="glass-card" style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Atividade Recente</h2>
-                        <Link href="/admin/pedidos" style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 700, textDecoration: 'none' }}>Ver Tudo</Link>
+                        <Link href="/admin/vendas" style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 700, textDecoration: 'none' }}>Ver todas as vendas</Link>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

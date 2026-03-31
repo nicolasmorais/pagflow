@@ -9,7 +9,6 @@ datasource db {
 model Order {
   id            String   @id @default(cuid())
   fullName      String
-  recipient     String?
   email         String
   phone         String
   cpf           String
@@ -25,12 +24,14 @@ model Order {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   productId     String?
-  paymentStatus String   @default("a cobrar")
-  paymentMethod String?
-  mpPaymentId   String?
-  totalPrice    Float    @default(0)
-  hasBump       Boolean  @default(false)
+  paymentStatus String   @default("abandonado")
   trackingCode  String?
+  recipient     String?
+  hasBump       Boolean  @default(false)
+  selectedBumps Json?
+  paymentMethod String?
+  totalPrice    Float    @default(0)
+  mpPaymentId   String?
   product       Product? @relation(fields: [productId], references: [id])
 }
 
@@ -43,4 +44,125 @@ model Product {
   updatedAt  DateTime @updatedAt
   commission Float    @default(0)
   orders     Order[]
+  orderBumps OrderBump[]
+}
+
+model OrderBump {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+}
+
+model ad_spends {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  amount      Decimal   @db.Decimal(10, 2)
+  spend_date  DateTime  @db.Date
+  description String?
+  views       Int?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model customization_settings {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String    @unique @db.VarChar(255)
+  value      String?
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model marketing_pixels {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String           @db.VarChar(255)
+  type           String           @db.VarChar(50)
+  pixel_id       String           @db.VarChar(255)
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  product_pixels product_pixels[]
+}
+
+model product_pixels {
+  product_id       String           @db.Uuid
+  pixel_id         String           @db.Uuid
+  marketing_pixels marketing_pixels @relation(fields: [pixel_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  products         products         @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([product_id, pixel_id])
+}
+
+model products {
+  id                       String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String           @db.VarChar(255)
+  price                    Decimal          @db.Decimal(10, 2)
+  description              String?
+  image_url                String?
+  created_at               DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime?        @default(now()) @db.Timestamptz(6)
+  pix_price                Decimal?         @db.Decimal(10, 2)
+  access_link              String?
+  checkout_images          String[]
+  order_bump_1_name        String?          @db.VarChar(255)
+  order_bump_1_description String?
+  order_bump_1_price       Decimal?         @db.Decimal(10, 2)
+  order_bump_2_name        String?          @db.VarChar(255)
+  order_bump_2_description String?
+  order_bump_2_price       Decimal?         @db.Decimal(10, 2)
+  order_bump_3_name        String?          @db.VarChar(255)
+  order_bump_3_description String?
+  order_bump_3_price       Decimal?         @db.Decimal(10, 2)
+  product_pixels           product_pixels[]
+  sales                    sales[]
+}
+
+model push_subscriptions {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscription_data Json
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model sales {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id            String?   @db.Uuid
+  customer_name         String    @db.VarChar(255)
+  customer_email        String    @db.VarChar(255)
+  pushing_pay_id        String?   @db.VarChar(255)
+  status                String?   @default("pending") @db.VarChar(50)
+  created_at            DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime? @default(now()) @db.Timestamptz(6)
+  customer_cep          String?   @db.VarChar(20)
+  customer_address      String?
+  customer_number       String?   @db.VarChar(50)
+  customer_complement   String?   @db.VarChar(255)
+  customer_neighborhood String?   @db.VarChar(255)
+  customer_city         String?   @db.VarChar(255)
+  customer_state        String?   @db.VarChar(50)
+  delivery_instructions String?
+  shipping_type         String?   @db.VarChar(100)
+  shipping_amount       Decimal?  @default(0) @db.Decimal(10, 2)
+  utm_source            String?   @db.VarChar(255)
+  utm_medium            String?   @db.VarChar(255)
+  utm_campaign          String?   @db.VarChar(255)
+  utm_term              String?   @db.VarChar(255)
+  utm_content           String?   @db.VarChar(255)
+  payment_detail        String?
+  accepted_bumps        Json?
+  payment_method        String?   @db.VarChar(50)
+  products              products? @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_sales_created_at")
+  @@index([product_id], map: "idx_sales_product_id")
+  @@index([status], map: "idx_sales_status")
+}
+
+model shipping_rules {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String    @db.VarChar(255)
+  price         Decimal   @default(0) @db.Decimal(10, 2)
+  delivery_time String?   @db.VarChar(100)
+  is_active     Boolean?  @default(true)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
 }

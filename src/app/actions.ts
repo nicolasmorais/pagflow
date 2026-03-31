@@ -96,7 +96,32 @@ export async function updateOrderTracking(orderId: string, trackingCode: string)
     }
 }
 
-// Product Actions
+export async function saveOrderProgress(data: any) {
+    try {
+        const { id, ...payload } = data;
+
+        if (id) {
+            const updated = await prisma.order.update({
+                where: { id },
+                data: payload,
+            });
+            return { success: true, id: updated.id };
+        } else {
+            const created = await prisma.order.create({
+                data: {
+                    ...payload,
+                    paymentStatus: 'abandonado'
+                },
+            });
+            revalidatePath('/admin/abandonados');
+            revalidatePath('/admin');
+            return { success: true, id: created.id };
+        }
+    } catch (error) {
+        console.error('Save Progress Error:', error);
+        return { success: false };
+    }
+}
 export async function createProduct(formData: FormData): Promise<void> {
     const name = formData.get('name') as string
     const priceValue = formData.get('price')
@@ -210,4 +235,145 @@ export async function deleteOrder(orderId: string): Promise<void> {
         console.error('Delete Order Error:', error)
         throw new Error('Falha ao excluir pedido')
     }
+}
+
+// Customization Actions
+export async function updateCustomization(key: string, value: string) {
+    try {
+        await (prisma as any).customization_settings.upsert({
+            where: { key },
+            update: { value, updated_at: new Date() },
+            create: { key, value }
+        })
+        revalidatePath('/checkout')
+        revalidatePath('/admin/personalizacao')
+        return { success: true }
+    } catch (error) {
+        console.error('Update Customization Error:', error)
+        throw new Error('Falha ao atualizar personalização')
+    }
+}
+
+export async function getCustomization(key: string) {
+    try {
+        const setting = await (prisma as any).customization_settings.findUnique({
+            where: { key }
+        })
+        return setting?.value || ''
+    } catch (error) {
+        console.error('Get Customization Error:', error)
+        return ''
+    }
+}
+
+// Shipping Actions
+export async function getShippingRules() {
+    try {
+        return await (prisma as any).shipping_rules.findMany({
+            orderBy: { price: 'asc' }
+        })
+    } catch (error) {
+        console.error('Get Shipping Rules Error:', error)
+        return []
+    }
+}
+
+export async function createShippingRule(data: { name: string, price: number, delivery_time: string }) {
+    try {
+        await (prisma as any).shipping_rules.create({
+            data: {
+                name: data.name,
+                price: data.price,
+                delivery_time: data.delivery_time,
+                is_active: true
+            }
+        })
+        revalidatePath('/checkout')
+        revalidatePath('/admin/ecommerce')
+        return { success: true }
+    } catch (error) {
+        console.error('Create Shipping Rule Error:', error)
+        throw new Error('Falha ao criar frete')
+    }
+}
+
+export async function updateShippingRule(id: string, data: { name: string, price: number, delivery_time: string, is_active: boolean }) {
+    try {
+        await (prisma as any).shipping_rules.update({
+            where: { id },
+            data: {
+                name: data.name,
+                price: data.price,
+                delivery_time: data.delivery_time,
+                is_active: data.is_active
+            }
+        })
+        revalidatePath('/checkout')
+        revalidatePath('/admin/ecommerce')
+        return { success: true }
+    } catch (error) {
+        console.error('Update Shipping Rule Error:', error)
+        throw new Error('Falha ao atualizar frete')
+    }
+}
+
+export async function deleteShippingRule(id: string) {
+    try {
+        await (prisma as any).shipping_rules.delete({ where: { id } })
+        revalidatePath('/checkout')
+        revalidatePath('/admin/ecommerce')
+        return { success: true }
+    } catch (error) {
+        console.error('Delete Shipping Rule Error:', error)
+        throw new Error('Falha ao excluir frete')
+    }
+}
+
+export async function setupInitialShipping() {
+    try {
+        const count = await (prisma as any).shipping_rules.count()
+        if (count === 0) {
+            await (prisma as any).shipping_rules.createMany({
+                data: [
+                    { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' },
+                    { name: 'Entrega Rápida Prioritária', price: 12.90, delivery_time: 'Chega em até 3 dias úteis' }
+                ]
+            })
+            revalidatePath('/admin/ecommerce')
+            return { success: true, message: 'Fretes iniciais criados' }
+        }
+        return { success: true, message: 'Fretes já configurados' }
+    } catch (error) {
+        console.error('Setup Shipping Error:', error)
+        return { success: false }
+    }
+}
+
+export async function createOrderBump(formData: FormData) {
+    const name = formData.get('name') as string
+    const price = Number(formData.get('price'))
+    const description = formData.get('description') as string
+    const productId = formData.get('productId') as string
+    const imageUrl = formData.get('imageUrl') as string
+
+    const p = prisma as any;
+    await (p.orderBump || p.OrderBump).create({
+        data: {
+            name,
+            price,
+            description,
+            productId: (productId && productId !== 'global') ? productId : null,
+            imageUrl
+        }
+    })
+
+    revalidatePath('/admin/ordem')
+}
+
+export async function deleteOrderBump(id: string) {
+    const p = prisma as any;
+    await (p.orderBump || p.OrderBump).delete({
+        where: { id }
+    })
+    revalidatePath('/admin/ordem')
 }

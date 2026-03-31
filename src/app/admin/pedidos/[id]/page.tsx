@@ -28,10 +28,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     }
 
     return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '24px' }}>
             {/* Nav */}
-            <Link href="/admin/pedidos" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '20px' }}>
-                <ChevronLeft size={16} /> Ver todos os pedidos
+            <Link href="/admin/vendas" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '20px' }}>
+                <ChevronLeft size={16} /> Ver todas as vendas
             </Link>
 
             {/* Header */}
@@ -64,7 +64,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <form action={async () => {
                         'use server'
                         await deleteOrder(id)
-                        redirect('/admin/pedidos')
+                        redirect('/admin/vendas')
                     }}>
                         <button type="submit" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px', background: '#fff1f2', border: '1px solid #ffe4e6', color: '#e11d48', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
                             <Trash2 size={16} /> Excluir Pedido
