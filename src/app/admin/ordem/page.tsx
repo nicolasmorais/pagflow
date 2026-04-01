@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import { Plus, Trash2, Tag, ShoppingCart, Package, Star } from 'lucide-react'
 import { createOrderBump, deleteOrderBump } from '@/app/actions'

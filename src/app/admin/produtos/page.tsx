@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import { Plus, Package } from 'lucide-react'
 import { createProduct } from '../../actions'
