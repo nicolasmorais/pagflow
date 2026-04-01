@@ -1,9 +1,10 @@
-export const dynamic = 'force-dynamic';
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { Save, Loader2, Megaphone, CheckCircle2, AlertCircle } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
+
+export const dynamic = 'force-dynamic';
 
 export default function MarketingPage() {
     const [loading, setLoading] = useState(true)
@@ -188,3 +189,4 @@ export default function MarketingPage() {
         </div>
     )
 }
+锋

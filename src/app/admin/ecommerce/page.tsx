@@ -1,9 +1,10 @@
-export const dynamic = 'force-dynamic';
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, CheckCircle2, AlertCircle, Loader2, Truck, DollarSign, Clock } from 'lucide-react'
 import { getShippingRules, createShippingRule, updateShippingRule, deleteShippingRule, setupInitialShipping } from '@/app/actions'
+
+export const dynamic = 'force-dynamic';
 
 export default function EcommercePage() {
     const [rules, setRules] = useState<any[]>([])
@@ -256,7 +257,7 @@ export default function EcommercePage() {
                                     <div>
                                         <h4 style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', margin: 0 }}>{rule.name}</h4>
                                         <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                                            <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: '600', display: 'center', alignItems: 'center', gap: '4px' }}>
                                                 <DollarSign size={14} />
                                                 {parseFloat(rule.price) === 0 ? 'Grátis' : `R$ ${parseFloat(rule.price).toFixed(2).replace('.', ',')}`}
                                             </span>
