@@ -938,119 +938,120 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                 {step > 1 && (
                                     <button className="btn-back-new" onClick={prevStep} disabled={loading}>
                                         ← Voltar
+                                    </button>
                                 )}
-                                    </div> {/* step-actions-new */}
+                            </div> {/* step-actions-new */}
 
-                                <p className="security-hint" style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                                    🔒 Pagamento processado com segurança via Mercado Pago. Seus dados estão protegidos.
-                                </p>
-                            </div> {/* checkout-card */}
+                            <p className="security-hint" style={{ marginTop: '16px', textAlign: 'center', fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                                🔒 Pagamento processado com segurança via Mercado Pago. Seus dados estão protegidos.
+                            </p>
+                        </div> {/* checkout-card */}
 
-                            <TrustBadges className="trust-badges-mobile" />
-                        </div> {/* form-side-column-new */}
+                        <TrustBadges className="trust-badges-mobile" />
+                    </div> {/* form-side-column-new */}
 
-                        {/* Right Side: Order Summary */}
-                        <div className="summary-side">
-                            <div className="summary-card" style={{ padding: 0, overflow: 'hidden' }}>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        padding: '16px 20px',
-                                        background: '#f1f5f9',
-                                        cursor: 'pointer',
-                                        transition: 'background 0.2s'
-                                    }}
-                                    onClick={() => setShowSummary(!showSummary)}
-                                >
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase' }}>
-                                            RESUMO ({1 + selectedBumpIds.length})
-                                        </span>
-                                        <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                                            Informações da sua compra
-                                        </span>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                        <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#10b981' }}>
-                                            R$ {finalPrice.toFixed(2)}
-                                        </span>
-                                        <span style={{ color: '#1e293b', fontSize: '1.2rem', transform: showSummary ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}>
-                                            ▼
-                                        </span>
-                                    </div>
+                    {/* Right Side: Order Summary */}
+                    <div className="summary-side">
+                        <div className="summary-card" style={{ padding: 0, overflow: 'hidden' }}>
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '16px 20px',
+                                    background: '#f1f5f9',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s'
+                                }}
+                                onClick={() => setShowSummary(!showSummary)}
+                            >
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#1e293b', textTransform: 'uppercase' }}>
+                                        RESUMO ({1 + selectedBumpIds.length})
+                                    </span>
+                                    <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                                        Informações da sua compra
+                                    </span>
                                 </div>
-
-                                <div style={{ padding: showSummary ? '24px' : '0', maxHeight: showSummary ? '1000px' : '0', overflow: 'hidden', transition: 'all 0.3s' }}>
-                                    <div className="summary-anim">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                                            <div style={{ width: '80px', height: '80px', flexShrink: 0 }}>
-                                                <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', margin: '0 0 4px 0' }}>{product.name}</h4>
-                                                <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                                                    Produto: R$ {product.price.toFixed(2)}
-                                                </div>
-                                                {shipping.price > 0 && (
-                                                    <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
-                                                        Frete: R$ {shipping.price.toFixed(2)}
-                                                    </div>
-                                                )}
-                                                {availableBumps.filter(b => selectedBumpIds.includes(b.id)).map(bump => (
-                                                    <div key={bump.id} style={{ fontSize: '0.9rem', color: '#10b981', marginBottom: '4px', fontWeight: 700 }}>
-                                                        {bump.name}: + R$ {bump.price.toFixed(2)}
-                                                    </div>
-                                                ))}
-                                                {paymentMethod === 'pix' && (
-                                                    <div style={{ fontSize: '0.9rem', color: '#10b981', marginBottom: '4px', fontWeight: 700 }}>
-                                                        Desconto PIX (35%): - R$ {(totalPrice * 0.35).toFixed(2)}
-                                                    </div>
-                                                )}
-                                                <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#10b981' }}>
-                                                    Total: R$ {finalPrice.toFixed(2)}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Removido o card de resumo de pagamento conforme solicitado */}
-                                    </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#10b981' }}>
+                                        R$ {finalPrice.toFixed(2)}
+                                    </span>
+                                    <span style={{ color: '#1e293b', fontSize: '1.2rem', transform: showSummary ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}>
+                                        ▼
+                                    </span>
                                 </div>
                             </div>
 
-                            <TrustBadges className="trust-badges-desktop" />
+                            <div style={{ padding: showSummary ? '24px' : '0', maxHeight: showSummary ? '1000px' : '0', overflow: 'hidden', transition: 'all 0.3s' }}>
+                                <div className="summary-anim">
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                                        <div style={{ width: '80px', height: '80px', flexShrink: 0 }}>
+                                            <img src={product.imageUrl} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px', border: '1px solid #e2e8f0' }} />
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <h4 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', margin: '0 0 4px 0' }}>{product.name}</h4>
+                                            <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
+                                                Produto: R$ {product.price.toFixed(2)}
+                                            </div>
+                                            {shipping.price > 0 && (
+                                                <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '4px' }}>
+                                                    Frete: R$ {shipping.price.toFixed(2)}
+                                                </div>
+                                            )}
+                                            {availableBumps.filter(b => selectedBumpIds.includes(b.id)).map(bump => (
+                                                <div key={bump.id} style={{ fontSize: '0.9rem', color: '#10b981', marginBottom: '4px', fontWeight: 700 }}>
+                                                    {bump.name}: + R$ {bump.price.toFixed(2)}
+                                                </div>
+                                            ))}
+                                            {paymentMethod === 'pix' && (
+                                                <div style={{ fontSize: '0.9rem', color: '#10b981', marginBottom: '4px', fontWeight: 700 }}>
+                                                    Desconto PIX (35%): - R$ {(totalPrice * 0.35).toFixed(2)}
+                                                </div>
+                                            )}
+                                            <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#10b981' }}>
+                                                Total: R$ {finalPrice.toFixed(2)}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Removido o card de resumo de pagamento conforme solicitado */}
+                                </div>
+                            </div>
                         </div>
+
+                        <TrustBadges className="trust-badges-desktop" />
                     </div>
                 </div>
+            </div>
 
-                <footer className="checkout-footer">
-                    <div className="footer-content">
-                        <div className="footer-info">
-                            {customization.footerText ? (
-                                <div style={{ whiteSpace: 'pre-line' }}>
-                                    {customization.footerText}
-                                </div>
-                            ) : (
-                                <>
-                                    <p><strong>PagFlow Sistemas de Pagamentos LTDA</strong></p>
-                                    <p>CNPJ: 00.000.000/0001-00</p>
-                                    <p>Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100</p>
-                                </>
-                            )}
-                        </div>
-
-                        <div className="footer-links">
-                            <a href="#">Termos de Uso</a>
-                            <a href="#">Privacidade</a>
-                            <a href="#">Ajuda</a>
-                        </div>
-
-                        <p style={{ fontSize: '0.75rem', marginTop: '10px', opacity: 0.6 }}>
-                            © {new Date().getFullYear()} PagFlow. Todos os direitos reservados.
-                        </p>
+            <footer className="checkout-footer">
+                <div className="footer-content">
+                    <div className="footer-info">
+                        {customization.footerText ? (
+                            <div style={{ whiteSpace: 'pre-line' }}>
+                                {customization.footerText}
+                            </div>
+                        ) : (
+                            <>
+                                <p><strong>PagFlow Sistemas de Pagamentos LTDA</strong></p>
+                                <p>CNPJ: 00.000.000/0001-00</p>
+                                <p>Av. Paulista, 1000 - Bela Vista, São Paulo - SP, 01310-100</p>
+                            </>
+                        )}
                     </div>
-                </footer>
-            </div >
-            );
+
+                    <div className="footer-links">
+                        <a href="#">Termos de Uso</a>
+                        <a href="#">Privacidade</a>
+                        <a href="#">Ajuda</a>
+                    </div>
+
+                    <p style={{ fontSize: '0.75rem', marginTop: '10px', opacity: 0.6 }}>
+                        © {new Date().getFullYear()} PagFlow. Todos os direitos reservados.
+                    </p>
+                </div>
+            </footer>
+        </div >
+    );
 }
