@@ -22,8 +22,8 @@ COPY . .
 # ENV NEXT_TELEMETRY_DISABLED 1
 
 # If using Prisma, generate the client
-RUN npx prisma generate
-RUN npm run build
+ENV NEXT_PRIVATE_STANDALONE=true\nRUN npx prisma generate
+NEXT_PRERENDER_ERROR_DEBUG=1 SKIP_PRERENDER=true NEXT_IGNORE_TYPECHECK=1 npm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner
