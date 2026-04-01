@@ -119,7 +119,9 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
         alertBg: string,
         pixBadgeText: string,
         pixBadgeColor: string,
-        pixBadgeBg: string
+        pixBadgeBg: string,
+        pixDiscount: string,
+        cardDiscount: string
     },
     shippingRules: any[],
     pixels?: {
@@ -219,7 +221,17 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
 
     const bumpsTotal = availableBumps.filter(b => selectedBumpIds.includes(b.id)).reduce((acc, b) => acc + b.price, 0);
     const totalPrice = (product.price + shipping.price + bumpsTotal);
-    const finalPrice = paymentMethod === 'pix' ? totalPrice * 0.65 : totalPrice;
+
+    // Apply dynamic discounts
+    const pixDiscountVal = parseFloat(customization.pixDiscount || '0') / 100;
+    const cardDiscountVal = parseFloat(customization.cardDiscount || '0') / 100;
+
+    let finalPrice = totalPrice;
+    if (paymentMethod === 'pix') {
+        finalPrice = totalPrice * (1 - pixDiscountVal);
+    } else if (paymentMethod === 'credit_card') {
+        finalPrice = totalPrice * (1 - cardDiscountVal);
+    }
 
     const updateDados = (k: string, v: string) => setDados(p => ({ ...p, [k]: v }));
     const updateCard = (k: string, v: any) => setCardData(p => ({ ...p, [k]: v }));
@@ -747,7 +759,7 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                                 background: customization.pixBadgeBg || '#10b981',
                                                 color: customization.pixBadgeColor || '#ffffff'
                                             }}>
-                                                {customization.pixBadgeText || "😲 35% de desconto + envio prioritário"}
+                                                {customization.pixBadgeText || `😲 ${customization.pixDiscount}% de desconto + envio prioritário`}
                                             </div>
                                         </div>
                                         <div className={`pm-option-new ${paymentMethod === 'credit_card' ? 'active' : ''}`} onClick={() => setPaymentMethod('credit_card')}>

@@ -43,6 +43,8 @@ export default async function CheckoutPage({
                     'checkout_pix_badge_text',
                     'checkout_pix_badge_color',
                     'checkout_pix_badge_bg',
+                    'checkout_pix_discount',
+                    'checkout_card_discount',
                     'marketing_taboola_id',
                     'marketing_facebook_id',
                     'marketing_google_id'
@@ -61,7 +63,9 @@ export default async function CheckoutPage({
         alertBg: settings.find((s: any) => s.key === 'checkout_alert_bg_color')?.value || '#e64a19',
         pixBadgeText: settings.find((s: any) => s.key === 'checkout_pix_badge_text')?.value || '',
         pixBadgeColor: settings.find((s: any) => s.key === 'checkout_pix_badge_color')?.value || '#ffffff',
-        pixBadgeBg: settings.find((s: any) => s.key === 'checkout_pix_badge_bg')?.value || '#10b981'
+        pixBadgeBg: settings.find((s: any) => s.key === 'checkout_pix_badge_bg')?.value || '#10b981',
+        pixDiscount: settings.find((s: any) => s.key === 'checkout_pix_discount')?.value || '0',
+        cardDiscount: settings.find((s: any) => s.key === 'checkout_card_discount')?.value || '0'
     }
 
     const pixels = {

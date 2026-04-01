@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone } from 'lucide-react'
+import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone, TrendingUp } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
 
 export const dynamic = 'force-dynamic';
@@ -17,6 +17,8 @@ export default function PersonalizacaoPage() {
     const [buttonColor, setButtonColor] = useState('#10b981')
     const [bgColor, setBgColor] = useState('#f0f9ff')
     const [disableCpf, setDisableCpf] = useState(false)
+    const [pixDiscount, setPixDiscount] = useState('0')
+    const [cardDiscount, setCardDiscount] = useState('0')
 
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
@@ -41,6 +43,8 @@ export default function PersonalizacaoPage() {
                 const pColor = await getCustomization('checkout_pix_badge_color')
                 const pBg = await getCustomization('checkout_pix_badge_bg')
                 const dCpf = await getCustomization('checkout_disable_cpf')
+                const pDisc = await getCustomization('checkout_pix_discount')
+                const cDisc = await getCustomization('checkout_card_discount')
 
                 setCheckoutLogo(logo)
                 setCheckoutFooter(footer)
@@ -53,6 +57,8 @@ export default function PersonalizacaoPage() {
                 if (pColor) setPixBadgeColor(pColor)
                 if (pBg) setPixBadgeBg(pBg)
                 setDisableCpf(dCpf === 'true')
+                setPixDiscount(pDisc || '0')
+                setCardDiscount(cDisc || '0')
             } catch (error) {
                 console.error('Error loading settings:', error)
             } finally {
@@ -79,6 +85,8 @@ export default function PersonalizacaoPage() {
             await updateCustomization('checkout_pix_badge_color', pixBadgeColor)
             await updateCustomization('checkout_pix_badge_bg', pixBadgeBg)
             await updateCustomization('checkout_disable_cpf', disableCpf ? 'true' : 'false')
+            await updateCustomization('checkout_pix_discount', pixDiscount)
+            await updateCustomization('checkout_card_discount', cardDiscount)
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
 
@@ -327,6 +335,42 @@ export default function PersonalizacaoPage() {
                                     onChange={(e) => setBgColor(e.target.value)}
                                     style={{ flex: 1, padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', textTransform: 'uppercase' }}
                                 />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Discounts Configuration */}
+                    <div style={{ marginBottom: '32px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <TrendingUp size={18} color="#4f46e5" />
+                            Configuração de Descontos (%)
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Desconto no PIX (%)</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                        type="number"
+                                        value={pixDiscount}
+                                        onChange={(e) => setPixDiscount(e.target.value)}
+                                        placeholder="Ex: 35"
+                                        style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
+                                    />
+                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#64748b' }}>%</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Desconto no Cartão (%)</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <input
+                                        type="number"
+                                        value={cardDiscount}
+                                        onChange={(e) => setCardDiscount(e.target.value)}
+                                        placeholder="Ex: 0"
+                                        style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
+                                    />
+                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#64748b' }}>%</span>
+                                </div>
                             </div>
                         </div>
                     </div>
