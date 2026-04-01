@@ -1,9 +1,10 @@
-export const dynamic = 'force-dynamic';
 'use client'
 
 import React, { useState, useEffect } from 'react'
 import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
+
+export const dynamic = 'force-dynamic';
 
 export default function PersonalizacaoPage() {
     const [loading, setLoading] = useState(true)
@@ -15,6 +16,7 @@ export default function PersonalizacaoPage() {
     const [primaryColor, setPrimaryColor] = useState('#10b981')
     const [buttonColor, setButtonColor] = useState('#10b981')
     const [bgColor, setBgColor] = useState('#f0f9ff')
+    const [disableCpf, setDisableCpf] = useState(false)
 
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
@@ -38,6 +40,7 @@ export default function PersonalizacaoPage() {
                 const pText = await getCustomization('checkout_pix_badge_text')
                 const pColor = await getCustomization('checkout_pix_badge_color')
                 const pBg = await getCustomization('checkout_pix_badge_bg')
+                const dCpf = await getCustomization('checkout_disable_cpf')
 
                 setCheckoutLogo(logo)
                 setCheckoutFooter(footer)
@@ -49,6 +52,7 @@ export default function PersonalizacaoPage() {
                 if (pText) setPixBadgeText(pText)
                 if (pColor) setPixBadgeColor(pColor)
                 if (pBg) setPixBadgeBg(pBg)
+                setDisableCpf(dCpf === 'true')
             } catch (error) {
                 console.error('Error loading settings:', error)
             } finally {
@@ -74,6 +78,7 @@ export default function PersonalizacaoPage() {
             await updateCustomization('checkout_pix_badge_text', pixBadgeText)
             await updateCustomization('checkout_pix_badge_color', pixBadgeColor)
             await updateCustomization('checkout_pix_badge_bg', pixBadgeBg)
+            await updateCustomization('checkout_disable_cpf', disableCpf ? 'true' : 'false')
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
 
@@ -324,6 +329,45 @@ export default function PersonalizacaoPage() {
                                 />
                             </div>
                         </div>
+                    </div>
+
+                    {/* CPF Toggle */}
+                    <div style={{ marginBottom: '32px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block' }}>
+                                Desativar Campo de CPF
+                            </label>
+                            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                                Se ativado, o campo CPF não será solicitado nem obrigatório no checkout.
+                            </p>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={disableCpf}
+                                onChange={(e) => setDisableCpf(e.target.checked)}
+                                style={{ opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                                position: 'absolute',
+                                top: 0, left: 0, right: 0, bottom: 0,
+                                backgroundColor: disableCpf ? '#4f46e5' : '#ccc',
+                                transition: '.4s',
+                                borderRadius: '34px'
+                            }}>
+                                <span style={{
+                                    position: 'absolute',
+                                    content: '""',
+                                    height: '18px',
+                                    width: '18px',
+                                    left: disableCpf ? '28px' : '4px',
+                                    bottom: '4px',
+                                    backgroundColor: 'white',
+                                    transition: '.4s',
+                                    borderRadius: '50%'
+                                }}></span>
+                            </span>
+                        </label>
                     </div>
 
                     {/* Footer Text */}
