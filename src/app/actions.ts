@@ -24,18 +24,18 @@ export async function sendConfirmationEmail(orderId: string) {
         const replacePlaceholders = (text: string) => {
             return text
                 .replace(/{{orderId}}/g, order.id.slice(0, 8).toUpperCase())
-                .replace(/{{fullName}}/g, order.fullName)
-                .replace(/{{firstName}}/g, order.fullName.split(' ')[0])
+                .replace(/{{fullName}}/g, order.fullName || '')
+                .replace(/{{firstName}}/g, (order.fullName || '').split(' ')[0])
                 .replace(/{{productName}}/g, order.product?.name || 'Produto')
-                .replace(/{{totalPrice}}/g, `R$ ${order.totalPrice.toFixed(2)}`)
+                .replace(/{{totalPrice}}/g, `R$ ${(order.totalPrice || 0).toFixed(2)}`)
                 .replace(/{{paymentMethod}}/g, order.paymentMethod === 'pix' ? 'PIX' : 'Cartão de Crédito')
-                .replace(/{{fullAddress}}/g, `${order.rua}, ${order.numero}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro}, ${order.cidade}/${order.estado}`)
-                .replace(/{{rua}}/g, order.rua)
-                .replace(/{{numero}}/g, order.numero)
-                .replace(/{{bairro}}/g, order.bairro)
-                .replace(/{{cidade}}/g, order.cidade)
-                .replace(/{{estado}}/g, order.estado)
-                .replace(/{{cep}}/g, order.cep);
+                .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
+                .replace(/{{rua}}/g, order.rua || '')
+                .replace(/{{numero}}/g, order.numero || '')
+                .replace(/{{bairro}}/g, order.bairro || '')
+                .replace(/{{cidade}}/g, order.cidade || '')
+                .replace(/{{estado}}/g, order.estado || '')
+                .replace(/{{cep}}/g, order.cep || '');
         };
 
         if (template) {
@@ -190,21 +190,21 @@ export async function sendTrackingEmail(orderId: string) {
         const replacePlaceholders = (text: string) => {
             return text
                 .replace(/{{orderId}}/g, order.id.slice(0, 8).toUpperCase())
-                .replace(/{{fullName}}/g, order.fullName)
-                .replace(/{{firstName}}/g, order.fullName.split(' ')[0])
+                .replace(/{{fullName}}/g, order.fullName || '')
+                .replace(/{{firstName}}/g, (order.fullName || '').split(' ')[0])
                 .replace(/{{productName}}/g, order.product?.name || 'Produto')
-                .replace(/{{totalPrice}}/g, `R$ ${order.totalPrice.toFixed(2)}`)
+                .replace(/{{totalPrice}}/g, `R$ ${(order.totalPrice || 0).toFixed(2)}`)
                 .replace(/{{paymentMethod}}/g, order.paymentMethod === 'pix' ? 'PIX' : 'Cartão de Crédito')
                 .replace(/{{trackingCode}}/g, order.trackingCode || '')
                 .replace(/{{trackingUrl}}/g, (order as any).trackingUrl || `https://www.linkcorreios.com.br/${order.trackingCode}`)
                 .replace(/{{estimatedDate}}/g, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'))
-                .replace(/{{fullAddress}}/g, `${order.rua}, ${order.numero}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro}, ${order.cidade}/${order.estado}`)
-                .replace(/{{rua}}/g, order.rua)
-                .replace(/{{numero}}/g, order.numero)
-                .replace(/{{bairro}}/g, order.bairro)
-                .replace(/{{cidade}}/g, order.cidade)
-                .replace(/{{estado}}/g, order.estado)
-                .replace(/{{cep}}/g, order.cep);
+                .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
+                .replace(/{{rua}}/g, order.rua || '')
+                .replace(/{{numero}}/g, order.numero || '')
+                .replace(/{{bairro}}/g, order.bairro || '')
+                .replace(/{{cidade}}/g, order.cidade || '')
+                .replace(/{{estado}}/g, order.estado || '')
+                .replace(/{{cep}}/g, order.cep || '');
         };
 
         if (template) {
