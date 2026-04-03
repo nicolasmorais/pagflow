@@ -46,6 +46,7 @@ const gridLayout = 'minmax(220px, 1.5fr) minmax(140px, 1fr) minmax(130px, 0.8fr)
 export default async function VendasPage() {
     const orders = await prisma.order.findMany({
         where: {
+            deletedAt: null,
             NOT: { paymentStatus: { in: ['abandonado', 'processando'] } }
         },
         orderBy: { createdAt: 'desc' },

@@ -44,19 +44,19 @@ const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, v
 
 export default async function SummaryPage() {
     const orders = await prisma.order.findMany({
-        where: { NOT: { paymentStatus: 'abandonado' } },
+        where: { deletedAt: null, NOT: { paymentStatus: 'abandonado' } },
         orderBy: { createdAt: 'desc' },
         take: 5
     })
 
-    const totalSales = await prisma.order.count({ where: { NOT: { paymentStatus: 'abandonado' } } })
-    const abandonedCount = await prisma.order.count({ where: { paymentStatus: 'abandonado' } })
+    const totalSales = await prisma.order.count({ where: { deletedAt: null, NOT: { paymentStatus: 'abandonado' } } })
+    const abandonedCount = await prisma.order.count({ where: { deletedAt: null, paymentStatus: 'abandonado' } })
     const revenueRes = await prisma.order.aggregate({
         _sum: { totalPrice: true },
-        where: { paymentStatus: 'pago' }
+        where: { deletedAt: null, paymentStatus: 'pago' }
     })
     const totalRevenue = revenueRes._sum.totalPrice || 0
-    const uniqueCustomers = new Set((await prisma.order.findMany({ select: { email: true }, where: { NOT: { paymentStatus: 'abandonado' } } })).map(o => o.email)).size
+    const uniqueCustomers = new Set((await prisma.order.findMany({ select: { email: true }, where: { deletedAt: null, NOT: { paymentStatus: 'abandonado' } } })).map(o => o.email)).size
 
     return (
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>

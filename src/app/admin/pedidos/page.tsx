@@ -9,6 +9,7 @@ import { MercadoPagoConfig, Payment } from 'mercadopago'
 export default async function OrdersPage() {
     // 1. Fetch orders from DB
     const orders = await prisma.order.findMany({
+        where: { deletedAt: null },
         orderBy: { createdAt: 'desc' },
         include: { product: true }
     })

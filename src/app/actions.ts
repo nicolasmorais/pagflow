@@ -411,7 +411,7 @@ export async function deleteProduct(productId: string): Promise<void> {
 }
 export async function deleteOrder(orderId: string): Promise<void> {
     try {
-        await prisma.order.delete({ where: { id: orderId } })
+        await prisma.order.update({ where: { id: orderId }, data: { deletedAt: new Date() } })
         revalidatePath('/admin/pedidos')
         revalidatePath('/admin')
     } catch (error) {
