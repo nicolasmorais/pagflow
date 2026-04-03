@@ -74,7 +74,7 @@ export async function sendConfirmationEmail(orderId: string) {
         }
 
         const { data, error } = await resend.emails.send({
-            from: 'PagFlow <onboarding@resend.dev>',
+            from: 'Elabela Store <noreply@elabela.store>',
             to: [order.email],
             subject: subject,
             html: htmlContent
@@ -230,7 +230,7 @@ export async function sendTrackingEmail(orderId: string) {
         }
 
         await resend.emails.send({
-            from: 'Elabela Store <onboarding@resend.dev>',
+            from: 'Elabela Store <noreply@elabela.store>',
             to: [order.email],
             subject: subject,
             html: htmlContent,
