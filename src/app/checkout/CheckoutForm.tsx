@@ -107,6 +107,59 @@ const TrustBadges = ({ className }: { className?: string }) => (
     </div>
 );
 
+function OrderBumpItem({ bump, selectedBumpIds, setSelectedBumpIds }: {
+    bump: any;
+    selectedBumpIds: string[];
+    setSelectedBumpIds: React.Dispatch<React.SetStateAction<string[]>>;
+}) {
+    const isSelected = selectedBumpIds.includes(bump.id);
+    const toggle = () => {
+        setSelectedBumpIds((prev: string[]) =>
+            prev.includes(bump.id) ? prev.filter((id: string) => id !== bump.id) : [...prev, bump.id]
+        );
+    };
+    return (
+        <div
+            onClick={toggle}
+            style={{
+                border: isSelected ? '2px solid #10b981' : '2px dashed #e2e8f0',
+                borderRadius: '14px',
+                padding: '14px 16px',
+                marginBottom: '10px',
+                cursor: 'pointer',
+                background: isSelected ? '#f0fdf4' : '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                transition: 'all 0.2s ease'
+            }}
+        >
+            <div style={{
+                width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0,
+                border: isSelected ? '2px solid #10b981' : '2px solid #cbd5e1',
+                background: isSelected ? '#10b981' : '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: '#fff', fontSize: '13px', fontWeight: 800
+            }}>
+                {isSelected && '✓'}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                    {bump.name}
+                </p>
+                {bump.description && (
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>
+                        {bump.description}
+                    </p>
+                )}
+            </div>
+            <span style={{ fontSize: '14px', fontWeight: 800, color: '#10b981', whiteSpace: 'nowrap' }}>
+                + R$ {(bump.price || 0).toFixed(2)}
+            </span>
+        </div>
+    );
+}
+
 export default function CheckoutForm({ product, customization, shippingRules, pixels, availableBumps = [] }: {
     product: any,
     customization: {
