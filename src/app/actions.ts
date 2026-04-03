@@ -47,7 +47,7 @@ export async function sendConfirmationEmail(orderId: string) {
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
                     <div style="background: #10b981; padding: 40px 20px; text-align: center; color: white;">
                         <h1 style="margin: 0; font-size: 28px;">Pedido Confirmado!</h1>
-                        <p style="opacity: 0.9; margin-top: 10px;">Olá, ${order.fullName.split(' ')[0]}. Sua compra foi processada com sucesso!</p>
+                        <p style="opacity: 0.9; margin-top: 10px;">Olá, ${(order.fullName || '').split(' ')[0]}. Sua compra foi processada com sucesso!</p>
                     </div>
                     <div style="padding: 30px;">
                         <h2 style="font-size: 16px; color: #64748b; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 0.05em;">Detalhes da sua compra:</h2>
@@ -58,11 +58,11 @@ export async function sendConfirmationEmail(orderId: string) {
                         <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #f1f5f9;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                                 <span>Subtotal:</span>
-                                <strong>R$ ${order.totalPrice.toFixed(2)}</strong>
+                                <strong>R$ ${(order.totalPrice || 0).toFixed(2)}</strong>
                             </div>
                             <div style="display: flex; justify-content: space-between; border-top: 1px solid #e2e8f0; padding-top: 10px;">
                                 <strong>Total Pago:</strong>
-                                <strong style="color: #10b981; font-size: 20px;">R$ ${order.totalPrice.toFixed(2)}</strong>
+                                <strong style="color: #10b981; font-size: 20px;">R$ ${(order.totalPrice || 0).toFixed(2)}</strong>
                             </div>
                         </div>
                     </div>
@@ -218,10 +218,10 @@ export async function sendTrackingEmail(orderId: string) {
                         <h1 style="margin: 0; font-size: 24px;">Seu pedido foi enviado!</h1>
                     </div>
                     <div style="padding: 30px; text-align: center;">
-                        <p>Olá, ${order.fullName.split(' ')[0]}! Temos boas notícias: seu pedido já está a caminho.</p>
+                        <p>Olá, ${(order.fullName || '').split(' ')[0]}! Temos boas notícias: seu pedido já está a caminho.</p>
                         <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #f1f5f9;">
                             <p style="font-size: 14px; color: #64748b; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">Código de Rastreio</p>
-                            <p style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: 2px;">${order.trackingCode}</p>
+                            <p style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: 2px;">${order.trackingCode || ''}</p>
                         </div>
                         <a href="${trackLink}" style="display: inline-block; background: #3b82f6; color: white; padding: 16px 32px; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);">Acompanhar Entrega</a>
                     </div>
