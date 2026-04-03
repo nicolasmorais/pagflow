@@ -147,7 +147,7 @@ export default async function SummaryPage() {
                                 {/* Info */}
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                        {order.fullName.split(' ')[0]}
+                                        {(order.fullName || '').split(' ')[0]}
                                     </p>
                                     <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
                                         {new Date(order.createdAt).toLocaleDateString('pt-BR')}

@@ -76,7 +76,7 @@ export default async function AbandonadosPage() {
                             <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--admin-text-primary)', margin: '0 0 2px 0' }}>
                                 {order.fullName || 'Sem nome'}
                             </h3>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-secondary)', marginBottom: '4px' }}>{order.email}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-secondary)', marginBottom: '4px' }}>{order.email || 'Sem e-mail'}</div>
                             <div style={{ fontSize: '0.65rem', color: 'var(--admin-text-secondary)' }}>
                                 {new Date(order.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                             </div>
@@ -122,7 +122,7 @@ export default async function AbandonadosPage() {
                         {/* Col 5: Actions */}
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                             <a
-                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}?text=Olá ${order.fullName}, vimos que você iniciou a compra do ${order.product?.name || 'nosso produto'} mas não finalizou. Podemos te ajudar?`}
+                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}?text=Olá ${(order.fullName || 'Cliente').split(' ')[0]}, vimos que você iniciou a compra do ${order.product?.name || 'nosso produto'} mas não finalizou. Podemos te ajudar?`}
                                 target="_blank"
                                 rel="noreferrer"
                                 style={{

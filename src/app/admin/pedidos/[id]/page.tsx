@@ -10,13 +10,13 @@ import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
 
 const STATUS_CONFIG: Record<string, { bg: string; color: string; dot: string; border: string; label: string }> = {
-    pago:        { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Pago' },
-    recusado:    { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Recusado' },
+    pago: { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Pago' },
+    recusado: { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Recusado' },
     reembolsado: { bg: '#eff6ff', color: '#1d4ed8', dot: '#2563eb', border: '#bfdbfe', label: 'Reembolsado' },
-    aguardando:  { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
+    aguardando: { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
     processando: { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
-    atendido:    { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Atendido' },
-    cancelado:   { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Cancelado' },
+    atendido: { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Atendido' },
+    cancelado: { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Cancelado' },
 }
 const getStatus = (s: string) => STATUS_CONFIG[s?.toLowerCase()] ?? STATUS_CONFIG.processando
 
@@ -108,7 +108,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         <span className="pedido-card-title">Cliente</span>
                     </div>
                     <div className="pedido-card-body">
-                        <p style={{ margin: '0 0 6px', fontWeight: 800, color: '#1e293b', fontSize: '15px' }}>{order.fullName}</p>
+                        <p style={{ margin: '0 0 6px', fontWeight: 800, color: '#1e293b', fontSize: '15px' }}>{order.fullName || 'Cliente sem nome'}</p>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '5px' }}>
                             <Mail size={12} color="#94a3b8" style={{ marginTop: '2px', flexShrink: 0 }} />
                             <span style={{ color: '#64748b', fontSize: '13px', wordBreak: 'break-all' }}>{order.email}</span>
@@ -222,8 +222,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 {order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'
                                     ? <span style={{ fontSize: '16px', color: 'white', fontWeight: 900 }}>✕</span>
                                     : order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'
-                                    ? <CheckCircle2 size={18} color="white" />
-                                    : <span style={{ fontSize: '14px', color: 'white', fontWeight: 900 }}>···</span>
+                                        ? <CheckCircle2 size={18} color="white" />
+                                        : <span style={{ fontSize: '14px', color: 'white', fontWeight: 900 }}>···</span>
                                 }
                             </div>
                             <span style={{ fontSize: '11px', fontWeight: 700, color: step2Color, marginTop: '6px', textAlign: 'center', textTransform: 'uppercase' }}>

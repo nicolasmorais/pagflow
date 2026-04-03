@@ -28,10 +28,10 @@ const getAvatarGradient = (name: string) =>
     AVATAR_PALETTES[name.charCodeAt(0) % AVATAR_PALETTES.length].gradient;
 
 const STATUS_CONFIG: Record<string, { bg: string; color: string; dot: string; border: string; label: string }> = {
-    pago:        { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Pago' },
-    recusado:    { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Recusado' },
+    pago: { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Pago' },
+    recusado: { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Recusado' },
     reembolsado: { bg: '#eff6ff', color: '#1d4ed8', dot: '#2563eb', border: '#bfdbfe', label: 'Reembolsado' },
-    aguardando:  { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
+    aguardando: { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
     processando: { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
 };
 const getStatus = (s: string) => STATUS_CONFIG[s] ?? STATUS_CONFIG.processando;
@@ -182,18 +182,18 @@ export default async function VendasPage() {
                                             <div style={{
                                                 width: '42px', height: '42px', minWidth: '42px',
                                                 borderRadius: '12px',
-                                                background: getAvatarGradient(order.fullName),
+                                                background: getAvatarGradient(order.fullName || 'C'),
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 fontSize: '15px', fontWeight: 800, color: '#fff',
                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
                                             }}>
-                                                {order.fullName.charAt(0).toUpperCase()}
+                                                {(order.fullName || 'C').charAt(0).toUpperCase()}
                                             </div>
                                             {/* Info */}
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                                                     <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                        {order.fullName.split(' ').slice(0, 2).join(' ')}
+                                                        {(order.fullName || '').split(' ').slice(0, 2).join(' ')}
                                                     </p>
                                                     <p style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#059669', whiteSpace: 'nowrap' }}>
                                                         R$ {formatBRL(order.totalPrice || 0)}
@@ -263,16 +263,16 @@ export default async function VendasPage() {
                                                     <div style={{
                                                         width: '42px', height: '42px',
                                                         borderRadius: '12px',
-                                                        background: getAvatarGradient(order.fullName),
+                                                        background: getAvatarGradient(order.fullName || 'C'),
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                         fontSize: '14px', fontWeight: 800, color: '#fff',
                                                         flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
                                                     }}>
-                                                        {order.fullName.charAt(0).toUpperCase()}
+                                                        {(order.fullName || 'C').charAt(0).toUpperCase()}
                                                     </div>
                                                     <div style={{ overflow: 'hidden' }}>
                                                         <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                            {order.fullName}
+                                                            {order.fullName || 'Cliente'}
                                                         </p>
                                                         <p style={{ margin: '1px 0 0', fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                             {order.email}
