@@ -26,12 +26,20 @@ model Order {
   productId     String?
   paymentStatus String   @default("abandonado")
   trackingCode  String?
+  trackingUrl   String?
   recipient     String?
   hasBump       Boolean  @default(false)
   selectedBumps Json?
-  paymentMethod String?
-  totalPrice    Float    @default(0)
-  mpPaymentId   String?
+  paymentMethod    String?
+  totalPrice       Float    @default(0)
+  mpPaymentId      String?
+  
+  // Payment Details
+  installments      Int?
+  installmentAmount Float?
+  cardBrand         String?
+  netReceived       Float?
+
   product       Product? @relation(fields: [productId], references: [id])
 }
 
@@ -53,6 +61,7 @@ model OrderBump {
   description String
   price       Float
   imageUrl    String?
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   productId   String?
@@ -165,4 +174,15 @@ model shipping_rules {
   delivery_time String?   @db.VarChar(100)
   is_active     Boolean?  @default(true)
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  subject   String
+  content   String   @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

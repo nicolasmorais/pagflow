@@ -3,6 +3,8 @@ import { MapPin, Phone, CreditCard, ChevronLeft, ExternalLink, Calendar, Mail, U
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { deleteOrder } from '../../../actions'
+import EmailSection from './EmailSection'
+import TrackingManagement from './TrackingManagement'
 
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -95,12 +97,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </div>
                     <div style={{ padding: '24px', borderRight: '1px solid #f1f5f9' }}>
                         <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '16px' }}>Pagamento</h4>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b', fontWeight: 700, fontSize: '0.9rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px' }}>
                             <div style={{ background: '#f8fafc', padding: '6px', borderRadius: '6px' }}>
                                 {order.paymentMethod === 'pix' ? '❖' : '💳'}
                             </div>
-                            {order.paymentMethod === 'pix' ? 'Pix' : 'Cartão de Crédito'}
+                            {order.paymentMethod === 'pix' ? 'Pix' : (order.cardBrand ? order.cardBrand.toUpperCase() : 'Cartão de Crédito')}
                         </div>
+                        {order.installments && (
+                            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
+                                {order.installments}x de R$ {order.installmentAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                        )}
+                        {order.paymentStatus === 'pago' && order.netReceived && (
+                            <div style={{ marginTop: '12px', fontSize: '0.7rem', color: '#10b981', fontWeight: 800, background: '#f0fdf4', padding: '4px 8px', borderRadius: '4px', width: 'fit-content' }}>
+                                VALOR LÍQUIDO: R$ {order.netReceived.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </div>
+                        )}
                     </div>
                     <div style={{ padding: '24px' }}>
                         <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '16px' }}>Entrega</h4>
@@ -174,7 +186,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
 
             {/* Products Table */}
-            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '24px' }}>
                 <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>Produtos</h3>
                     <span style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800 }}>1</span>
@@ -202,12 +214,15 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 </div>
                             </td>
                             <td style={{ textAlign: 'center', padding: '20px 24px', fontWeight: 600, color: '#1e293b' }}>1</td>
-                            <td style={{ textAlign: 'right', padding: '20px 24px', color: '#64748b', fontSize: '0.9rem' }}>R$ {order.product?.price.toFixed(2)}</td>
-                            <td style={{ textAlign: 'right', padding: '20px 24px', fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>R$ {order.product?.price.toFixed(2)}</td>
+                            <td style={{ textAlign: 'right', padding: '20px 24px', color: '#64748b', fontSize: '0.9rem' }}>R$ {order.product?.price?.toFixed(2) || '0.00'}</td>
+                            <td style={{ textAlign: 'right', padding: '20px 24px', fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>R$ {order.product?.price?.toFixed(2) || '0.00'}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+
+            <TrackingManagement orderId={order.id} initialCode={order.trackingCode} initialUrl={order.trackingUrl} />
+            <EmailSection orderId={order.id} email={order.email} />
         </div>
     )
 }

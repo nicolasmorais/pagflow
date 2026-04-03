@@ -15,25 +15,67 @@ import {
     Settings,
     Activity,
     LogOut,
-    Bell
+    Bell,
+    Mail,
+    ChevronDown
 } from 'lucide-react'
 import './admin.css'
 
-const SidebarItem = ({ icon: Icon, label, href, active, count }: {
+const SidebarItem = ({ icon: Icon, label, href, active, count, subItems, pathname }: {
     icon: any,
     label: string,
     href: string,
     active: boolean,
-    count?: number
-}) => (
-    <Link href={href} className={`nav-item ${active ? 'active' : ''}`}>
-        <Icon className="nav-item-icon" />
-        <span>{label}</span>
-        {count !== undefined && count > 0 && (
-            <span className="nav-count">{count}</span>
-        )}
-    </Link>
-)
+    count?: number,
+    subItems?: { label: string, href: string }[],
+    pathname: string
+}) => {
+    const [isOpen, setIsOpen] = useState(active || subItems?.some(sub => pathname === sub.href))
+
+    return (
+        <div className="nav-item-container">
+            <Link
+                href={href}
+                className={`nav-item ${active ? 'active' : ''}`}
+                onClick={(e) => {
+                    if (subItems) {
+                        setIsOpen(!isOpen)
+                    }
+                }}
+            >
+                <div className="nav-icon-box">
+                    <Icon className="nav-item-icon" />
+                </div>
+                <span>{label}</span>
+                {count !== undefined && count > 0 && (
+                    <span className="nav-count">{count}</span>
+                )}
+                {subItems && (
+                    <ChevronDown size={14} style={{ marginLeft: 'auto', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                )}
+            </Link>
+
+            {subItems && isOpen && (
+                <div className="sub-menu">
+                    {subItems.map((sub) => (
+                        <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className={`sub-nav-item ${pathname === sub.href ? 'active' : ''}`}
+                        >
+                            <span>{sub.label}</span>
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
+import TopBar from './components/TopBar'
+import BottomNav from './components/BottomNav'
+
+import NotificationCenter from './components/NotificationCenter'
 
 export default function AdminLayout({
     children,
@@ -42,18 +84,37 @@ export default function AdminLayout({
 }) {
     const pathname = usePathname()
 
-    // Simulated stats for the sidebar
-    const pendingOrders = 3 // This would come from real data in a production app
-
     const mainMenu = [
-        { icon: Home, label: 'Visão Geral', href: '/admin' },
-        { icon: ShoppingCart, label: 'Todas as Vendas', href: '/admin/vendas' },
-        { icon: ShoppingBag, label: 'Abandonados', href: '/admin/abandonados' },
-        { icon: Package, label: 'Produtos', href: '/admin/produtos' },
-        { icon: Truck, label: 'Fretes', href: '/admin/ecommerce' },
-        { icon: Megaphone, label: 'Marketing', href: '/admin/marketing' },
-        { icon: Sparkles, label: 'Order Bumps', href: '/admin/ordem' },
-        { icon: Target, label: 'ROI de Anúncios', href: '/admin/roi' },
+        { icon: Home, label: 'Dashboard', href: '/admin' },
+        {
+            icon: ShoppingCart,
+            label: 'Todas as Vendas',
+            href: '/admin/vendas',
+            subItems: [
+                { label: 'Pedidos', href: '/admin/vendas' },
+                { label: 'Carrinhos Abandonados', href: '/admin/abandonados' },
+            ]
+        },
+        {
+            icon: Package,
+            label: 'Produtos',
+            href: '/admin/produtos',
+            subItems: [
+                { label: 'Lista de Produtos', href: '/admin/produtos' },
+                { label: 'Configurações de Frete', href: '/admin/ecommerce' },
+            ]
+        },
+        {
+            icon: Megaphone,
+            label: 'Marketing',
+            href: '/admin/marketing',
+            subItems: [
+                { label: 'Pixel', href: '/admin/marketing' },
+                { label: 'Order Bumps', href: '/admin/ordem' },
+                { label: 'ROI de Anúncios', href: '/admin/roi' },
+                { label: 'E-mails', href: '/admin/emails' },
+            ]
+        },
     ]
 
     const managementMenu = [
@@ -64,18 +125,21 @@ export default function AdminLayout({
 
     return (
         <div className="admin-layout">
-            {/* Sidebar Navigation */}
-            <aside className="sidebar">
-                <div className="sidebar-logo">
+            {/* Sidebar Navigation - Hidden on Mobile */}
+            <aside className="sidebar desktop-only">
+                <div className="sidebar-logo" style={{ padding: '0 12px', marginBottom: '24px' }}>
                     <img
-                        src="https://pub-da9fd1c19b8e45d691d67626b9a7ba6d.r2.dev/1774908668169-1774828360577-019d3c03-84c9-7750-9ed0-2cd31fab976b-(2).png"
-                        alt="Logo"
-                        style={{ height: '32px', width: 'auto', objectFit: 'contain' }}
+                        src="https://pub-da9fd1c19b8e45d691d67626b9a7ba6d.r2.dev/1774828533696-1774828360577-019d3c03-84c9-7750-9ed0-2cd31fab976b.png"
+                        alt="PagFlow"
+                        style={{ maxWidth: '100%', height: 'auto', display: 'block' }}
                     />
                 </div>
 
                 <div className="sidebar-scroll">
-                    <div className="sidebar-section-title">Menu Principal</div>
+                    <div style={{ padding: '0 8px' }}>
+                        <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)', marginBottom: '24px' }}></div>
+                    </div>
+
                     <nav className="sidebar-nav">
                         {mainMenu.map((item) => (
                             <SidebarItem
@@ -84,11 +148,13 @@ export default function AdminLayout({
                                 label={item.label}
                                 href={item.href}
                                 active={pathname === item.href}
+                                subItems={(item as any).subItems}
+                                pathname={pathname}
                             />
                         ))}
                     </nav>
 
-                    <div className="sidebar-section-title" style={{ marginTop: '24px' }}>Gerenciamento</div>
+                    <div className="sidebar-section-title">ACCOUNT PAGES</div>
                     <nav className="sidebar-nav">
                         {managementMenu.map((item) => (
                             <SidebarItem
@@ -97,19 +163,24 @@ export default function AdminLayout({
                                 label={item.label}
                                 href={item.href}
                                 active={pathname === item.href}
+                                subItems={(item as any).subItems}
+                                pathname={pathname}
                             />
                         ))}
                     </nav>
                 </div>
 
                 <div className="sidebar-footer">
-                    <div className="user-profile">
-                        <div className="user-avatar">AD</div>
+                    <div style={{ padding: '0 12px 16px' }}>
+                        <NotificationCenter />
+                    </div>
+                    <div className="user-profile" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '12px' }}>
+                        <div className="user-avatar" style={{ background: 'var(--sidebar-icon-active-bg)', color: '#fff' }}>AD</div>
                         <div className="user-info">
-                            <span className="user-name">Admin</span>
-                            <span className="user-role">Super Usuário</span>
+                            <span className="user-name" style={{ color: '#fff' }}>Admin</span>
+                            <span className="user-role" style={{ color: 'rgba(255,255,255,0.5)' }}>Pro User</span>
                         </div>
-                        <Link href="/" title="Sair" style={{ marginLeft: 'auto', color: '#94a3b8', transition: 'color 0.2s' }}>
+                        <Link href="/" title="Sair" style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.4)', transition: 'color 0.2s' }}>
                             <LogOut size={16} />
                         </Link>
                     </div>
@@ -118,30 +189,24 @@ export default function AdminLayout({
 
             {/* Main Content Area */}
             <main className="main-content">
-                <header style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    padding: '20px 0 16px 0',
-                    alignItems: 'center'
-                }}>
-                    <div>
-                        <h1 className="title" style={{ fontSize: '1.6rem', margin: 0 }}>
-                            {pathname === '/admin' && 'Visão Geral'}
-                            {pathname === '/admin/vendas' && 'Todas as Vendas'}
-                            {pathname === '/admin/abandonados' && 'Carrinhos Abandonados'}
-                            {pathname === '/admin/produtos' && 'Gestão de Produtos'}
-                            {pathname === '/admin/ecommerce' && 'Gestão de Fretes'}
-                            {pathname === '/admin/marketing' && 'Marketing & Campanhas'}
-                            {pathname === '/admin/roi' && 'Analítico de ROI'}
-                            {pathname === '/admin/personalizacao' && 'Personalizar Loja'}
-                            {pathname === '/admin/configuracoes' && 'Configurações do Sistema'}
-                            {pathname === '/admin/status' && 'Status do Servidor'}
-                        </h1>
-                    </div>
-                </header>
-
-                {children}
+                <div style={{ padding: '32px' }}>
+                    {children}
+                </div>
+                <BottomNav />
             </main>
+
+            <style jsx global>{`
+                @media (max-width: 1024px) {
+                    .desktop-only {
+                        display: none !important;
+                    }
+                    .main-content {
+                        margin-left: 0 !important;
+                        width: 100% !important;
+                        padding-bottom: 80px !important;
+                    }
+                }
+            `}</style>
         </div>
     )
 }

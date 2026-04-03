@@ -17,21 +17,40 @@ export default function ProductRow({ product }: ProductRowProps) {
 
     return (
         <>
-            <div className="dashboard-order-row" style={{
+            <div className="product-row-new" style={{
                 background: 'var(--admin-card)',
                 border: '1px solid var(--admin-border)',
-                borderRadius: '16px',
-                padding: '12px 24px',
+                borderRadius: '20px',
+                padding: '16px 24px',
                 display: 'grid',
                 gridTemplateColumns: gridLayout,
                 alignItems: 'center',
                 gap: '16px',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.01)'
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
             }}>
+                <style jsx>{`
+                    .product-row-new:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 12px 20px -10px rgba(0,0,0,0.04);
+                        border-color: #3b82f640;
+                    }
+                    .checkout-link-container:focus-within {
+                        border-color: #3b82f6 !important;
+                        background: #fff !important;
+                    }
+                `}</style>
                 {/* Col 1: Product Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '14px',
+                        overflow: 'hidden',
+                        flexShrink: 0,
+                        border: '1.5px solid #f1f5f9',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+                    }}>
                         <img
                             src={product.imageUrl || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop'}
                             alt={product.name}
@@ -39,53 +58,71 @@ export default function ProductRow({ product }: ProductRowProps) {
                         />
                     </div>
                     <div>
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--admin-text-primary)', margin: 0 }}>{product.name}</h3>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--admin-text-secondary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <ShoppingBag size={10} /> ID: {product.id.substring(0, 8)}...
-                        </span>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>{product.name}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                            <span style={{
+                                fontSize: '10px',
+                                background: '#f1f5f9',
+                                color: '#64748b',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontWeight: 700
+                            }}>
+                                ID: {product.id.substring(0, 8)}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
                 {/* Col 2: Price */}
-                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--admin-text-primary)' }}>
-                    R$ {product.price.toFixed(2)}
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#64748b', marginRight: '2px' }}>R$</span>
+                    {product.price.toFixed(2)}
                 </div>
 
                 {/* Col 3: Commission */}
                 <div>
                     <span style={{
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: '#10b981',
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        color: '#059669',
                         background: '#ecfdf5',
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        border: '1px solid #d1f7de'
+                        padding: '6px 12px',
+                        borderRadius: '10px',
+                        border: '1.5px solid #d1f7de'
                     }}>
-                        R$ {product.commission?.toFixed(2) || '0.00'}
+                        + R$ {product.commission?.toFixed(2) || '0.00'}
                     </span>
                 </div>
 
                 {/* Col 4: Checkout Link */}
-                <div style={{
+                <div className="checkout-link-container" style={{
                     display: 'flex',
                     background: '#f8fafc',
                     border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    padding: '6px 10px',
+                    borderRadius: '12px',
+                    padding: '8px 12px',
                     alignItems: 'center',
                     gap: '8px',
-                    maxWidth: '100%'
+                    transition: 'all 0.2s'
                 }}>
                     <input
                         readOnly
                         value={`/checkout?p=${product.id}`}
-                        style={{ border: 'none', background: 'transparent', fontSize: '11px', color: '#64748b', width: '100%', fontWeight: 600, outline: 'none' }}
+                        style={{ border: 'none', background: 'transparent', fontSize: '12px', color: '#64748b', width: '100%', fontWeight: 600, outline: 'none' }}
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
                     />
                     <Link
                         href={`/checkout?p=${product.id}`}
                         target="_blank"
-                        style={{ color: '#3b82f6', display: 'flex' }}
+                        style={{
+                            color: '#3b82f6',
+                            display: 'flex',
+                            padding: '4px',
+                            borderRadius: '6px',
+                            background: '#fff',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                        }}
                         title="Abrir Checkout"
                     >
                         <ExternalLink size={14} />
@@ -93,43 +130,51 @@ export default function ProductRow({ product }: ProductRowProps) {
                 </div>
 
                 {/* Col 5: Actions */}
-                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                     <button
                         onClick={() => setIsEditing(true)}
                         title="Editar"
                         style={{
-                            width: '34px',
-                            height: '34px',
-                            background: '#eff6ff',
-                            borderRadius: '8px',
+                            width: '40px',
+                            height: '40px',
+                            background: '#fff',
+                            borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: '#3b82f6',
-                            border: '1px solid #dbeafe',
-                            cursor: 'pointer'
+                            border: '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                            transition: 'all 0.2s'
                         }}
+                        onMouseOver={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
+                        onMouseOut={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
                     >
-                        <Edit2 size={16} />
+                        <Edit2 size={18} />
                     </button>
 
                     <button
                         onClick={async () => await duplicateProduct(product.id)}
                         title="Duplicar"
                         style={{
-                            width: '34px',
-                            height: '34px',
-                            background: '#f8fafc',
-                            borderRadius: '8px',
+                            width: '40px',
+                            height: '40px',
+                            background: '#fff',
+                            borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: '#475569',
                             border: '1px solid #e2e8f0',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                            transition: 'all 0.2s'
                         }}
+                        onMouseOver={(e) => (e.currentTarget.style.borderColor = '#475569')}
+                        onMouseOut={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
                     >
-                        <Copy size={16} />
+                        <Copy size={18} />
                     </button>
 
                     <button
@@ -140,19 +185,23 @@ export default function ProductRow({ product }: ProductRowProps) {
                         }}
                         title="Excluir"
                         style={{
-                            width: '34px',
-                            height: '34px',
-                            background: '#fef2f2',
-                            borderRadius: '8px',
+                            width: '40px',
+                            height: '40px',
+                            background: '#fff',
+                            borderRadius: '12px',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: '#ef4444',
                             border: '1px solid #fee2e2',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+                            transition: 'all 0.2s'
                         }}
+                        onMouseOver={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                        onMouseOut={(e) => (e.currentTarget.style.background = '#fff')}
                     >
-                        <Trash2 size={16} />
+                        <Trash2 size={18} />
                     </button>
                 </div>
             </div>

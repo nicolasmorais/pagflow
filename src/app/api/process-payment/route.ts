@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment, CardToken } from "mercadopago";
 import { prisma } from "@/lib/prisma";
+import { sendConfirmationEmail } from "@/app/actions";
 
 export async function POST(req: NextRequest) {
     try {
@@ -142,9 +143,22 @@ export async function POST(req: NextRequest) {
             data: {
                 paymentStatus: finalStatus,
                 status: finalStatus === 'pago' ? 'processando' : 'pendente',
-                mpPaymentId: String(mpResult.id)
+                mpPaymentId: String(mpResult.id),
+                installments: mpResult.installments || null,
+                installmentAmount: (mpResult as any).transaction_details?.installment_amount || null,
+                cardBrand: mpResult.payment_method_id || null,
+                netReceived: (mpResult as any).transaction_details?.net_received_amount || null
             }
         });
+
+        // 4. Enviar E-mail se aprovado
+        if (finalStatus === 'pago') {
+            try {
+                await sendConfirmationEmail(order.id);
+            } catch (emailError) {
+                console.error("Failed to send confirmation email:", emailError);
+            }
+        }
 
         let qrCode = null;
         let qrCodeBase64 = null;

@@ -1,22 +1,21 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Edit, Package, DollarSign, Image as ImageIcon, Percent, Loader2, Save } from 'lucide-react'
-import { updateProduct } from '../../../actions'
+import { X, Plus, Package, DollarSign, Image as ImageIcon, Percent, Loader2 } from 'lucide-react'
+import { createProduct } from '../../../actions'
 
-interface EditProductModalProps {
-    product: any
+interface NewProductModalProps {
     onClose: () => void
 }
 
-export default function EditProductModal({ product, onClose }: EditProductModalProps) {
+export default function NewProductModal({ onClose }: NewProductModalProps) {
     const [loading, setLoading] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         setLoading(true)
         const formData = new FormData(e.currentTarget)
         try {
-            await updateProduct(formData)
+            await createProduct(formData)
             onClose()
         } catch (error) {
             console.error(error)
@@ -118,26 +117,24 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
                         color: '#3b82f6',
                         marginBottom: '16px'
                     }}>
-                        <Edit size={24} />
+                        <Package size={24} />
                     </div>
-                    <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#1e293b', margin: 0 }}>Editar Produto</h2>
+                    <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#1e293b', margin: 0 }}>Novo Produto</h2>
                     <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
-                        Atualize as informações do produto selecionado.
+                        Cadastre os detalhes do seu novo produto.
                     </p>
                 </header>
 
                 <form onSubmit={handleSubmit}>
-                    <input type="hidden" name="id" value={product.id} />
-
                     <div className="form-group">
                         <label className="form-label">
-                            <Package size={14} /> Nome do Produto
+                            <Plus size={14} /> Nome do Produto
                         </label>
                         <input
                             name="name"
                             type="text"
                             className="form-input"
-                            defaultValue={product.name}
+                            placeholder="Ex: Guia Amigurumi Premium"
                             required
                         />
                     </div>
@@ -152,7 +149,7 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
                                 type="number"
                                 step="0.01"
                                 className="form-input"
-                                defaultValue={product.price}
+                                placeholder="0.00"
                                 required
                             />
                         </div>
@@ -165,7 +162,7 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
                                 type="number"
                                 step="0.01"
                                 className="form-input"
-                                defaultValue={product.commission || 0}
+                                placeholder="0.00"
                                 required
                             />
                         </div>
@@ -173,13 +170,13 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
 
                     <div className="form-group">
                         <label className="form-label">
-                            <ImageIcon size={14} /> URL da Imagem
+                            <ImageIcon size={14} /> URL da Imagem (Opcional)
                         </label>
                         <input
                             name="imageUrl"
                             type="url"
                             className="form-input"
-                            defaultValue={product.imageUrl || ''}
+                            placeholder="https://..."
                         />
                     </div>
 
@@ -219,8 +216,8 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
                                 boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.2)'
                             }}
                         >
-                            {loading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                            {loading ? 'Salvando...' : 'Salvar Alterações'}
+                            {loading ? <Loader2 size={20} className="animate-spin" /> : <Plus size={20} />}
+                            {loading ? 'Salvando...' : 'Criar Produto'}
                         </button>
                     </div>
                 </form>

@@ -121,7 +121,8 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
         pixBadgeColor: string,
         pixBadgeBg: string,
         pixDiscount: string,
-        cardDiscount: string
+        cardDiscount: string,
+        disableCpf: boolean
     },
     shippingRules: any[],
     pixels?: {
@@ -140,6 +141,7 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
     const [endereco, setEndereco] = useState({ destinatario: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", estado: "", referencia: "" });
     const [showSummary, setShowSummary] = useState(true);
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
+    const [refused, setRefused] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card' | null>(null);
     const [cardData, setCardData] = useState({ cardNumber: '', cardName: '', expiration: '', cvv: '', installments: 1 });
     const [shipping, setShipping] = useState(
@@ -289,7 +291,8 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
             const result = await response.json();
             if (result.success) {
                 if (result.paymentStatus === 'recusado') {
-                    alert("Pagamento Recusado: " + (result.statusDetail || "Verifique os dados do cartão e tente novamente."));
+                    setRefused(result.statusDetail || 'cc_rejected_other_reason');
+                    setLoading(false);
                     return;
                 }
 
@@ -365,6 +368,67 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
 
     const prevStep = () => {
         if (step > 1) setStep(s => s - 1);
+    }
+
+    const translateStatusDetail = (detail: string) => {
+        const map: Record<string, string> = {
+            'cc_rejected_bad_filled_card_number': 'O número do cartão digitado é inválido.',
+            'cc_rejected_bad_filled_date': 'A data de expiração do cartão é inválida.',
+            'cc_rejected_bad_filled_other': 'Alguns dados do cartão estão incorretos.',
+            'cc_rejected_bad_filled_security_code': 'O código de segurança (CVV) é inválido.',
+            'cc_rejected_blacklist': 'O pagamento não pôde ser processado para este cartão (Blacklist).',
+            'cc_rejected_call_for_authorize': 'O banco emissor não autorizou o pagamento. Ligue para o banco para autorizar.',
+            'cc_rejected_card_disabled': 'Este cartão está desativado. Use outro cartão.',
+            'cc_rejected_card_error': 'Ocorreu um erro ao processar seu cartão. Tente novamente mais tarde.',
+            'cc_rejected_duplicated_payment': 'Pagamento duplicado detectado. Você já fez este pagamento.',
+            'cc_rejected_high_risk': 'Transação recusada pelo sistema de segurança. Tente outro cartão ou PIX.',
+            'cc_rejected_insufficient_amount': 'Saldo ou limite insuficiente no cartão selecionado.',
+            'cc_rejected_invalid_installments': 'O número de parcelas escolhido é inválido para este cartão.',
+            'cc_rejected_max_attempts': 'Limite de tentativas excedido. Tente novamente após 24 horas.',
+            'cc_rejected_other_reason': 'O banco ou a operadora recusaram o pagamento por um motivo não especificado.'
+        };
+        return map[detail] || 'Ocorreu um problema ao processar seu pagamento. Verifique seus dados e tente novamente.';
+    };
+
+    if (refused) {
+        return (
+            <div className="refused-container" style={{ minHeight: '100vh', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+                <div style={{ background: '#fff', borderRadius: '24px', padding: '48px 40px', maxWidth: '580px', width: '100%', textAlign: 'center', boxShadow: '0 20px 50px rgba(185,28,28,0.08)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '6px', background: '#ef4444' }}></div>
+
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', margin: '0 auto 24px', color: '#ef4444', border: '4px solid #fff', boxShadow: '0 4px 10px rgba(239,68,68,0.1)' }}>✕</div>
+
+                    <h2 style={{ fontSize: '32px', color: '#111827', marginBottom: '12px', fontWeight: 900, letterSpacing: '-0.03em' }}>Pagamento Recusado</h2>
+                    <p style={{ fontSize: '18px', color: '#4b5563', lineHeight: '1.6', marginBottom: '32px' }}>
+                        Infelizmente seu pagamento não pôde ser processado pela operadora.
+                    </p>
+
+                    <div style={{ textAlign: 'left', background: '#fff1f2', borderRadius: '16px', padding: '24px', marginBottom: '32px', border: '1px solid #ffe4e6' }}>
+                        <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#e11d48', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '16px' }}>⚠️</span> Motivo da Recusa
+                        </h3>
+                        <p style={{ fontSize: '15px', color: '#9f1239', fontWeight: 700, margin: 0, lineHeight: '1.4' }}>
+                            {translateStatusDetail(refused)}
+                        </p>
+                    </div>
+
+                    <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '32px' }}>
+                        Você pode tentar novamente com outro cartão ou utilizar o <strong>PIX</strong> para garantir seu produto agora mesmo.
+                    </p>
+
+                    <button
+                        onClick={() => { setRefused(null); setStep(3); }}
+                        style={{ width: '100%', padding: '16px', borderRadius: '12px', background: '#ef4444', color: '#fff', fontWeight: 800, border: 'none', cursor: 'pointer', transition: 'all 0.2s', fontSize: '16px', boxShadow: '0 4px 12px rgba(239,68,68,0.2)' }}
+                    >
+                        Tentar Novamente
+                    </button>
+
+                    <p style={{ marginTop: '24px', fontSize: '12px', color: '#9ca3af', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        🔒 Seus dados continuam protegidos
+                    </p>
+                </div>
+            </div>
+        );
     }
 
     if (done) {
@@ -493,13 +557,61 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
         }
 
         return (
-            <div className="done-container" style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-                <div style={{ background: '#fff', borderRadius: '20px', padding: '48px 36px', maxWidth: '480px', width: '100%', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,0,0,0.1)' }}>
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', margin: '0 auto 20px' }}>✅</div>
-                    <h2 style={{ fontSize: '26px', color: '#166534', marginBottom: '8px', fontWeight: 700 }}>Pedido Confirmado!</h2>
-                    <p style={{ fontSize: '17px', color: '#4b5563', lineHeight: '1.8' }}>
-                        Obrigado, <strong>{dados.nome.split(" ")[0]}</strong>!<br />
-                        Seu pedido foi recebido com sucesso.
+            <div className="done-container" style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 20px' }}>
+                <div style={{ background: '#fff', borderRadius: '24px', padding: '48px 40px', maxWidth: '580px', width: '100%', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.08)', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '6px', background: '#10b981' }}></div>
+
+                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', margin: '0 auto 24px', color: '#10b981', border: '4px solid #fff', boxShadow: '0 4px 10px rgba(16,185,129,0.1)' }}>✓</div>
+
+                    <h2 style={{ fontSize: '32px', color: '#111827', marginBottom: '12px', fontWeight: 900, letterSpacing: '-0.03em' }}>Pedido Confirmado!</h2>
+                    <p style={{ fontSize: '18px', color: '#4b5563', lineHeight: '1.6', marginBottom: '32px' }}>
+                        Tudo certo, <strong>{dados.nome.split(" ")[0]}</strong>! <br />
+                        Sua compra foi processada e já estamos separando seu pedido.
+                    </p>
+
+                    <div style={{ textAlign: 'left', background: '#f9fafb', borderRadius: '16px', padding: '24px', marginBottom: '32px', border: '1px solid #f1f5f9' }}>
+                        <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '16px' }}>📦</span> Detalhes da Entrega
+                        </h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 4px 0', fontWeight: 600 }}>DESTINATÁRIO</p>
+                                <p style={{ fontSize: '14px', color: '#111827', fontWeight: 700, margin: 0 }}>{endereco.destinatario || dados.nome}</p>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 4px 0', fontWeight: 600 }}>ENDEREÇO</p>
+                                <p style={{ fontSize: '13px', color: '#4b5563', margin: 0, lineHeight: '1.4' }}>
+                                    {endereco.rua}, {endereco.numero}<br />
+                                    {endereco.bairro}, {endereco.cidade}-{endereco.estado}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style={{ height: '1px', background: '#e5e7eb', margin: '20px 0' }}></div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <h3 style={{ fontSize: '12px', fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>RESUMO</h3>
+                                <p style={{ fontSize: '14px', color: '#111827', fontWeight: 700, margin: 0 }}>{product.name}</p>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                                <p style={{ fontSize: '20px', color: '#10b981', fontWeight: 900, margin: 0 }}>R$ {finalPrice.toFixed(2)}</p>
+                                <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0, fontWeight: 700 }}>PAGO VIA {paymentMethod === 'pix' ? 'PIX' : 'CARTÃO'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px 20px', background: '#eff6ff', borderRadius: '12px', border: '1px solid #dbeafe', textAlign: 'left', marginBottom: '32px' }}>
+                        <div style={{ fontSize: '24px' }}>📧</div>
+                        <div>
+                            <p style={{ fontSize: '14px', color: '#1e40af', fontWeight: 700, margin: '0 0 2px 0' }}>Confirmação enviada!</p>
+                            <p style={{ fontSize: '13px', color: '#3b82f6', margin: 0 }}>Enviamos todos os detalhes da compra e o código de rastreio para <strong>{dados.email}</strong>.</p>
+                        </div>
+                    </div>
+
+
+                    <p style={{ marginTop: '24px', fontSize: '12px', color: '#9ca3af', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        🛡️ Compra Segura Garantida
                     </p>
                 </div>
             </div>
@@ -566,7 +678,8 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
     };
 
     const isStep1Valid = () => {
-        return dados.nome.trim().length >= 3 && validateEmail(dados.email) && validatePhone(dados.telefone) && validateCPF(dados.cpf);
+        const cpfValid = customization.disableCpf || validateCPF(dados.cpf);
+        return dados.nome.trim().length >= 3 && validateEmail(dados.email) && validatePhone(dados.telefone) && cpfValid;
     };
 
     const isStep2Valid = () => {
@@ -673,16 +786,18 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                         errorMsg="Telefone inválido"
                                         onChange={(e: any) => updateDados("telefone", maskPhone(e.target.value))}
                                     />
-                                    <Field
-                                        label="CPF *"
-                                        placeholder="000.000.000-00"
-                                        hint="Necessário para emissão da nota fiscal."
-                                        value={dados.cpf}
-                                        error={dados.cpf.length > 0 && (dados.cpf.length === 14 ? !validateCPF(dados.cpf) : false)}
-                                        touched={step1Touched}
-                                        errorMsg="CPF inválido"
-                                        onChange={(e: any) => updateDados("cpf", maskCPF(e.target.value))}
-                                    />
+                                    {!customization.disableCpf && (
+                                        <Field
+                                            label="CPF *"
+                                            placeholder="000.000.000-00"
+                                            hint="Necessário para emissão da nota fiscal."
+                                            value={dados.cpf}
+                                            error={dados.cpf.length > 0 && (dados.cpf.length === 14 ? !validateCPF(dados.cpf) : false)}
+                                            touched={step1Touched}
+                                            errorMsg="CPF inválido"
+                                            onChange={(e: any) => updateDados("cpf", maskCPF(e.target.value))}
+                                        />
+                                    )}
                                 </div>
                             )}
 
