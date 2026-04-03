@@ -31,7 +31,7 @@ export default async function ProductsPage() {
                         }}>
                             <div>Produto</div>
                             <div>Preço</div>
-                            <div>Comissão</div>
+                            <div>Custo</div>
                             <div>Link de Checkout</div>
                             <div style={{ textAlign: 'right' }}>Ações</div>
                         </div>

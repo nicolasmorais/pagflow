@@ -19,6 +19,8 @@ export default function PersonalizacaoPage() {
     const [disableCpf, setDisableCpf] = useState(false)
     const [pixDiscount, setPixDiscount] = useState('0')
     const [cardDiscount, setCardDiscount] = useState('0')
+    const [checkoutStoreName, setCheckoutStoreName] = useState('')
+    const [disableBack, setDisableBack] = useState(false)
 
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
@@ -45,6 +47,8 @@ export default function PersonalizacaoPage() {
                 const dCpf = await getCustomization('checkout_disable_cpf')
                 const pDisc = await getCustomization('checkout_pix_discount')
                 const cDisc = await getCustomization('checkout_card_discount')
+                const sName = await getCustomization('checkout_store_name')
+                const dBack = await getCustomization('checkout_disable_back')
 
                 setCheckoutLogo(logo)
                 setCheckoutFooter(footer)
@@ -59,6 +63,8 @@ export default function PersonalizacaoPage() {
                 setDisableCpf(dCpf === 'true')
                 setPixDiscount(pDisc || '0')
                 setCardDiscount(cDisc || '0')
+                setCheckoutStoreName(sName || '')
+                setDisableBack(dBack === 'true')
             } catch (error) {
                 console.error('Error loading settings:', error)
             } finally {
@@ -87,6 +93,8 @@ export default function PersonalizacaoPage() {
             await updateCustomization('checkout_disable_cpf', disableCpf ? 'true' : 'false')
             await updateCustomization('checkout_pix_discount', pixDiscount)
             await updateCustomization('checkout_card_discount', cardDiscount)
+            await updateCustomization('checkout_store_name', checkoutStoreName)
+            await updateCustomization('checkout_disable_back', disableBack ? 'true' : 'false')
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
 
@@ -127,6 +135,32 @@ export default function PersonalizacaoPage() {
                 </header>
 
                 <form onSubmit={handleSave}>
+                    {/* Store Name */}
+                    <div style={{ marginBottom: '32px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Palette size={16} />
+                            Nome da Loja (Browser Tab)
+                        </label>
+                        <input
+                            type="text"
+                            value={checkoutStoreName}
+                            onChange={(e) => setCheckoutStoreName(e.target.value)}
+                            placeholder="Ex: Minha Loja Inc."
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px',
+                                outline: 'none',
+                                transition: 'border-color 0.2s',
+                            }}
+                        />
+                        <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
+                            Este nome aparecerá na aba do navegador quando o cliente estiver no checkout.
+                        </p>
+                    </div>
+
                     {/* Checkout Logo */}
                     <div style={{ marginBottom: '32px' }}>
                         <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -376,7 +410,7 @@ export default function PersonalizacaoPage() {
                     </div>
 
                     {/* CPF Toggle */}
-                    <div style={{ marginBottom: '32px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ marginBottom: '24px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div>
                             <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block' }}>
                                 Desativar Campo de CPF
@@ -401,10 +435,47 @@ export default function PersonalizacaoPage() {
                             }}>
                                 <span style={{
                                     position: 'absolute',
-                                    content: '""',
                                     height: '18px',
                                     width: '18px',
                                     left: disableCpf ? '28px' : '4px',
+                                    bottom: '4px',
+                                    backgroundColor: 'white',
+                                    transition: '.4s',
+                                    borderRadius: '50%'
+                                }}></span>
+                            </span>
+                        </label>
+                    </div>
+
+                    {/* Disable Back Button Toggle */}
+                    <div style={{ marginBottom: '32px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block' }}>
+                                Desativar Botão Voltar (Checkout)
+                            </label>
+                            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                                Impede que o cliente volte para a etapa anterior ou use o botão voltar do navegador no checkout.
+                            </p>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={disableBack}
+                                onChange={(e) => setDisableBack(e.target.checked)}
+                                style={{ opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                                position: 'absolute',
+                                top: 0, left: 0, right: 0, bottom: 0,
+                                backgroundColor: disableBack ? '#4f46e5' : '#ccc',
+                                transition: '.4s',
+                                borderRadius: '34px'
+                            }}>
+                                <span style={{
+                                    position: 'absolute',
+                                    height: '18px',
+                                    width: '18px',
+                                    left: disableBack ? '28px' : '4px',
                                     bottom: '4px',
                                     backgroundColor: 'white',
                                     transition: '.4s',

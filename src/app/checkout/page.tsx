@@ -1,6 +1,35 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import CheckoutForm from './CheckoutForm'
+import { Metadata } from 'next'
+
+export async function generateMetadata({
+    searchParams
+}: {
+    searchParams: Promise<{ p?: string }>
+}): Promise<Metadata> {
+    const params = await searchParams
+    const productId = params.p
+
+    let productName = 'Checkout'
+    if (productId) {
+        const p = await prisma.product.findUnique({
+            where: { id: productId },
+            select: { name: true }
+        })
+        if (p) productName = p.name
+    }
+
+    const storeSetting = await (prisma as any).customization_settings.findFirst({
+        where: { key: 'checkout_store_name' }
+    })
+    const storeName = storeSetting?.value || 'PagFlow Checkout'
+
+    return {
+        title: `${storeName} - ${productName}`,
+        description: `Finalize sua compra de ${productName}`
+    }
+}
 
 export default async function CheckoutPage({
     searchParams
@@ -46,6 +75,8 @@ export default async function CheckoutPage({
                     'checkout_pix_discount',
                     'checkout_card_discount',
                     'checkout_disable_cpf',
+                    'checkout_store_name',
+                    'checkout_disable_back',
                     'marketing_taboola_id',
                     'marketing_facebook_id',
                     'marketing_google_id'
@@ -67,7 +98,9 @@ export default async function CheckoutPage({
         pixBadgeBg: settings.find((s: any) => s.key === 'checkout_pix_badge_bg')?.value || '#10b981',
         pixDiscount: settings.find((s: any) => s.key === 'checkout_pix_discount')?.value || '0',
         cardDiscount: settings.find((s: any) => s.key === 'checkout_card_discount')?.value || '0',
-        disableCpf: settings.find((s: any) => s.key === 'checkout_disable_cpf')?.value === 'true'
+        disableCpf: settings.find((s: any) => s.key === 'checkout_disable_cpf')?.value === 'true',
+        storeName: settings.find((s: any) => s.key === 'checkout_store_name')?.value || 'PagFlow',
+        disableBack: settings.find((s: any) => s.key === 'checkout_disable_back')?.value === 'true'
     }
 
     const pixels = {

@@ -80,18 +80,18 @@ export default function ProductRow({ product }: ProductRowProps) {
                     {product.price.toFixed(2)}
                 </div>
 
-                {/* Col 3: Commission */}
+                {/* Col 3: Cost */}
                 <div>
                     <span style={{
                         fontSize: '0.8rem',
                         fontWeight: 800,
-                        color: '#059669',
-                        background: '#ecfdf5',
+                        color: '#475569',
+                        background: '#f1f5f9',
                         padding: '6px 12px',
                         borderRadius: '10px',
-                        border: '1.5px solid #d1f7de'
+                        border: '1.5px solid #e2e8f0'
                     }}>
-                        + R$ {product.commission?.toFixed(2) || '0.00'}
+                        R$ {product.cost?.toFixed(2) || '0.00'}
                     </span>
                 </div>
 

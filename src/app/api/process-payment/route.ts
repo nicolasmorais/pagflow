@@ -11,8 +11,8 @@ export async function POST(req: NextRequest) {
         // Reading selectedBumpIds from either orderData or body root
         const selectedBumpIds = orderData?.selectedBumpIds || body.selectedBumpIds || orderData?.selectedBumps || [];
 
-        const fullName = orderData.nome || orderData.fullName;
-        const phone = orderData.telefone || orderData.phone;
+        const fullName = orderData.nome || orderData.fullName || "Cliente PagFlow";
+        const phone = orderData.telefone || orderData.phone || "";
         const price = Number(orderData.price) || 0;
 
         // 0. Buscar produto para ter o nome
@@ -20,13 +20,16 @@ export async function POST(req: NextRequest) {
             where: { id: orderData.productId }
         }) : null;
 
+        const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
+        const cpfToSave = cpfInput || "19119119100"; // Fallback CPF for checkouts without CPF field
+
         // 1. Preparar dados do pedido
         const orderDataToSave: any = {
             fullName: fullName || "Cliente PagFlow",
             recipient: orderData.destinatario || fullName || "Destinatário",
             email: orderData.email || "",
             phone: phone || "",
-            cpf: (orderData.cpf || "").replace(/\D/g, ''),
+            cpf: cpfToSave,
             cep: (orderData.cep || "").replace(/\D/g, ''),
             rua: orderData.rua || "",
             numero: orderData.numero || "",
@@ -45,14 +48,28 @@ export async function POST(req: NextRequest) {
         };
         let order;
         if (orderId) {
-            order = await prisma.order.update({
-                where: { id: orderId },
-                data: orderDataToSave
-            });
+            // Verificar se o pedido existe antes de tentar atualizar (Prisma joga erro 500 se não encontrar no update)
+            const existing = await prisma.order.findUnique({ where: { id: orderId } });
+
+            if (existing) {
+                order = await prisma.order.update({
+                    where: { id: orderId },
+                    data: orderDataToSave
+                });
+            } else {
+                order = await prisma.order.create({
+                    data: orderDataToSave
+                });
+            }
         } else {
             order = await prisma.order.create({
                 data: orderDataToSave
             });
+        }
+
+        // Validar valor mínimo
+        if (price <= 0) {
+            return NextResponse.json({ success: false, error: "O valor do pedido deve ser maior que zero para processar o pagamento." }, { status: 400 });
         }
 
         // 2. Processar Pagamento Mercado Pago
@@ -68,7 +85,7 @@ export async function POST(req: NextRequest) {
                 last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
                 identification: {
                     type: 'CPF',
-                    number: orderData.cpf.replace(/\D/g, '')
+                    number: cpfToSave
                 }
             },
         };
@@ -180,9 +197,23 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         console.error("PAYMENT API ERROR DETAIL:", error);
+        console.log("Full Error Object:", JSON.stringify(error, null, 2));
 
-        // Return detailed error for debugging if it's an invocation error
-        let finalError = error.message || "Ocorreu um erro ao processar o pagamento.";
+        // Tentar capturar a mensagem de erro do Mercado Pago se existir
+        let apiError = error.message;
+        if (error.cause && Array.isArray(error.cause) && error.cause[0]?.description) {
+            apiError = error.cause[0].description;
+        } else if (error.errors && Array.isArray(error.errors) && error.errors[0]?.message) {
+            apiError = error.errors[0].message;
+        }
+
+        let finalError = apiError || "Ocorreu um erro ao processar o pagamento.";
+
+        // Traduzir erro genérico do Mercado Pago para algo mais útil
+        if (finalError === "internal_error") {
+            finalError = "Erro no Mercado Pago (internal_error). Verifique suas credenciais (Access Token) ou se o Pix está ativo na conta.";
+        }
+
         if (finalError.includes("invocation")) {
             finalError = `${finalError} - Verifique se todos os campos obrigatórios estão preenchidos corretamente.`;
         }

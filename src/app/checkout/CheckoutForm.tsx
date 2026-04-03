@@ -1,6 +1,6 @@
 'use client'
 
-import { createOrder, saveOrderProgress, saveAbandonedLead } from '../actions'
+import { createOrder, saveOrderProgress } from '../actions'
 import { useState, useEffect } from 'react'
 import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
 import './checkout.css'
@@ -122,7 +122,9 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
         pixBadgeBg: string,
         pixDiscount: string,
         cardDiscount: string,
-        disableCpf: boolean
+        disableCpf: boolean,
+        storeName: string,
+        disableBack: boolean
     },
     shippingRules: any[],
     pixels?: {
@@ -133,25 +135,70 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
     availableBumps?: any[]
 }) {
     const [step, setStep] = useState(1);
+
+    // Trap Browser Back Button if enabled
+    useEffect(() => {
+        if (!customization.disableBack) return;
+
+        // Push a new state so there's something to go back from
+        window.history.pushState(null, '', window.location.href);
+
+        const handlePopState = (event: PopStateEvent) => {
+            // Re-push state to trap user
+            window.history.pushState(null, '', window.location.href);
+            console.log("Back button disabled by admin");
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [customization.disableBack]);
+
     const [step1Touched, setStep1Touched] = useState(false);
     const [done, setDone] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [tempOrderId, setTempOrderId] = useState<string | null>(null);
-    const [dados, setDados] = useState({ nome: "", email: "", telefone: "", cpf: "" });
-    const [endereco, setEndereco] = useState({ destinatario: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", estado: "", referencia: "" });
-    const [showSummary, setShowSummary] = useState(true);
-    const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
-    const [refused, setRefused] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card' | null>(null);
-    const [cardData, setCardData] = useState({ cardNumber: '', cardName: '', expiration: '', cvv: '', installments: 1 });
-    const [shipping, setShipping] = useState(
-        shippingRules.length > 0
-            ? { id: shippingRules[0].id, type: 'dynamic', price: shippingRules[0].price, label: shippingRules[0].name }
-            : { type: 'economica', price: 0, label: 'Entrega Econômica' }
-    );
-    const [selectedBumpIds, setSelectedBumpIds] = useState<string[]>([]);
-    const [timeLeft, setTimeLeft] = useState(1620); // 27:00 in seconds
     const [accessId, setAccessId] = useState<string | null>(null);
+    const [tempOrderId, setTempOrderId] = useState<string | null>(null);
+    const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
+    const [timeLeft, setTimeLeft] = useState(15 * 60);
+    const [refused, setRefused] = useState<string | null>(null);
+    const [showSummary, setShowSummary] = useState(false);
+
+    const [dados, setDados] = useState({
+        nome: '',
+        email: '',
+        telefone: '',
+        cpf: ''
+    });
+
+    const [endereco, setEndereco] = useState({
+        cep: '',
+        rua: '',
+        numero: '',
+        complemento: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        referencia: '',
+        destinatario: ''
+    });
+
+    const [cardData, setCardData] = useState({
+        number: '',
+        name: '',
+        expiry: '',
+        cvc: '',
+        installments: '1'
+    });
+
+    const [shipping, setShipping] = useState(shippingRules[0] || { label: 'Frete Grátis', price: 0 });
+    const [selectedBumpIds, setSelectedBumpIds] = useState<string[]>([]);
+    const [paymentMethod, setPaymentMethod] = useState<'pix' | 'credit_card' | null>(null);
+
+    // Initial load
+    useEffect(() => {
+        setAccessId(localStorage.getItem('checkoutAccessId'));
+        setTempOrderId(localStorage.getItem('tempOrderId'));
+    }, []);
     // Tracking Pixels Integration (Taboola, Meta, Google)
     useEffect(() => {
         const w = (window as any);
@@ -207,13 +254,9 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
         }
     }, [pixels?.taboolaId, pixels?.facebookId, pixels?.googleId]);
 
-    // Load accessId from localStorage on mount
-    useEffect(() => {
-        const savedId = localStorage.getItem('checkoutAccessId');
-        if (savedId) {
-            setAccessId(savedId);
-        }
-    }, []);
+    // Load state from localStorage on mount (handled above)
+    // Removed old useEffect block that was here
+
 
     useEffect(() => {
         const trackAccess = async () => {
@@ -266,20 +309,6 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
     useEffect(() => {
         if (step === 2) {
             trackStep(1, true);
-            if (!tempOrderId) {
-                saveAbandonedLead({
-                    fullName: dados.nome,
-                    email: dados.email,
-                    phone: dados.telefone,
-                    cpf: dados.cpf,
-                    productId: product?.id || '',
-                }).then(result => {
-                    if (result.success && result.id) {
-                        setTempOrderId(result.id);
-                        localStorage.setItem('tempOrderId', result.id);
-                    }
-                });
-            }
         }
     }, [step]);
 
@@ -423,6 +452,7 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                     });
                 }
             } else {
+                console.error("DETAILED PAYMENT ERROR FROM API:", result);
                 alert("Erro no pagamento: " + (result.error || "Ocorreu um erro inesperado."));
             }
 
@@ -805,8 +835,10 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                             <img src={customization.logo} alt="Logo" style={{ maxHeight: '32px', maxWidth: '180px', objectFit: 'contain' }} />
                         ) : (
                             <>
-                                <span style={{ fontSize: '24px' }}>🐻</span>
-                                <span style={{ fontWeight: 700, fontSize: '1.25rem', color: '#1a1a1a', letterSpacing: '-0.3px' }}>Meu Amigurumi</span>
+                                <span style={{ fontSize: '24px' }}>🛡️</span>
+                                <span style={{ fontWeight: 700, fontSize: '1.25rem', color: '#1a1a1a', letterSpacing: '-0.3px' }}>
+                                    {product.storeName || customization.storeName || "PagFlow Checkout"}
+                                </span>
                             </>
                         )}
                     </div>
@@ -952,154 +984,169 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                     </p>
 
                                     <div className="payment-method-selector-new">
-                                        <div className={`pm-option-pix-new ${paymentMethod === 'pix' ? 'active' : ''}`} onClick={() => setPaymentMethod('pix')}>
-                                            <div className="pix-pm-top">
+                                        {/* Credit Card Option */}
+                                        <div className={`pm-option-new ${paymentMethod === 'credit_card' ? 'active' : ''}`}
+                                            onClick={() => setPaymentMethod('credit_card')}
+                                            style={{
+                                                marginBottom: '12px',
+                                                display: 'block', // Change to block to allow vertical stacking
+                                                padding: 0 // Padding will be internal
+                                            }}>
+                                            <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div className="pm-main-col">
+                                                    <div className="pm-main">
+                                                        <div className="radio-circle">
+                                                            <div className="radio-inner" style={{ display: paymentMethod === 'credit_card' ? 'block' : 'none' }}></div>
+                                                        </div>
+                                                        <span className="pm-icon">💳</span>
+                                                        <span className="pm-text" style={{ fontWeight: 600 }}>Cartão de Crédito</span>
+                                                    </div>
+                                                    <div className="card-flags-row">
+                                                        <img src="https://github.bubbstore.com/svg/card-hiper.svg" alt="Hiper" height="18" />
+                                                        <img src="https://github.bubbstore.com/svg/card-amex.svg" alt="Amex" height="18" />
+                                                        <img src="https://github.bubbstore.com/svg/card-visa.svg" alt="Visa" height="18" />
+                                                        <img src="https://github.bubbstore.com/svg/card-diners.svg" alt="Diners" height="18" />
+                                                        <img src="https://github.bubbstore.com/svg/card-mastercard.svg" alt="Mastercard" height="18" />
+                                                        <img src="https://github.bubbstore.com/svg/card-discover.svg" alt="Discover" height="18" />
+                                                    </div>
+                                                </div>
+                                                <span className="parcelas-badge" style={{
+                                                    background: '#f0fdf4',
+                                                    color: '#166534',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '20px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 800,
+                                                    border: '1px solid #bcf0da'
+                                                }}>até 10x sem juros</span>
+                                            </div>
+
+                                            {paymentMethod === 'credit_card' && (
+                                                <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9', background: '#fff' }} onClick={(e) => e.stopPropagation()}>
+                                                    {/* Bumps for Credit Card */}
+                                                    {availableBumps.length > 0 && availableBumps.map(bump => (
+                                                        <OrderBumpItem key={bump.id} bump={bump} selectedBumpIds={selectedBumpIds} setSelectedBumpIds={setSelectedBumpIds} />
+                                                    ))}
+
+                                                    <div className="card-form-wrapper" style={{ minHeight: '400px' }}>
+                                                        <CardPayment
+                                                            key={totalPrice}
+                                                            initialization={{
+                                                                amount: totalPrice,
+                                                                payer: { email: dados.email },
+                                                            }}
+                                                            customization={{
+                                                                visual: {
+                                                                    style: {
+                                                                        theme: 'default',
+                                                                        customVariables: {
+                                                                            formButtonWidth: '100%',
+                                                                            formButtonHeight: '52px',
+                                                                            colorPrimary: '#10b981',
+                                                                            colorSecondary: '#10b981',
+                                                                            borderRadiusSmall: '8px'
+                                                                        }
+                                                                    }
+                                                                },
+                                                                paymentMethods: {
+                                                                    maxInstallments: 10,
+                                                                    types: { excluded: ['debit_card'] }
+                                                                }
+                                                            }}
+                                                            onSubmit={async (formData) => {
+                                                                await handleFinalize(formData);
+                                                            }}
+                                                            onReady={() => console.log('Brick is ready')}
+                                                            onError={(e) => console.error(e)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* PIX Option */}
+                                        <div className={`pm-option-pix-new ${paymentMethod === 'pix' ? 'active' : ''}`}
+                                            onClick={() => setPaymentMethod('pix')}
+                                            style={{
+                                                border: paymentMethod === 'pix' ? '2px solid #10b981' : '1.5px solid #e2e8f0',
+                                                display: 'block',
+                                                padding: 0
+                                            }}>
+                                            <div className="pix-pm-top" style={{ padding: '16px 20px' }}>
                                                 <div className="pix-pm-left">
                                                     <div className="radio-circle">
-                                                        <div className="radio-inner"></div>
+                                                        <div className="radio-inner" style={{ display: paymentMethod === 'pix' ? 'block' : 'none' }}></div>
                                                     </div>
                                                     <span className="pix-icon">❖</span>
                                                     <span className="pm-text" style={{ fontWeight: 600 }}>Pix</span>
                                                 </div>
+                                                <div style={{
+                                                    background: '#f0fdf4',
+                                                    color: '#10b981',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '6px',
+                                                    fontSize: '11px',
+                                                    fontWeight: 800,
+                                                    border: '1px solid #bcf0da'
+                                                }}>
+                                                    {customization.pixDiscount}% DE DESCONTO
+                                                </div>
                                             </div>
+
+                                            {paymentMethod === 'pix' && (
+                                                <div style={{ padding: '0 20px 20px 20px' }} onClick={(e) => e.stopPropagation()}>
+                                                    <div className="pix-details-box" style={{ background: 'transparent', border: 'none', padding: 0, marginBottom: '16px' }}>
+                                                        <p className="pix-instruction" style={{ fontSize: '14px', color: '#475569', marginBottom: '16px' }}>
+                                                            A confirmação de pagamento é realizada em poucos minutos. Utilize o aplicativo do seu banco para pagar.
+                                                        </p>
+                                                        <div className="pix-expiration-warning" style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px', borderRadius: '10px' }}>
+                                                            <span className="timer-icon">⏱️</span>
+                                                            <p style={{ fontSize: '13px', color: '#1e40af', margin: 0 }}>O código PIX expira em 10 minutos. Pague dentro do prazo para garantir sua compra.</p>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Bumps for PIX */}
+                                                    {availableBumps.length > 0 && availableBumps.map(bump => (
+                                                        <OrderBumpItem key={bump.id} bump={bump} selectedBumpIds={selectedBumpIds} setSelectedBumpIds={setSelectedBumpIds} />
+                                                    ))}
+
+                                                    <button
+                                                        className="btn-primary-new"
+                                                        style={{ margin: '16px 0', padding: '16px', borderRadius: '14px', background: '#10b981' }}
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            await handleFinalize();
+                                                        }}
+                                                        disabled={loading}
+                                                    >
+                                                        {loading ? "Processando..." : "Finalizar compra"}
+                                                    </button>
+                                                </div>
+                                            )}
+
                                             <div className="pix-pm-footer" style={{
                                                 background: customization.pixBadgeBg || '#10b981',
-                                                color: customization.pixBadgeColor || '#ffffff'
+                                                color: customization.pixBadgeColor || '#ffffff',
+                                                padding: '12px',
+                                                fontSize: '14px'
                                             }}>
                                                 {customization.pixBadgeText || `😲 ${customization.pixDiscount}% de desconto + envio prioritário`}
                                             </div>
                                         </div>
-                                        <div className={`pm-option-new ${paymentMethod === 'credit_card' ? 'active' : ''}`} onClick={() => setPaymentMethod('credit_card')}>
-                                            <div className="pm-main-col">
-                                                <div className="pm-main">
-                                                    <span className="pm-icon">💳</span>
-                                                    <span className="pm-text">Cartão de Crédito</span>
-                                                </div>
-                                                <div className="card-flags-row">
-                                                    <img src="https://github.bubbstore.com/svg/card-hiper.svg" alt="Hiper" height="20" />
-                                                    <img src="https://github.bubbstore.com/svg/card-amex.svg" alt="Amex" height="20" />
-                                                    <img src="https://github.bubbstore.com/svg/card-visa.svg" alt="Visa" height="20" />
-                                                    <img src="https://github.bubbstore.com/svg/card-diners.svg" alt="Diners" height="20" />
-                                                    <img src="https://github.bubbstore.com/svg/card-mastercard.svg" alt="Mastercard" height="20" />
-                                                    <img src="https://github.bubbstore.com/svg/card-discover.svg" alt="Discover" height="20" />
-                                                </div>
-                                            </div>
-                                            <span className="parcelas-badge" style={{
-                                                background: '#f0fdf4',
-                                                color: '#166534',
-                                                padding: '6px 12px',
-                                                borderRadius: '20px',
-                                                fontSize: '11px',
-                                                fontWeight: 800,
-                                                border: '1px solid #bcf0da'
-                                            }}>em até 10x sem juros</span>
-                                        </div>
                                     </div>
-
-                                    {paymentMethod && availableBumps.length > 0 && availableBumps.map(bump => (
-                                        <div key={bump.id} className="order-bump-new" style={{ marginBottom: '1rem' }}>
-                                            <div className="bump-badge">🎉 VOCÊ TEM UMA OFERTA!</div>
-                                            <div className="bump-content">
-                                                <div className="bump-main">
-                                                    <div style={{ width: '60px', height: '60px', borderRadius: '8px', background: '#f8fafc', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        {bump.imageUrl ? (
-                                                            <img src={bump.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                        ) : (
-                                                            <span style={{ fontSize: '24px' }}>✨</span>
-                                                        )}
-                                                    </div>
-                                                    <div className="bump-info">
-                                                        <p className="bump-title">{bump.name}</p>
-                                                        <p className="bump-price">por <strong>R$ {bump.price.toFixed(2)}</strong></p>
-                                                    </div>
-                                                </div>
-                                                <div className="bump-divider" />
-                                                <p className="bump-subtitle">{bump.description}</p>
-                                                <div
-                                                    className={`bump-check-btn ${selectedBumpIds.includes(bump.id) ? 'active' : ''}`}
-                                                    onClick={() => {
-                                                        if (selectedBumpIds.includes(bump.id)) {
-                                                            setSelectedBumpIds(prev => prev.filter(id => id !== bump.id));
-                                                        } else {
-                                                            setSelectedBumpIds(prev => [...prev, bump.id]);
-                                                        }
-                                                    }}
-                                                >
-                                                    <div className="bump-checkbox">
-                                                        {selectedBumpIds.includes(bump.id) && "✓"}
-                                                    </div>
-                                                    <span>+ Comprar Junto</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-
-                                    {paymentMethod === 'pix' && (
-                                        <div className="pix-details-box">
-                                            <p className="pix-instruction">
-                                                A confirmação de pagamento é realizada em poucos minutos. Utilize o aplicativo do seu banco para pagar.
-                                            </p>
-                                            <div className="pix-expiration-warning">
-                                                <span className="timer-icon">⏱️</span>
-                                                <p>O código PIX expira em 10 minutos. Pague dentro do prazo para garantir sua compra.</p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {paymentMethod === 'credit_card' && (
-                                        <div className="card-form-wrapper" style={{ minHeight: '400px' }}>
-                                            <CardPayment
-                                                key={totalPrice}
-                                                initialization={{
-                                                    amount: totalPrice,
-                                                    payer: {
-                                                        email: dados.email,
-                                                    },
-                                                }}
-                                                customization={{
-                                                    visual: {
-                                                        style: {
-                                                            theme: 'default',
-                                                            customVariables: {
-                                                                formButtonWidth: '100%',
-                                                                formButtonHeight: '52px',
-                                                                colorPrimary: '#10b981',
-                                                                colorSecondary: '#10b981',
-                                                                borderRadiusSmall: '8px'
-                                                            }
-                                                        }
-                                                    },
-                                                    paymentMethods: {
-                                                        maxInstallments: 10,
-                                                        types: {
-                                                            excluded: ['debit_card']
-                                                        }
-                                                    }
-                                                }}
-                                                onSubmit={async (formData) => {
-                                                    await handleFinalize(formData);
-                                                }}
-                                                onReady={() => console.log('Brick is ready')}
-                                                onError={(e) => {
-                                                    console.error(e);
-                                                }}
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
                             <div className="checkout-actions" style={{ marginTop: '24px' }}>
-                                {/* Hide this button in Final Step if Credit Card is selected (Brick has its own button) */}
-                                {!(step === 3 && paymentMethod === 'credit_card') && (
+                                {step !== 3 && (
                                     <button
                                         className="btn-primary-new"
                                         onClick={async () => {
                                             if (step === 1) {
                                                 setStep1Touched(true);
                                                 if (isStep1Valid()) {
-                                                    // Save in background to avoid loading state
-                                                    saveOrderProgress({
+                                                    // Save to track abandoned cart
+                                                    const res = await saveOrderProgress({
                                                         id: tempOrderId,
                                                         fullName: dados.nome,
                                                         email: dados.email,
@@ -1107,9 +1154,11 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                                         cpf: dados.cpf,
                                                         productId: product.id,
                                                         totalPrice: totalPrice,
-                                                    }).then(res => {
-                                                        if (res.id) setTempOrderId(res.id);
                                                     });
+                                                    if (res.id) {
+                                                        setTempOrderId(res.id);
+                                                        localStorage.setItem('tempOrderId', res.id);
+                                                    }
 
                                                     setEndereco(prev => ({ ...prev, destinatario: prev.destinatario || dados.nome }));
                                                     setStep(2);
@@ -1131,7 +1180,10 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                                         hasBump: selectedBumpIds.length > 0,
                                                         selectedBumps: selectedBumpIds
                                                     }).then(res => {
-                                                        if (res.id) setTempOrderId(res.id);
+                                                        if (res.id) {
+                                                            setTempOrderId(res.id);
+                                                            localStorage.setItem('tempOrderId', res.id);
+                                                        }
                                                     });
 
                                                     setStep(3);
@@ -1154,7 +1206,7 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                     </button>
                                 )}
 
-                                {step > 1 && (
+                                {step > 1 && !customization.disableBack && (
                                     <button className="btn-back-new" onClick={prevStep} disabled={loading}>
                                         ← Voltar
                                     </button>
@@ -1223,9 +1275,9 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                                                     {bump.name}: + R$ {bump.price.toFixed(2)}
                                                 </div>
                                             ))}
-                                            {paymentMethod === 'pix' && (
+                                            {paymentMethod === 'pix' && pixDiscountVal > 0 && (
                                                 <div style={{ fontSize: '0.9rem', color: '#10b981', marginBottom: '4px', fontWeight: 700 }}>
-                                                    Desconto PIX (35%): - R$ {(totalPrice * 0.35).toFixed(2)}
+                                                    Desconto PIX ({customization.pixDiscount}%): - R$ {(totalPrice * pixDiscountVal).toFixed(2)}
                                                 </div>
                                             )}
                                             <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#10b981' }}>

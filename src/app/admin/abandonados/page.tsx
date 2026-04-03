@@ -9,7 +9,9 @@ export default async function AbandonadosPage() {
     // An abandoned order has paymentStatus 'abandonado' (default)
     const abandonedOrders = await prisma.order.findMany({
         where: {
-            paymentStatus: 'abandonado'
+            paymentStatus: {
+                in: ['abandonado', 'processando']
+            }
         },
         orderBy: { createdAt: 'desc' },
         include: { product: true }

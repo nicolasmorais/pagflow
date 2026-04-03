@@ -17,8 +17,11 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
         const formData = new FormData(e.currentTarget)
         try {
             await updateProduct(formData)
+            alert('Produto atualizado!')
+            window.location.reload()
             onClose()
-        } catch (error) {
+        } catch (error: any) {
+            alert('Erro ao editar: ' + error.message)
             console.error(error)
         } finally {
             setLoading(false)
@@ -127,7 +130,8 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
                 </header>
 
                 <form onSubmit={handleSubmit}>
-                    <input type="hidden" name="id" value={product.id} />
+                    <input type="hidden" name="id" defaultValue={String(product.id)} />
+
 
                     <div className="form-group">
                         <label className="form-label">
@@ -158,14 +162,14 @@ export default function EditProductModal({ product, onClose }: EditProductModalP
                         </div>
                         <div className="form-group">
                             <label className="form-label">
-                                <Percent size={14} /> Comissão (R$)
+                                <DollarSign size={14} /> Custo unitário (R$)
                             </label>
                             <input
-                                name="commission"
+                                name="cost"
                                 type="number"
                                 step="0.01"
                                 className="form-input"
-                                defaultValue={product.commission || 0}
+                                defaultValue={product.cost || 0}
                                 required
                             />
                         </div>

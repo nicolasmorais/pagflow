@@ -316,10 +316,17 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                                 </div>
 
                                 <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '24px', padding: '32px' }}>
-                                    <h3 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#1e293b', textTransform: 'uppercase', marginBottom: '16px' }}>Dica Pro</h3>
-                                    <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.6', margin: 0 }}>
-                                        Mantenha o slug como <strong style={{ color: '#0075ff' }}>confirmation</strong> para automatizar o envio em todas as compras aprovadas.
-                                    </p>
+                                    <h3 style={{ fontSize: '0.85rem', fontWeight: 900, color: '#1e293b', textTransform: 'uppercase', marginBottom: '16px' }}>Slugs do Sistema</h3>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
+                                            <strong style={{ color: '#0075ff' }}>confirmation</strong><br />
+                                            Enviado automaticamente quando o pagamento é aprovado.
+                                        </p>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
+                                            <strong style={{ color: '#0075ff' }}>tracking</strong><br />
+                                            Enviado ao salvar um código de rastreio no pedido.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

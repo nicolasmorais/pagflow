@@ -81,8 +81,8 @@ export async function sendConfirmationEmail(orderId: string) {
         });
 
         if (error) {
-            console.error('RESEND ERROR:', error);
-            return { success: false, error };
+            console.error('RESEND API ERROR:', JSON.stringify(error, null, 2));
+            return { success: false, error: error.message || 'Falha na API de Email' };
         }
 
         return { success: true, data };
@@ -246,7 +246,9 @@ export async function sendTrackingEmail(orderId: string) {
 export async function updateOrderTracking(orderId: string, trackingCode: string, trackingUrl?: string) {
     try {
         const p = prisma as any;
-        await (p.order || p.Order).update({
+        const model = p.order || p.Order;
+
+        await model.update({
             where: { id: orderId },
             data: {
                 trackingCode,
@@ -302,8 +304,8 @@ export async function createProduct(formData: FormData): Promise<void> {
     const name = formData.get('name') as string
     const priceValue = formData.get('price')
     const price = priceValue ? parseFloat(priceValue as string) : NaN
-    const commissionValue = formData.get('commission')
-    const commission = commissionValue ? parseFloat(commissionValue as string) : 0
+    const costValue = formData.get('cost')
+    const cost = costValue ? parseFloat(costValue as string) : 0
     let imageUrl = formData.get('imageUrl') as string
 
     if (!imageUrl || imageUrl.trim() === '') {
@@ -319,7 +321,7 @@ export async function createProduct(formData: FormData): Promise<void> {
             name,
             price: isNaN(price) ? 0 : price,
             imageUrl: imageUrl || null,
-            commission: isNaN(commission) ? 0 : commission
+            cost: isNaN(cost) ? 0 : cost
         }
 
         await prisma.product.create({
@@ -337,8 +339,8 @@ export async function updateProduct(formData: FormData): Promise<void> {
     const name = formData.get('name') as string
     const priceValue = formData.get('price')
     const price = priceValue ? parseFloat(priceValue as string) : NaN
-    const commissionValue = formData.get('commission')
-    const commission = commissionValue ? parseFloat(commissionValue as string) : 0
+    const costValue = formData.get('cost')
+    const cost = costValue ? parseFloat(costValue as string) : 0
     let imageUrl = formData.get('imageUrl') as string
 
     if (!id || !name || isNaN(price)) {
@@ -346,7 +348,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
     }
 
     try {
-        console.log('UPDATING PRODUCT:', { id, name, price, commission, imageUrl })
+        console.log('UPDATING PRODUCT:', { id, name, price, cost, imageUrl })
 
         if (isNaN(price)) {
             console.error('PRICE IS NaN')
@@ -357,7 +359,12 @@ export async function updateProduct(formData: FormData): Promise<void> {
             name,
             price: Number(price),
             imageUrl: imageUrl || null,
-            commission: isNaN(commission) ? 0 : Number(commission)
+            cost: isNaN(cost) ? 0 : Number(cost)
+        }
+
+        const existingProduct = await prisma.product.findUnique({ where: { id } })
+        if (!existingProduct) {
+            throw new Error(`Produto com ID ${id} não encontrado no banco de dados.`)
         }
 
         const result = await prisma.product.update({
@@ -402,35 +409,6 @@ export async function deleteProduct(productId: string): Promise<void> {
         throw new Error('Falha ao excluir produto')
     }
 }
-export async function saveAbandonedLead(data: {
-    fullName: string
-    email: string
-    phone: string
-    cpf: string
-    productId: string
-}) {
-    try {
-        const order = await prisma.order.create({
-            data: {
-                fullName: data.fullName,
-                email: data.email,
-                phone: data.phone,
-                cpf: data.cpf,
-                productId: data.productId || null,
-                paymentStatus: 'abandonado',
-                status: 'pendente',
-                totalPrice: 0,
-            },
-        })
-        revalidatePath('/admin/abandonados')
-        revalidatePath('/admin')
-        return { success: true, id: order.id }
-    } catch (error) {
-        console.error('Save Abandoned Lead Error:', error)
-        return { success: false }
-    }
-}
-
 export async function deleteOrder(orderId: string): Promise<void> {
     try {
         await prisma.order.delete({ where: { id: orderId } })
@@ -474,9 +452,16 @@ export async function getCustomization(key: string) {
 // Shipping Actions
 export async function getShippingRules() {
     try {
-        return await (prisma as any).shipping_rules.findMany({
+        const p = prisma as any;
+        const rules = await p.shipping_rules.findMany({
             orderBy: { price: 'asc' }
         })
+
+        // Convert Decimal objects to plain numbers for Next.js serialization
+        return rules.map((rule: any) => ({
+            ...rule,
+            price: Number(rule.price || 0)
+        }));
     } catch (error) {
         console.error('Get Shipping Rules Error:', error)
         return []

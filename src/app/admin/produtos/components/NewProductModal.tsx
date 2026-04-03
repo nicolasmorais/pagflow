@@ -16,8 +16,11 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
         const formData = new FormData(e.currentTarget)
         try {
             await createProduct(formData)
+            alert('Produto criado com sucesso!')
+            window.location.reload()
             onClose()
-        } catch (error) {
+        } catch (error: any) {
+            alert('Erro ao criar: ' + error.message)
             console.error(error)
         } finally {
             setLoading(false)
@@ -126,6 +129,7 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                 </header>
 
                 <form onSubmit={handleSubmit}>
+
                     <div className="form-group">
                         <label className="form-label">
                             <Plus size={14} /> Nome do Produto
@@ -155,10 +159,10 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                         </div>
                         <div className="form-group">
                             <label className="form-label">
-                                <Percent size={14} /> Comissão (R$)
+                                <DollarSign size={14} /> Custo unitário (R$)
                             </label>
                             <input
-                                name="commission"
+                                name="cost"
                                 type="number"
                                 step="0.01"
                                 className="form-input"
