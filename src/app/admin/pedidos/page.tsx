@@ -113,11 +113,11 @@ export default async function OrdersPage() {
                         <div>
                             <Link href={`/admin/pedidos/${order.id}`} style={{ textDecoration: 'none' }}>
                                 <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#3b82f6', margin: '0 0 2px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    {order.fullName}
+                                    {order.fullName || 'Sem nome'}
                                     <ExternalLink size={12} style={{ opacity: 0.5 }} />
                                 </h3>
                             </Link>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-secondary)', marginBottom: '4px' }}>{order.email}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-secondary)', marginBottom: '4px' }}>{order.email || ''}</div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px', color: getStatusColor(order.status), fontSize: '0.6rem', fontWeight: 800, textTransform: 'uppercase' }}>
                                     {order.status === 'atendido' ? <CheckCircle2 size={11} /> : order.status === 'cancelado' ? <XCircle size={11} /> : <Clock size={11} />}
@@ -159,9 +159,9 @@ export default async function OrdersPage() {
 
                         {/* Col 3: Address */}
                         <div style={{ fontSize: '0.8rem', color: 'var(--admin-text-primary)', lineHeight: '1.4' }}>
-                            <div style={{ fontWeight: 700 }}>{order.rua}, {order.numero}</div>
+                            <div style={{ fontWeight: 700 }}>{order.rua || ''}, {order.numero || ''}</div>
                             <div style={{ color: 'var(--admin-text-secondary)', fontSize: '0.75rem' }}>
-                                {order.bairro} — {order.cidade}/{order.estado}
+                                {order.bairro || ''} — {order.cidade || ''}/{order.estado || ''}
                                 {order.complemento && ` — ${order.complemento} `}
                             </div>
                             {order.referencia && (
@@ -176,11 +176,11 @@ export default async function OrdersPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 600 }}>
                                 <Phone size={13} color="#10b981" />
-                                {order.phone}
+                                {order.phone || 'Sem telefone'}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--admin-text-secondary)' }}>
                                 <CreditCard size={13} />
-                                {order.cpf}
+                                {order.cpf || 'Sem CPF'}
                             </div>
                         </div>
 
@@ -204,7 +204,7 @@ export default async function OrdersPage() {
                         {/* Col 7: Actions */}
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <a
-                                href={`https://wa.me/${order.phone.replace(/\D/g, '')}`}
+                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 style={{

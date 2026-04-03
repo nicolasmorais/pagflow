@@ -115,7 +115,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px' }}>
                             <Phone size={12} color="#94a3b8" />
-                            <span style={{ color: '#64748b', fontSize: '13px' }}>{order.phone}</span>
+                            <span style={{ color: '#64748b', fontSize: '13px' }}>{order.phone || 'Sem telefone'}</span>
                         </div>
                         {order.cpf && (
                             <div style={{ marginTop: '8px', display: 'inline-block', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '3px 9px' }}>
@@ -282,7 +282,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
             {/* ── Tracking & Email ── */}
             <TrackingManagement orderId={order.id} initialCode={order.trackingCode} initialUrl={order.trackingUrl} />
-            <EmailSection orderId={order.id} email={order.email} />
+            <EmailSection orderId={order.id} email={order.email || ''} />
 
         </div>
     )
