@@ -17,7 +17,8 @@ import {
     LogOut,
     Bell,
     Mail,
-    ChevronDown
+    ChevronDown,
+    BarChart3
 } from 'lucide-react'
 import './admin.css'
 
@@ -86,6 +87,7 @@ export default function AdminLayout({
 
     const mainMenu = [
         { icon: Home, label: 'Dashboard', href: '/admin' },
+        { icon: BarChart3, label: 'Analytics', href: '/admin/analise' },
         {
             icon: ShoppingCart,
             label: 'Todas as Vendas',
@@ -189,14 +191,21 @@ export default function AdminLayout({
 
             {/* Main Content Area */}
             <main className="main-content">
-                <div style={{ padding: '32px' }}>
+                <div className="main-content-inner">
                     {children}
                 </div>
                 <BottomNav />
             </main>
 
             <style jsx global>{`
+                .main-content-inner {
+                    padding: 32px;
+                }
                 @media (max-width: 1024px) {
+                    .main-content-inner {
+                        padding: 16px;
+                        padding-top: 24px;
+                    }
                     .desktop-only {
                         display: none !important;
                     }
@@ -204,6 +213,12 @@ export default function AdminLayout({
                         margin-left: 0 !important;
                         width: 100% !important;
                         padding-bottom: 80px !important;
+                    }
+                }
+                @media (max-width: 480px) {
+                    .main-content-inner {
+                        padding: 12px;
+                        padding-top: 16px;
                     }
                 }
             `}</style>

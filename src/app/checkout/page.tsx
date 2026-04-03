@@ -10,7 +10,7 @@ export default async function CheckoutPage({
     const params = await searchParams
     const productId = params.p
 
-    let product = null
+    let product: any = null
 
     if (productId) {
         product = await prisma.product.findUnique({

@@ -1,228 +1,289 @@
 import { prisma } from '@/lib/prisma'
-import { MapPin, Phone, CreditCard, ChevronLeft, ExternalLink, Calendar, Mail, User, Info, MoreVertical, Package, ShieldCheck, Truck, Trash2 } from 'lucide-react'
+import {
+    ChevronLeft, Trash2, Package, Phone, Mail,
+    MapPin, CreditCard, User, CheckCircle2, Clock, Truck, ReceiptText
+} from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { deleteOrder } from '../../../actions'
 import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
 
+const STATUS_CONFIG: Record<string, { bg: string; color: string; dot: string; border: string; label: string }> = {
+    pago:        { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Pago' },
+    recusado:    { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Recusado' },
+    reembolsado: { bg: '#eff6ff', color: '#1d4ed8', dot: '#2563eb', border: '#bfdbfe', label: 'Reembolsado' },
+    aguardando:  { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
+    processando: { bg: '#fef3c7', color: '#92400e', dot: '#d97706', border: '#fde68a', label: 'Aguardando' },
+    atendido:    { bg: '#dcfce7', color: '#15803d', dot: '#16a34a', border: '#bbf7d0', label: 'Atendido' },
+    cancelado:   { bg: '#fee2e2', color: '#b91c1c', dot: '#dc2626', border: '#fecaca', label: 'Cancelado' },
+}
+const getStatus = (s: string) => STATUS_CONFIG[s?.toLowerCase()] ?? STATUS_CONFIG.processando
+
+const formatBRL = (v: number) =>
+    v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    const order = await prisma.order.findUnique({
-        where: { id },
-        include: { product: true }
-    })
-
+    const order = await prisma.order.findUnique({ where: { id }, include: { product: true } })
     if (!order) notFound()
 
-    const getStatusColor = (status: string) => {
-        const s = status?.toLowerCase()
-        if (s === 'pago' || s === 'atendido') return '#dcfce7'; // green-100
-        if (s === 'recusado' || s === 'cancelado') return '#fee2e2'; // red-100
-        return '#fef3c7'; // yellow-100
-    }
+    const ps = order.paymentStatus || 'processando'
+    const sc = getStatus(ps)
+    const hasSent = !!(order.trackingCode || order.trackingUrl)
 
-    const getStatusTextColor = (status: string) => {
-        const s = status?.toLowerCase()
-        if (s === 'pago' || s === 'atendido') return '#166534';
-        if (s === 'recusado' || s === 'cancelado') return '#991b1b';
-        return '#92400e';
-    }
+    // Stepper steps
+    const step2Color = sc.dot
+    const step3Color = hasSent ? '#16a34a' : '#cbd5e1'
+    const step3Bg = hasSent ? '#dcfce7' : '#f1f5f9'
+    const step3Text = hasSent ? '#15803d' : '#94a3b8'
+    const line2Bg = hasSent ? '#16a34a' : '#e2e8f0'
 
     return (
-        <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '24px' }}>
-            {/* Nav */}
-            <Link href="/admin/vendas" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '0.85rem', textDecoration: 'none', marginBottom: '20px' }}>
-                <ChevronLeft size={16} /> Ver todas as vendas
+        <div className="pedido-page">
+
+            {/* ── Back link ── */}
+            <Link href="/admin/vendas" className="pedido-back-link">
+                <ChevronLeft size={15} strokeWidth={2.5} />
+                Voltar para vendas
             </Link>
 
-            {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
-                <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: '0 0 8px 0' }}>
-                        Pedido: <span style={{ fontWeight: 400 }}>{order.id.slice(0, 8).toUpperCase()}</span>
-                        <span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#64748b', marginLeft: '12px' }}>
-                            em {new Date(order.createdAt).toLocaleDateString('pt-BR')} às {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                    </h1>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <span style={{
-                            background: getStatusColor(order.paymentStatus || 'processando'),
-                            color: getStatusTextColor(order.paymentStatus || 'processando'),
-                            padding: '4px 12px',
-                            borderRadius: '4px',
-                            fontSize: '0.75rem',
-                            fontWeight: 800,
-                            textTransform: 'uppercase'
-                        }}>
-                            {order.paymentStatus || 'processando'}
-                        </span>
-                        <button style={{ background: 'none', border: 'none', color: '#3b82f6', fontSize: '0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            🔄 Atualizar status
-                        </button>
+            {/* ── Header ── */}
+            <div className="pedido-header-card">
+                <div className="pedido-header-left">
+                    <div style={{
+                        width: '44px', height: '44px', borderRadius: '13px',
+                        background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0, boxShadow: '0 4px 14px rgba(99,102,241,0.3)'
+                    }}>
+                        <ReceiptText size={20} color="white" strokeWidth={2} />
+                    </div>
+                    <div>
+                        <h1 style={{ fontSize: 'clamp(1rem, 4vw, 1.3rem)', fontWeight: 900, color: '#1e293b', margin: 0, letterSpacing: '-0.02em' }}>
+                            Pedido{' '}
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#6366f1', fontSize: '0.9em', background: '#eef2ff', padding: '2px 8px', borderRadius: '6px' }}>
+                                #{order.id.slice(0, 8).toUpperCase()}
+                            </span>
+                        </h1>
+                        <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
+                            {new Date(order.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                            {' às '}
+                            {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div className="pedido-header-right">
+                    <span style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                        background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
+                        padding: '5px 13px', borderRadius: '10px',
+                        fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap'
+                    }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: sc.dot, flexShrink: 0 }} />
+                        {sc.label}
+                    </span>
                     <form action={async () => {
                         'use server'
                         await deleteOrder(id)
                         redirect('/admin/vendas')
                     }}>
-                        <button type="submit" style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px', background: '#fff1f2', border: '1px solid #ffe4e6', color: '#e11d48', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                            <Trash2 size={16} /> Excluir Pedido
+                        <button type="submit" className="pedido-delete-btn">
+                            <Trash2 size={14} />
+                            <span>Excluir</span>
                         </button>
                     </form>
-
-                    <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px', background: 'white', border: '1px solid #e2e8f0', color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>
-                        📄 Anotações <span style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '10px', fontSize: '0.7rem' }}>0</span>
-                    </button>
-                    <button style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', borderRadius: '8px', background: 'white', border: '1px solid #e2e8f0', color: '#1e293b', fontSize: '0.85rem', fontWeight: 600 }}>
-                        Ações <MoreVertical size={16} />
-                    </button>
                 </div>
             </div>
 
-            {/* Info Cards Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '24px', marginBottom: '32px' }}>
-                <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                    <div style={{ padding: '24px', borderRight: '1px solid #f1f5f9' }}>
-                        <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '16px' }}>Cliente</h4>
-                        <div style={{ color: '#3b82f6', fontWeight: 700, fontSize: '1rem', marginBottom: '4px' }}>{order.fullName}</div>
-                        <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '4px' }}>{order.email}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '0.85rem', marginBottom: '8px' }}>
-                            <Phone size={14} /> {order.phone}
+            {/* ── Info Grid ── */}
+            <div className="pedido-info-grid">
+
+                {/* Cliente */}
+                <div className="pedido-card">
+                    <div className="pedido-card-header">
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <User size={14} color="#3b82f6" />
                         </div>
-                        <div style={{ color: '#64748b', fontSize: '0.85rem' }}>CPF: {order.cpf}</div>
-                        <div style={{ marginTop: '16px', fontSize: '0.75rem', color: '#94a3b8' }}>IP da compra: <br /> <span style={{ fontSize: '0.7rem' }}>177.102.45.189</span></div>
+                        <span className="pedido-card-title">Cliente</span>
                     </div>
-                    <div style={{ padding: '24px', borderRight: '1px solid #f1f5f9' }}>
-                        <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '16px' }}>Pagamento</h4>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px' }}>
-                            <div style={{ background: '#f8fafc', padding: '6px', borderRadius: '6px' }}>
-                                {order.paymentMethod === 'pix' ? '❖' : '💳'}
+                    <div className="pedido-card-body">
+                        <p style={{ margin: '0 0 6px', fontWeight: 800, color: '#1e293b', fontSize: '15px' }}>{order.fullName}</p>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '5px' }}>
+                            <Mail size={12} color="#94a3b8" style={{ marginTop: '2px', flexShrink: 0 }} />
+                            <span style={{ color: '#64748b', fontSize: '13px', wordBreak: 'break-all' }}>{order.email}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px' }}>
+                            <Phone size={12} color="#94a3b8" />
+                            <span style={{ color: '#64748b', fontSize: '13px' }}>{order.phone}</span>
+                        </div>
+                        {order.cpf && (
+                            <div style={{ marginTop: '8px', display: 'inline-block', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '3px 9px' }}>
+                                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>CPF: </span>
+                                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>{order.cpf}</span>
                             </div>
-                            {order.paymentMethod === 'pix' ? 'Pix' : (order.cardBrand ? order.cardBrand.toUpperCase() : 'Cartão de Crédito')}
+                        )}
+                    </div>
+                </div>
+
+                {/* Pagamento */}
+                <div className="pedido-card">
+                    <div className="pedido-card-header">
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CreditCard size={14} color="#10b981" />
+                        </div>
+                        <span className="pedido-card-title">Pagamento</span>
+                    </div>
+                    <div className="pedido-card-body">
+                        {/* Method */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                            {order.paymentMethod === 'pix' ? (
+                                <span style={{ fontSize: '11px', fontWeight: 800, color: '#059669', background: '#ecfdf5', padding: '4px 10px', borderRadius: '8px', border: '1px solid #a7f3d0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    ❖ PIX
+                                </span>
+                            ) : (
+                                <span style={{ fontSize: '11px', fontWeight: 800, color: '#3b82f6', background: '#eff6ff', padding: '4px 10px', borderRadius: '8px', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    💳 {order.cardBrand ? order.cardBrand.toUpperCase() : 'CARTÃO'}
+                                </span>
+                            )}
                         </div>
                         {order.installments && (
-                            <div style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
-                                {order.installments}x de R$ {order.installmentAmount?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </div>
+                            <p style={{ margin: '0 0 10px', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>
+                                {order.installments}x de R$ {formatBRL(order.installmentAmount || 0)}
+                            </p>
                         )}
+                        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                            <p style={{ margin: '0 0 2px', color: '#94a3b8', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</p>
+                            <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 900, color: '#059669', letterSpacing: '-0.03em' }}>
+                                R$ {formatBRL(order.totalPrice || 0)}
+                            </p>
+                        </div>
                         {order.paymentStatus === 'pago' && order.netReceived && (
-                            <div style={{ marginTop: '12px', fontSize: '0.7rem', color: '#10b981', fontWeight: 800, background: '#f0fdf4', padding: '4px 8px', borderRadius: '4px', width: 'fit-content' }}>
-                                VALOR LÍQUIDO: R$ {order.netReceived.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 800, background: '#f0fdf4', padding: '3px 9px', borderRadius: '7px', border: '1px solid #a7f3d0' }}>
+                                    Líq. R$ {formatBRL(order.netReceived)}
+                                </span>
                             </div>
                         )}
                     </div>
-                    <div style={{ padding: '24px' }}>
-                        <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '16px' }}>Entrega</h4>
-                        <div style={{ color: '#1e293b', fontWeight: 700, fontSize: '0.9rem', marginBottom: '8px' }}>{order.recipient || order.fullName}</div>
-                        <div style={{ color: '#64748b', fontSize: '0.85rem', lineHeight: '1.5' }}>
-                            {order.rua}, {order.numero}<br />
+                </div>
+
+                {/* Entrega */}
+                <div className="pedido-card">
+                    <div className="pedido-card-header">
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <MapPin size={14} color="#f97316" />
+                        </div>
+                        <span className="pedido-card-title">Entrega</span>
+                    </div>
+                    <div className="pedido-card-body">
+                        <p style={{ margin: '0 0 8px', fontWeight: 800, color: '#1e293b', fontSize: '14px' }}>
+                            {order.recipient || order.fullName}
+                        </p>
+                        <p style={{ margin: 0, color: '#64748b', fontSize: '13px', lineHeight: 1.75 }}>
+                            {order.rua}, {order.numero}
+                            {order.complemento && ` — ${order.complemento}`}<br />
                             {order.bairro}<br />
                             {order.cidade} / {order.estado}<br />
-                            CEP: {order.cep}
+                            <span style={{ fontWeight: 700, color: '#94a3b8' }}>CEP: </span>{order.cep}
+                        </p>
+                        {(order as any).referencia && (
+                            <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '7px', padding: '5px 9px' }}>
+                                Ref: {(order as any).referencia}
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Status Stepper ── */}
+            <div className="pedido-card" style={{ marginBottom: '16px' }}>
+                <div className="pedido-card-header">
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Clock size={14} color="#6366f1" />
+                    </div>
+                    <span className="pedido-card-title">Status do Pedido</span>
+                </div>
+                <div className="pedido-card-body">
+                    <div className="pedido-stepper">
+                        {/* Step 1: Criado */}
+                        <div className="pedido-step">
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 10px rgba(22,163,74,0.3)' }}>
+                                <CheckCircle2 size={18} color="white" />
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#16a34a', marginTop: '6px', textAlign: 'center' }}>Criado</span>
                         </div>
-                        <div style={{ marginTop: '16px', fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
-                            CORREIOS - PRAZO DE 2 A 4 SEMANAS
+
+                        <div className="pedido-step-line" style={{ background: '#16a34a' }} />
+
+                        {/* Step 2: Pagamento */}
+                        <div className="pedido-step">
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: step2Color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 10px ${step2Color}40` }}>
+                                {order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'
+                                    ? <span style={{ fontSize: '16px', color: 'white', fontWeight: 900 }}>✕</span>
+                                    : order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'
+                                    ? <CheckCircle2 size={18} color="white" />
+                                    : <span style={{ fontSize: '14px', color: 'white', fontWeight: 900 }}>···</span>
+                                }
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: step2Color, marginTop: '6px', textAlign: 'center', textTransform: 'uppercase' }}>
+                                {sc.label}
+                            </span>
+                        </div>
+
+                        <div className="pedido-step-line" style={{ background: line2Bg }} />
+
+                        {/* Step 3: Enviado */}
+                        <div className="pedido-step">
+                            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: step3Bg, border: `2px solid ${step3Color}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Truck size={17} color={step3Text} />
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: step3Text, marginTop: '6px', textAlign: 'center' }}>Enviado</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div style={{ background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '24px' }}>
-                    <h4 style={{ fontSize: '0.75rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '20px' }}>Valor Total</h4>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e293b', marginBottom: '24px' }}>R$ {(order.totalPrice || 0).toFixed(2)}</div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.85rem', marginBottom: '8px' }}>
-                        <span>Produtos</span>
-                        <span>R$ {(order.totalPrice || 0).toFixed(2)}</span>
+            {/* ── Product ── */}
+            <div className="pedido-card" style={{ marginBottom: '16px' }}>
+                <div className="pedido-card-header">
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fdf4ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Package size={14} color="#a855f7" />
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.85rem', marginBottom: '8px' }}>
-                        <span>Desconto</span>
-                        <span>- R$ 0,00</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#64748b', fontSize: '0.85rem' }}>
-                        <span>Frete</span>
-                        <span>R$ 0,00</span>
+                    <span className="pedido-card-title">Produto</span>
+                    <span style={{ marginLeft: 'auto', background: '#f1f5f9', padding: '2px 9px', borderRadius: '8px', fontSize: '11px', fontWeight: 800, color: '#64748b' }}>
+                        1 item
+                    </span>
+                </div>
+                <div className="pedido-card-body">
+                    <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+                        {order.product?.imageUrl && (
+                            <div style={{ width: '58px', height: '58px', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', flexShrink: 0, background: '#f8fafc' }}>
+                                <img src={order.product.imageUrl} alt={order.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ margin: '0 0 3px', fontWeight: 800, color: '#1e293b', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                {order.product?.name || 'Produto removido'}
+                            </p>
+                            <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                                SKU: {order.id.slice(0, 8).toUpperCase()}
+                            </p>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <p style={{ margin: '0 0 2px', fontWeight: 900, color: '#059669', fontSize: '16px', letterSpacing: '-0.02em' }}>
+                                R$ {formatBRL(order.totalPrice || 0)}
+                            </p>
+                            <p style={{ margin: 0, color: '#94a3b8', fontSize: '11px', fontWeight: 600 }}>Qtd: 1</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: '2px', background: '#f1f5f9', padding: '4px', borderRadius: '10px', marginBottom: '24px', width: 'fit-content' }}>
-                {['Resumo', 'Transações', 'Nota fiscal', 'Rastreamento', 'Status', 'Histórico', 'E-mails'].map((tab, idx) => (
-                    <div key={tab} style={{
-                        padding: '10px 24px',
-                        borderRadius: '8px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        color: idx === 0 ? '#1e293b' : '#64748b',
-                        background: idx === 0 ? 'white' : 'transparent',
-                        cursor: 'pointer',
-                        boxShadow: idx === 0 ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-                    }}>
-                        {tab}
-                    </div>
-                ))}
-            </div>
-
-            {/* Stepper */}
-            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', padding: '32px', marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', position: 'relative', height: '40px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', zIndex: 2 }}>✓</div>
-                    <div style={{ flex: 1, height: '4px', background: '#10b981', margin: '0 -1px' }}></div>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: getStatusTextColor(order.paymentStatus || ''), border: '4px solid white', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', zIndex: 2, boxShadow: '0 0 0 4px #f1f5f9' }}>
-                        {order.paymentStatus === 'pago' ? '✓' : '!'}
-                    </div>
-                    <div style={{ flex: 1, height: '4px', background: '#f1f5f9', borderStyle: 'dotted' }}></div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', marginTop: '12px' }}>
-                    <div style={{ color: '#64748b', fontSize: '0.8rem', fontWeight: 600 }}>Aguardando pagamento</div>
-                    <div style={{ color: getStatusTextColor(order.paymentStatus || ''), fontSize: '0.8rem', fontWeight: 800, textAlign: 'center' }}>
-                        {order.paymentStatus?.toUpperCase()}
-                    </div>
-                    <div style={{ textAlign: 'right', color: '#94a3b8', fontSize: '0.8rem' }}>Enviado</div>
-                </div>
-            </div>
-
-            {/* Products Table */}
-            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginBottom: '24px' }}>
-                <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>Produtos</h3>
-                    <span style={{ background: '#f1f5f9', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 800 }}>1</span>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead style={{ background: '#f8fafc' }}>
-                        <tr>
-                            <th style={{ textAlign: 'left', padding: '12px 24px', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Produto</th>
-                            <th style={{ textAlign: 'center', padding: '12px 24px', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Qtd.</th>
-                            <th style={{ textAlign: 'right', padding: '12px 24px', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Valor Unit.</th>
-                            <th style={{ textAlign: 'right', padding: '12px 24px', fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td style={{ padding: '20px 24px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                                    <div style={{ width: '50px', height: '50px', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', flexShrink: 0 }}>
-                                        <img src={order.product?.imageUrl || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>{order.product?.name}</div>
-                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '4px' }}>SKU: {order.id.slice(0, 8).toUpperCase()}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td style={{ textAlign: 'center', padding: '20px 24px', fontWeight: 600, color: '#1e293b' }}>1</td>
-                            <td style={{ textAlign: 'right', padding: '20px 24px', color: '#64748b', fontSize: '0.9rem' }}>R$ {order.product?.price?.toFixed(2) || '0.00'}</td>
-                            <td style={{ textAlign: 'right', padding: '20px 24px', fontWeight: 700, color: '#1e293b', fontSize: '0.9rem' }}>R$ {order.product?.price?.toFixed(2) || '0.00'}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
+            {/* ── Tracking & Email ── */}
             <TrackingManagement orderId={order.id} initialCode={order.trackingCode} initialUrl={order.trackingUrl} />
             <EmailSection orderId={order.id} email={order.email} />
+
         </div>
     )
 }

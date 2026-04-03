@@ -1,6 +1,6 @@
 'use client'
 
-import { createOrder, saveOrderProgress } from '../actions'
+import { createOrder, saveOrderProgress, saveAbandonedLead } from '../actions'
 import { useState, useEffect } from 'react'
 import { initMercadoPago, CardPayment } from '@mercadopago/sdk-react'
 import './checkout.css'
@@ -151,6 +151,7 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
     );
     const [selectedBumpIds, setSelectedBumpIds] = useState<string[]>([]);
     const [timeLeft, setTimeLeft] = useState(1620); // 27:00 in seconds
+    const [accessId, setAccessId] = useState<string | null>(null);
     // Tracking Pixels Integration (Taboola, Meta, Google)
     useEffect(() => {
         const w = (window as any);
@@ -205,6 +206,89 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
             w.gtag('config', gId);
         }
     }, [pixels?.taboolaId, pixels?.facebookId, pixels?.googleId]);
+
+    // Load accessId from localStorage on mount
+    useEffect(() => {
+        const savedId = localStorage.getItem('checkoutAccessId');
+        if (savedId) {
+            setAccessId(savedId);
+        }
+    }, []);
+
+    useEffect(() => {
+        const trackAccess = async () => {
+            const params = new URLSearchParams(window.location.search);
+            try {
+                const res = await fetch('/api/checkout-access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        productId: product?.id || null,
+                        source: params.get('utm_source') || null,
+                        medium: params.get('utm_medium') || null,
+                        campaign: params.get('utm_campaign') || null,
+                        term: params.get('utm_term') || null,
+                        content: params.get('utm_content') || null,
+                    })
+                });
+                const data = await res.json();
+                console.log('Checkout access response:', data);
+                if (data.accessId) {
+                    localStorage.setItem('checkoutAccessId', data.accessId);
+                    setAccessId(data.accessId);
+                }
+            } catch (e) { console.error('Failed to track checkout access:', e); }
+        };
+        trackAccess();
+    }, [product?.id]);
+
+    // Track step completions
+    const trackStep = async (step: number | 'payment', completed: boolean) => {
+        const accessId = localStorage.getItem('checkoutAccessId');
+        if (!accessId) {
+            console.log('No accessId found in localStorage');
+            return;
+        }
+
+        console.log('Tracking step:', step, 'accessId:', accessId);
+        try {
+            const res = await fetch('/api/checkout-access', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accessId, step, completed })
+            });
+            const data = await res.json();
+            console.log('Track step response:', data);
+        } catch (e) { console.error('Failed to track step:', e); }
+    };
+
+    // Track step 1 completion (first page blur/submit attempt)
+    useEffect(() => {
+        if (step === 2) {
+            trackStep(1, true);
+            if (!tempOrderId) {
+                saveAbandonedLead({
+                    fullName: dados.nome,
+                    email: dados.email,
+                    phone: dados.telefone,
+                    cpf: dados.cpf,
+                    productId: product?.id || '',
+                }).then(result => {
+                    if (result.success && result.id) {
+                        setTempOrderId(result.id);
+                        localStorage.setItem('tempOrderId', result.id);
+                    }
+                });
+            }
+        }
+    }, [step]);
+
+    // Track step 2 completion
+    useEffect(() => {
+        if (step === 3) {
+            trackStep(2, true);
+        }
+    }, [step]);
 
     useEffect(() => {
         if (!done || !pixData) return;
@@ -296,10 +380,18 @@ export default function CheckoutForm({ product, customization, shippingRules, pi
                     return;
                 }
 
+                // Track step 3 (payment initiated)
+                trackStep(3, true);
+
                 if (result.qrCodeBase64) {
                     setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
                 }
                 setDone(true);
+
+                // Track payment completed
+                if (result.paymentStatus === 'pago') {
+                    trackStep('payment', true);
+                }
 
                 // Taboola Purchase Tracking
                 if (pixels?.taboolaId) {

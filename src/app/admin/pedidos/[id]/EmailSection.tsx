@@ -4,82 +4,83 @@ import { useState } from 'react'
 import { sendConfirmationEmail } from '@/app/actions'
 import { Mail, RefreshCw, CheckCircle2, XCircle } from 'lucide-react'
 
-export default function EmailSection({ orderId, email }: { orderId: string, email: string }) {
-    const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+export default function EmailSection({ orderId, email }: { orderId: string; email: string }) {
+    const [loading, setLoading] = useState(false)
+    const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
 
     const handleResend = async () => {
-        setLoading(true);
-        setStatus('idle');
+        setLoading(true)
+        setStatus('idle')
         try {
-            const result = await sendConfirmationEmail(orderId);
+            const result = await sendConfirmationEmail(orderId)
             if (result.success) {
-                setStatus('success');
-                setTimeout(() => setStatus('idle'), 3000);
+                setStatus('success')
+                setTimeout(() => setStatus('idle'), 4000)
             } else {
-                setStatus('error');
+                setStatus('error')
             }
-        } catch (error) {
-            setStatus('error');
+        } catch {
+            setStatus('error')
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
     return (
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', marginTop: '24px' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <Mail size={18} color="#1e293b" />
-                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>Comunicação pós-venda</h3>
+        <div className="pedido-card" style={{ marginBottom: '16px' }}>
+            <div className="pedido-card-header">
+                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#fdf4ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Mail size={14} color="#a855f7" />
                 </div>
+                <span className="pedido-card-title">E-mail de Confirmação</span>
                 {status === 'success' && (
-                    <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', padding: '4px 10px', borderRadius: '20px' }}>
-                        <CheckCircle2 size={14} /> Enviado com sucesso
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#10b981', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', padding: '3px 10px', borderRadius: '8px', border: '1px solid #a7f3d0', whiteSpace: 'nowrap' }}>
+                        <CheckCircle2 size={12} /> Enviado!
                     </span>
                 )}
                 {status === 'error' && (
-                    <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', padding: '4px 10px', borderRadius: '20px' }}>
-                        <XCircle size={14} /> Erro ao enviar
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', padding: '3px 10px', borderRadius: '8px', border: '1px solid #fecaca', whiteSpace: 'nowrap' }}>
+                        <XCircle size={12} /> Erro
                     </span>
                 )}
             </div>
-
-            <div style={{ padding: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #f1f5f9' }}>
-                    <div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px' }}>E-mail de destino</div>
-                        <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>{email}</div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button
-                            onClick={handleResend}
-                            disabled={loading}
-                            style={{
-                                padding: '10px 18px',
-                                borderRadius: '8px',
-                                background: '#111827',
-                                color: '#fff',
-                                border: 'none',
-                                cursor: loading ? 'not-allowed' : 'pointer',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                opacity: loading ? 0.7 : 1,
-                                transition: 'all 0.2s',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                            }}
-                        >
-                            {loading ? <RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <RefreshCw size={16} />}
-                            {loading ? 'Enviando...' : 'Reenviar E-mail'}
-                        </button>
-                    </div>
+            <div className="pedido-card-body">
+                {/* Recipient display */}
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>
+                    <p style={{ margin: '0 0 2px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        Destinatário
+                    </p>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b', wordBreak: 'break-all' }}>
+                        {email}
+                    </p>
                 </div>
 
-                <p style={{ marginTop: '16px', fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {/* Send button */}
+                <button
+                    onClick={handleResend}
+                    disabled={loading}
+                    style={{
+                        width: '100%', padding: '13px 18px', borderRadius: '12px',
+                        background: loading ? '#475569' : '#111827',
+                        color: '#fff', border: 'none',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        fontSize: '14px', fontWeight: 700,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                        transition: 'background 0.2s, transform 0.15s',
+                        minHeight: '48px',
+                        letterSpacing: '-0.01em'
+                    }}
+                    onMouseEnter={e => { if (!loading) (e.currentTarget.style.background = '#1e293b') }}
+                    onMouseLeave={e => { if (!loading) (e.currentTarget.style.background = '#111827') }}
+                >
+                    <RefreshCw
+                        size={16}
+                        style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }}
+                    />
+                    {loading ? 'Enviando...' : 'Reenviar E-mail de Confirmação'}
+                </button>
+
+                <p style={{ marginTop: '12px', fontSize: '12px', color: '#94a3b8', lineHeight: 1.5 }}>
                     💡 E-mails de confirmação são enviados automaticamente para compras aprovadas.
                 </p>
             </div>
@@ -91,5 +92,5 @@ export default function EmailSection({ orderId, email }: { orderId: string, emai
                 }
             `}</style>
         </div>
-    );
+    )
 }

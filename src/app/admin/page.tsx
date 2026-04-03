@@ -1,33 +1,44 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
-import { TrendingUp, Users, Package, Clock, ShoppingBag, ArrowUpRight, ArrowDownRight, DollarSign, UserX } from 'lucide-react'
+import { TrendingUp, Users, ShoppingBag, ArrowUpRight, ArrowDownRight, DollarSign, UserX, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 
 const StatCard = ({ title, value, icon: Icon, color, trend }: { title: string, value: string | number, icon: any, color: string, trend?: string }) => (
-    <div className="glass-card" style={{ padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-            <div style={{ padding: '0.75rem', background: `${color}10`, color: color, borderRadius: '12px' }}>
+    <div style={{
+        background: '#fff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '16px',
+        padding: '20px',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+    }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ padding: '10px', background: `${color}15`, color: color, borderRadius: '12px', display: 'flex' }}>
                 <Icon size={20} />
             </div>
             {trend && (
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
+                    gap: '3px',
                     fontSize: '12px',
-                    fontWeight: '700',
+                    fontWeight: 700,
                     color: trend.startsWith('+') ? '#10b981' : '#ef4444',
                     background: trend.startsWith('+') ? '#f0fdf4' : '#fef2f2',
-                    padding: '2px 8px',
+                    padding: '3px 8px',
                     borderRadius: '20px'
                 }}>
-                    {trend.startsWith('+') ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                    {trend.startsWith('+') ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
                     {trend}
                 </div>
             )}
         </div>
-        <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--admin-text-secondary)', fontWeight: 600 }}>{title}</p>
-        <h3 style={{ margin: '4px 0 0', fontSize: '1.75rem', fontWeight: 800, color: 'var(--admin-text-primary)' }}>{value}</h3>
+        <div>
+            <p style={{ margin: '0 0 4px', fontSize: '13px', color: '#64748b', fontWeight: 600, lineHeight: 1.4 }}>{title}</p>
+            <h3 style={{ margin: 0, fontSize: '1.6rem', fontWeight: 800, color: '#1e293b', lineHeight: 1.1 }}>{value}</h3>
+        </div>
     </div>
 )
 
@@ -40,7 +51,6 @@ export default async function SummaryPage() {
 
     const totalSales = await prisma.order.count({ where: { NOT: { paymentStatus: 'abandonado' } } })
     const abandonedCount = await prisma.order.count({ where: { paymentStatus: 'abandonado' } })
-    const completedCount = await prisma.order.count({ where: { paymentStatus: 'pago' } })
     const revenueRes = await prisma.order.aggregate({
         _sum: { totalPrice: true },
         where: { paymentStatus: 'pago' }
@@ -51,110 +61,140 @@ export default async function SummaryPage() {
     return (
         <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
 
-            {/* Dashboard Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
-                <StatCard
-                    title="Faturamento (Pago)"
-                    value={`R$ ${totalRevenue.toFixed(2)}`}
-                    icon={DollarSign}
-                    color="#10b981"
-                    trend="+15%"
-                />
-                <StatCard
-                    title="Vendas Totais"
-                    value={totalSales}
-                    icon={TrendingUp}
-                    color="#6366f1"
-                    trend="+12%"
-                />
-                <StatCard
-                    title="Abandonados"
-                    value={abandonedCount}
-                    icon={UserX}
-                    color="#f59e0b"
-                />
-                <StatCard
-                    title="Clientes Ativos"
-                    value={uniqueCustomers}
-                    icon={Users}
-                    color="#3b82f6"
-                />
+            {/* Page Title */}
+            <div style={{ marginBottom: '24px' }}>
+                <h1 style={{ fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', fontWeight: 900, color: '#1e293b', margin: 0, letterSpacing: '-0.02em' }}>
+                    Dashboard
+                </h1>
+                <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b', lineHeight: 1.5 }}>
+                    Visão geral do desempenho da sua loja
+                </p>
             </div>
 
+            {/* Stats Grid */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: '2fr 1fr',
-                gap: '1.5rem'
-            }}>
-                {/* Recent Activity */}
-                <div className="glass-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>Atividade Recente</h2>
-                        <Link href="/admin/vendas" style={{ fontSize: '0.85rem', color: '#3b82f6', fontWeight: 700, textDecoration: 'none' }}>Ver todas as vendas</Link>
-                    </div>
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '12px',
+                marginBottom: '24px'
+            }} className="dash-stats-grid">
+                <StatCard title="Faturamento" value={`R$ ${totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} icon={DollarSign} color="#10b981" trend="+15%" />
+                <StatCard title="Vendas" value={totalSales} icon={TrendingUp} color="#6366f1" trend="+12%" />
+                <StatCard title="Abandonados" value={abandonedCount} icon={UserX} color="#f59e0b" />
+                <StatCard title="Clientes" value={uniqueCustomers} icon={Users} color="#3b82f6" />
+            </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {orders.length === 0 ? (
-                            <p style={{ color: 'var(--admin-text-secondary)', fontSize: '0.9rem', textAlign: 'center', padding: '2rem' }}>Sem atividade recente.</p>
-                        ) : (
-                            orders.map(order => (
-                                <div key={order.id} style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    paddingBottom: '1rem',
-                                    borderBottom: '1px solid #f1f5f9'
-                                }}>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                        <div style={{
-                                            width: '40px',
-                                            height: '40px',
-                                            borderRadius: '10px',
-                                            background: '#f8fafc',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#64748b',
-                                            border: '1px solid #e2e8f0'
-                                        }}>
-                                            <ShoppingBag size={18} />
-                                        </div>
-                                        <div>
-                                            <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700 }}>Novo pedido de {order.fullName.split(' ')[0]}</p>
-                                            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--admin-text-secondary)' }}>{new Date(order.createdAt).toLocaleDateString('pt-BR')}</p>
-                                        </div>
-                                    </div>
-                                    <div style={{
-                                        padding: '4px 10px',
-                                        borderRadius: '8px',
-                                        fontSize: '11px',
-                                        fontWeight: 800,
-                                        background: order.status === 'pendente' ? '#fffbeb' : '#f0fdf4',
-                                        color: order.status === 'pendente' ? '#b45309' : '#15803d',
-                                        textTransform: 'uppercase'
-                                    }}>
-                                        {order.status}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
+            {/* Recent Activity */}
+            <div style={{
+                background: '#fff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '20px',
+                overflow: 'hidden',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                marginBottom: '16px'
+            }}>
+                <div style={{ padding: '20px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: '#1e293b' }}>Atividade Recente</h2>
+                    <Link href="/admin/vendas" style={{
+                        fontSize: '13px',
+                        color: '#3b82f6',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '6px 12px',
+                        background: '#eff6ff',
+                        borderRadius: '10px',
+                        minHeight: '36px'
+                    }}>
+                        Ver todas
+                    </Link>
                 </div>
 
-                {/* Growth/Mini stats */}
-                <div className="glass-card" style={{ padding: '1.5rem', background: 'linear-gradient(180deg, #fff 0%, #f8fafc 100%)' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem' }}>Desempenho</h2>
-                    <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                        <div style={{
-                            fontSize: '48px',
-                            marginBottom: '4px'
-                        }}>⚡</div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--admin-text-secondary)', lineHeight: '1.5' }}>
-                            Sua taxa de conversão subiu <strong style={{ color: '#10b981' }}>8%</strong> nesta semana!
-                        </p>
-                    </div>
+                <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+                    {orders.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+                            <ShoppingCart size={32} style={{ margin: '0 auto 12px', display: 'block', opacity: 0.4 }} />
+                            <p style={{ margin: 0, fontSize: '14px' }}>Sem atividade recente.</p>
+                        </div>
+                    ) : (
+                        orders.map((order, idx) => (
+                            <div key={order.id} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                paddingTop: idx === 0 ? 0 : '14px',
+                                paddingBottom: '14px',
+                                borderBottom: idx < orders.length - 1 ? '1px solid #f1f5f9' : 'none',
+                            }}>
+                                {/* Icon */}
+                                <div style={{
+                                    width: '44px',
+                                    height: '44px',
+                                    minWidth: '44px',
+                                    borderRadius: '12px',
+                                    background: '#f8fafc',
+                                    border: '1px solid #e2e8f0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#64748b'
+                                }}>
+                                    <ShoppingBag size={18} />
+                                </div>
+
+                                {/* Info */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {order.fullName.split(' ')[0]}
+                                    </p>
+                                    <p style={{ margin: 0, fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                                        {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                                    </p>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div style={{
+                                    padding: '5px 10px',
+                                    borderRadius: '8px',
+                                    fontSize: '11px',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    whiteSpace: 'nowrap',
+                                    background: order.status === 'pendente' ? '#fffbeb' : '#f0fdf4',
+                                    color: order.status === 'pendente' ? '#b45309' : '#15803d'
+                                }}>
+                                    {order.status}
+                                </div>
+                            </div>
+                        ))
+                    )}
                 </div>
             </div>
+
+            {/* Performance Card */}
+            <div style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: '20px',
+                padding: '24px',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                boxShadow: '0 8px 24px rgba(102,126,234,0.3)'
+            }}>
+                <div style={{ fontSize: '36px', lineHeight: 1 }}>⚡</div>
+                <div>
+                    <p style={{ margin: 0, fontWeight: 800, fontSize: '15px', lineHeight: 1.4 }}>
+                        Ótimo desempenho!
+                    </p>
+                    <p style={{ margin: '4px 0 0', fontSize: '13px', opacity: 0.85, lineHeight: 1.5 }}>
+                        Sua taxa de conversão subiu <strong>8%</strong> nesta semana.
+                    </p>
+                </div>
+            </div>
+
         </div>
     )
 }

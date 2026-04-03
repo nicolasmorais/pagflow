@@ -402,6 +402,35 @@ export async function deleteProduct(productId: string): Promise<void> {
         throw new Error('Falha ao excluir produto')
     }
 }
+export async function saveAbandonedLead(data: {
+    fullName: string
+    email: string
+    phone: string
+    cpf: string
+    productId: string
+}) {
+    try {
+        const order = await prisma.order.create({
+            data: {
+                fullName: data.fullName,
+                email: data.email,
+                phone: data.phone,
+                cpf: data.cpf,
+                productId: data.productId || null,
+                paymentStatus: 'abandonado',
+                status: 'pendente',
+                totalPrice: 0,
+            },
+        })
+        revalidatePath('/admin/abandonados')
+        revalidatePath('/admin')
+        return { success: true, id: order.id }
+    } catch (error) {
+        console.error('Save Abandoned Lead Error:', error)
+        return { success: false }
+    }
+}
+
 export async function deleteOrder(orderId: string): Promise<void> {
     try {
         await prisma.order.delete({ where: { id: orderId } })

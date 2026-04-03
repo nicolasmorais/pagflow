@@ -40,14 +40,14 @@ export default function ROIPage() {
                 </div>
             </header>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '32px' }}>
+            <div className="stats-grid">
                 <StatCard icon={Target} label="Investimento" value="R$ 12.450,00" trend={12} color="#4f46e5" />
                 <StatCard icon={DollarSign} label="Faturamento" value="R$ 48.920,00" trend={18} color="#10b981" />
                 <StatCard icon={TrendingUp} label="ROI Atual" value="3.92x" trend={5} color="#f59e0b" />
                 <StatCard icon={MousePointer2} label="Custo por Clique" value="R$ 0,42" trend={-2} color="#ef4444" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+            <div className="dashboard-layout">
                 <div style={{ background: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #e2e8f0', minHeight: '400px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>Desempenho por Campanha</h3>
@@ -61,20 +61,22 @@ export default function ROIPage() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {[
-                            { name: 'Facebook Ads - Conversão VIP', spend: 4500, rev: 18400, roi: 4.08 },
-                            { name: 'Google Search - Kit 3 Potes', spend: 3200, rev: 12100, roi: 3.78 },
-                            { name: 'TikTok Ads - Viral Video', spend: 2800, rev: 10500, roi: 3.75 },
-                            { name: 'Instagram Stories - Promo Outono', spend: 1950, rev: 7920, roi: 4.06 },
-                        ].map(item => (
-                            <div key={item.name} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', alignItems: 'center', padding: '16px', borderRadius: '12px', background: '#f8fafc' }}>
-                                <span style={{ fontWeight: 700, color: '#1e293b' }}>{item.name}</span>
-                                <span style={{ color: '#64748b', fontSize: '0.9rem' }}>R$ {item.spend.toLocaleString()}</span>
-                                <span style={{ color: '#10b981', fontWeight: 600 }}>R$ {item.rev.toLocaleString()}</span>
-                                <span style={{ textAlign: 'right', fontWeight: 800, color: '#4f46e5' }}>{item.roi}x</span>
-                            </div>
-                        ))}
+                    <div style={{ overflowX: 'auto' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: '600px' }}>
+                            {[
+                                { name: 'Facebook Ads - Conversão VIP', spend: 4500, rev: 18400, roi: 4.08 },
+                                { name: 'Google Search - Kit 3 Potes', spend: 3200, rev: 12100, roi: 3.78 },
+                                { name: 'TikTok Ads - Viral Video', spend: 2800, rev: 10500, roi: 3.75 },
+                                { name: 'Instagram Stories - Promo Outono', spend: 1950, rev: 7920, roi: 4.06 },
+                            ].map(item => (
+                                <div key={item.name} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', alignItems: 'center', padding: '16px', borderRadius: '12px', background: '#f8fafc' }}>
+                                    <span style={{ fontWeight: 700, color: '#1e293b' }}>{item.name}</span>
+                                    <span style={{ color: '#64748b', fontSize: '0.9rem' }}>R$ {item.spend.toLocaleString()}</span>
+                                    <span style={{ color: '#10b981', fontWeight: 600 }}>R$ {item.rev.toLocaleString()}</span>
+                                    <span style={{ textAlign: 'right', fontWeight: 800, color: '#4f46e5' }}>{item.roi}x</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

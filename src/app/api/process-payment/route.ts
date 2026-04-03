@@ -160,12 +160,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        let qrCode = null;
-        let qrCodeBase64 = null;
+        let qrCode: string | null = null;
+        let qrCodeBase64: string | null = null;
 
         if (method === 'pix' && mpResult.point_of_interaction?.transaction_data) {
-            qrCode = mpResult.point_of_interaction.transaction_data.qr_code;
-            qrCodeBase64 = mpResult.point_of_interaction.transaction_data.qr_code_base64;
+            qrCode = mpResult.point_of_interaction.transaction_data.qr_code || null;
+            qrCodeBase64 = mpResult.point_of_interaction.transaction_data.qr_code_base64 || null;
         }
 
         return NextResponse.json({
