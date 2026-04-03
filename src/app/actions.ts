@@ -293,6 +293,10 @@ export async function saveOrderProgress(data: any) {
             });
             revalidatePath('/admin/abandonados');
             revalidatePath('/admin');
+
+            // Notify Admin
+            await sendAdminNotification('abandoned', { ...payload, id: created.id }).catch(e => console.error(e));
+
             return { success: true, id: created.id };
         }
     } catch (error) {
@@ -625,5 +629,50 @@ export async function deleteEmailTemplate(id: string) {
     } catch (error) {
         console.error('Delete Email Template Error:', error);
         throw new Error('Falha ao excluir template');
+    }
+}
+
+export async function sendAdminNotification(type: 'sale' | 'abandoned', order: any) {
+    try {
+        const email = await getCustomization('notify_admin_email');
+        if (!email) return;
+
+        const isSalesNotify = await getCustomization('notify_sales_enabled');
+        const isAbandonedNotify = await getCustomization('notify_abandoned_enabled');
+
+        if (type === 'sale' && isSalesNotify !== 'true') return;
+        if (type === 'abandoned' && isAbandonedNotify !== 'true') return;
+
+        let subject = '';
+        let htmlContent = '';
+
+        if (type === 'sale') {
+            subject = `💰 Nova Venda Recebida: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
+            htmlContent = `
+                <h2>Nova venda confirmada! 🎉</h2>
+                <p><strong>Pedido:</strong> ${order.id}</p>
+                <p><strong>Cliente:</strong> ${order.fullName}</p>
+                <p><strong>Valor:</strong> R$ ${order.totalPrice?.toFixed(2) || '0.00'}</p>
+                <p>Acesse o painel para processar a venda.</p>
+            `;
+        } else if (type === 'abandoned') {
+            subject = `🛒 Carrinho Abandonado: ${order.fullName || 'Sem nome'}`;
+            htmlContent = `
+                <h2>Um cliente abandonou o carrinho</h2>
+                <p><strong>Cliente:</strong> ${order.fullName || 'Sem nome'}</p>
+                <p><strong>Telefone/WhatsApp:</strong> ${order.phone || 'Não informado'}</p>
+                <p><strong>E-mail:</strong> ${order.email || 'Não informado'}</p>
+                <p>Acesse o painel para entrar em contato com o cliente.</p>
+            `;
+        }
+
+        await resend.emails.send({
+            from: 'Elabela Store <noreply@elabela.store>',
+            to: [email],
+            subject: subject,
+            html: htmlContent
+        });
+    } catch (error) {
+        console.error('Admin Notification Error:', error);
     }
 }

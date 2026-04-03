@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment, CardToken } from "mercadopago";
 import { prisma } from "@/lib/prisma";
-import { sendConfirmationEmail } from "@/app/actions";
+import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 
 export async function POST(req: NextRequest) {
     try {
@@ -174,6 +174,13 @@ export async function POST(req: NextRequest) {
                 await sendConfirmationEmail(order.id);
             } catch (emailError) {
                 console.error("Failed to send confirmation email:", emailError);
+            }
+
+            // Notify Admin
+            try {
+                await sendAdminNotification('sale', order);
+            } catch (notifyError) {
+                console.error("Failed to send admin notification:", notifyError);
             }
         }
 
