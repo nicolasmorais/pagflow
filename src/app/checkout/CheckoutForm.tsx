@@ -230,9 +230,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     // Efeito para inicializar o Brick
     useEffect(() => {
-        if (paymentMethod === 'card' && step === 3 && typeof window !== 'undefined' && window.MercadoPago) {
+        if (paymentMethod === 'card' && step === 3 && typeof window !== 'undefined' && (window as any).MercadoPago) {
             const initBrick = async () => {
-                const mp = new window.MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || 'TEST-91331b4d-be71-43a4-b12a-d38e686b8ab2');
+                const mp = new (window as any).MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || 'TEST-91331b4d-be71-43a4-b12a-d38e686b8ab2');
                 const bricksBuilder = mp.bricks();
 
                 const container = document.getElementById('paymentBrick_container');
