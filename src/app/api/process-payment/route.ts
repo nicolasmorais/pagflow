@@ -73,71 +73,84 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Processar Pagamento Mercado Pago
+        const { deviceId, idempotencyKey } = body;
         const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
+
+        const protocol = req.headers.get('x-forwarded-proto') || 'http';
+        const host = req.headers.get('host');
+        const baseUrl = `${protocol}://${host}`;
+        const notificationUrl = (host?.includes('localhost') || !protocol.includes('https')) ? undefined : `${baseUrl}/api/webhook/mercadopago`;
 
         let mpPayload: any = {
             transaction_amount: price,
             description: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
+            external_reference: order.id,
+            statement_descriptor: "PAGFLOW*PRODUTO", // Nome na fatura do cartão
+            binary_mode: true, // Aprovação instantânea (ideal para produtos digitais/físicos com estoque)
             payment_method_id: method === 'pix' ? 'pix' : undefined,
+            notification_url: notificationUrl,
             payer: {
-                email: orderData.email || 'test@test.com',
+                email: orderData.email || 'cliente@pagflow.com',
                 first_name: fullName.split(' ')[0] || "Cliente",
                 last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
                 identification: {
                     type: 'CPF',
                     number: cpfToSave
+                },
+                device_id: deviceId, // Fallback para algumas versões da API
+                address: {
+                    zip_code: orderData.cep?.replace(/\D/g, '') || '',
+                    street_name: orderData.rua || '',
+                    street_number: orderData.numero || '',
+                    neighborhood: orderData.bairro || '',
+                    city: orderData.cidade || '',
+                    federal_unit: (orderData.estado || '').toUpperCase()
                 }
             },
+            additional_info: {
+                items: [
+                    {
+                        id: product?.id || 'default',
+                        title: product?.name || 'Produto Digital',
+                        quantity: 1,
+                        unit_price: price,
+                        category_id: 'others',
+                        description: `Compra realizada no PagFlow - ID ${order.id}`
+                    }
+                ]
+            }
         };
 
-        if (method === 'credit_card') {
+        if (method === 'credit_card' || method === 'card') {
             if (brickData) {
-                // Se vier do Brick, já temos o token e outros dados
                 mpPayload.token = brickData.token;
                 mpPayload.installments = Number(brickData.installments);
                 mpPayload.payment_method_id = brickData.payment_method_id;
                 mpPayload.issuer_id = brickData.issuer_id;
+            } else if (cardData && cardData.token) {
+                // Fallback para quando o token vem direto
+                mpPayload.token = cardData.token;
+                mpPayload.installments = Number(cardData.installments) || 1;
+                mpPayload.payment_method_id = cardData.payment_method_id;
             } else {
-                // Fallback manual (opcional, mantido para compatibilidade)
-                const cleanCard = (cardData.cardNumber || "").replace(/\D/g, '');
-                let pmi = "master";
-                if (cleanCard.startsWith("4")) pmi = "visa";
-                else if (cleanCard.startsWith("3")) pmi = "amex";
-                else if (cleanCard.startsWith("6")) pmi = "elo";
-                else if (cleanCard.startsWith("5")) pmi = "master";
-                mpPayload.payment_method_id = pmi;
-
-                const expMonth = parseInt((cardData.expiration || "12/29").split('/')[0]);
-                let expYear = parseInt((cardData.expiration || "12/29").split('/')[1]);
-                if (expYear < 100) expYear += 2000;
-
-                try {
-                    const cardTokenConfig = new CardToken(client);
-                    const tokenRes = await cardTokenConfig.create({
-                        body: {
-                            card_number: cleanCard,
-                            expiration_month: String(expMonth),
-                            expiration_year: String(expYear),
-                            security_code: cardData.cvv,
-                            cardholder: {
-                                name: cardData.cardName,
-                                identification: { type: 'CPF', number: orderData.cpf.replace(/\D/g, '') }
-                            }
-                        } as any
-                    });
-                    mpPayload.token = tokenRes.id;
-                    mpPayload.installments = Number(cardData.installments) || 1;
-                } catch (tokenError: any) {
-                    console.error("Tokenization Error:", tokenError);
-                    return NextResponse.json({ success: false, error: "Dados do cartão inválidos ou não aceitos." }, { status: 400 });
-                }
+                return NextResponse.json({ success: false, error: "Dados do cartão incompletos." }, { status: 400 });
             }
         }
 
         const payment = new Payment(client);
         console.log("Creating Payment with payload:", JSON.stringify(mpPayload, null, 2));
 
-        const mpResult = await payment.create({ body: mpPayload });
+        // Usamos 'as any' para passar os cabeçalhos customizados que não estão no Type oficial do SDK v2
+        const mpResult = await payment.create({
+            body: mpPayload,
+            requestOptions: {
+                idempotencyKey: idempotencyKey || crypto.randomUUID(),
+                // @ts-ignore - customHeaders é necessário para o Device ID aumentar a nota de qualidade
+                customHeaders: {
+                    'X-Id-Device': deviceId || ''
+                }
+            }
+        });
         console.log("MP Result ID:", mpResult.id);
 
         // 3. Update DB com status final
