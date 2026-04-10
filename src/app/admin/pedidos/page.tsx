@@ -2,22 +2,19 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import { MapPin, Phone, CreditCard, CheckCircle2, XCircle, Clock, ExternalLink, RefreshCw, Trash2 } from 'lucide-react'
 import Link from 'next/link'
-import { updateOrderStatus, deleteOrder } from '../../actions'
+import { deleteOrder } from '../../actions'
 import PaymentStatusSelect from './components/PaymentStatusSelect'
 import OrderStatusSelect from './components/OrderStatusSelect'
-import { MercadoPagoConfig, Payment } from 'mercadopago'
 
-export default async function OrdersPage() {
-    // 1. Fetch orders from DB
-    const orders = await prisma.order.findMany({
-        where: { deletedAt: null },
-        orderBy: { createdAt: 'desc' },
-        include: { product: true }
-    })
+async function syncMercadoPagoOrders(orders: any[]) {
+    // Only sync if MP token is available
+    if (!process.env.MP_ACCESS_TOKEN) return orders;
 
-    // 2. Auto-sync pending payments with Mercado Pago
-    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
-    const payment = new Payment(client);
+    const pendingOrders = orders.filter(
+        o => o.mpPaymentId && (o.paymentStatus === 'processando' || o.paymentStatus === 'aguardando')
+    );
+
+    if (pendingOrders.length === 0) return orders;
 
     const statusMap: Record<string, string> = {
         'approved': 'pago',
@@ -29,10 +26,14 @@ export default async function OrdersPage() {
         'refunded': 'reembolsado'
     };
 
-    for (const order of orders) {
-        if (order.mpPaymentId && (order.paymentStatus === 'processando' || order.paymentStatus === 'aguardando')) {
+    try {
+        const { MercadoPagoConfig, Payment } = await import('mercadopago');
+        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+        const paymentClient = new Payment(client);
+
+        for (const order of pendingOrders) {
             try {
-                const mpResult = await payment.get({ id: order.mpPaymentId });
+                const mpResult = await paymentClient.get({ id: order.mpPaymentId });
                 const newStatus = statusMap[mpResult.status || ''] || order.paymentStatus;
 
                 if (newStatus !== order.paymentStatus) {
@@ -44,28 +45,46 @@ export default async function OrdersPage() {
                         }
                     });
                     // Update local object for this render
-                    order.paymentStatus = newStatus;
-                    if (newStatus === 'pago') order.status = 'processando';
+                    const localOrder = orders.find(o => o.id === order.id);
+                    if (localOrder) {
+                        localOrder.paymentStatus = newStatus;
+                        if (newStatus === 'pago') localOrder.status = 'processando';
+                    }
                 }
             } catch (e) {
+                // Non-fatal: just skip this order sync
                 console.error(`Error syncing order ${order.id}:`, e);
             }
         }
+    } catch (e) {
+        // Non-fatal: MP SDK not available or misconfigured
+        console.error('Error initializing Mercado Pago for sync:', e);
     }
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'entregue': return '#10b981';
-            case 'enviado': return '#3b82f6';
-            case 'aguardando_envio': return '#f59e0b';
-            case 'cancelado': return '#ef4444';
-            case 'processando': return '#6366f1';
-            case 'pendente': return '#94a3b8';
-            default: return '#94a3b8';
-        }
+    return orders;
+}
+
+export default async function OrdersPage() {
+    let orders: any[] = [];
+
+    try {
+        orders = await prisma.order.findMany({
+            where: { deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+            include: { product: true }
+        });
+    } catch (e) {
+        console.error('Error fetching orders:', e);
+        return (
+            <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px', padding: '40px', textAlign: 'center' }}>
+                <h2 style={{ color: '#ef4444' }}>Erro ao carregar pedidos</h2>
+                <p style={{ color: '#64748b' }}>Tente recarregar a página. Se o problema persistir, verifique as configurações do banco de dados.</p>
+            </div>
+        )
     }
 
-    const gridLayout = 'minmax(180px, 1fr) minmax(130px, 0.8fr) minmax(220px, 1fr) minmax(130px, 0.8fr) minmax(90px, 0.5fr) minmax(130px, 0.8fr) minmax(135px, 0.8fr) 120px';
+    // Sync MP status in background - errors are handled internally
+    orders = await syncMercadoPagoOrders(orders);
 
     return (
         <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px' }}>
@@ -100,7 +119,7 @@ export default async function OrdersPage() {
                             }}
                         />
                         <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-                            <RefreshCw size={16} /> {/* Replace with Search icon if available */}
+                            <RefreshCw size={16} />
                         </div>
                     </div>
                 </div>
@@ -276,33 +295,36 @@ export default async function OrdersPage() {
                                     }}
                                 >
                                     <ExternalLink size={14} /> WhatsApp
-                                </a >
+                                </a>
 
-                                <form action={async () => {
-                                    'use server'
-                                    await deleteOrder(order.id)
-                                }}>
-                                    <button style={{
-                                        width: '38px',
-                                        height: '38px',
-                                        background: '#fff',
-                                        borderRadius: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#e11d48',
-                                        border: '1px solid #ffe4e6',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.2s'
-                                    }}>
-                                        <Trash2 size={16} />
-                                    </button>
-                                </form>
+                                <DeleteOrderButton orderId={order.id} />
                             </div>
                         </div>
                     </div>
                 ))}
             </div>
         </div>
+    )
+}
+
+async function DeleteOrderButton({ orderId }: { orderId: string }) {
+    return (
+        <form action={deleteOrder.bind(null, orderId)}>
+            <button style={{
+                width: '38px',
+                height: '38px',
+                background: '#fff',
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#e11d48',
+                border: '1px solid #ffe4e6',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+            }}>
+                <Trash2 size={16} />
+            </button>
+        </form>
     )
 }
