@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { deleteOrder } from '../../actions'
 import PaymentStatusSelect from './components/PaymentStatusSelect'
 import OrderStatusSelect from './components/OrderStatusSelect'
+import { MercadoPagoConfig, Payment } from 'mercadopago'
 
 async function syncMercadoPagoOrders(orders: any[]) {
     // Only sync if MP token is available
@@ -27,7 +28,6 @@ async function syncMercadoPagoOrders(orders: any[]) {
     };
 
     try {
-        const { MercadoPagoConfig, Payment } = await import('mercadopago');
         const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
         const paymentClient = new Payment(client);
 
