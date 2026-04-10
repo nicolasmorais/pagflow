@@ -86,8 +86,7 @@ export default function AdminLayout({
     const pathname = usePathname()
 
     const mainMenu = [
-        { icon: Home, label: 'Dashboard', href: '/admin' },
-        { icon: BarChart3, label: 'Analytics', href: '/admin/analise' },
+        { icon: BarChart3, label: 'Analytics', href: '/admin' },
         {
             icon: ShoppingCart,
             label: 'Todas as Vendas',
@@ -126,7 +125,8 @@ export default function AdminLayout({
     ]
 
     return (
-        <div className="admin-layout">
+        <div className="admin-layout" style={{ fontFamily: '"Nunito", sans-serif' }}>
+            <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
             {/* Sidebar Navigation - Hidden on Mobile */}
             <aside className="sidebar desktop-only">
                 <div className="sidebar-logo" style={{ padding: '0 12px', marginBottom: '24px' }}>
@@ -138,10 +138,6 @@ export default function AdminLayout({
                 </div>
 
                 <div className="sidebar-scroll">
-                    <div style={{ padding: '0 8px' }}>
-                        <div style={{ height: '1px', background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)', marginBottom: '24px' }}></div>
-                    </div>
-
                     <nav className="sidebar-nav">
                         {mainMenu.map((item) => (
                             <SidebarItem
@@ -176,13 +172,13 @@ export default function AdminLayout({
                     <div style={{ padding: '0 12px 16px' }}>
                         <NotificationCenter />
                     </div>
-                    <div className="user-profile" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', padding: '12px' }}>
-                        <div className="user-avatar" style={{ background: 'var(--sidebar-icon-active-bg)', color: '#fff' }}>AD</div>
+                    <div className="user-profile">
+                        <div className="user-avatar">AD</div>
                         <div className="user-info">
-                            <span className="user-name" style={{ color: '#fff' }}>Admin</span>
-                            <span className="user-role" style={{ color: 'rgba(255,255,255,0.5)' }}>Pro User</span>
+                            <span className="user-name">Admin</span>
+                            <span className="user-role">Premium User</span>
                         </div>
-                        <Link href="/" title="Sair" style={{ marginLeft: 'auto', color: 'rgba(255,255,255,0.4)', transition: 'color 0.2s' }}>
+                        <Link href="/" title="Sair" className="logout-btn">
                             <LogOut size={16} />
                         </Link>
                     </div>

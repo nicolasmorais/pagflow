@@ -279,26 +279,36 @@ export async function saveOrderProgress(data: any) {
         const { id, ...payload } = data;
 
         if (id) {
-            const updated = await prisma.order.update({
-                where: { id },
-                data: payload,
-            });
-            return { success: true, id: updated.id };
-        } else {
-            const created = await prisma.order.create({
-                data: {
-                    ...payload,
-                    paymentStatus: 'abandonado'
-                },
-            });
-            revalidatePath('/admin/abandonados');
-            revalidatePath('/admin');
-
-            // Notify Admin
-            await sendAdminNotification('abandoned', { ...payload, id: created.id }).catch(e => console.error(e));
-
-            return { success: true, id: created.id };
+            const existing = await prisma.order.findUnique({ where: { id } });
+            if (existing) {
+                const updated = await prisma.order.update({
+                    where: { id },
+                    data: {
+                        ...payload,
+                        // Garante que continue como abandonado enquanto navega no checkout
+                        paymentStatus: payload.paymentStatus || 'abandonado'
+                    },
+                });
+                revalidatePath('/admin/abandonados');
+                revalidatePath('/admin');
+                return { success: true, id: updated.id };
+            }
         }
+
+        // Caso não tenha id ou o id não exista no banco, cria um novo
+        const created = await prisma.order.create({
+            data: {
+                ...payload,
+                paymentStatus: 'abandonado'
+            },
+        });
+        revalidatePath('/admin/abandonados');
+        revalidatePath('/admin');
+
+        // Notify Admin
+        await sendAdminNotification('abandoned', { ...payload, id: created.id }).catch(e => console.error(e));
+
+        return { success: true, id: created.id };
     } catch (error) {
         console.error('Save Progress Error:', error);
         return { success: false };

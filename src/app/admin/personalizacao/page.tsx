@@ -21,6 +21,7 @@ export default function PersonalizacaoPage() {
     const [cardDiscount, setCardDiscount] = useState('0')
     const [checkoutStoreName, setCheckoutStoreName] = useState('')
     const [disableBack, setDisableBack] = useState(false)
+    const [disableWa, setDisableWa] = useState(false)
 
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
@@ -49,6 +50,7 @@ export default function PersonalizacaoPage() {
                 const cDisc = await getCustomization('checkout_card_discount')
                 const sName = await getCustomization('checkout_store_name')
                 const dBack = await getCustomization('checkout_disable_back')
+                const dWa = await getCustomization('checkout_disable_wa')
 
                 setCheckoutLogo(logo)
                 setCheckoutFooter(footer)
@@ -65,6 +67,7 @@ export default function PersonalizacaoPage() {
                 setCardDiscount(cDisc || '0')
                 setCheckoutStoreName(sName || '')
                 setDisableBack(dBack === 'true')
+                setDisableWa(dWa === 'true')
             } catch (error) {
                 console.error('Error loading settings:', error)
             } finally {
@@ -95,6 +98,7 @@ export default function PersonalizacaoPage() {
             await updateCustomization('checkout_card_discount', cardDiscount)
             await updateCustomization('checkout_store_name', checkoutStoreName)
             await updateCustomization('checkout_disable_back', disableBack ? 'true' : 'false')
+            await updateCustomization('checkout_disable_wa', disableWa ? 'true' : 'false')
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
 
@@ -476,6 +480,44 @@ export default function PersonalizacaoPage() {
                                     height: '18px',
                                     width: '18px',
                                     left: disableBack ? '28px' : '4px',
+                                    bottom: '4px',
+                                    backgroundColor: 'white',
+                                    transition: '.4s',
+                                    borderRadius: '50%'
+                                }}></span>
+                            </span>
+                        </label>
+                    </div>
+
+                    {/* Disable WhatsApp Toggle */}
+                    <div style={{ marginBottom: '32px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div>
+                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block' }}>
+                                Desativar WhatsApp Flutuante
+                            </label>
+                            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
+                                Oculta o botão flutuante de WhatsApp no canto inferior do checkout.
+                            </p>
+                        </div>
+                        <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={disableWa}
+                                onChange={(e) => setDisableWa(e.target.checked)}
+                                style={{ opacity: 0, width: 0, height: 0 }}
+                            />
+                            <span style={{
+                                position: 'absolute',
+                                top: 0, left: 0, right: 0, bottom: 0,
+                                backgroundColor: disableWa ? '#4f46e5' : '#ccc',
+                                transition: '.4s',
+                                borderRadius: '34px'
+                            }}>
+                                <span style={{
+                                    position: 'absolute',
+                                    height: '18px',
+                                    width: '18px',
+                                    left: disableWa ? '28px' : '4px',
                                     bottom: '4px',
                                     backgroundColor: 'white',
                                     transition: '.4s',

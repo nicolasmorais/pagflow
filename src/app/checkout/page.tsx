@@ -79,7 +79,8 @@ export default async function CheckoutPage({
                     'checkout_disable_back',
                     'marketing_taboola_id',
                     'marketing_facebook_id',
-                    'marketing_google_id'
+                    'marketing_google_id',
+                    'checkout_disable_wa'
                 ]
             }
         }
@@ -100,7 +101,8 @@ export default async function CheckoutPage({
         cardDiscount: settings.find((s: any) => s.key === 'checkout_card_discount')?.value || '0',
         disableCpf: settings.find((s: any) => s.key === 'checkout_disable_cpf')?.value === 'true',
         storeName: settings.find((s: any) => s.key === 'checkout_store_name')?.value || 'PagFlow',
-        disableBack: settings.find((s: any) => s.key === 'checkout_disable_back')?.value === 'true'
+        disableBack: settings.find((s: any) => s.key === 'checkout_disable_back')?.value === 'true',
+        disableWa: settings.find((s: any) => s.key === 'checkout_disable_wa')?.value === 'true'
     }
 
     const pixels = {

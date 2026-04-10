@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 
         const fullName = orderData.nome || orderData.fullName || "Cliente PagFlow";
         const phone = orderData.telefone || orderData.phone || "";
-        const price = Number(orderData.price) || 0;
+        const price = Number(Number(orderData.price).toFixed(2)) || 0;
 
         // 0. Buscar produto para ter o nome
         const product = orderData.productId ? await prisma.product.findUnique({
@@ -95,9 +95,8 @@ export async function POST(req: NextRequest) {
                 last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
                 identification: {
                     type: 'CPF',
-                    number: cpfToSave
+                    number: cpfToSave || '12345678909'
                 },
-                device_id: deviceId, // Fallback para algumas versões da API
                 address: {
                     zip_code: orderData.cep?.replace(/\D/g, '') || '',
                     street_name: orderData.rua || '',

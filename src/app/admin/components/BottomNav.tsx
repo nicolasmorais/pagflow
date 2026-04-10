@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, ShoppingCart, Package, Settings } from 'lucide-react'
+import { BarChart3, ShoppingCart, Package, Settings } from 'lucide-react'
 import NotificationCenter from './NotificationCenter'
 
 const getItemStyle = (active: boolean) => ({
@@ -23,7 +23,7 @@ export default function BottomNav() {
     const pathname = usePathname()
 
     const navItems = [
-        { Icon: Home, label: 'Dashboard', href: '/admin' },
+        { Icon: BarChart3, label: 'Analytics', href: '/admin' },
         { Icon: ShoppingCart, label: 'Vendas', href: '/admin/vendas' },
         { Icon: Package, label: 'Produtos', href: '/admin/produtos' },
         { Icon: Settings, label: 'Configs', href: '/admin/configuracoes' },
@@ -47,7 +47,7 @@ export default function BottomNav() {
             visibility: 'hidden'
         }}>
             <Link key={navItems[0].href} href={navItems[0].href} style={getItemStyle(pathname === navItems[0].href)}>
-                <Home size={22} />
+                <BarChart3 size={22} />
             </Link>
 
             <Link key={navItems[1].href} href={navItems[1].href} style={getItemStyle(pathname === navItems[1].href)}>
