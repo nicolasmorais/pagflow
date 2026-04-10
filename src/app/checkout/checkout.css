@@ -1546,3 +1546,290 @@ input::placeholder {
     text-decoration: none;
     font-size: 14px;
 }
+
+/* ============================================== */
+/* CARD PAYMENT CONFIRMATION PAGE                */
+/* ============================================== */
+
+.card-confirm-page { width: 100%; }
+
+/* HERO */
+.cc-hero {
+    background: #0d6e4a;
+    padding: 48px 24px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    border-radius: 0 0 28px 28px;
+}
+.cc-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+}
+.cc-confetti-ring {
+    position: relative;
+    width: 88px; height: 88px;
+    margin: 0 auto 20px;
+}
+.cc-confetti-ring svg {
+    width: 88px; height: 88px;
+    animation: ccPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+@keyframes ccPop {
+    0% { transform: scale(0.4); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes ccFadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.cc-hero-title {
+    font-family: 'Merriweather', serif;
+    font-size: 26px;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 10px;
+    animation: ccFadeUp 0.5s 0.15s both;
+}
+.cc-hero-sub {
+    font-size: 15px;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.55;
+    animation: ccFadeUp 0.5s 0.25s both;
+}
+
+/* RECEIPT */
+.cc-receipt {
+    background: #fff;
+    border-radius: 16px;
+    margin: -12px 16px 0;
+    position: relative;
+    z-index: 2;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border: 1px solid #e2ddd6;
+    overflow: hidden;
+    animation: ccFadeUp 0.5s 0.35s both;
+}
+.cc-receipt-header {
+    background: #fdf6e3;
+    border-bottom: 1px solid #ede3c4;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.cc-tag {
+    background: #b8933a;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+}
+.cc-order-id {
+    font-size: 13px;
+    color: #6b6860;
+    margin-left: auto;
+}
+.cc-order-id span {
+    color: #1a1a18;
+    font-weight: 700;
+}
+.cc-receipt-rows { padding: 4px 0; }
+.cc-receipt-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 20px;
+    border-bottom: 1px solid #e2ddd6;
+    gap: 12px;
+}
+.cc-receipt-row:last-child { border-bottom: none; }
+.cc-label {
+    font-size: 13px;
+    color: #6b6860;
+    flex-shrink: 0;
+}
+.cc-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1a1a18;
+    text-align: right;
+}
+.cc-value.cc-green { color: #0d6e4a; }
+.cc-total-row {
+    background: #e6f4ef;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 2px solid #c2e0d3;
+}
+.cc-total-row .cc-label {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0d6e4a;
+}
+.cc-total-value {
+    font-family: 'Merriweather', serif;
+    font-size: 24px;
+    color: #0d6e4a;
+}
+
+/* CARD VISUAL */
+.cc-card-visual-wrap {
+    margin: 14px 16px 0;
+    animation: ccFadeUp 0.5s 0.45s both;
+}
+.cc-card-visual {
+    background: linear-gradient(135deg, #1a3a2a 0%, #0d6e4a 60%, #1a5c3a 100%);
+    border-radius: 16px;
+    padding: 22px 22px 18px;
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+}
+.cc-card-visual::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+}
+.cc-card-visual::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 20px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+}
+.cc-card-chip {
+    width: 36px; height: 28px;
+    background: linear-gradient(135deg, #d4a843, #f0c860);
+    border-radius: 5px;
+    margin-bottom: 24px;
+    position: relative;
+    z-index: 1;
+}
+.cc-card-number {
+    font-size: 15px;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+    font-weight: 600;
+}
+.cc-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    position: relative;
+    z-index: 1;
+}
+.cc-card-holder-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 3px;
+}
+.cc-card-holder-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.03em;
+}
+.cc-card-flag {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+.cc-card-flag-circles { display: flex; }
+.cc-circle-red {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #eb001b;
+}
+.cc-circle-orange {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #f79e1b;
+    margin-left: -14px;
+}
+
+/* STEPS CARD */
+.cc-steps-card {
+    background: #fff;
+    border-radius: 16px;
+    margin: 14px 16px 0;
+    padding: 20px;
+    border: 1px solid #e2ddd6;
+    animation: ccFadeUp 0.5s 0.55s both;
+}
+.cc-steps-title {
+    font-family: 'Merriweather', serif;
+    font-size: 17px;
+    color: #1a1a18;
+    margin-bottom: 16px;
+}
+.cc-step-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 10px 0;
+    border-bottom: 1px solid #e2ddd6;
+}
+.cc-step-item:last-child { border-bottom: none; padding-bottom: 0; }
+.cc-step-dot {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #e6f4ef;
+    border: 2px solid #c2e0d3;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.cc-step-dot svg { width: 16px; height: 16px; }
+.cc-step-text-title { font-size: 14px; font-weight: 700; color: #1a1a18; margin-bottom: 2px; }
+.cc-step-text-desc { font-size: 13px; color: #6b6860; line-height: 1.4; }
+
+/* TRUST ROW */
+.cc-trust-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin: 16px 16px 0;
+    animation: ccFadeUp 0.5s 0.75s both;
+}
+.cc-trust-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #6b6860;
+    font-weight: 600;
+}
+
+/* HELP */
+.cc-help {
+    text-align: center;
+    padding: 20px 16px 8px;
+    font-size: 14px;
+    color: #6b6860;
+    animation: ccFadeUp 0.5s 0.85s both;
+}
+.cc-help a {
+    color: #0d6e4a;
+    font-weight: 700;
+    text-decoration: none;
+}
