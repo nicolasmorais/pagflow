@@ -176,11 +176,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
             // Se brickData existir, ele já vem tokenizado pelo Mercado Pago Brick
             if (brickData) {
+                const payloadSrc = brickData.formData ? brickData.formData : brickData;
                 tokenData = {
-                    token: brickData.token,
-                    installments: brickData.installments,
-                    payment_method_id: brickData.payment_method_id,
-                    issuer_id: brickData.issuer_id
+                    token: payloadSrc.token,
+                    installments: payloadSrc.installments,
+                    payment_method_id: payloadSrc.payment_method_id,
+                    issuer_id: payloadSrc.issuer_id
                 };
             }
             else if (paymentMethod === 'card') {
@@ -286,8 +287,19 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             onReady: () => {
                                 console.log("Card Brick Ready");
                             },
-                            onSubmit: ({ formData }) => {
+                            onSubmit: (formData) => {
                                 return new Promise((resolve, reject) => {
+                                    console.log("Card FormData Completo:", formData);
+
+                                    // Validar se o Brick gerou um token válido
+                                    const tokenSrc = formData?.formData || formData;
+                                    if (!tokenSrc || !tokenSrc.token) {
+                                        console.error("❌ Token não gerado pelo Brick. Possível bloqueio CORS/WAF do Mercado Pago.");
+                                        alert("Não foi possível processar o cartão. O sistema de segurança bloqueou a operação. Tente novamente ou utilize o PIX.");
+                                        reject(new Error("Token do cartão não disponível"));
+                                        return;
+                                    }
+
                                     finalizar(formData)
                                         .then(resolve)
                                         .catch(reject);
