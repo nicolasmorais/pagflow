@@ -6,7 +6,13 @@ import { redirect } from 'next/navigation'
 export async function loginAction(formData: FormData) {
     const password = formData.get('password') as string
 
-    if (password === '84740949') {
+    const adminPassword = process.env.ADMIN_PASSWORD
+    if (!adminPassword) {
+        console.error('ADMIN_PASSWORD env var not set!')
+        return { error: 'Configuração do servidor incorreta.' }
+    }
+
+    if (password === adminPassword) {
         const cookieStore = await cookies()
         cookieStore.set('admin_auth', 'authenticated', {
             httpOnly: true,

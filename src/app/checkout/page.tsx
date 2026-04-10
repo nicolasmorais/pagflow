@@ -20,7 +20,7 @@ export async function generateMetadata({
         if (p) productName = p.name
     }
 
-    const storeSetting = await (prisma as any).customization_settings.findFirst({
+    const storeSetting = await prisma.customization_settings.findFirst({
         where: { key: 'checkout_store_name' }
     })
     const storeName = storeSetting?.value || 'PagFlow Checkout'
@@ -58,7 +58,7 @@ export default async function CheckoutPage({
     }
 
     // Fetch customization settings
-    const settings = await (prisma as any).customization_settings.findMany({
+    const settings = await prisma.customization_settings.findMany({
         where: {
             key: {
                 in: [
@@ -111,16 +111,14 @@ export default async function CheckoutPage({
         googleId: settings.find((s: any) => s.key === 'marketing_google_id')?.value || ''
     }
 
-    // Fetch order bumps
-    const p = prisma as any;
-    const orderBumps = (p.orderBump || p.OrderBump) ? await (p.orderBump || p.OrderBump).findMany({
+    const orderBumps = await prisma.orderBump.findMany({
         where: {
             OR: [
                 { productId: null },
                 { productId: productId || '' }
             ]
         }
-    }) : [];
+    });
 
     // Map order bumps to simple objects
     const mappedOrderBumps = orderBumps.map((bump: any) => ({
@@ -132,7 +130,7 @@ export default async function CheckoutPage({
     }))
 
     // Fetch shipping rules
-    const shippingRules = await (prisma as any).shipping_rules.findMany({
+    const shippingRules = await prisma.shipping_rules.findMany({
         where: { is_active: true },
         orderBy: { price: 'asc' }
     })

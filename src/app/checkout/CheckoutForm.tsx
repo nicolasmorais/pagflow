@@ -14,7 +14,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
-    const [shipping, setShipping] = useState(shippingRules[0] || { label: 'Entrega Econômica', price: 0, delivery_time: '7 dias úteis' });
+    const defaultShipping = shippingRules && shippingRules.length > 0
+        ? shippingRules[0]
+        : { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' };
+    const [shipping, setShipping] = useState(defaultShipping);
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | ''>('');
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -322,7 +325,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 if (!container) return; // Prevent creating if DOM is not ready
                 container.innerHTML = '';
 
-                const mp = new (window as any).MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || 'APP_USR-ecbf9e53-4fee-47e3-8356-326c5313433c');
+                const mp = new (window as any).MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!);
                 const bricksBuilder = mp.bricks();
 
                 // Prevent multiple instances in development StrictMode
@@ -805,17 +808,16 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
 
                                     <div className="frete-title">🚚 Escolha a forma de entrega:</div>
-                                    {[
-                                        { label: 'Entrega Econômica', name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' },
-                                        { label: 'Entrega Rápida Prioritária', name: 'Entrega Rápida Prioritária ⚡', price: 9.90, delivery_time: 'Chega em até 5 dias úteis' }
-                                    ].map(opt => (
-                                        <div key={opt.price} className={`frete-opt ${shipping.price === opt.price ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
+                                    {(shippingRules && shippingRules.length > 0 ? shippingRules : [
+                                        { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' }
+                                    ]).map((opt: any, idx: number) => (
+                                        <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
                                             <div className="frete-radio"></div>
                                             <div className="frete-info">
                                                 <div className="frete-name">{opt.name} {opt.price === 0 && <span className="frete-tag">GRÁTIS</span>}</div>
                                                 <div className="frete-days">📅 {opt.delivery_time}</div>
                                             </div>
-                                            <div className={`frete-price ${opt.price === 0 ? 'free' : ''}`}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${opt.price.toFixed(2).replace('.', ',')}`}</div>
+                                            <div className={`frete-price ${opt.price === 0 ? 'free' : ''}`}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
                                         </div>
                                     ))}
 

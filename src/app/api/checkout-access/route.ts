@@ -1,15 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { productId, source, medium, campaign, term, content } = body;
 
-    const p = prisma as any;
-    const newId = require('crypto').randomUUID();
-    
-    await p.$executeRaw`INSERT INTO "CheckoutAccess" (id, "productId", source, medium, campaign, term, content, "createdAt") VALUES (${newId}, ${productId || null}, ${source || null}, ${medium || null}, ${campaign || null}, ${term || null}, ${content || null}, NOW())`;
+    const newId = crypto.randomUUID();
+
+    await prisma.checkoutAccess.create({
+      data: {
+        id: newId,
+        productId: productId || null,
+        source: source || null,
+        medium: medium || null,
+        campaign: campaign || null,
+        term: term || null,
+        content: content || null
+      }
+    });
 
     return NextResponse.json({ success: true, accessId: newId });
   } catch (error: any) {
@@ -22,10 +32,10 @@ export async function PUT(req: NextRequest) {
   let body;
   try {
     body = await req.json();
-  } catch(e) {
+  } catch (e) {
     return NextResponse.json({ success: false, error: "Invalid JSON" }, { status: 400 });
   }
-  
+
   const { accessId, step } = body;
 
   if (!accessId) {
@@ -42,10 +52,10 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const p = prisma as any;
-    
-    // Try direct SQL update
-    await p.$executeRawUnsafe(`UPDATE "CheckoutAccess" SET "${column}" = true WHERE id = '${accessId}'`);
+    await (prisma.checkoutAccess as any).update({
+      where: { id: accessId },
+      data: { [column]: true }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

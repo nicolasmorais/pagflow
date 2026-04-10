@@ -2,8 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { MercadoPagoConfig, Payment, CardToken } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+    // ── Rate Limiting ──────────────────────────────────────────────────────
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || req.headers.get('x-real-ip')
+        || 'unknown';
+    const { limited } = checkRateLimit(`payment:${ip}`, 10, 60_000);
+    if (limited) {
+        return NextResponse.json(
+            { success: false, error: 'Muitas tentativas. Aguarde 1 minuto e tente novamente.' },
+            { status: 429 }
+        );
+    }
+
     try {
         const body = await req.json();
         const { method, cardData, orderData, brickData, orderId } = body;
@@ -46,17 +59,20 @@ export async function POST(req: NextRequest) {
             selectedBumps: Array.isArray(selectedBumpIds) ? selectedBumpIds : [],
             product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined
         };
+
         let order;
         if (orderId) {
-            // Verificar se o pedido existe antes de tentar atualizar (Prisma joga erro 500 se não encontrar no update)
+            // ── Security: only allow updating orders still in "abandonado" state ──
+            // This prevents someone from hijacking a paid order via a leaked orderId
             const existing = await prisma.order.findUnique({ where: { id: orderId } });
 
-            if (existing) {
+            if (existing && existing.paymentStatus === 'abandonado') {
                 order = await prisma.order.update({
                     where: { id: orderId },
                     data: orderDataToSave
                 });
             } else {
+                // Order doesn't exist or is already past abandoned state → create new
                 order = await prisma.order.create({
                     data: orderDataToSave
                 });
@@ -125,8 +141,10 @@ export async function POST(req: NextRequest) {
             const brick = brickData?.formData || brickData;
             const card = cardData?.formData || cardData;
 
-            console.log("🔹 [DEBUG] brickData recebido:", JSON.stringify(brickData, null, 2));
-            console.log("🔹 [DEBUG] cardData recebido:", JSON.stringify(cardData, null, 2));
+            if (process.env.NODE_ENV !== 'production') {
+                console.log("🔹 [DEBUG] brickData recebido:", JSON.stringify(brickData, null, 2));
+                console.log("🔹 [DEBUG] cardData recebido:", JSON.stringify(cardData, null, 2));
+            }
 
             if (brick && brick.token) {
                 mpPayload.token = brick.token;
@@ -144,7 +162,9 @@ export async function POST(req: NextRequest) {
         }
 
         const payment = new Payment(client);
-        console.log("Creating Payment with payload:", JSON.stringify(mpPayload, null, 2));
+        if (process.env.NODE_ENV !== 'production') {
+            console.log("Creating Payment with payload:", JSON.stringify(mpPayload, null, 2));
+        }
 
         // Usamos 'as any' para passar os cabeçalhos customizados que não estão no Type oficial do SDK v2
         const mpResult = await payment.create({
@@ -223,7 +243,6 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         console.error("PAYMENT API ERROR DETAIL:", error);
-        console.log("Full Error Object:", JSON.stringify(error, null, 2));
 
         // Tentar capturar a mensagem de erro do Mercado Pago se existir
         let apiError = error.message;

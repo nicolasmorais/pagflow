@@ -83,7 +83,7 @@ export async function sendConfirmationEmail(orderId: string) {
         // Record Log
         try {
             console.log('RECORDING EMAIL LOG FOR ORDER:', order.id);
-            await (prisma as any).emailLog.create({
+            await prisma.emailLog.create({
                 data: {
                     orderId: order.id,
                     type: 'confirmation',
@@ -255,7 +255,7 @@ export async function sendTrackingEmail(orderId: string) {
 
         // Record Log
         try {
-            await (prisma as any).emailLog.create({
+            await prisma.emailLog.create({
                 data: {
                     orderId: order.id,
                     type: 'tracking',
@@ -288,7 +288,7 @@ export async function sendTrackingEmail(orderId: string) {
 export async function getEmailLogs(orderId: string) {
     try {
         console.log('FETCHING LOGS FOR ORDER:', orderId);
-        const logs = await (prisma as any).emailLog.findMany({
+        const logs = await prisma.emailLog.findMany({
             where: { orderId },
             orderBy: { sentAt: 'desc' }
         });
@@ -302,10 +302,7 @@ export async function getEmailLogs(orderId: string) {
 
 export async function updateOrderTracking(orderId: string, trackingCode: string, trackingUrl?: string) {
     try {
-        const p = prisma as any;
-        const model = p.order || p.Order;
-
-        await model.update({
+        await prisma.order.update({
             where: { id: orderId },
             data: {
                 trackingCode,
@@ -494,7 +491,7 @@ export async function deleteOrder(orderId: string): Promise<void> {
 // Customization Actions
 export async function updateCustomization(key: string, value: string) {
     try {
-        await (prisma as any).customization_settings.upsert({
+        await prisma.customization_settings.upsert({
             where: { key },
             update: { value, updated_at: new Date() },
             create: { key, value }
@@ -510,7 +507,7 @@ export async function updateCustomization(key: string, value: string) {
 
 export async function getCustomization(key: string) {
     try {
-        const setting = await (prisma as any).customization_settings.findUnique({
+        const setting = await prisma.customization_settings.findUnique({
             where: { key }
         })
         return setting?.value || ''
@@ -523,8 +520,7 @@ export async function getCustomization(key: string) {
 // Shipping Actions
 export async function getShippingRules() {
     try {
-        const p = prisma as any;
-        const rules = await p.shipping_rules.findMany({
+        const rules = await prisma.shipping_rules.findMany({
             orderBy: { price: 'asc' }
         })
 
@@ -541,7 +537,7 @@ export async function getShippingRules() {
 
 export async function createShippingRule(data: { name: string, price: number, delivery_time: string }) {
     try {
-        await (prisma as any).shipping_rules.create({
+        await prisma.shipping_rules.create({
             data: {
                 name: data.name,
                 price: data.price,
@@ -560,7 +556,7 @@ export async function createShippingRule(data: { name: string, price: number, de
 
 export async function updateShippingRule(id: string, data: { name: string, price: number, delivery_time: string, is_active: boolean }) {
     try {
-        await (prisma as any).shipping_rules.update({
+        await prisma.shipping_rules.update({
             where: { id },
             data: {
                 name: data.name,
@@ -580,7 +576,7 @@ export async function updateShippingRule(id: string, data: { name: string, price
 
 export async function deleteShippingRule(id: string) {
     try {
-        await (prisma as any).shipping_rules.delete({ where: { id } })
+        await prisma.shipping_rules.delete({ where: { id } })
         revalidatePath('/checkout')
         revalidatePath('/admin/ecommerce')
         return { success: true }
@@ -592,9 +588,9 @@ export async function deleteShippingRule(id: string) {
 
 export async function setupInitialShipping() {
     try {
-        const count = await (prisma as any).shipping_rules.count()
+        const count = await prisma.shipping_rules.count()
         if (count === 0) {
-            await (prisma as any).shipping_rules.createMany({
+            await prisma.shipping_rules.createMany({
                 data: [
                     { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' },
                     { name: 'Entrega Rápida Prioritária', price: 12.90, delivery_time: 'Chega em até 3 dias úteis' }
@@ -617,8 +613,7 @@ export async function createOrderBump(formData: FormData) {
     const productId = formData.get('productId') as string
     const imageUrl = formData.get('imageUrl') as string
 
-    const p = prisma as any;
-    await (p.orderBump || p.OrderBump).create({
+    await prisma.orderBump.create({
         data: {
             name,
             price,
@@ -632,16 +627,14 @@ export async function createOrderBump(formData: FormData) {
 }
 
 export async function deleteOrderBump(id: string) {
-    const p = prisma as any;
-    await (p.orderBump || p.OrderBump).delete({
+    await prisma.orderBump.delete({
         where: { id }
     })
     revalidatePath('/admin/ordem')
 }
 
 export async function toggleOrderBump(id: string, isActive: boolean) {
-    const p = prisma as any;
-    await (p.orderBump || p.OrderBump).update({
+    await prisma.orderBump.update({
         where: { id },
         data: { isActive }
     })

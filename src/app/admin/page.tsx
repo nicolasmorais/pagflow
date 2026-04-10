@@ -13,7 +13,6 @@ export default async function AdminPage({
     searchParams: Promise<{ from?: string; to?: string; filter?: string }>
 }) {
     const params = await searchParams
-    const p = prisma as any
 
     const now = new Date()
     const formatDate = (d: Date) => {
@@ -85,7 +84,7 @@ export default async function AdminPage({
     // ── Fetch checkout accesses ─────────────────────────────────────────────
     let accesses: any[] = []
     try {
-        accesses = await p.checkoutAccess.findMany({
+        accesses = await prisma.checkoutAccess.findMany({
             where: {
                 createdAt: {
                     gte: new Date(fromDate + 'T00:00:00'),
@@ -107,7 +106,7 @@ export default async function AdminPage({
     const paymentCount = accesses.filter((a: any) => a.paymentCompleted).length;
 
     // ── Fetch all orders ──────────────────────────────────────────────────
-    const allOrders = await p.order.findMany({
+    const allOrders = await prisma.order.findMany({
         where: {
             createdAt: {
                 gte: new Date(fromDate + 'T00:00:00'),
