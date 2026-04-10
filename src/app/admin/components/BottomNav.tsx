@@ -24,7 +24,7 @@ export default function BottomNav() {
 
     const navItems = [
         { Icon: BarChart3, label: 'Analytics', href: '/admin' },
-        { Icon: ShoppingCart, label: 'Vendas', href: '/admin/vendas' },
+        { Icon: ShoppingCart, label: 'Vendas', href: '/admin/pedidos' },
         { Icon: Package, label: 'Produtos', href: '/admin/produtos' },
         { Icon: Settings, label: 'Configs', href: '/admin/configuracoes' },
     ]

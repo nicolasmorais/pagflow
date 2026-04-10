@@ -12,6 +12,7 @@ import {
     Wallet,
 } from 'lucide-react'
 import Link from 'next/link'
+import OrderStatusSelect from '../pedidos/components/OrderStatusSelect'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ const getStatus = (s: string) => STATUS_CONFIG[s] ?? STATUS_CONFIG.processando;
 const formatBRL = (v: number) =>
     v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-const gridLayout = 'minmax(220px, 1.5fr) minmax(140px, 1fr) minmax(130px, 0.8fr) minmax(160px, 1fr) 160px';
+const gridLayout = 'minmax(210px, 1.3fr) minmax(130px, 0.8fr) minmax(120px, 0.8fr) minmax(150px, 1fr) minmax(140px, 0.9fr) 110px';
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
@@ -205,15 +206,25 @@ export default async function VendasPage() {
                                                         {new Date(order.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                                         {order.product && <span style={{ marginLeft: '6px', opacity: 0.8 }}>· {order.product.name}</span>}
                                                     </p>
-                                                    <span style={{
-                                                        fontSize: '10px', fontWeight: 800, textTransform: 'uppercase',
-                                                        padding: '2px 9px', borderRadius: '7px',
-                                                        background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
-                                                        display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap'
-                                                    }}>
-                                                        <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: sc.dot, display: 'inline-block', flexShrink: 0 }} />
-                                                        {sc.label}
-                                                    </span>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <span style={{
+                                                            fontSize: '10px', fontWeight: 800, textTransform: 'uppercase',
+                                                            padding: '2px 9px', borderRadius: '7px',
+                                                            background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
+                                                            display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap'
+                                                        }}>
+                                                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: sc.dot, display: 'inline-block', flexShrink: 0 }} />
+                                                            {sc.label}
+                                                        </span>
+                                                        <span style={{
+                                                            fontSize: '9px', fontWeight: 800, textTransform: 'uppercase',
+                                                            padding: '2px 8px', borderRadius: '6px',
+                                                            background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0',
+                                                            display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {order.status || 'Pendente'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -242,6 +253,7 @@ export default async function VendasPage() {
                                 <div>Produto</div>
                                 <div>Valor</div>
                                 <div>Pagamento</div>
+                                <div>Status Pedido</div>
                                 <div style={{ textAlign: 'right' }}>Ações</div>
                             </div>
 
@@ -356,7 +368,15 @@ export default async function VendasPage() {
                                                     </span>
                                                 </div>
 
-                                                {/* Col 5: Actions */}
+                                                {/* Col 5: Order Status */}
+                                                <div>
+                                                    <OrderStatusSelect
+                                                        orderId={order.id}
+                                                        initialStatus={order.status || 'pendente'}
+                                                    />
+                                                </div>
+
+                                                {/* Col 6: Actions */}
                                                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                                                     <Link href={`/admin/pedidos/${order.id}`} className="vendas-detail-btn">
                                                         Detalhes <ExternalLink size={12} />
@@ -370,8 +390,9 @@ export default async function VendasPage() {
                         </div>
                     </div>
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
 

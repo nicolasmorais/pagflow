@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import {
     ChevronLeft, Trash2, Package, Phone, Mail,
-    MapPin, CreditCard, User, CheckCircle2, Clock, Truck, ReceiptText
+    MapPin, CreditCard, User, CheckCircle2, Clock, Truck, ReceiptText, Target
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -43,9 +43,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         <div className="pedido-page">
 
             {/* ── Back link ── */}
-            <Link href="/admin/vendas" className="pedido-back-link">
+            <Link href="/admin/pedidos" className="pedido-back-link">
                 <ChevronLeft size={15} strokeWidth={2.5} />
-                Voltar para vendas
+                Voltar para pedidos
             </Link>
 
             {/* ── Header ── */}
@@ -86,7 +86,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <form action={async () => {
                         'use server'
                         await deleteOrder(id)
-                        redirect('/admin/vendas')
+                        redirect('/admin/pedidos')
                     }}>
                         <button type="submit" className="pedido-delete-btn">
                             <Trash2 size={14} />
@@ -194,6 +194,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         )}
                     </div>
                 </div>
+
+                {/* Origem do Pedido (UTMs) */}
+                <div className="pedido-card">
+                    <div className="pedido-card-header">
+                        <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: '#f5f3ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <Target size={14} color="#7c3aed" />
+                        </div>
+                        <span className="pedido-card-title">Origem do Pedido</span>
+                    </div>
+                    <div className="pedido-card-body">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <UtmItem label="Source" value={order.utmSource} color="#7c3aed" />
+                            <UtmItem label="Medium" value={order.utmMedium} color="#8b5cf6" />
+                            <UtmItem label="Campaign" value={order.utmCampaign} color="#a78bfa" />
+                            <UtmItem label="Content" value={order.utmContent} color="#c4b5fd" />
+                            <UtmItem label="Term" value={order.utmTerm} color="#ddd6fe" />
+                            {!order.utmSource && !order.utmMedium && (
+                                <p style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>
+                                    Nenhum dado de rastreamento disponível.
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* ── Status Stepper ── */}
@@ -284,6 +308,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             <TrackingManagement orderId={order.id} initialCode={order.trackingCode} initialUrl={order.trackingUrl} />
             <EmailSection orderId={order.id} email={order.email || ''} />
 
+        </div>
+    )
+}
+
+function UtmItem({ label, value, color }: { label: string; value?: string | null; color: string }) {
+    if (!value) return null;
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '4px', borderBottom: '1px solid #f8fafc' }}>
+            <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>{label}</span>
+            <span style={{
+                fontSize: '11px', fontWeight: 800, color: color,
+                background: `${color}10`, padding: '2px 8px', borderRadius: '6px',
+                maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+            }}>
+                {value}
+            </span>
         </div>
     )
 }

@@ -1,26 +1,41 @@
 'use client'
 
-import { useState } from 'react'
-import { sendConfirmationEmail } from '@/app/actions'
-import { Mail, RefreshCw, CheckCircle2, XCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { sendConfirmationEmail, getEmailLogs } from '@/app/actions'
+import { Mail, RefreshCw, CheckCircle2, XCircle, Clock, AlertTriangle } from 'lucide-react'
 
 export default function EmailSection({ orderId, email }: { orderId: string; email: string }) {
     const [loading, setLoading] = useState(false)
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+    const [errorMsg, setErrorMsg] = useState<string>('')
+    const [logs, setLogs] = useState<any[]>([])
+
+    const fetchLogs = async () => {
+        const history = await getEmailLogs(orderId)
+        setLogs(history)
+    }
+
+    useEffect(() => {
+        fetchLogs()
+    }, [orderId])
 
     const handleResend = async () => {
         setLoading(true)
         setStatus('idle')
+        setErrorMsg('')
         try {
             const result = await sendConfirmationEmail(orderId)
             if (result.success) {
                 setStatus('success')
+                fetchLogs() // Refresh history
                 setTimeout(() => setStatus('idle'), 4000)
             } else {
                 setStatus('error')
+                setErrorMsg(result.error as string || 'Erro desconhecido')
             }
-        } catch {
+        } catch (err: any) {
             setStatus('error')
+            setErrorMsg(err.message || 'Erro inesperado')
         } finally {
             setLoading(false)
         }
@@ -39,11 +54,16 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
                     </span>
                 )}
                 {status === 'error' && (
-                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', padding: '3px 10px', borderRadius: '8px', border: '1px solid #fecaca', whiteSpace: 'nowrap' }}>
+                    <span style={{ marginLeft: 'auto', fontSize: '11px', color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px', background: '#fef2f2', padding: '3px 10px', borderRadius: '8px', border: '1px solid #fecaca', whiteSpace: 'nowrap' }} title={errorMsg}>
                         <XCircle size={12} /> Erro
                     </span>
                 )}
             </div>
+            {status === 'error' && errorMsg && (
+                <div style={{ padding: '8px 16px', background: '#fef2f2', borderBottom: '1px solid #fee2e2', fontSize: '12px', color: '#ef4444', fontWeight: 600 }}>
+                    ❌ {errorMsg}
+                </div>
+            )}
             <div className="pedido-card-body">
                 {/* Recipient display */}
                 <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px' }}>
@@ -80,9 +100,47 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
                     {loading ? 'Enviando...' : 'Reenviar E-mail de Confirmação'}
                 </button>
 
-                <p style={{ marginTop: '12px', fontSize: '12px', color: '#94a3b8', lineHeight: 1.5 }}>
+                <p style={{ marginTop: '12px', fontSize: '12px', color: '#94a3b8', lineHeight: 1.5, marginBottom: '20px' }}>
                     💡 E-mails de confirmação são enviados automaticamente para compras aprovadas.
                 </p>
+
+                {/* EMAIL LOGS HISTORY */}
+                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                    <h4 style={{ fontSize: '12px', fontWeight: 800, color: '#1e293b', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Clock size={14} color="#64748b" /> Histórico de Envios
+                    </h4>
+
+                    {logs.length === 0 ? (
+                        <p style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>Nenhum e-mail enviado ainda.</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {logs.map((log) => (
+                                <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f8fafc', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                                    {log.status === 'sent' ? (
+                                        <CheckCircle2 size={16} color="#10b981" />
+                                    ) : (
+                                        <AlertTriangle size={16} color="#ef4444" />
+                                    )}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
+                                                {log.type === 'confirmation' ? 'Confirmação' : 'Rastreio'}
+                                            </span>
+                                            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
+                                                {new Date(log.sentAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        {log.status === 'error' && log.error && (
+                                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
+                                                Erro: {JSON.parse(log.error).message || 'API Error'}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             <style jsx>{`

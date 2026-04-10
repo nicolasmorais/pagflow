@@ -90,9 +90,9 @@ export default function AdminLayout({
         {
             icon: ShoppingCart,
             label: 'Todas as Vendas',
-            href: '/admin/vendas',
+            href: '/admin/pedidos',
             subItems: [
-                { label: 'Pedidos', href: '/admin/vendas' },
+                { label: 'Pedidos', href: '/admin/pedidos' },
                 { label: 'Carrinhos Abandonados', href: '/admin/abandonados' },
             ]
         },
@@ -125,8 +125,8 @@ export default function AdminLayout({
     ]
 
     return (
-        <div className="admin-layout" style={{ fontFamily: '"Nunito", sans-serif' }}>
-            <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+        <div className="admin-layout" style={{ fontFamily: '"Space Grotesk", "Nunito", sans-serif' }}>
+            <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
             {/* Sidebar Navigation - Hidden on Mobile */}
             <aside className="sidebar desktop-only">
                 <div className="sidebar-logo" style={{ padding: '0 12px', marginBottom: '24px' }}>

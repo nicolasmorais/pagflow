@@ -3,7 +3,9 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 import { BarChart3 } from 'lucide-react'
 import AnalyticsCharts from './AnalyticsCharts'
+import AnalyticsFilterForm from './AnalyticsFilterForm'
 import type { AnalyticsData, CheckoutAccessData } from './types'
+
 
 export default async function AdminPage({
     searchParams,
@@ -13,57 +15,71 @@ export default async function AdminPage({
     const params = await searchParams
     const p = prisma as any
 
-    const today = new Date()
-    today.setHours(23, 59, 59, 999)
-    const yesterday = new Date(today)
-    yesterday.setDate(yesterday.getDate() - 1)
-    yesterday.setHours(0, 0, 0, 0)
-    const yesterdayEnd = new Date(yesterday)
-    yesterdayEnd.setHours(23, 59, 59, 999)
-    const last7Days = new Date(today)
-    last7Days.setDate(last7Days.getDate() - 7)
-    const last30Days = new Date(today)
-    last30Days.setDate(last30Days.getDate() - 30)
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-    const firstDayLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
-    const lastDayLastMonth = new Date(today.getFullYear(), today.getMonth(), 0)
+    const now = new Date()
+    const formatDate = (d: Date) => {
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+
+    const todayStr = formatDate(now)
+    const yesterdayDate = new Date(now)
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+    const yesterdayStr = formatDate(yesterdayDate)
+
+    const last7DaysDate = new Date(now)
+    last7DaysDate.setDate(last7DaysDate.getDate() - 7)
+    const last7DaysStr = formatDate(last7DaysDate)
+
+    const last30DaysDate = new Date(now)
+    last30DaysDate.setDate(last30DaysDate.getDate() - 30)
+    const last30DaysStr = formatDate(last30DaysDate)
+
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const firstDayOfMonthStr = formatDate(firstDayOfMonth)
+
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const firstDayLastMonthStr = formatDate(firstDayLastMonth)
+
+    const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+    const lastDayLastMonthStr = formatDate(lastDayLastMonth)
 
     let fromDate: string
     let toDate: string
 
     switch (params.filter) {
         case 'today':
-            fromDate = today.toISOString().slice(0, 10)
-            toDate = fromDate
+            fromDate = todayStr
+            toDate = todayStr
             break
         case 'yesterday':
-            fromDate = yesterday.toISOString().slice(0, 10)
-            toDate = fromDate
+            fromDate = yesterdayStr
+            toDate = yesterdayStr
             break
         case '7dias':
-            fromDate = last7Days.toISOString().slice(0, 10)
-            toDate = today.toISOString().slice(0, 10)
+            fromDate = last7DaysStr
+            toDate = todayStr
             break
         case '30dias':
-            fromDate = last30Days.toISOString().slice(0, 10)
-            toDate = today.toISOString().slice(0, 10)
+            fromDate = last30DaysStr
+            toDate = todayStr
             break
         case 'mes':
-            fromDate = firstDayOfMonth.toISOString().slice(0, 10)
-            toDate = today.toISOString().slice(0, 10)
+            fromDate = firstDayOfMonthStr
+            toDate = todayStr
             break
         case 'mes-anterior':
-            fromDate = firstDayLastMonth.toISOString().slice(0, 10)
-            toDate = lastDayLastMonth.toISOString().slice(0, 10)
+            fromDate = firstDayLastMonthStr
+            toDate = lastDayLastMonthStr
             break
         case 'vida':
             fromDate = '2020-01-01'
-            toDate = today.toISOString().slice(0, 10)
+            toDate = todayStr
             break
         default:
-            fromDate = params.from || last30Days.toISOString().slice(0, 10)
-            toDate = params.to || today.toISOString().slice(0, 10)
+            fromDate = params.from || todayStr
+            toDate = params.to || todayStr
     }
 
     // ── Fetch checkout accesses ─────────────────────────────────────────────
@@ -344,13 +360,13 @@ export default async function AdminPage({
         <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px' }}>
 
             {/* Header */}
-            <header style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+            <header style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
                     <div style={{
-                        width: '44px', height: '44px', borderRadius: '13px', flexShrink: 0,
+                        width: '46px', height: '46px', borderRadius: '14px', flexShrink: 0,
                         background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 4px 14px rgba(99,102,241,0.3)'
+                        boxShadow: '0 6px 18px rgba(99,102,241,0.35)'
                     }}>
                         <BarChart3 size={22} color="white" />
                     </div>
@@ -359,61 +375,19 @@ export default async function AdminPage({
                             Centro de Análise
                         </h1>
                         <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
-                            Dados completos do checkout — receita, conversão, métodos e geografia.
+                            Receita, conversão, métodos e origem do tráfego.
                         </p>
                     </div>
                 </div>
 
                 {/* Date Filter */}
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    {[
-                        { value: 'today', label: 'Hoje' },
-                        { value: 'yesterday', label: 'Ontem' },
-                        { value: '7dias', label: '7 dias' },
-                        { value: '30dias', label: '30 dias' },
-                        { value: 'mes', label: 'Esse mês' },
-                        { value: 'mes-anterior', label: 'Mês ant.' },
-                        { value: 'vida', label: 'Vida' },
-                    ].map((btn) => (
-                        <a
-                            key={btn.value}
-                            href={`?filter=${btn.value}`}
-                            style={{
-                                padding: '4px 8px',
-                                fontSize: '11px',
-                                fontWeight: 600,
-                                color: params.filter === btn.value ? '#fff' : '#475569',
-                                background: params.filter === btn.value ? '#1e293b' : '#f1f5f9',
-                                borderRadius: '4px',
-                                textDecoration: 'none',
-                            }}
-                        >
-                            {btn.label}
-                        </a>
-                    ))}
-                    <form method="get" style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: '8px' }}>
-                        <input
-                            type="date"
-                            name="from"
-                            defaultValue={fromDate}
-                            style={{ padding: '3px 6px', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '11px', background: '#fff', width: '110px' }}
-                        />
-                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>até</span>
-                        <input
-                            type="date"
-                            name="to"
-                            defaultValue={toDate}
-                            style={{ padding: '3px 6px', borderRadius: '4px', border: '1px solid #e2e8f0', fontSize: '11px', background: '#fff', width: '110px' }}
-                        />
-                        <button
-                            type="submit"
-                            style={{ padding: '3px 8px', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
-                        >
-                            OK
-                        </button>
-                    </form>
-                </div>
+                <AnalyticsFilterForm
+                    currentFilter={params.filter || 'today'}
+                    fromDate={fromDate}
+                    toDate={toDate}
+                />
             </header>
+
 
             <AnalyticsCharts data={data} />
         </div>

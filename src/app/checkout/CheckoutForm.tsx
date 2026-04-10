@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react'
 import './checkout.css'
 
-export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [] }: any) {
+export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [timeLeft, setTimeLeft] = useState(14 * 60 + 52);
     const [done, setDone] = useState(false);
     const [isMpLoaded, setIsMpLoaded] = useState(false);
+    const [accessId, setAccessId] = useState<string | null>(null);
+    const [lastTrackedStep, setLastTrackedStep] = useState<number>(0);
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
@@ -19,7 +21,25 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
 
+    const trackTaboolaEvent = (eventName: string, data: any = {}) => {
+        if (!pixels?.taboolaId || typeof window === 'undefined') return;
+        const _tfa = (window as any)._tfa || [];
+        _tfa.push({ notify: 'event', name: eventName, id: pixels.taboolaId, ...data });
+    };
+
     useEffect(() => {
+        // Taboola Base Script
+        if (pixels?.taboolaId && !document.getElementById('taboola-pixel')) {
+            const _tfa = (window as any)._tfa || [];
+            (window as any)._tfa = _tfa;
+            const s = document.createElement('script');
+            s.id = 'taboola-pixel';
+            s.async = true;
+            s.src = `https://cdn.taboola.com/libtr/${pixels.taboolaId}/tfa.js`;
+            document.head.appendChild(s);
+            trackTaboolaEvent('page_view');
+        }
+
         // Injetar MP SDK V2 manualmente
         if (!document.getElementById('mp-v2')) {
             const script = document.createElement('script');
@@ -48,8 +68,53 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
 
         const timer = setInterval(() => setTimeLeft(prev => prev > 0 ? prev - 1 : 0), 1000);
+
+        // ── Funnel Tracking Logic ──
+        const searchParams = new URLSearchParams(window.location.search);
+        const utmData = {
+            productId: product?.id,
+            source: searchParams.get('utm_source'),
+            medium: searchParams.get('utm_medium'),
+            campaign: searchParams.get('utm_campaign'),
+            term: searchParams.get('utm_term'),
+            content: searchParams.get('utm_content'),
+        };
+
+        fetch('/api/checkout-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(utmData)
+        })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) setAccessId(res.accessId);
+            })
+            .catch(e => console.error('Tracking Error:', e));
+
         return () => clearInterval(timer);
     }, []);
+
+    const updateTrackingStep = async (stepValue: number | string) => {
+        if (!accessId) return;
+        try {
+            await fetch('/api/checkout-access', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ accessId, step: stepValue })
+            });
+        } catch (e) {
+            console.error('Update Tracking Error:', e);
+        }
+    };
+
+    useEffect(() => {
+        if (step === 3 && lastTrackedStep < 3) {
+            updateTrackingStep(3);
+            setLastTrackedStep(3);
+        } else if (step > lastTrackedStep && step < 3) {
+            setLastTrackedStep(step);
+        }
+    }, [step, lastTrackedStep, accessId]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -139,6 +204,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (Object.keys(newErrors).length === 0) {
             setEndereco(prev => ({ ...prev, destinatario: prev.destinatario || dados.nome }));
             setStep(2);
+            updateTrackingStep(1); // Report Step 1 Completed
+            trackTaboolaEvent('start_checkout');
             window.scrollTo(0, 0);
             return true;
         }
@@ -158,6 +225,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         setErrors(newErrors);
         if (Object.keys(newErrors).length === 0) {
             setStep(3);
+            updateTrackingStep(2); // Report Step 2 Completed
+            trackTaboolaEvent('add_to_cart');
             window.scrollTo(0, 0);
             return true;
         }
@@ -227,6 +296,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     setTimeLeft(10 * 60);
                 }
                 setDone(true);
+                updateTrackingStep('payment'); // Funnel Completed!
+                trackTaboolaEvent('purchase', { value: finalPrice, currency: 'BRL' });
             } else {
                 alert("Erro: " + (result.error || "Tente novamente"));
                 throw new Error(result.error || "Erro de validação do pagamento");

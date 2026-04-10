@@ -80,6 +80,22 @@ export async function sendConfirmationEmail(orderId: string) {
             html: htmlContent
         });
 
+        // Record Log
+        try {
+            console.log('RECORDING EMAIL LOG FOR ORDER:', order.id);
+            await (prisma as any).emailLog.create({
+                data: {
+                    orderId: order.id,
+                    type: 'confirmation',
+                    status: error ? 'error' : 'sent',
+                    error: error ? JSON.stringify(error) : null
+                }
+            });
+            console.log('LOG RECORDED SUCCESSFULLY');
+        } catch (logErr) {
+            console.error('FAILED TO RECORD EMAIL LOG:', logErr);
+        }
+
         if (error) {
             console.error('RESEND API ERROR:', JSON.stringify(error, null, 2));
             return { success: false, error: error.message || 'Falha na API de Email' };
@@ -229,17 +245,58 @@ export async function sendTrackingEmail(orderId: string) {
             `;
         }
 
-        await resend.emails.send({
+
+        const { error } = await resend.emails.send({
             from: 'Elabela Store <noreply@elabela.store>',
             to: [order.email],
             subject: subject,
             html: htmlContent,
         });
 
+        // Record Log
+        try {
+            await (prisma as any).emailLog.create({
+                data: {
+                    orderId: order.id,
+                    type: 'tracking',
+                    status: error ? 'error' : 'sent',
+                    error: error ? JSON.stringify(error) : null
+                }
+            });
+        } catch (logErr) {
+            console.error('FAILED TO RECORD TRACKING LOG:', logErr);
+        }
+
+        if (error) throw error;
+
+        // Automate status update to "enviado"
+        await prisma.order.update({
+            where: { id: orderId },
+            data: { status: 'enviado' }
+        });
+        revalidatePath('/admin/vendas');
+        revalidatePath('/admin/pedidos');
+        revalidatePath(`/admin/pedidos/${orderId}`);
+
         return { success: true };
     } catch (error) {
         console.error('Send Tracking Email Error:', error);
         return { success: false };
+    }
+}
+
+export async function getEmailLogs(orderId: string) {
+    try {
+        console.log('FETCHING LOGS FOR ORDER:', orderId);
+        const logs = await (prisma as any).emailLog.findMany({
+            where: { orderId },
+            orderBy: { sentAt: 'desc' }
+        });
+        console.log(`FOUND ${logs.length} LOGS`);
+        return logs;
+    } catch (error: any) {
+        console.error('Get Email Logs Error:', error);
+        return [];
     }
 }
 
