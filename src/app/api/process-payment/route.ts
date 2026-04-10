@@ -121,18 +121,25 @@ export async function POST(req: NextRequest) {
         };
 
         if (method === 'credit_card' || method === 'card') {
-            if (brickData) {
-                mpPayload.token = brickData.token;
-                mpPayload.installments = Number(brickData.installments);
-                mpPayload.payment_method_id = brickData.payment_method_id;
-                mpPayload.issuer_id = brickData.issuer_id;
-            } else if (cardData && cardData.token) {
-                // Fallback para quando o token vem direto
-                mpPayload.token = cardData.token;
-                mpPayload.installments = Number(cardData.installments) || 1;
-                mpPayload.payment_method_id = cardData.payment_method_id;
+            // O Card Payment Brick do MP pode enviar dados diretamente ou aninhados em formData
+            const brick = brickData?.formData || brickData;
+            const card = cardData?.formData || cardData;
+
+            console.log("🔹 [DEBUG] brickData recebido:", JSON.stringify(brickData, null, 2));
+            console.log("🔹 [DEBUG] cardData recebido:", JSON.stringify(cardData, null, 2));
+
+            if (brick && brick.token) {
+                mpPayload.token = brick.token;
+                mpPayload.installments = Number(brick.installments);
+                mpPayload.payment_method_id = brick.payment_method_id;
+                mpPayload.issuer_id = brick.issuer_id;
+            } else if (card && card.token) {
+                mpPayload.token = card.token;
+                mpPayload.installments = Number(card.installments) || 1;
+                mpPayload.payment_method_id = card.payment_method_id;
             } else {
-                return NextResponse.json({ success: false, error: "Dados do cartão incompletos." }, { status: 400 });
+                console.error("❌ Token do cartão ausente. brickData:", brickData, "cardData:", cardData);
+                return NextResponse.json({ success: false, error: "Dados do cartão incompletos. Token não recebido." }, { status: 400 });
             }
         }
 
