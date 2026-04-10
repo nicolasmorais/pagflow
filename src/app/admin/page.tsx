@@ -85,13 +85,16 @@ export default async function AdminPage({
     // ── Fetch checkout accesses ─────────────────────────────────────────────
     let accesses: any[] = []
     try {
-        const result = await p.$queryRaw`
-            SELECT id, "productId", source, medium, campaign, term, content, "createdAt", "step1Completed", "step2Completed", "step3Completed", "paymentCompleted" 
-            FROM "CheckoutAccess" 
-            WHERE "createdAt" >= ${fromDate + 'T00:00:00'} AND "createdAt" <= ${toDate + 'T23:59:59'}
-            ORDER BY "createdAt" DESC LIMIT 500
-        `;
-        accesses = result as any[];
+        accesses = await p.checkoutAccess.findMany({
+            where: {
+                createdAt: {
+                    gte: new Date(fromDate + 'T00:00:00'),
+                    lte: new Date(toDate + 'T23:59:59'),
+                },
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 500
+        })
     } catch (e) {
         console.error('CheckoutAccess query error:', e)
     }

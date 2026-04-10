@@ -121,7 +121,6 @@ export default function AdminLayout({
     const managementMenu = [
         { icon: Sparkles, label: 'Personalização', href: '/admin/personalizacao' },
         { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
-        { icon: Activity, label: 'Status do Sistema', href: '/admin/status' },
     ]
 
     return (

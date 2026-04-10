@@ -12,10 +12,13 @@ import {
 } from 'lucide-react'
 import type { AnalyticsData } from './types'
 
-const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-const fmtShort = (v: number) => v >= 1000
-    ? `R$ ${(v / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1 })}k`
-    : `R$ ${fmt(v)}`
+const fmt = (v: number | undefined | null) => (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const fmtShort = (v: number | undefined | null) => {
+    const n = v || 0
+    return n >= 1000
+        ? `R$ ${(n / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1 })}k`
+        : `R$ ${fmt(n)}`
+}
 
 // ── Custom Tooltips ────────────────────────────────────────────────────────────
 const RevenueTooltip = ({ active, payload, label }: any) => {
@@ -123,6 +126,7 @@ function SourceRow({ label, count, color, max }: { label: string; count: number;
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
+    if (!data) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Carregando dados...</div>
     const { kpis, dailyData, paymentMethods, installments, cardBrands, topProducts, topStates, statusBreakdown, bumpStats, checkoutAccess } = data
 
     const maxState = topStates[0]?.revenue || 1
