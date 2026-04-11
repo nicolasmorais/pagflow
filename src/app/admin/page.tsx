@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
+import { getDateFilters, dateToBrazilDateStr, formatDateStr, getBrazilNow } from '@/lib/date-utils'
 import { BarChart3 } from 'lucide-react'
 import AnalyticsCharts from './AnalyticsCharts'
 import AnalyticsFilterForm from './AnalyticsFilterForm'
@@ -14,74 +15,9 @@ export default async function AdminPage({
 }) {
     const params = await searchParams
 
-    // Ensure 'now' uses the correct timezone (America/Sao_Paulo) to prevent UTC date shifting at night
-    const nowString = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
-    const now = new Date(nowString)
-    const formatDate = (d: Date) => {
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
-    }
-
-    const todayStr = formatDate(now)
-    const yesterdayDate = new Date(now)
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-    const yesterdayStr = formatDate(yesterdayDate)
-
-    const last7DaysDate = new Date(now)
-    last7DaysDate.setDate(last7DaysDate.getDate() - 7)
-    const last7DaysStr = formatDate(last7DaysDate)
-
-    const last30DaysDate = new Date(now)
-    last30DaysDate.setDate(last30DaysDate.getDate() - 30)
-    const last30DaysStr = formatDate(last30DaysDate)
-
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const firstDayOfMonthStr = formatDate(firstDayOfMonth)
-
-    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const firstDayLastMonthStr = formatDate(firstDayLastMonth)
-
-    const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
-    const lastDayLastMonthStr = formatDate(lastDayLastMonth)
-
-    let fromDate: string
-    let toDate: string
-
-    switch (params.filter) {
-        case 'today':
-            fromDate = todayStr
-            toDate = todayStr
-            break
-        case 'yesterday':
-            fromDate = yesterdayStr
-            toDate = yesterdayStr
-            break
-        case '7dias':
-            fromDate = last7DaysStr
-            toDate = todayStr
-            break
-        case '30dias':
-            fromDate = last30DaysStr
-            toDate = todayStr
-            break
-        case 'mes':
-            fromDate = firstDayOfMonthStr
-            toDate = todayStr
-            break
-        case 'mes-anterior':
-            fromDate = firstDayLastMonthStr
-            toDate = lastDayLastMonthStr
-            break
-        case 'vida':
-            fromDate = '2020-01-01'
-            toDate = todayStr
-            break
-        default:
-            fromDate = params.from || todayStr
-            toDate = params.to || todayStr
-    }
+    const { now, todayStr, fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(
+        params.filter, params.from, params.to
+    )
 
     // ── Fetch checkout accesses ─────────────────────────────────────────────
     let accesses: any[] = []
@@ -89,8 +25,8 @@ export default async function AdminPage({
         accesses = await prisma.checkoutAccess.findMany({
             where: {
                 createdAt: {
-                    gte: new Date(fromDate + 'T00:00:00-03:00'),
-                    lte: new Date(toDate + 'T23:59:59-03:00'),
+                    gte: fromDateUTC,
+                    lte: toDateUTC,
                 },
             },
             orderBy: { createdAt: 'desc' },
@@ -111,8 +47,8 @@ export default async function AdminPage({
     const allOrders = await prisma.order.findMany({
         where: {
             createdAt: {
-                gte: new Date(fromDate + 'T00:00:00-03:00'),
-                lte: new Date(toDate + 'T23:59:59-03:00'),
+                gte: fromDateUTC,
+                lte: toDateUTC,
             },
         },
         select: {
@@ -160,12 +96,12 @@ export default async function AdminPage({
     for (let i = 29; i >= 0; i--) {
         const d = new Date(now)
         d.setDate(d.getDate() - i)
-        const key = d.toISOString().slice(0, 10)
+        const key = formatDateStr(d)
         dailyMap.set(key, { revenue: 0, orders: 0, paidOrders: 0 })
     }
     for (const order of allOrders) {
         if (order.createdAt < thirtyDaysAgo) continue
-        const key = order.createdAt.toISOString().slice(0, 10)
+        const key = dateToBrazilDateStr(order.createdAt)
         if (!dailyMap.has(key)) continue
         const ex = dailyMap.get(key)!
         dailyMap.set(key, {
@@ -283,11 +219,11 @@ export default async function AdminPage({
     for (let i = 29; i >= 0; i--) {
         const d = new Date(now)
         d.setDate(d.getDate() - i)
-        accessDailyMap.set(d.toISOString().slice(0, 10), 0)
+        accessDailyMap.set(formatDateStr(d), 0)
     }
     for (const access of accesses) {
         if (access.createdAt < thirtyDaysAgo) continue
-        const key = access.createdAt.toISOString().slice(0, 10)
+        const key = dateToBrazilDateStr(access.createdAt)
         if (accessDailyMap.has(key)) {
             accessDailyMap.set(key, accessDailyMap.get(key)! + 1)
         }

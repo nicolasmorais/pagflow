@@ -7,6 +7,7 @@ import PaymentStatusSelect from './components/PaymentStatusSelect'
 import OrderStatusSelect from './components/OrderStatusSelect'
 import AnalyticsFilterForm from '../AnalyticsFilterForm'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { getDateFilters } from '@/lib/date-utils'
 
 async function syncMercadoPagoOrders(orders: any[]) {
     // Only sync if MP token is available
@@ -72,73 +73,9 @@ export default async function OrdersPage({
 }) {
     const params = await searchParams
 
-    const nowString = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
-    const now = new Date(nowString)
-    const formatDate = (d: Date) => {
-        const year = d.getFullYear()
-        const month = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        return `${year}-${month}-${day}`
-    }
-
-    const todayStr = formatDate(now)
-    const yesterdayDate = new Date(now)
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1)
-    const yesterdayStr = formatDate(yesterdayDate)
-
-    const last7DaysDate = new Date(now)
-    last7DaysDate.setDate(last7DaysDate.getDate() - 7)
-    const last7DaysStr = formatDate(last7DaysDate)
-
-    const last30DaysDate = new Date(now)
-    last30DaysDate.setDate(last30DaysDate.getDate() - 30)
-    const last30DaysStr = formatDate(last30DaysDate)
-
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    const firstDayOfMonthStr = formatDate(firstDayOfMonth)
-
-    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    const firstDayLastMonthStr = formatDate(firstDayLastMonth)
-
-    const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
-    const lastDayLastMonthStr = formatDate(lastDayLastMonth)
-
-    let fromDate: string
-    let toDate: string
-
-    switch (params.filter) {
-        case 'today':
-            fromDate = todayStr
-            toDate = todayStr
-            break
-        case 'yesterday':
-            fromDate = yesterdayStr
-            toDate = yesterdayStr
-            break
-        case '7dias':
-            fromDate = last7DaysStr
-            toDate = todayStr
-            break
-        case '30dias':
-            fromDate = last30DaysStr
-            toDate = todayStr
-            break
-        case 'mes':
-            fromDate = firstDayOfMonthStr
-            toDate = todayStr
-            break
-        case 'mes-anterior':
-            fromDate = firstDayLastMonthStr
-            toDate = lastDayLastMonthStr
-            break
-        case 'vida':
-            fromDate = '2020-01-01'
-            toDate = todayStr
-            break
-        default:
-            fromDate = params.from || todayStr
-            toDate = params.to || todayStr
-    }
+    const { fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(
+        params.filter, params.from, params.to
+    )
 
     let orders: any[] = [];
 
@@ -147,8 +84,8 @@ export default async function OrdersPage({
             where: {
                 deletedAt: null,
                 createdAt: {
-                    gte: new Date(fromDate + 'T00:00:00-03:00'),
-                    lte: new Date(toDate + 'T23:59:59-03:00'),
+                    gte: fromDateUTC,
+                    lte: toDateUTC,
                 }
             },
             orderBy: { createdAt: 'desc' },
