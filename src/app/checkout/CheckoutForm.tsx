@@ -260,6 +260,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 // ... fallback logic if needed
             }
 
+            const searchParams = new URLSearchParams(window.location.search);
             const payload = {
                 method: currentMethod,
                 cardData: tokenData,
@@ -269,7 +270,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     ...dados,
                     ...endereco,
                     price: finalPrice,
-                    productId: product?.id || 'default'
+                    productId: product?.id || 'default',
+                    utmSource: searchParams.get('utm_source'),
+                    utmMedium: searchParams.get('utm_medium'),
+                    utmCampaign: searchParams.get('utm_campaign'),
+                    utmTerm: searchParams.get('utm_term'),
+                    utmContent: searchParams.get('utm_content'),
                 },
                 deviceId: deviceId
             };

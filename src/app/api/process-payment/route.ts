@@ -57,7 +57,12 @@ export async function POST(req: NextRequest) {
             totalPrice: price,
             hasBump: Array.isArray(selectedBumpIds) && selectedBumpIds.length > 0,
             selectedBumps: Array.isArray(selectedBumpIds) ? selectedBumpIds : [],
-            product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined
+            product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined,
+            utmSource: orderData.utmSource || null,
+            utmMedium: orderData.utmMedium || null,
+            utmCampaign: orderData.utmCampaign || null,
+            utmTerm: orderData.utmTerm || null,
+            utmContent: orderData.utmContent || null,
         };
 
         let order;
