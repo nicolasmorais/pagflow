@@ -5,6 +5,7 @@ import './checkout.css'
 
 export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
     const [step, setStep] = useState(1);
+    const [isSummaryOpen, setIsSummaryOpen] = useState(true);
     const [loading, setLoading] = useState(false);
     const [timeLeft, setTimeLeft] = useState(14 * 60 + 52);
     const [done, setDone] = useState(false);
@@ -891,24 +892,48 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                         <div className="aside">
                             <div className="product-card">
-                                <div className="product-card-title">Resumo do Pedido</div>
-                                <div className="product-row">
-                                    <div className="product-img">
-                                        {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
-                                    </div>
-                                    <div>
-                                        <div className="product-name">{product?.name || "Kit Gel DermaVit 3 Unidades"}</div>
-                                        <div className="product-qty">Quantidade: 1</div>
-                                    </div>
+                                <div
+                                    className="product-card-title"
+                                    onClick={() => setIsSummaryOpen(!isSummaryOpen)}
+                                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+                                >
+                                    Resumo do Pedido
+                                    <svg
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        style={{
+                                            width: '20px',
+                                            height: '20px',
+                                            transform: isSummaryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                            transition: 'transform 0.3s ease'
+                                        }}
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                                    </svg>
                                 </div>
-                                <div className="price-table">
-                                    <div className="price-row"><span>Subtotal</span><span>R$ {basePrice.toFixed(2).replace('.', ',')}</span></div>
-                                    <div className="price-row"><span>Frete</span><span className="green">{shipping.price === 0 ? 'GRÁTIS' : `R$ ${shipping.price.toFixed(2).replace('.', ',')}`}</span></div>
-                                    {step === 3 && paymentMethod === 'pix' && pixDiscountVal > 0 && (
-                                        <div className="price-row"><span>Desconto PIX ({customization?.pixDiscount}%)</span><span className="green">− R$ {(basePrice * pixDiscountVal).toFixed(2).replace('.', ',')}</span></div>
-                                    )}
-                                    <div className="price-row total"><span>Total</span><span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span></div>
-                                </div>
+                                {isSummaryOpen && (
+                                    <>
+                                        <div className="product-row">
+                                            <div className="product-img">
+                                                {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
+                                            </div>
+                                            <div>
+                                                <div className="product-name">{product?.name || "Kit Gel DermaVit 3 Unidades"}</div>
+                                                <div className="product-qty">Quantidade: 1</div>
+                                            </div>
+                                        </div>
+                                        <div className="price-table">
+                                            <div className="price-row"><span>Subtotal</span><span>R$ {basePrice.toFixed(2).replace('.', ',')}</span></div>
+                                            <div className="price-row"><span>Frete</span><span className="green">{shipping.price === 0 ? 'GRÁTIS' : `R$ ${shipping.price.toFixed(2).replace('.', ',')}`}</span></div>
+                                            {step === 3 && paymentMethod === 'pix' && pixDiscountVal > 0 && (
+                                                <div className="price-row"><span>Desconto PIX ({customization?.pixDiscount}%)</span><span className="green">− R$ {(basePrice * pixDiscountVal).toFixed(2).replace('.', ',')}</span></div>
+                                            )}
+                                            <div className="price-row total"><span>Total</span><span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span></div>
+                                        </div>
+                                    </>
+                                )}
                             </div>
 
                             <div className="trust-card">
