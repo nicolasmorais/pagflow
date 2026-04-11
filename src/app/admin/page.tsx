@@ -14,7 +14,9 @@ export default async function AdminPage({
 }) {
     const params = await searchParams
 
-    const now = new Date()
+    // Ensure 'now' uses the correct timezone (America/Sao_Paulo) to prevent UTC date shifting at night
+    const nowString = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+    const now = new Date(nowString)
     const formatDate = (d: Date) => {
         const year = d.getFullYear()
         const month = String(d.getMonth() + 1).padStart(2, '0')
