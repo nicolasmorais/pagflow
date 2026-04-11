@@ -89,8 +89,8 @@ export default async function AdminPage({
         accesses = await prisma.checkoutAccess.findMany({
             where: {
                 createdAt: {
-                    gte: new Date(fromDate + 'T00:00:00'),
-                    lte: new Date(toDate + 'T23:59:59'),
+                    gte: new Date(fromDate + 'T00:00:00-03:00'),
+                    lte: new Date(toDate + 'T23:59:59-03:00'),
                 },
             },
             orderBy: { createdAt: 'desc' },
@@ -111,8 +111,8 @@ export default async function AdminPage({
     const allOrders = await prisma.order.findMany({
         where: {
             createdAt: {
-                gte: new Date(fromDate + 'T00:00:00'),
-                lte: new Date(toDate + 'T23:59:59'),
+                gte: new Date(fromDate + 'T00:00:00-03:00'),
+                lte: new Date(toDate + 'T23:59:59-03:00'),
             },
         },
         select: {
@@ -153,12 +153,12 @@ export default async function AdminPage({
         : 0
 
     // ── Daily data (last 30 days) ─────────────────────────────────────────
-    const thirtyDaysAgo = new Date()
+    const thirtyDaysAgo = new Date(now)
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
     const dailyMap = new Map<string, { revenue: number; orders: number; paidOrders: number }>()
     for (let i = 29; i >= 0; i--) {
-        const d = new Date()
+        const d = new Date(now)
         d.setDate(d.getDate() - i)
         const key = d.toISOString().slice(0, 10)
         dailyMap.set(key, { revenue: 0, orders: 0, paidOrders: 0 })
@@ -281,7 +281,7 @@ export default async function AdminPage({
 
     const accessDailyMap = new Map<string, number>()
     for (let i = 29; i >= 0; i--) {
-        const d = new Date()
+        const d = new Date(now)
         d.setDate(d.getDate() - i)
         accessDailyMap.set(d.toISOString().slice(0, 10), 0)
     }
