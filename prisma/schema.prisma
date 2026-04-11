@@ -7,7 +7,7 @@ datasource db {
 }
 
 model Order {
-  id                String   @id @default(cuid())
+  id                String     @id @default(cuid())
   fullName          String?
   email             String?
   phone             String?
@@ -20,31 +20,31 @@ model Order {
   cidade            String?
   estado            String?
   referencia        String?
-  status            String   @default("pendente")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  status            String     @default("pendente")
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
   productId         String?
-  paymentStatus     String   @default("abandonado")
+  paymentStatus     String     @default("abandonado")
   trackingCode      String?
   trackingUrl       String?
   recipient         String?
-  hasBump           Boolean  @default(false)
+  hasBump           Boolean    @default(false)
   selectedBumps     Json?
   paymentMethod     String?
-  totalPrice        Float    @default(0)
+  totalPrice        Float      @default(0)
   mpPaymentId       String?
   installments      Int?
   installmentAmount Float?
   cardBrand         String?
   netReceived       Float?
-  utmSource         String?
-  utmMedium         String?
-  utmCampaign       String?
-  utmTerm           String?
-  utmContent        String?
   deletedAt         DateTime?
-  product           Product? @relation(fields: [productId], references: [id])
+  utmCampaign       String?
+  utmContent        String?
+  utmMedium         String?
+  utmSource         String?
+  utmTerm           String?
   emailLogs         EmailLog[]
+  product           Product?   @relation(fields: [productId], references: [id])
 }
 
 model Product {
@@ -52,10 +52,10 @@ model Product {
   name       String
   price      Float
   imageUrl   String?
-  storeName  String?     @default("PagFlow")
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   commission Float       @default(0)
+  storeName  String?     @default("PagFlow")
   cost       Float       @default(0)
   orders     Order[]
   orderBumps OrderBump[]
@@ -209,11 +209,11 @@ model CheckoutAccess {
 }
 
 model EmailLog {
-  id        String   @id @default(cuid())
-  orderId   String
-  type      String   // 'confirmation', 'tracking', etc.
-  status    String   // 'sent', 'error'
-  error     String?
-  sentAt    DateTime @default(now())
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id      String   @id @default(cuid())
+  orderId String
+  type    String
+  status  String
+  error   String?
+  sentAt  DateTime @default(now())
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
