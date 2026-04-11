@@ -40,7 +40,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             s.async = true;
             s.src = `https://cdn.taboola.com/libtr/${pixels.taboolaId}/tfa.js`;
             document.head.appendChild(s);
-            trackTaboolaEvent('page_view');
+            trackTaboolaEvent('start_checkout');
         }
 
         // Injetar MP SDK V2 manualmente
@@ -208,7 +208,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             setEndereco(prev => ({ ...prev, destinatario: prev.destinatario || dados.nome }));
             setStep(2);
             updateTrackingStep(1); // Report Step 1 Completed
-            trackTaboolaEvent('start_checkout');
             window.scrollTo(0, 0);
             return true;
         }
@@ -229,7 +228,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (Object.keys(newErrors).length === 0) {
             setStep(3);
             updateTrackingStep(2); // Report Step 2 Completed
-            trackTaboolaEvent('add_to_cart');
             window.scrollTo(0, 0);
             return true;
         }
