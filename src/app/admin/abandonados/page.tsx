@@ -3,13 +3,90 @@ import { prisma } from '@/lib/prisma'
 import { MapPin, Phone, CreditCard, CheckCircle2, XCircle, Clock, ExternalLink, RefreshCw, Trash2, ShoppingBag, ShoppingCart, UserX } from 'lucide-react'
 import Link from 'next/link'
 import { deleteOrder } from '../../actions'
+import AnalyticsFilterForm from '../AnalyticsFilterForm'
 
-export default async function AbandonadosPage() {
-    // 1. Fetch only ABANDONED orders from DB
-    // An abandoned order has paymentStatus 'abandonado' (default)
+export default async function AbandonadosPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ from?: string; to?: string; filter?: string }>
+}) {
+    const params = await searchParams
+
+    const nowString = new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" })
+    const now = new Date(nowString)
+    const formatDate = (d: Date) => {
+        const year = d.getFullYear()
+        const month = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${year}-${month}-${day}`
+    }
+
+    const todayStr = formatDate(now)
+    const yesterdayDate = new Date(now)
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+    const yesterdayStr = formatDate(yesterdayDate)
+
+    const last7DaysDate = new Date(now)
+    last7DaysDate.setDate(last7DaysDate.getDate() - 7)
+    const last7DaysStr = formatDate(last7DaysDate)
+
+    const last30DaysDate = new Date(now)
+    last30DaysDate.setDate(last30DaysDate.getDate() - 30)
+    const last30DaysStr = formatDate(last30DaysDate)
+
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    const firstDayOfMonthStr = formatDate(firstDayOfMonth)
+
+    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const firstDayLastMonthStr = formatDate(firstDayLastMonth)
+
+    const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+    const lastDayLastMonthStr = formatDate(lastDayLastMonth)
+
+    let fromDate: string
+    let toDate: string
+
+    switch (params.filter) {
+        case 'today':
+            fromDate = todayStr
+            toDate = todayStr
+            break
+        case 'yesterday':
+            fromDate = yesterdayStr
+            toDate = yesterdayStr
+            break
+        case '7dias':
+            fromDate = last7DaysStr
+            toDate = todayStr
+            break
+        case '30dias':
+            fromDate = last30DaysStr
+            toDate = todayStr
+            break
+        case 'mes':
+            fromDate = firstDayOfMonthStr
+            toDate = todayStr
+            break
+        case 'mes-anterior':
+            fromDate = firstDayLastMonthStr
+            toDate = lastDayLastMonthStr
+            break
+        case 'vida':
+            fromDate = '2020-01-01'
+            toDate = todayStr
+            break
+        default:
+            fromDate = params.from || todayStr
+            toDate = params.to || todayStr
+    }
+
     const abandonedOrders = await prisma.order.findMany({
         where: {
             deletedAt: null,
+            createdAt: {
+                gte: new Date(fromDate + 'T00:00:00-03:00'),
+                lte: new Date(toDate + 'T23:59:59-03:00'),
+            },
             paymentStatus: {
                 in: ['abandonado', 'processando']
             }
@@ -23,14 +100,21 @@ export default async function AbandonadosPage() {
     return (
         <div style={{ width: '100%', padding: '24px' }}>
             <div style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ background: '#fee2e2', padding: '10px', borderRadius: '12px', color: '#ef4444' }}>
-                        <ShoppingCart size={24} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ background: '#fee2e2', padding: '10px', borderRadius: '12px', color: '#ef4444' }}>
+                            <ShoppingCart size={24} />
+                        </div>
+                        <div>
+                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--admin-text-primary)' }}>Carrinhos Abandonados</h2>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--admin-text-secondary)' }}>Checkouts iniciados que não foram finalizados.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--admin-text-primary)' }}>Carrinhos Abandonados</h2>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--admin-text-secondary)' }}>Checkouts iniciados que não foram finalizados.</p>
-                    </div>
+                    <AnalyticsFilterForm
+                        currentFilter={params.filter || 'today'}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                    />
                 </div>
             </div>
 
