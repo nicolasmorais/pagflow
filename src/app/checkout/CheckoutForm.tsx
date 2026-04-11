@@ -840,6 +840,33 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div className="step-title"><span className="step-icon">💳</span> Passo 3 — Pagamento</div>
                                     <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
 
+                                    {pixDiscountVal > 0 && (
+                                        <div style={{
+                                            background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                                            border: '1.5px solid #6ee7b7',
+                                            borderRadius: '12px',
+                                            padding: '12px 16px',
+                                            marginBottom: '16px',
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: '10px',
+                                            fontSize: '13.5px',
+                                            color: '#065f46',
+                                            fontWeight: 500,
+                                            lineHeight: 1.5
+                                        }}>
+                                            <span style={{ fontSize: '18px', flexShrink: 0 }}>⚡</span>
+                                            <div>
+                                                <strong>Atenção:</strong> Pagando por PIX sai por{' '}
+                                                <strong style={{ color: '#059669' }}>
+                                                    R$ {(basePrice * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
+                                                </strong>
+                                                {' '}+ frete rápido <strong>GRÁTIS</strong>{' '}
+                                                <span style={{ opacity: 0.85 }}>(chega em 5 dias úteis)</span> 🚀
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <div className={`pay-card ${paymentMethod === 'pix' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix')}>
                                         <div className="pay-radio"></div>
                                         <div className="pay-icon-wrap">
