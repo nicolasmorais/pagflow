@@ -897,7 +897,18 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     onClick={() => setIsSummaryOpen(!isSummaryOpen)}
                                     style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
                                 >
-                                    Resumo do Pedido
+                                    {isSummaryOpen ? (
+                                        <span>Resumo do Pedido</span>
+                                    ) : (
+                                        <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'space-between', fontSize: '15px', marginRight: '12px' }}>
+                                            <span style={{ fontWeight: 600, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>
+                                                {product?.name || "Kit Gel DermaVit"}
+                                            </span>
+                                            <span style={{ fontWeight: 800, color: '#1e293b' }}>
+                                                R$ {finalPrice.toFixed(2).replace('.', ',')}
+                                            </span>
+                                        </div>
+                                    )}
                                     <svg
                                         viewBox="0 0 24 24"
                                         fill="none"
@@ -906,6 +917,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         style={{
                                             width: '20px',
                                             height: '20px',
+                                            flexShrink: 0,
                                             transform: isSummaryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
                                             transition: 'transform 0.3s ease'
                                         }}
