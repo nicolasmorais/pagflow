@@ -18,7 +18,8 @@ import {
     Bell,
     Mail,
     ChevronDown,
-    BarChart3
+    BarChart3,
+    Shield
 } from 'lucide-react'
 import './admin.css'
 
@@ -114,6 +115,7 @@ export default function AdminLayout({
                 { label: 'Order Bumps', href: '/admin/ordem' },
                 { label: 'ROI de Anúncios', href: '/admin/roi' },
                 { label: 'E-mails', href: '/admin/emails' },
+                { label: '🛡️ Anti-Fuga', href: '/admin/antifuga' },
             ]
         },
     ]

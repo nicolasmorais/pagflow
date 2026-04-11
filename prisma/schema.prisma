@@ -217,3 +217,19 @@ model EmailLog {
   sentAt  DateTime @default(now())
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
+
+model ExitPopupConfig {
+  id           String   @id @default(cuid())
+  isEnabled    Boolean  @default(true)
+  discountPct  Int      @default(50)
+  timerSeconds Int      @default(480)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ExitPopupEvent {
+  id        String   @id @default(cuid())
+  event     String   // "shown" | "accepted" | "declined" | "expired"
+  productId String?
+  createdAt DateTime @default(now())
+}

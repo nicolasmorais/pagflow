@@ -141,11 +141,23 @@ export default async function CheckoutPage({
         price: Number(rule.price)
     }));
 
+    // Fetch exit popup config
+    let exitPopupConfig: any = null
+    try {
+        exitPopupConfig = await prisma.exitPopupConfig.findFirst()
+        if (!exitPopupConfig) {
+            exitPopupConfig = { isEnabled: true, discountPct: 50, timerSeconds: 480, installments: 3 }
+        }
+    } catch (e) {
+        exitPopupConfig = { isEnabled: false }
+    }
+
     return <CheckoutForm
         product={product}
         customization={customization}
         shippingRules={mappedShippingRules}
         pixels={pixels}
         availableBumps={mappedOrderBumps}
+        exitPopupConfig={exitPopupConfig}
     />
 }

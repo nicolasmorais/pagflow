@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import './checkout.css'
+import ExitPopup from './ExitPopup'
 
-export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
+export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {}, exitPopupConfig }: any) {
     const [step, setStep] = useState(1);
     const [isSummaryOpen, setIsSummaryOpen] = useState(true);
+    const [exitDiscount, setExitDiscount] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [timeLeft, setTimeLeft] = useState(14 * 60 + 52);
     const [done, setDone] = useState(false);
@@ -128,7 +130,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
     const basePrice = product?.price || 9;
-    const finalPrice = (step === 3 && paymentMethod === 'pix') ? (basePrice * (1 - pixDiscountVal) + shipping.price) : (basePrice + shipping.price);
+    // exitDiscount overrides the normal PIX discount (from anti-exit popup)
+    const effectivePrice = exitDiscount !== null
+        ? exitDiscount
+        : (step === 3 && paymentMethod === 'pix') ? (basePrice * (1 - pixDiscountVal) + shipping.price) : (basePrice + shipping.price);
+    const finalPrice = effectivePrice;
 
     const handleCEPChange = async (val: string) => {
         const cleanCEP = val.replace(/\D/g, '').slice(0, 8);
@@ -1021,6 +1027,23 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     {customization?.footerText || "Todos os direitos reservados. CNPJ: 00.000.000/0001-00"}
                 </div>
             </footer>
+
+            {exitPopupConfig?.isEnabled && (
+                <ExitPopup
+                    productName={product?.name || 'Produto'}
+                    originalPrice={product?.price || basePrice}
+                    discountPct={exitPopupConfig.discountPct ?? 50}
+                    installments={exitPopupConfig.installments ?? 3}
+                    timerSeconds={exitPopupConfig.timerSeconds ?? 480}
+                    productId={product?.id}
+                    isEnabled={true}
+                    onAccept={(discountedPrice: number) => {
+                        setExitDiscount(discountedPrice)
+                        setPaymentMethod('pix')
+                    }}
+                    onDecline={() => { }}
+                />
+            )}
         </div>
     );
 }
