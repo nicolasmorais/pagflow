@@ -692,9 +692,33 @@ export async function deleteEmailTemplate(id: string) {
     }
 }
 
-export async function sendAdminNotification(type: 'sale' | 'abandoned', order: any) {
+import { sendAdminPush } from "@/lib/push-service";
+
+export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pending', order: any) {
     try {
         const email = await getCustomization('notify_admin_email');
+
+        // Determina título do Push
+        let pushTitle = '';
+        let pushBody = '';
+
+        if (type === 'sale') {
+            const method = order.paymentMethod === 'pix' ? 'PIX' : 'CARTÃO';
+            pushTitle = `✅ Compra realizada - ${method}`;
+            pushBody = `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
+        } else if (type === 'abandoned') {
+            pushTitle = `🚨 Carrinho Abandonado`;
+            pushBody = `Cliente: ${order.fullName || 'Sem nome'}`;
+        } else if (type === 'pix_pending') {
+            pushTitle = `⏳ PIX Gerado (Pendente)`;
+            pushBody = `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
+        }
+
+        // Tenta enviar o Web Push independentemente da configuração de e-mail
+        if (pushTitle) {
+            await sendAdminPush(pushTitle, pushBody, '/admin/vendas').catch(e => console.error("Erro no envio do Push:", e));
+        }
+
         if (!email) return;
 
         const isSalesNotify = await getCustomization('notify_sales_enabled');
@@ -726,12 +750,14 @@ export async function sendAdminNotification(type: 'sale' | 'abandoned', order: a
             `;
         }
 
-        await resend.emails.send({
-            from: 'Elabela Store <noreply@elabela.store>',
-            to: [email],
-            subject: subject,
-            html: htmlContent
-        });
+        if (subject && htmlContent) {
+            await resend.emails.send({
+                from: 'Elabela Store <noreply@elabela.store>',
+                to: [email],
+                subject: subject,
+                html: htmlContent
+            });
+        }
     } catch (error) {
         console.error('Admin Notification Error:', error);
     }

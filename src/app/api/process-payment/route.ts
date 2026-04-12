@@ -236,6 +236,12 @@ export async function POST(req: NextRequest) {
             } catch (notifyError) {
                 console.error("Failed to send admin notification:", notifyError);
             }
+        } else if (method === 'pix' && finalStatus === 'aguardando') {
+            try {
+                await sendAdminNotification('pix_pending', order);
+            } catch (notifyError) {
+                console.error("Failed to send admin notification for pix_pending:", notifyError);
+            }
         }
 
         let qrCode: string | null = null;
