@@ -207,7 +207,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
         if (!customization?.disableCpf) {
             const cleanCpf = dados.cpf.replace(/\D/g, '');
-            if (cleanCpf.length !== 11) newErrors.cpf = 'CPF inválido';
+            if (cleanCpf.length > 0 && cleanCpf.length !== 11) {
+                newErrors.cpf = 'CPF inválido';
+            }
         }
 
         setErrors(newErrors);
@@ -351,7 +353,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             email: dados.email,
                             identification: {
                                 type: 'CPF',
-                                number: dados.cpf ? dados.cpf.replace(/\D/g, '') : '12345678909'
+                                number: dados.cpf ? dados.cpf.replace(/\D/g, '') : ''
                             }
                         },
                     };
@@ -421,7 +423,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 (window as any).cardBrickController = null;
             }
         };
-    }, [paymentMethod, step, isMpLoaded, finalPrice, dados.email]);
+    }, [paymentMethod, step, isMpLoaded, finalPrice, dados.email, dados.cpf]);
 
     const renderProgressBar = () => (
         <div className="progress-wrap" style={{ borderBottom: 'none', padding: '0 0 24px 0', background: 'transparent' }}>
@@ -740,7 +742,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                     {!customization?.disableCpf && (
                                         <div className={`field ${errors.cpf ? 'error' : ''}`}>
-                                            <label className="field-label">CPF *</label>
+                                            <label className="field-label">CPF</label>
                                             <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
                                             {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
                                             <div className="field-hint-label">Necessário para emissão da nota fiscal</div>

@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         }) : null;
 
         const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
-        const cpfToSave = cpfInput || "19119119100"; // Fallback CPF for checkouts without CPF field
+        const cpfToSave = cpfInput || "41324707011"; // Fallback CPF válido para Pix sem fricção
 
         // 1. Preparar dados do pedido
         const orderDataToSave: any = {
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
                 last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
                 identification: {
                     type: 'CPF',
-                    number: cpfToSave || '12345678909'
+                    number: cpfToSave || '41324707011'
                 },
                 address: {
                     zip_code: orderData.cep?.replace(/\D/g, '') || '',
@@ -156,10 +156,20 @@ export async function POST(req: NextRequest) {
                 mpPayload.installments = Number(brick.installments);
                 mpPayload.payment_method_id = brick.payment_method_id;
                 mpPayload.issuer_id = brick.issuer_id;
+
+                // Importante: Para CARTÃO, usamos o CPF que o cliente digitou no Brick
+                // para evitar que o CPF fixo do PIX cause a negação do cartão.
+                if (brick.payer?.identification?.number) {
+                    mpPayload.payer.identification.number = brick.payer.identification.number.replace(/\D/g, '');
+                }
             } else if (card && card.token) {
                 mpPayload.token = card.token;
                 mpPayload.installments = Number(card.installments) || 1;
                 mpPayload.payment_method_id = card.payment_method_id;
+
+                if (card.payer?.identification?.number) {
+                    mpPayload.payer.identification.number = card.payer.identification.number.replace(/\D/g, '');
+                }
             } else {
                 console.error("❌ Token do cartão ausente. brickData:", brickData, "cardData:", cardData);
                 return NextResponse.json({ success: false, error: "Dados do cartão incompletos. Token não recebido." }, { status: 400 });

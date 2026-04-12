@@ -154,21 +154,22 @@ export default function ExitPopup({
 
     useEffect(() => {
         if (!isEnabled) return
+        const isMobile = () => /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 
         // ── 1. Desktop: mouse sai pelo topo da janela ──────────────────────
-        const onMouseLeave = (e: MouseEvent) => {
-            if (e.clientY <= 10) show()
+        // Usamos mousemove + clientY ao invés de mouseleave para que funcione
+        // IMEDIATAMENTE, mesmo sem o usuário ter interagido antes na página.
+        // O mouseleave no document exige interação prévia no Chrome (anti-popup policy).
+        const onMouseMove = (e: MouseEvent) => {
+            if (e.clientY <= 5) show()
         }
 
         // ── 2. Mobile: botão voltar / swipe voltar interceptado ────────────
-        // Empurra um estado extra. Quando o usuário aperta voltar, volta para
-        // esse estado e o popstate é disparado antes de sair de fato.
         history.pushState({ exitPopupGuard: true }, '', location.href)
 
         const onPopState = (e: PopStateEvent) => {
             const test = isTestMode();
             if ((!shownRef.current && !alreadyShown() && !isBlockedPage()) || test) {
-                // Reempurra o estado para impedir a navegação real
                 history.pushState({ exitPopupGuard: true }, '', location.href)
                 show()
             }
@@ -179,26 +180,51 @@ export default function ExitPopup({
             if (e.persisted) show()
         }
 
-        // ── 4. Tab saindo para segundo plano (swipe para fundo no iOS) ─────
+        // ── 4. Tab saindo para segundo plano ─────────────────────────────
         const onVisibilityChange = () => {
             if (document.visibilityState === 'hidden') show()
         }
 
-        // ── 5. pagehide — captura na maioria dos browsers modernos ─────────
+        // ── 5. pagehide ────────────────────────────────────────────────────
         const onPageHide = () => show()
 
-        document.addEventListener('mouseleave', onMouseLeave)
+        // ── 6. Mobile: pull-down no topo (intenção de sair) ───────────────
+        // Funciona SEM interação prévia. Pull-down da borda superior da tela
+        // = usuário tentando revelar a barra de endereço / aplicativo voltar.
+        let touchStartY = 0
+        let touchStartX = 0
+        const onTouchStart = (e: TouchEvent) => {
+            touchStartY = e.touches[0].clientY
+            touchStartX = e.touches[0].clientX
+        }
+        const onTouchMove = (e: TouchEvent) => {
+            const dy = e.touches[0].clientY - touchStartY
+            const dx = Math.abs(e.touches[0].clientX - touchStartX)
+            const atTop = window.scrollY <= 0 && touchStartY < 60
+            // Pull-down de pelo menos 60px partindo do topo, sem ser swipe horizontal
+            if (atTop && dy > 60 && dx < 40) show()
+        }
+
+        document.addEventListener('mousemove', onMouseMove, { capture: true })
         window.addEventListener('popstate', onPopState)
         window.addEventListener('pageshow', onPageShow)
         document.addEventListener('visibilitychange', onVisibilityChange)
         window.addEventListener('pagehide', onPageHide)
+        if (isMobile()) {
+            document.addEventListener('touchstart', onTouchStart, { passive: true })
+            document.addEventListener('touchmove', onTouchMove, { passive: true })
+        }
 
         return () => {
-            document.removeEventListener('mouseleave', onMouseLeave)
+            document.removeEventListener('mousemove', onMouseMove, { capture: true })
             window.removeEventListener('popstate', onPopState)
             window.removeEventListener('pageshow', onPageShow)
             document.removeEventListener('visibilitychange', onVisibilityChange)
             window.removeEventListener('pagehide', onPageHide)
+            if (isMobile()) {
+                document.removeEventListener('touchstart', onTouchStart)
+                document.removeEventListener('touchmove', onTouchMove)
+            }
             if (timerRef.current) clearInterval(timerRef.current)
         }
     }, [isEnabled, show, alreadyShown, isBlockedPage])
