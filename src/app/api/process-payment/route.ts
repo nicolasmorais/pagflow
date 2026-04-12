@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         }) : null;
 
         const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
-        const cpfToSave = cpfInput || "41324707011"; // Fallback CPF válido para Pix sem fricção
+        const cpfToSave = cpfInput || "19119119100"; // Fallback CPF válido para Pix sem fricção
 
         // 1. Preparar dados do pedido
         const orderDataToSave: any = {
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
                 last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
                 identification: {
                     type: 'CPF',
-                    number: cpfToSave || '41324707011'
+                    number: cpfToSave || '19119119100'
                 },
                 address: {
                     zip_code: orderData.cep?.replace(/\D/g, '') || '',
