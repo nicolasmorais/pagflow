@@ -144,7 +144,12 @@ export default async function CheckoutPage({
     // Fetch exit popup config
     let exitPopupConfig: any = null
     try {
-        exitPopupConfig = await prisma.exitPopupConfig.findFirst()
+        const p: any = prisma;
+        const model = p.exitPopupConfig;
+        if (model) {
+            exitPopupConfig = await model.findFirst()
+        }
+
         if (!exitPopupConfig) {
             exitPopupConfig = { isEnabled: true, discountPct: 50, timerSeconds: 480, installments: 3 }
         }

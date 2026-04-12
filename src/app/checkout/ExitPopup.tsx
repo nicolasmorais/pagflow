@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 
 interface ExitPopupProps {
     productName: string
@@ -46,7 +46,13 @@ export default function ExitPopup({
     const overlayRef = useRef<HTMLDivElement>(null)
     const timerElRef = useRef<HTMLDivElement>(null)
 
-    const discounted = originalPrice * (1 - discountPct / 100)
+    // Live values - fetched fresh from DB when popup is triggered
+    const [liveDiscountPct, setLiveDiscountPct] = useState(discountPct)
+    const [liveTimerSeconds, setLiveTimerSeconds] = useState(timerSeconds)
+    const liveDiscountRef = useRef(discountPct)
+    const liveTimerRef = useRef(timerSeconds)
+
+    const discounted = originalPrice * (1 - liveDiscountPct / 100)
     const installValue = discounted / installments
 
     const isBlockedPage = useCallback(() => {
@@ -69,6 +75,11 @@ export default function ExitPopup({
         }
     }, [])
 
+    const isTestMode = useCallback(() => {
+        if (typeof window === 'undefined') return false;
+        return window.location.search.includes('test_af=1');
+    }, []);
+
     const hide = useCallback(() => {
         const overlay = overlayRef.current
         if (!overlay) return
@@ -76,49 +87,70 @@ export default function ExitPopup({
         overlay.style.transition = 'opacity 0.25s ease'
         setTimeout(() => {
             overlay.style.display = 'none'
+            if (isTestMode()) {
+                shownRef.current = false
+            }
         }, 250)
         if (timerRef.current) clearInterval(timerRef.current)
-    }, [])
+    }, [isTestMode])
 
-    const show = useCallback(() => {
-        if (shownRef.current || alreadyShown() || isBlockedPage()) return
+    const show = useCallback(async () => {
+        const test = isTestMode();
+        if ((shownRef.current || alreadyShown()) && !test) return
+        if (isBlockedPage()) return
+
+        // Fetch LIVE config from DB before showing
+        try {
+            const res = await fetch('/api/exit-popup/config')
+            if (res.ok) {
+                const cfg = await res.json()
+                if (cfg.discountPct) {
+                    liveDiscountRef.current = cfg.discountPct
+                    setLiveDiscountPct(cfg.discountPct)
+                }
+                if (cfg.timerSeconds) {
+                    liveTimerRef.current = cfg.timerSeconds
+                    setLiveTimerSeconds(cfg.timerSeconds)
+                }
+            }
+        } catch (_) { /* use prop fallback */ }
+
         shownRef.current = true
-        sessionStorage.setItem(SESSION_KEY, '1')
+        if (!test) sessionStorage.setItem(SESSION_KEY, '1')
 
         const overlay = overlayRef.current
         if (!overlay) return
         overlay.style.display = 'flex'
-        // Force reflow before opacity transition
         void overlay.offsetHeight
         overlay.style.opacity = '1'
 
-        trackEvent('shown', productId)
+        if (!test) trackEvent('shown', productId)
 
-        // Start countdown timer
-        remainingRef.current = timerSeconds
+        // Start countdown with live timer value
+        remainingRef.current = liveTimerRef.current
         updateTimer()
         timerRef.current = setInterval(() => {
             remainingRef.current -= 1
             updateTimer()
             if (remainingRef.current <= 0) {
                 if (timerRef.current) clearInterval(timerRef.current)
-                trackEvent('expired', productId)
+                if (!test) trackEvent('expired', productId)
                 hide()
             }
         }, 1000)
-    }, [alreadyShown, isBlockedPage, productId, timerSeconds, updateTimer, hide])
+    }, [alreadyShown, isBlockedPage, productId, updateTimer, hide, isTestMode])
 
     const handleAccept = useCallback(() => {
-        trackEvent('accepted', productId)
+        if (!isTestMode()) trackEvent('accepted', productId)
         hide()
-        onAccept(discounted)
-    }, [discounted, hide, onAccept, productId])
+        onAccept(originalPrice * (1 - liveDiscountRef.current / 100))
+    }, [hide, isTestMode, onAccept, originalPrice, productId])
 
     const handleDecline = useCallback(() => {
-        trackEvent('declined', productId)
+        if (!isTestMode()) trackEvent('declined', productId)
         hide()
         onDecline()
-    }, [hide, onDecline, productId])
+    }, [hide, isTestMode, onDecline, productId])
 
     useEffect(() => {
         if (!isEnabled) return
@@ -134,7 +166,8 @@ export default function ExitPopup({
         history.pushState({ exitPopupGuard: true }, '', location.href)
 
         const onPopState = (e: PopStateEvent) => {
-            if (!shownRef.current && !alreadyShown() && !isBlockedPage()) {
+            const test = isTestMode();
+            if ((!shownRef.current && !alreadyShown() && !isBlockedPage()) || test) {
                 // Reempurra o estado para impedir a navegação real
                 history.pushState({ exitPopupGuard: true }, '', location.href)
                 show()

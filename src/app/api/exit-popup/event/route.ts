@@ -11,7 +11,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Invalid event type' }, { status: 400 })
         }
 
-        await prisma.exitPopupEvent.create({
+        const p: any = prisma
+        await p.exitPopupEvent.create({
             data: {
                 event,
                 productId: productId || null,

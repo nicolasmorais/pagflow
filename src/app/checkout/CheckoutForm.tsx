@@ -846,7 +846,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div className="step-title"><span className="step-icon">💳</span> Passo 3 — Pagamento</div>
                                     <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
 
-                                    {pixDiscountVal > 0 && (
+                                    {pixDiscountVal > 0 && exitDiscount === null && (
                                         <div style={{
                                             background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
                                             border: '1.5px solid #6ee7b7',
@@ -882,7 +882,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             <div className="pay-name">PIX</div>
                                             <div className="pay-desc">Pague pelo aplicativo do banco — aprovação na hora</div>
                                         </div>
-                                        {pixDiscountVal > 0 && <div className="pay-tag green">{customization?.pixDiscount}% OFF</div>}
+                                        {pixDiscountVal > 0 && exitDiscount === null && <div className="pay-tag green">{customization?.pixDiscount}% OFF</div>}
                                     </div>
                                     {paymentMethod === 'pix' && (
                                         <div className="pix-box" style={{ marginTop: '12px', background: 'transparent', border: 'none', padding: '0' }}>

@@ -1,30 +1,48 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
+import { getDateFilters } from '@/lib/date-utils'
 import AntiFugaClient from './AntiFugaClient'
 
-export default async function AntiFugaPage() {
+export default async function AntiFugaPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ from?: string; to?: string; filter?: string }>
+}) {
+    const params = await searchParams
+    const { fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(
+        params.filter, params.from, params.to
+    )
+
     // Load config
-    let config: any = await prisma.exitPopupConfig.findFirst()
+    const configModel = (prisma as any).exitPopupConfig || (await prisma).exitPopupConfig;
+
+    if (!configModel) {
+        throw new Error("O Prisma Client ainda não foi atualizado com os novos modelos Anti-Fuga. Por favor, reinicie o servidor de desenvolvimento (npm run dev).");
+    }
+
+    let config: any = await configModel.findFirst()
     if (!config) {
-        config = await prisma.exitPopupConfig.create({
+        config = await configModel.create({
             data: { isEnabled: true, discountPct: 50, timerSeconds: 480 }
         })
     }
 
-    // Analytics: aggregate events
+    const p: any = prisma;
+
+    // Analytics: aggregate events filtered by date
     const [shown, accepted, declined, expired] = await Promise.all([
-        prisma.exitPopupEvent.count({ where: { event: 'shown' } }),
-        prisma.exitPopupEvent.count({ where: { event: 'accepted' } }),
-        prisma.exitPopupEvent.count({ where: { event: 'declined' } }),
-        prisma.exitPopupEvent.count({ where: { event: 'expired' } }),
+        p.exitPopupEvent.count({ where: { event: 'shown', createdAt: { gte: fromDateUTC, lte: toDateUTC } } }),
+        p.exitPopupEvent.count({ where: { event: 'accepted', createdAt: { gte: fromDateUTC, lte: toDateUTC } } }),
+        p.exitPopupEvent.count({ where: { event: 'declined', createdAt: { gte: fromDateUTC, lte: toDateUTC } } }),
+        p.exitPopupEvent.count({ where: { event: 'expired', createdAt: { gte: fromDateUTC, lte: toDateUTC } } }),
     ])
 
-    // Last 7 days breakdown
+    // Last 7 days breakdown for the chart (historical context)
     const sevenDaysAgo = new Date()
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-    const recentEvents = await prisma.exitPopupEvent.findMany({
+    const recentEvents = await p.exitPopupEvent.findMany({
         where: { createdAt: { gte: sevenDaysAgo } },
         orderBy: { createdAt: 'asc' },
     })
@@ -54,6 +72,11 @@ export default async function AntiFugaPage() {
             config={config}
             stats={{ shown, accepted, declined, expired }}
             chartData={chartData}
+            filterState={{
+                currentFilter: params.filter || 'today',
+                fromDate,
+                toDate
+            }}
         />
     )
 }

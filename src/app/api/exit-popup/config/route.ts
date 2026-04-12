@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 async function getOrCreateConfig() {
-    let config = await prisma.exitPopupConfig.findFirst()
+    const p: any = prisma
+    const model = p.exitPopupConfig
+
+    if (!model) {
+        throw new Error("Prisma client stale. Please restart server.")
+    }
+
+    let config = await model.findFirst()
     if (!config) {
-        config = await prisma.exitPopupConfig.create({
+        config = await model.create({
             data: { isEnabled: true, discountPct: 50, timerSeconds: 480 }
         })
     }

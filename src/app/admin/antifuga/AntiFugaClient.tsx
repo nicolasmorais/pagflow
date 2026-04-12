@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Shield, TrendingUp, Eye, CheckCircle, XCircle, Clock, Save } from 'lucide-react'
+import AntiFugaFilterForm from './AntiFugaFilterForm'
 
 interface Props {
     config: {
@@ -17,9 +18,14 @@ interface Props {
         expired: number
     }
     chartData: { date: string; shown: number; accepted: number }[]
+    filterState: {
+        currentFilter: string
+        fromDate: string
+        toDate: string
+    }
 }
 
-export default function AntiFugaClient({ config, stats, chartData }: Props) {
+export default function AntiFugaClient({ config, stats, chartData, filterState }: Props) {
     const [isEnabled, setIsEnabled] = useState(config.isEnabled)
     const [discountPct, setDiscountPct] = useState(config.discountPct)
     const [timerSeconds, setTimerSeconds] = useState(config.timerSeconds)
@@ -30,7 +36,13 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
         ? ((stats.accepted / stats.shown) * 100).toFixed(1)
         : '0.0'
 
-    const maxChart = Math.max(...chartData.map(d => d.shown), 1)
+    const maxChart = Math.max(
+        ...chartData.map(d => d.shown),
+        ...chartData.map(d => d.accepted),
+        1
+    )
+
+    const BAR_MAX_HEIGHT = 140 // Safe max height inside 160px container
 
     async function handleSave() {
         setSaving(true)
@@ -54,9 +66,23 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
     const timerSecs = timerSeconds % 60
 
     return (
-        <div style={{ padding: '24px', maxWidth: '900px', margin: '0 auto', fontFamily: 'inherit' }}>
+        <div className="af-admin-container" style={{ padding: '24px', maxWidth: '900px', margin: '0 auto', fontFamily: 'inherit' }}>
+            <style>{`
+                @media (max-width: 768px) {
+                    .af-admin-container { padding: 16px !important; }
+                    .af-header { flex-direction: column !important; align-items: flex-start !important; gap: 16px !important; margin-bottom: 24px !important; }
+                    .af-header-toggle { margin-left: 0 !important; width: 100% !important; justify-content: space-between !important; padding: 12px !important; background: #f8fafc !important; border-radius: 12px !important; border: 1px solid #e2e8f0 !important; }
+                    .af-stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; margin-bottom: 24px !important; }
+                    .af-main-layout { grid-template-columns: 1fr !important; gap: 20px !important; }
+                    .af-chart-card { overflow-x: auto !important; }
+                    .af-chart-container { min-width: 450px !important; }
+                }
+                @media (max-width: 480px) {
+                    .af-stats-grid { grid-template-columns: 1fr !important; }
+                }
+            `}</style>
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+            <div className="af-header" style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
                 <div style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', borderRadius: '12px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Shield size={24} color="white" />
                 </div>
@@ -64,7 +90,7 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
                     <h1 style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b', margin: 0 }}>Popup Anti-Fuga</h1>
                     <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>Recupere vendas quando o usuário tenta abandonar o checkout</p>
                 </div>
-                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div className="af-header-toggle" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ fontSize: '14px', color: '#64748b' }}>{isEnabled ? 'Ativo' : 'Inativo'}</span>
                     <button
                         onClick={() => setIsEnabled(!isEnabled)}
@@ -84,8 +110,15 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
                 </div>
             </div>
 
+            {/* Date Filter */}
+            <AntiFugaFilterForm
+                currentFilter={filterState.currentFilter}
+                fromDate={filterState.fromDate}
+                toDate={filterState.toDate}
+            />
+
             {/* Stats Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+            <div className="af-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
                 {[
                     { icon: Eye, label: 'Exibições', value: stats.shown, color: '#3b82f6', bg: '#eff6ff' },
                     { icon: CheckCircle, label: 'Aceitos', value: stats.accepted, color: '#10b981', bg: '#f0fdf4' },
@@ -104,7 +137,7 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
                 ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+            <div className="af-main-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 {/* Config Card */}
                 <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '24px', marginTop: 0 }}>⚙️ Configurações</h2>
@@ -162,17 +195,17 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
                 </div>
 
                 {/* Chart Card */}
-                <div style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div className="af-chart-card" style={{ background: 'white', borderRadius: '16px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                     <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '24px', marginTop: 0 }}>📊 Últimos 7 dias</h2>
 
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '160px' }}>
+                    <div className="af-chart-container" style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', height: '160px', paddingBottom: '20px' }}>
                         {chartData.map(({ date, shown, accepted }) => (
                             <div key={date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', height: '100%', justifyContent: 'flex-end' }}>
-                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '2px', justifyContent: 'flex-end', alignItems: 'center', flex: 1 }}>
+                                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '2px', justifyContent: 'flex-end', alignItems: 'center', flex: 1, overflow: 'hidden' }}>
                                     <div
                                         style={{
                                             width: '100%', background: '#10b981', borderRadius: '4px 4px 0 0',
-                                            height: shown > 0 ? `${Math.max((accepted / maxChart) * 120, accepted > 0 ? 6 : 0)}px` : '0',
+                                            height: shown > 0 ? `${Math.min((accepted / maxChart) * BAR_MAX_HEIGHT, BAR_MAX_HEIGHT)}px` : '0',
                                             transition: 'height 0.3s'
                                         }}
                                         title={`${accepted} aceitos`}
@@ -180,7 +213,7 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
                                     <div
                                         style={{
                                             width: '100%', background: '#3b82f6', borderRadius: accepted > 0 ? '0' : '4px 4px 0 0',
-                                            height: `${Math.max(((shown - accepted) / maxChart) * 120, shown > 0 ? 4 : 0)}px`,
+                                            height: `${Math.min((Math.max(shown - accepted, 0) / maxChart) * BAR_MAX_HEIGHT, BAR_MAX_HEIGHT)}px`,
                                             transition: 'height 0.3s'
                                         }}
                                         title={`${shown} exibições`}
@@ -230,6 +263,22 @@ export default function AntiFugaClient({ config, stats, chartData }: Props) {
                             <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>{desc}</div>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            {/* Test Mode Tip */}
+            <div style={{ background: '#eff6ff', borderRadius: '16px', padding: '24px', border: '1px solid #bfdbfe', marginTop: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ background: '#dbeafe', padding: '6px', borderRadius: '8px' }}>
+                        <Clock size={18} color="#1d4ed8" />
+                    </div>
+                    <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#1e40af', margin: 0 }}>💡 Dica: Como testar o popup</h2>
+                </div>
+                <p style={{ fontSize: '14px', color: '#1d4ed8', margin: 0, lineHeight: 1.6 }}>
+                    Para testar o popup várias vezes sem precisar limpar o cache ou usar aba anônima, adicione <strong>?test_af=1</strong> ao final da URL do seu checkout.
+                </p>
+                <div style={{ marginTop: '12px', background: '#dbeafe', padding: '12px 14px', border: '1px dashed #3b82f6', borderRadius: '8px', fontSize: '13px', fontFamily: 'monospace', color: '#1e40af', wordBreak: 'break-all' }}>
+                    seusite.com/checkout?p=id_do_produto<strong>&test_af=1</strong>
                 </div>
             </div>
         </div>
