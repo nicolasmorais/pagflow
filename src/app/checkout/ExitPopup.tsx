@@ -188,21 +188,44 @@ export default function ExitPopup({
         // ── 5. pagehide ────────────────────────────────────────────────────
         const onPageHide = () => show()
 
-        // ── 6. Mobile: pull-down no topo (intenção de sair) ───────────────
-        // Funciona SEM interação prévia. Pull-down da borda superior da tela
-        // = usuário tentando revelar a barra de endereço / aplicativo voltar.
-        let touchStartY = 0
-        let touchStartX = 0
-        const onTouchStart = (e: TouchEvent) => {
-            touchStartY = e.touches[0].clientY
-            touchStartX = e.touches[0].clientX
-        }
-        const onTouchMove = (e: TouchEvent) => {
-            const dy = e.touches[0].clientY - touchStartY
-            const dx = Math.abs(e.touches[0].clientX - touchStartX)
-            const atTop = window.scrollY <= 0 && touchStartY < 60
-            // Pull-down de pelo menos 60px partindo do topo, sem ser swipe horizontal
-            if (atTop && dy > 60 && dx < 40) show()
+        // ── 6. Mobile: scroll-based exit intent ────────────────────────────
+        // Funciona assim que o usuário rolar a página (o que é inevitável no checkout).
+        // Depois de rolar 100px+ para baixo, qualquer scroll de volta ao topo
+        // = intenção de sair (botão voltar, barra de endereço, etc.)
+        let maxScrollY = 0
+        let lastScrollY = 0
+        let scrollTimeout: ReturnType<typeof setTimeout> | null = null
+
+        const onScroll = () => {
+            const current = window.scrollY
+
+            // Registrar o quanto o usuário já rolou
+            if (current > maxScrollY) maxScrollY = current
+
+            // Só ativar depois que o usuário tiver rolado pelo menos 100px
+            if (maxScrollY < 100) {
+                lastScrollY = current
+                return
+            }
+
+            // Velocidade de scroll para cima
+            const scrolledUp = lastScrollY - current
+            lastScrollY = current
+
+            // Chegou ao topo: saída quase certa
+            if (current <= 10 && maxScrollY > 100) {
+                show()
+                return
+            }
+
+            // Scroll rápido para cima (≥ 40px em um frame) = gesto de "ir embora"
+            if (scrolledUp >= 40) {
+                // Debounce: só dispara se parar de rolar nessa direção por 150ms
+                if (scrollTimeout) clearTimeout(scrollTimeout)
+                scrollTimeout = setTimeout(() => {
+                    if (window.scrollY < lastScrollY + 40) show()
+                }, 150)
+            }
         }
 
         document.addEventListener('mousemove', onMouseMove, { capture: true })
@@ -211,8 +234,7 @@ export default function ExitPopup({
         document.addEventListener('visibilitychange', onVisibilityChange)
         window.addEventListener('pagehide', onPageHide)
         if (isMobile()) {
-            document.addEventListener('touchstart', onTouchStart, { passive: true })
-            document.addEventListener('touchmove', onTouchMove, { passive: true })
+            window.addEventListener('scroll', onScroll, { passive: true })
         }
 
         return () => {
@@ -222,12 +244,13 @@ export default function ExitPopup({
             document.removeEventListener('visibilitychange', onVisibilityChange)
             window.removeEventListener('pagehide', onPageHide)
             if (isMobile()) {
-                document.removeEventListener('touchstart', onTouchStart)
-                document.removeEventListener('touchmove', onTouchMove)
+                window.removeEventListener('scroll', onScroll)
+                if (scrollTimeout) clearTimeout(scrollTimeout)
             }
             if (timerRef.current) clearInterval(timerRef.current)
         }
     }, [isEnabled, show, alreadyShown, isBlockedPage])
+
 
     if (!isEnabled) return null
 
