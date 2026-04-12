@@ -156,11 +156,15 @@ export default function ExitPopup({
         if (!isEnabled) return
         const isMobile = () => /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 
+        let isEngaged = false
+
+        const setEngaged = () => {
+            if (!isEngaged) isEngaged = true
+        }
+
         // ── 1. Desktop: mouse sai pelo topo da janela ──────────────────────
-        // Usamos mousemove + clientY ao invés de mouseleave para que funcione
-        // IMEDIATAMENTE, mesmo sem o usuário ter interagido antes na página.
-        // O mouseleave no document exige interação prévia no Chrome (anti-popup policy).
         const onMouseMove = (e: MouseEvent) => {
+            // Desktop não exige engajamento prévio da nossa parte porque o mousemove já garante intenção
             if (e.clientY <= 5) show()
         }
 
@@ -171,86 +175,67 @@ export default function ExitPopup({
             const test = isTestMode();
             if ((!shownRef.current && !alreadyShown() && !isBlockedPage()) || test) {
                 history.pushState({ exitPopupGuard: true }, '', location.href)
-                show()
+                if (isEngaged || !isMobile() || test) show()
             }
         }
 
-        // ── 3. iOS Safari bfcache — pageshow com persisted=true ────────────
-        const onPageShow = (e: PageTransitionEvent) => {
-            if (e.persisted) show()
-        }
-
-        // ── 4. Tab saindo para segundo plano ─────────────────────────────
-        const onVisibilityChange = () => {
-            if (document.visibilityState === 'hidden') show()
-        }
-
-        // ── 5. pagehide ────────────────────────────────────────────────────
-        const onPageHide = () => show()
-
-        // ── 6. Mobile: scroll-based exit intent ────────────────────────────
-        // Funciona assim que o usuário rolar a página (o que é inevitável no checkout).
-        // Depois de rolar 100px+ para baixo, qualquer scroll de volta ao topo
-        // = intenção de sair (botão voltar, barra de endereço, etc.)
-        let maxScrollY = 0
-        let lastScrollY = 0
-        let scrollTimeout: ReturnType<typeof setTimeout> | null = null
-
+        // ── 3. Comportamento de Scroll (Mobile e Desktop) ──────────────────
         const onScroll = () => {
-            const current = window.scrollY
+            if (window.scrollY > 100) setEngaged()
+        }
 
-            // Registrar o quanto o usuário já rolou
-            if (current > maxScrollY) maxScrollY = current
+        // ── 4. Mobile: pull-down no topo (intenção de sair) ───────────────
+        let touchStartY = 0
+        let touchStartX = 0
+        const onTouchStart = (e: TouchEvent) => {
+            touchStartY = e.touches[0].clientY
+            touchStartX = e.touches[0].clientX
+            setEngaged() // Qualquer toque no mobile marca como engajado
+        }
+        const onTouchMove = (e: TouchEvent) => {
+            const dy = e.touches[0].clientY - touchStartY
+            const dx = Math.abs(e.touches[0].clientX - touchStartX)
+            const atTop = window.scrollY <= 0 && touchStartY < 60
+            if (atTop && dy > 60 && dx < 40 && isEngaged) show()
+        }
 
-            // Só ativar depois que o usuário tiver rolado pelo menos 100px
-            if (maxScrollY < 100) {
-                lastScrollY = current
-                return
-            }
-
-            // Velocidade de scroll para cima
-            const scrolledUp = lastScrollY - current
-            lastScrollY = current
-
-            // Chegou ao topo: saída quase certa
-            if (current <= 10 && maxScrollY > 100) {
-                show()
-                return
-            }
-
-            // Scroll rápido para cima (≥ 40px em um frame) = gesto de "ir embora"
-            if (scrolledUp >= 40) {
-                // Debounce: só dispara se parar de rolar nessa direção por 150ms
-                if (scrollTimeout) clearTimeout(scrollTimeout)
-                scrollTimeout = setTimeout(() => {
-                    if (window.scrollY < lastScrollY + 40) show()
-                }, 150)
-            }
+        // ── 5. Outros gatilhos ─────────────────────────────────────────────
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'hidden' && (isEngaged || !isMobile())) show()
+        }
+        const onPageHide = () => {
+            if (isEngaged || !isMobile()) show()
+        }
+        const onInteraction = () => {
+            setEngaged()
         }
 
         document.addEventListener('mousemove', onMouseMove, { capture: true })
         window.addEventListener('popstate', onPopState)
-        window.addEventListener('pageshow', onPageShow)
+        window.addEventListener('scroll', onScroll, { passive: true })
         document.addEventListener('visibilitychange', onVisibilityChange)
         window.addEventListener('pagehide', onPageHide)
+        document.addEventListener('mousedown', onInteraction, { passive: true })
+
         if (isMobile()) {
-            window.addEventListener('scroll', onScroll, { passive: true })
+            document.addEventListener('touchstart', onTouchStart, { passive: true })
+            document.addEventListener('touchmove', onTouchMove, { passive: true })
         }
 
         return () => {
             document.removeEventListener('mousemove', onMouseMove, { capture: true })
             window.removeEventListener('popstate', onPopState)
-            window.removeEventListener('pageshow', onPageShow)
+            window.removeEventListener('scroll', onScroll)
             document.removeEventListener('visibilitychange', onVisibilityChange)
             window.removeEventListener('pagehide', onPageHide)
+            document.removeEventListener('mousedown', onInteraction)
             if (isMobile()) {
-                window.removeEventListener('scroll', onScroll)
-                if (scrollTimeout) clearTimeout(scrollTimeout)
+                document.removeEventListener('touchstart', onTouchStart)
+                document.removeEventListener('touchmove', onTouchMove)
             }
             if (timerRef.current) clearInterval(timerRef.current)
         }
     }, [isEnabled, show, alreadyShown, isBlockedPage])
-
 
     if (!isEnabled) return null
 
