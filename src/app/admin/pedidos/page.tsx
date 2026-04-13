@@ -105,20 +105,35 @@ export default async function OrdersPage({
     orders = await syncMercadoPagoOrders(orders);
 
     return (
-        <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px' }}>
+        <div style={{ width: '100%', paddingBottom: '60px' }}>
 
-            {/* Header / Toolbar */}
-            <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
+            {/* Header / Toolbar - Full Width */}
+            <div style={{
+                marginBottom: '32px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '24px',
+                padding: '0 8px'
+            }}>
                 <div>
-                    <h1 style={{ fontSize: 'clamp(1.5rem, 5vw, 2.2rem)', fontWeight: 900, color: '#1e293b', margin: 0, letterSpacing: '-0.04em', fontFamily: "'Space Grotesk', sans-serif" }}>
-                        Pedidos
+                    <h1 style={{
+                        fontSize: 'clamp(1.8rem, 4vw, 2.4rem)',
+                        fontWeight: 800,
+                        color: 'var(--admin-text-primary)',
+                        margin: 0,
+                        letterSpacing: '-0.04em',
+                        fontFamily: "'Space Grotesk', sans-serif"
+                    }}>
+                        Pedidos de Venda
                     </h1>
-                    <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#64748b', fontWeight: 500 }}>
-                        Gerencie suas vendas, envios e faturamento.
+                    <p style={{ margin: '8px 0 0', fontSize: '15px', color: 'var(--admin-text-secondary)', fontWeight: 500 }}>
+                        Acompanhe o fluxo de vendas e logísticas em tempo real.
                     </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <AnalyticsFilterForm
                         currentFilter={params.filter || 'today'}
                         fromDate={fromDate}
@@ -127,222 +142,212 @@ export default async function OrdersPage({
                     <div style={{ position: 'relative' }}>
                         <input
                             type="text"
-                            placeholder="Buscar pedido..."
+                            placeholder="Buscar por cliente ou ID..."
+                            className="search-input-field"
                             style={{
-                                padding: '10px 16px',
-                                paddingLeft: '40px',
+                                padding: '12px 16px',
+                                paddingLeft: '44px',
                                 borderRadius: '14px',
                                 border: '1px solid #e2e8f0',
                                 fontSize: '14px',
-                                width: '280px',
+                                width: '300px',
                                 background: '#fff',
                                 outline: 'none',
                                 transition: 'all 0.2s',
-                                fontFamily: "'Space Grotesk', sans-serif"
+                                fontFamily: "'Space Grotesk', sans-serif",
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
                             }}
                         />
                         <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-                            <RefreshCw size={16} />
+                            <RefreshCw size={18} />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {orders.length === 0 && (
-                    <div className="glass-card" style={{ textAlign: 'center', padding: '5rem 2rem', borderRadius: '24px' }}>
+            <div className="orders-container">
+                {orders.length === 0 ? (
+                    <div className="analytics-card" style={{ textAlign: 'center', padding: '6rem 2rem', borderRadius: '24px' }}>
                         <div style={{
-                            width: '64px', height: '64px', background: '#f1f5f9', borderRadius: '20px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px'
+                            width: '80px', height: '80px', background: '#f8fafc', borderRadius: '24px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px'
                         }}>
-                            <Clock size={32} color="#94a3b8" />
+                            <Clock size={40} color="#cbd5e1" />
                         </div>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', marginBottom: '8px' }}>Nenhum pedido ainda</h2>
-                        <p style={{ color: '#64748b', fontSize: '0.95rem' }}>Assim que as vendas começarem, elas aparecerão aqui em tempo real.</p>
+                        <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--admin-text-primary)', marginBottom: '12px' }}>Aguardando primeira venda</h2>
+                        <p style={{ color: 'var(--admin-text-secondary)', fontSize: '1rem', maxWidth: '400px', margin: '0 auto' }}>Fique tranquilo, assim que um cliente finalizar a compra, os dados aparecerão aqui instantaneamente.</p>
                     </div>
+                ) : (
+                    <>
+                        {/* Desktop Table View */}
+                        <div className="desktop-orders-table">
+                            <table style={{
+                                width: '100%',
+                                borderCollapse: 'separate',
+                                borderSpacing: '0 12px',
+                                marginTop: '-12px'
+                            }}>
+                                <thead>
+                                    <tr style={{ textAlign: 'left' }}>
+                                        <th style={headerStyle}>CLIENTE</th>
+                                        <th style={headerStyle}>DATA / HORA</th>
+                                        <th style={headerStyle}>PRODUTO</th>
+                                        <th style={headerStyle}>VALOR TOTAL</th>
+                                        <th style={headerStyle}>PAGAMENTO</th>
+                                        <th style={headerStyle}>LOGÍSTICA</th>
+                                        <th style={{ ...headerStyle, textAlign: 'right' }}>AÇÕES</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {orders.map((order: any) => (
+                                        <tr key={order.id} className="order-row-matte">
+                                            <td style={cellStyle}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                                    <div style={{
+                                                        width: '42px', height: '42px', borderRadius: '12px',
+                                                        background: order.paymentStatus === 'pago' ? '#ecfdf5' : '#fef2f2',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>
+                                                        {order.paymentStatus === 'pago' ? <CheckCircle2 size={20} color="#10b981" /> : <XCircle size={20} color="#ef4444" />}
+                                                    </div>
+                                                    <div>
+                                                        <Link href={`/admin/pedidos/${order.id}`} className="order-customer-link">
+                                                            {order.fullName || 'Sem nome'}
+                                                            <ExternalLink size={12} style={{ marginLeft: '6px' }} />
+                                                        </Link>
+                                                        <div style={{ fontSize: '12px', color: '#64748b' }}>{order.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style={cellStyle}>
+                                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
+                                                    {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#94a3b8' }}>
+                                                    {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </td>
+                                            <td style={cellStyle}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
+                                                        {order.product?.name || 'Produto'}
+                                                    </span>
+                                                    {order.hasBump && <span className="bump-badge">BUMP</span>}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>
+                                                    {order.paymentMethod === 'pix' ? '💠 PIX' : '💳 CARTÃO'}
+                                                </div>
+                                            </td>
+                                            <td style={cellStyle}>
+                                                <div style={{ fontSize: '15px', fontWeight: 800, color: '#10b981', fontFamily: '"Space Grotesk", sans-serif' }}>
+                                                    R$ {(order.totalPrice || 0).toFixed(2)}
+                                                </div>
+                                            </td>
+                                            <td style={cellStyle}>
+                                                <PaymentStatusSelect orderId={order.id} initialStatus={order.paymentStatus || 'processando'} />
+                                            </td>
+                                            <td style={cellStyle}>
+                                                <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
+                                            </td>
+                                            <td style={{ ...cellStyle, textAlign: 'right' }}>
+                                                <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                                    <a
+                                                        href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
+                                                        target="_blank" rel="noreferrer"
+                                                        className="action-btn-matte whatsapp"
+                                                        title="Chamar no WhatsApp"
+                                                    >
+                                                        <Phone size={16} />
+                                                    </a>
+                                                    <DeleteOrderButton orderId={order.id} />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Mobile Card View */}
+                        <div className="mobile-orders-grid">
+                            {orders.map((order: any) => (
+                                <div key={order.id} className="mobile-order-card">
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                            <div className="status-dot" style={{ background: order.paymentStatus === 'pago' ? '#10b981' : '#ef4444' }} />
+                                            <span style={{ fontWeight: 800, fontSize: '15px' }}>{order.fullName}</span>
+                                        </div>
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#10b981' }}>R$ {order.totalPrice.toFixed(2)}</span>
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                                        <div>
+                                            <div style={labelStyle}>PAGAMENTO</div>
+                                            <PaymentStatusSelect orderId={order.id} initialStatus={order.paymentStatus || 'processando'} />
+                                        </div>
+                                        <div>
+                                            <div style={labelStyle}>LOGÍSTICA</div>
+                                            <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', borderTop: '1px solid #f1f5f9', paddingTop: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                                            {new Date(order.createdAt).toLocaleDateString('pt-BR')}  às {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '10px' }}>
+                                            <a href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="mobile-action-btn whatsapp">
+                                                <Phone size={16} />
+                                            </a>
+                                            <DeleteOrderButton orderId={order.id} />
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
                 )}
-
-                {orders.map((order: any) => (
-                    <div key={order.id} className="analytics-card" style={{
-                        padding: '0',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        cursor: 'default',
-                        border: '1px solid var(--admin-border)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
-                    }}>
-                        <div style={{
-                            padding: '20px 24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            flexWrap: 'wrap',
-                            gap: '20px',
-                            borderBottom: '1px solid #f1f5f9'
-                        }}>
-                            {/* Left: Primary Info */}
-                            <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                                <div style={{
-                                    width: '56px', height: '56px', borderRadius: '16px',
-                                    background: order.paymentStatus === 'pago' ? '#ecfdf5' : '#fef2f2',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    flexShrink: 0
-                                }}>
-                                    {order.paymentStatus === 'pago' ? (
-                                        <CheckCircle2 size={24} color="#10b981" />
-                                    ) : (
-                                        <XCircle size={24} color="#ef4444" />
-                                    )}
-                                </div>
-                                <div>
-                                    <Link href={`/admin/pedidos/${order.id}`} style={{ textDecoration: 'none' }}>
-                                        <h3 style={{
-                                            fontSize: '1.2rem', fontWeight: 800, color: '#0d1117',
-                                            margin: '0 0 4px 0', letterSpacing: '-0.02em',
-                                            fontFamily: "'Space Grotesk', sans-serif",
-                                            display: 'flex', alignItems: 'center', gap: '8px'
-                                        }}>
-                                            {order.fullName || 'Sem nome'}
-                                            <ExternalLink size={14} color="#3b82f6" />
-                                        </h3>
-                                    </Link>
-                                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>{order.email}</span>
-                                        <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#cbd5e1' }} />
-                                        <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
-                                            {new Date(order.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Center: Value & Status Selectors */}
-                            <div style={{ display: 'flex', gap: '32px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '11px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>Valor Total</div>
-                                    <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#10b981', fontFamily: "'Space Grotesk', sans-serif" }}>
-                                        R$ {(order.totalPrice || 0).toFixed(2)}
-                                    </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <div>
-                                        <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>Pagamento</div>
-                                        <PaymentStatusSelect
-                                            orderId={order.id}
-                                            initialStatus={order.paymentStatus || 'processando'}
-                                        />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>Logística</div>
-                                        <OrderStatusSelect
-                                            orderId={order.id}
-                                            initialStatus={order.status || 'pendente'}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Bottom: Details Bar */}
-                        <div style={{
-                            padding: '16px 24px',
-                            background: '#f8fafc',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            flexWrap: 'wrap',
-                            gap: '16px'
-                        }}>
-                            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-                                {/* Product */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
-                                        <CreditCard size={16} color="#6366f1" />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Produto</div>
-                                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
-                                            {order.product?.name || 'Produto Removido'}
-                                            {order.hasBump && <span style={{ marginLeft: '8px', fontSize: '10px', background: '#fef3c7', color: '#f59e0b', padding: '2px 6px', borderRadius: '4px' }}>+ BUMP</span>}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Shipping */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
-                                        <MapPin size={16} color="#f43f5e" />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Entrega</div>
-                                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>
-                                            {order.cidade}/{order.estado}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Phone */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <div style={{ width: '32px', height: '32px', background: '#fff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #e2e8f0' }}>
-                                        <Phone size={16} color="#10b981" />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Contato</div>
-                                        <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>{order.phone}</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <a
-                                    href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{
-                                        padding: '8px 16px',
-                                        background: '#fff',
-                                        borderRadius: '12px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '8px',
-                                        color: '#10b981',
-                                        border: '1px solid #d1f7de',
-                                        textDecoration: 'none',
-                                        fontSize: '13px',
-                                        fontWeight: 700,
-                                        transition: 'all 0.2s'
-                                    }}
-                                >
-                                    <ExternalLink size={14} /> WhatsApp
-                                </a>
-
-                                <DeleteOrderButton orderId={order.id} />
-                            </div>
-                        </div>
-                    </div>
-                ))}
             </div>
         </div>
     )
 }
 
+const headerStyle: React.CSSProperties = {
+    padding: '12px 20px',
+    fontSize: '11px',
+    fontWeight: 800,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em'
+}
+
+const cellStyle: React.CSSProperties = {
+    padding: '16px 20px',
+    borderBottom: '1px solid #f8fafc',
+    borderTop: '1px solid #f8fafc'
+}
+
+const labelStyle: React.CSSProperties = {
+    fontSize: '10px',
+    fontWeight: 800,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    marginBottom: '6px'
+}
+
 async function DeleteOrderButton({ orderId }: { orderId: string }) {
     return (
         <form action={deleteOrder.bind(null, orderId)}>
-            <button style={{
-                width: '38px',
-                height: '38px',
+            <button className="del-btn-matte" style={{
+                width: '36px',
+                height: '36px',
                 background: '#fff',
-                borderRadius: '12px',
+                borderRadius: '10px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#e11d48',
-                border: '1px solid #ffe4e6',
+                color: '#ef4444',
+                border: '1px solid #fee2e2',
                 cursor: 'pointer',
                 transition: 'all 0.2s'
             }}>

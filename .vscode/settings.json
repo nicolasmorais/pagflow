@@ -1,0 +1,14 @@
+{
+    "mcpServers": {
+        "mui-mcp": {
+            "type": "stdio",
+            "command": "npx",
+            "args": [
+                "-y",
+                "@mui/mcp@latest"
+            ]
+        }
+    },
+    "chat.mcp.enabled": true,
+    "chat.mcp.discovery.enabled": true
+}
