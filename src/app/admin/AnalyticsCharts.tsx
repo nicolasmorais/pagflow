@@ -48,19 +48,39 @@ const BarTooltip = ({ active, payload, label }: any) => {
 }
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
-function KpiCard({ icon: Icon, label, value, sub, badge }: {
-    icon: any; label: string; value: string; sub?: string; badge?: { text: string; color: string; bg: string }
+function KpiCard({ icon: Icon, label, value, sub, badge, featured }: {
+    icon: any; label: string; value: string; sub?: string; badge?: { text: string; color: string; bg: string }; featured?: boolean
 }) {
     return (
-        <div className="stark-card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '12px' }}>
+        <div className="stark-card" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            padding: featured ? '28px 24px' : '20px',
+            background: '#ffffff',
+            border: featured ? 'none' : '1px solid var(--admin-border)',
+            borderRadius: featured ? '24px' : '18px',
+            boxShadow: featured ? '0 12px 32px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04), inset 0 0 0 1px rgba(0,0,0,0.02)' : '0 1px 3px rgba(0, 0, 0, 0.04)',
+            color: 'inherit',
+            position: 'relative',
+            overflow: 'hidden'
+        }}>
+            {featured && (
+                <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.03, pointerEvents: 'none', transform: 'scale(3)' }}>
+                    <Icon size={120} strokeWidth={1} />
+                </div>
+            )}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: featured ? '20px' : '16px', position: 'relative', zIndex: 1 }}>
                 <div style={{
-                    width: '38px', height: '38px', borderRadius: '12px',
-                    background: 'var(--admin-accent-light)',
+                    width: featured ? '48px' : '38px',
+                    height: featured ? '48px' : '38px',
+                    borderRadius: featured ? '14px' : '12px',
+                    background: featured ? 'linear-gradient(135deg, #6366f1, #8b5cf6)' : 'var(--admin-accent-light)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'var(--admin-accent)', opacity: 0.8
+                    color: featured ? '#ffffff' : 'var(--admin-accent)',
+                    boxShadow: featured ? '0 6px 16px rgba(99,102,241,0.25)' : 'none'
                 }}>
-                    <Icon size={18} strokeWidth={2.5} />
+                    <Icon size={featured ? 24 : 18} strokeWidth={2.5} />
                 </div>
                 {badge && (
                     <span style={{ fontSize: '10px', fontWeight: 800, color: badge.color, background: badge.bg, padding: '4px 10px', borderRadius: '20px', border: `1px solid ${badge.color}15` }}>
@@ -69,19 +89,26 @@ function KpiCard({ icon: Icon, label, value, sub, badge }: {
                 )}
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative', zIndex: 1 }}>
+                <span style={{ fontSize: featured ? '13px' : '11px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {label}
                 </span>
-                <div style={{ fontSize: 'clamp(22px, 2.5vw, 26px)', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
+                <div style={{
+                    fontSize: featured ? 'clamp(32px, 4vw, 42px)' : 'clamp(22px, 2.5vw, 26px)',
+                    fontWeight: 900,
+                    color: '#0f172a',
+                    letterSpacing: '-0.04em',
+                    lineHeight: 1.1
+                }}>
                     {value}
                 </div>
             </div>
 
             {sub && (
-                <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
-                    <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {sub}
+                <div style={{ marginTop: 'auto', paddingTop: featured ? '16px' : '12px', position: 'relative', zIndex: 1 }}>
+                    <div style={{ fontSize: featured ? '14px' : '12px', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {featured ? <div style={{ fontSize: '11px', fontWeight: 800, background: '#e0e7ff', color: '#4338ca', padding: '2px 8px', borderRadius: '4px' }}>LÍQ</div> : null}
+                        {featured ? sub.replace('Líq. ', '') : sub}
                     </div>
                 </div>
             )}
@@ -166,7 +193,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
         <>
             {/* ── KPI Grid ── */}
             <div className="analytics-kpi-grid">
-                <KpiCard icon={DollarSign} label="Faturamento" value={`R$ ${fmt(kpis.totalRevenue)}`} sub={kpis.netRevenue > 0 ? `Líq. R$ ${fmt(kpis.netRevenue)}` : undefined} />
+                <KpiCard featured icon={DollarSign} label="Faturamento" value={`R$ ${fmt(kpis.totalRevenue)}`} sub={kpis.netRevenue > 0 ? `Líq. R$ ${fmt(kpis.netRevenue)}` : undefined} />
                 <KpiCard icon={ShoppingBag} label="Total de Pedidos" value={String(kpis.totalOrders)} />
                 <KpiCard icon={CheckCircle2} label="Pagos" value={String(kpis.paidOrders)} />
                 <KpiCard icon={ShoppingCart} label="Abandonados" value={String(kpis.abandonedOrders)} />

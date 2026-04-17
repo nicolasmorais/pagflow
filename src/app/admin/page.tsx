@@ -300,7 +300,7 @@ export default async function AdminPage({
         <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px' }}>
 
             {/* Header */}
-            <header style={{
+            <header className="page-header" style={{
                 marginBottom: '32px',
                 display: 'flex',
                 alignItems: 'center',
@@ -308,16 +308,8 @@ export default async function AdminPage({
                 flexWrap: 'wrap',
                 gap: '20px'
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{
-                        width: '46px', height: '46px', borderRadius: '14px', flexShrink: 0,
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 6px 18px rgba(99,102,241,0.35)'
-                    }}>
-                        <BarChart3 size={22} color="white" />
-                    </div>
-                    <div>
+                <div className="page-title-section" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div className="page-title-text">
                         <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 900, color: '#1e293b', margin: 0, letterSpacing: '-0.03em' }}>
                             Centro de Análise
                         </h1>

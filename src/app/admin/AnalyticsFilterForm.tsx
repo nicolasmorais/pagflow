@@ -17,13 +17,7 @@ export default function AnalyticsFilterForm({
     }
 
     return (
-        <form method="get" className="filter-form" style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'stretch',
-            gap: '8px',
-            width: '100%',
-        }}>
+        <form method="get" className="filter-form">
             <select
                 name="filter"
                 defaultValue={currentFilter}

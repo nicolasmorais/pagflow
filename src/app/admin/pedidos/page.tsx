@@ -108,7 +108,7 @@ export default async function OrdersPage({
         <div style={{ width: '100%', paddingBottom: '60px' }}>
 
             {/* Header / Toolbar - Full Width */}
-            <div style={{
+            <div className="page-header" style={{
                 marginBottom: '32px',
                 display: 'flex',
                 justifyContent: 'space-between',
@@ -117,7 +117,7 @@ export default async function OrdersPage({
                 gap: '24px',
                 padding: '0 8px'
             }}>
-                <div style={{ flex: 1 }}>
+                <div className="page-title-section" style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--admin-text-muted)', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
                         <span>Dashboard</span>
                         <span>/</span>

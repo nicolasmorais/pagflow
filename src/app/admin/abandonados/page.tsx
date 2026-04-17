@@ -54,9 +54,9 @@ export default async function AbandonadosPage({
     return (
         <div style={{ width: '100%', padding: '24px' }}>
             <div style={{ marginBottom: '32px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ background: '#fee2e2', padding: '10px', borderRadius: '12px', color: '#ef4444' }}>
+                <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div className="page-title-section" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div className="page-title-icon" style={{ background: '#fee2e2', padding: '10px', borderRadius: '12px', color: '#ef4444' }}>
                             <ShoppingCart size={24} />
                         </div>
                         <div>
