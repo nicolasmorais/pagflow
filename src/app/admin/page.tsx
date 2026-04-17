@@ -300,8 +300,15 @@ export default async function AdminPage({
         <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px' }}>
 
             {/* Header */}
-            <header style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '16px' }}>
+            <header style={{
+                marginBottom: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '20px'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <div style={{
                         width: '46px', height: '46px', borderRadius: '14px', flexShrink: 0,
                         background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
@@ -327,6 +334,7 @@ export default async function AdminPage({
                     toDate={toDate}
                 />
             </header>
+
 
 
             <AnalyticsCharts data={data} />

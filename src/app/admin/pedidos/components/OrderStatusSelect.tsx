@@ -11,16 +11,16 @@ interface OrderStatusSelectProps {
 export default function OrderStatusSelect({ orderId, initialStatus }: OrderStatusSelectProps) {
     const [status, setStatus] = React.useState(initialStatus)
 
-    const getStatusColor = (currentStatus: string) => {
+    const getStatusColors = (currentStatus: string) => {
         const s = currentStatus?.toLowerCase();
         switch (s) {
-            case 'entregue': return '#10b981';
-            case 'enviado': return '#3b82f6';
-            case 'cancelado': return '#ef4444';
-            case 'aguardando_envio': return '#f59e0b';
-            case 'pendente': return '#94a3b8';
-            case 'processando': return '#6366f1';
-            default: return '#94a3b8';
+            case 'entregue': return { color: '#059669', bg: '#ECFDF5' };
+            case 'enviado': return { color: '#2563EB', bg: '#EFF6FF' };
+            case 'cancelado': return { color: '#DC2626', bg: '#FEF2F2' };
+            case 'aguardando_envio': return { color: '#D97706', bg: '#FFFBEB' };
+            case 'pendente': return { color: '#64748B', bg: '#F1F5F9' };
+            case 'processando': return { color: '#7C3AED', bg: '#F5F3FF' };
+            default: return { color: '#64748B', bg: '#F1F5F9' };
         }
     }
 
@@ -31,22 +31,24 @@ export default function OrderStatusSelect({ orderId, initialStatus }: OrderStatu
             await updateOrderStatus(orderId, newStatus)
         } catch (error) {
             console.error('Failed to update order status:', error)
-            setStatus(initialStatus) // Revert to initial on failure
+            setStatus(initialStatus)
         }
     }
+
+    const colors = getStatusColors(status);
 
     return (
         <select
             value={status}
             onChange={handleChange}
             style={{
-                fontSize: '0.7rem',
-                fontWeight: 800,
-                color: getStatusColor(status),
-                background: '#fff',
-                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: colors.color,
+                background: colors.bg,
+                padding: '6px 12px',
                 borderRadius: '8px',
-                border: `1.5px solid ${getStatusColor(status)}`,
+                border: 'none',
                 cursor: 'pointer',
                 outline: 'none',
                 width: '100%',

@@ -72,9 +72,9 @@ export default async function OrdersPage({
     searchParams: Promise<{ from?: string; to?: string; filter?: string }>
 }) {
     const params = await searchParams
-
+    const filter = params.filter || '7dias'
     const { fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(
-        params.filter, params.from, params.to
+        filter, params.from, params.to
     )
 
     let orders: any[] = [];
@@ -117,51 +117,52 @@ export default async function OrdersPage({
                 gap: '24px',
                 padding: '0 8px'
             }}>
-                <div>
+                <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--admin-text-muted)', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
+                        <span>Dashboard</span>
+                        <span>/</span>
+                        <span style={{ color: 'var(--admin-text-primary)' }}>Pedidos</span>
+                    </div>
                     <h1 style={{
-                        fontSize: 'clamp(1.8rem, 4vw, 2.4rem)',
-                        fontWeight: 800,
+                        fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+                        fontWeight: 900,
                         color: 'var(--admin-text-primary)',
                         margin: 0,
-                        letterSpacing: '-0.04em',
-                        fontFamily: "'Space Grotesk', sans-serif"
+                        letterSpacing: '-0.03em',
                     }}>
-                        Pedidos de Venda
+                        Gestão de Pedidos
                     </h1>
-                    <p style={{ margin: '8px 0 0', fontSize: '15px', color: 'var(--admin-text-secondary)', fontWeight: 500 }}>
-                        Acompanhe o fluxo de vendas e logísticas em tempo real.
-                    </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <AnalyticsFilterForm
-                        currentFilter={params.filter || 'today'}
-                        fromDate={fromDate}
-                        toDate={toDate}
-                    />
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative' }}>
                         <input
                             type="text"
-                            placeholder="Buscar por cliente ou ID..."
+                            placeholder="Pesquisar pedidos..."
                             className="search-input-field"
                             style={{
-                                padding: '12px 16px',
-                                paddingLeft: '44px',
-                                borderRadius: '14px',
-                                border: '1px solid #e2e8f0',
-                                fontSize: '14px',
-                                width: '300px',
-                                background: '#fff',
+                                padding: '10px 16px',
+                                paddingLeft: '40px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--admin-border)',
+                                fontSize: '13px',
+                                width: '260px',
+                                background: 'white',
                                 outline: 'none',
                                 transition: 'all 0.2s',
-                                fontFamily: "'Space Grotesk', sans-serif",
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                fontWeight: 500,
+                                color: 'var(--admin-text-primary)'
                             }}
                         />
-                        <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}>
-                            <RefreshCw size={18} />
+                        <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--admin-text-muted)' }}>
+                            <RefreshCw size={16} />
                         </div>
                     </div>
+                    <AnalyticsFilterForm
+                        currentFilter={filter}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                    />
                 </div>
             </div>
 
@@ -180,66 +181,57 @@ export default async function OrdersPage({
                 ) : (
                     <>
                         {/* Desktop Table View */}
-                        <div className="desktop-orders-table">
+                        <div className="desktop-orders-table stark-card" style={{ padding: 0, overflow: 'hidden' }}>
                             <table style={{
                                 width: '100%',
-                                borderCollapse: 'separate',
-                                borderSpacing: '0 12px',
-                                marginTop: '-12px'
+                                borderCollapse: 'collapse',
                             }}>
                                 <thead>
-                                    <tr style={{ textAlign: 'left' }}>
+                                    <tr style={{ background: '#F9FAFB', borderBottom: '1px solid var(--admin-border)' }}>
                                         <th style={headerStyle}>CLIENTE</th>
-                                        <th style={headerStyle}>DATA / HORA</th>
                                         <th style={headerStyle}>PRODUTO</th>
                                         <th style={headerStyle}>VALOR TOTAL</th>
                                         <th style={headerStyle}>PAGAMENTO</th>
                                         <th style={headerStyle}>LOGÍSTICA</th>
+                                        <th style={{ ...headerStyle, textAlign: 'right' }}>DATA</th>
                                         <th style={{ ...headerStyle, textAlign: 'right' }}>AÇÕES</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {orders.map((order: any) => (
-                                        <tr key={order.id} className="order-row-matte">
+                                        <tr key={order.id} style={{ borderBottom: '1px solid var(--admin-border)', transition: 'background 0.2s' }}>
                                             <td style={cellStyle}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                     <div style={{
-                                                        width: '42px', height: '42px', borderRadius: '12px',
-                                                        background: order.paymentStatus === 'pago' ? '#ecfdf5' : '#fef2f2',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                        width: '36px', height: '36px', borderRadius: '50%',
+                                                        background: '#F1F5F9', color: '#64748B',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '12px', fontWeight: 800
                                                     }}>
-                                                        {order.paymentStatus === 'pago' ? <CheckCircle2 size={20} color="#10b981" /> : <XCircle size={20} color="#ef4444" />}
+                                                        {order.fullName?.charAt(0).toUpperCase() || '?'}
                                                     </div>
                                                     <div>
-                                                        <Link href={`/admin/pedidos/${order.id}`} className="order-customer-link">
+                                                        <Link
+                                                            href={`/admin/pedidos/${order.id}`}
+                                                            style={{ fontSize: '14px', fontWeight: 700, color: 'var(--admin-text-primary)', textDecoration: 'none' }}
+                                                            className="hover:underline"
+                                                        >
                                                             {order.fullName || 'Sem nome'}
-                                                            <ExternalLink size={12} style={{ marginLeft: '6px' }} />
                                                         </Link>
-                                                        <div style={{ fontSize: '12px', color: '#64748b' }}>{order.email}</div>
+                                                        <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)' }}>{order.email}</div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td style={cellStyle}>
-                                                <div style={{ fontSize: '13px', fontWeight: 600, color: '#1e293b' }}>
-                                                    {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                                                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--admin-text-primary)' }}>
+                                                    {order.product?.name || 'Produto'}
                                                 </div>
-                                                <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-                                                    {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
-                                            </td>
-                                            <td style={cellStyle}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
-                                                        {order.product?.name || 'Produto'}
-                                                    </span>
-                                                    {order.hasBump && <span className="bump-badge">BUMP</span>}
-                                                </div>
-                                                <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>
-                                                    {order.paymentMethod === 'pix' ? '💠 PIX' : '💳 CARTÃO'}
+                                                <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)' }}>
+                                                    {order.paymentMethod === 'pix' ? 'Pix' : 'Cartão'}
                                                 </div>
                                             </td>
                                             <td style={cellStyle}>
-                                                <div style={{ fontSize: '15px', fontWeight: 800, color: '#10b981', fontFamily: '"Space Grotesk", sans-serif' }}>
+                                                <div style={{ fontSize: '16px', fontWeight: 900, color: 'black', fontFamily: 'var(--font-space-grotesk)' }}>
                                                     R$ {(order.totalPrice || 0).toFixed(2)}
                                                 </div>
                                             </td>
@@ -250,14 +242,26 @@ export default async function OrdersPage({
                                                 <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
                                             </td>
                                             <td style={{ ...cellStyle, textAlign: 'right' }}>
+                                                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--admin-text-primary)' }}>
+                                                    {new Date(order.createdAt).toLocaleDateString('pt-BR')}
+                                                </div>
+                                                <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)' }}>
+                                                    {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </td>
+                                            <td style={{ ...cellStyle, textAlign: 'right' }}>
                                                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                     <a
                                                         href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
                                                         target="_blank" rel="noreferrer"
-                                                        className="action-btn-matte whatsapp"
-                                                        title="Chamar no WhatsApp"
+                                                        style={{
+                                                            width: '32px', height: '32px', borderRadius: '8px',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            background: '#F1F5F9', color: '#64748B', textDecoration: 'none'
+                                                        }}
+                                                        title="WhatsApp"
                                                     >
-                                                        <Phone size={16} />
+                                                        <Phone size={14} />
                                                     </a>
                                                     <DeleteOrderButton orderId={order.id} />
                                                 </div>
@@ -271,13 +275,20 @@ export default async function OrdersPage({
                         {/* Mobile Card View */}
                         <div className="mobile-orders-grid">
                             {orders.map((order: any) => (
-                                <div key={order.id} className="mobile-order-card">
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                                        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                                            <div className="status-dot" style={{ background: order.paymentStatus === 'pago' ? '#10b981' : '#ef4444' }} />
-                                            <span style={{ fontWeight: 800, fontSize: '15px' }}>{order.fullName}</span>
+                                <div key={order.id} className="stark-card" style={{ padding: '20px', marginBottom: '16px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'flex-start' }}>
+                                        <div>
+                                            <Link
+                                                href={`/admin/pedidos/${order.id}`}
+                                                style={{ fontWeight: 900, fontSize: '15px', color: 'var(--admin-text-primary)', textDecoration: 'none' }}
+                                            >
+                                                {order.fullName}
+                                            </Link>
+                                            <div style={{ fontSize: '12px', color: 'var(--admin-text-muted)' }}>{order.email}</div>
                                         </div>
-                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#10b981' }}>R$ {order.totalPrice.toFixed(2)}</span>
+                                        <div style={{ fontSize: '16px', fontWeight: 900, color: 'black', fontFamily: 'var(--font-space-grotesk)' }}>
+                                            R$ {order.totalPrice.toFixed(2)}
+                                        </div>
                                     </div>
 
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
@@ -291,13 +302,21 @@ export default async function OrdersPage({
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', borderTop: '1px solid #f1f5f9', paddingTop: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '12px', color: '#94a3b8' }}>
-                                            {new Date(order.createdAt).toLocaleDateString('pt-BR')}  às {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                    <div style={{ display: 'flex', borderTop: '1px solid var(--admin-border)', paddingTop: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '11px', color: 'var(--admin-text-muted)', fontWeight: 600 }}>
+                                            {new Date(order.createdAt).toLocaleDateString('pt-BR')} às {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                         <div style={{ display: 'flex', gap: '10px' }}>
-                                            <a href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" className="mobile-action-btn whatsapp">
-                                                <Phone size={16} />
+                                            <a
+                                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
+                                                target="_blank" rel="noreferrer"
+                                                style={{
+                                                    width: '32px', height: '32px', borderRadius: '8px',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    background: '#F1F5F9', color: '#64748B'
+                                                }}
+                                            >
+                                                <Phone size={14} />
                                             </a>
                                             <DeleteOrderButton orderId={order.id} />
                                         </div>
@@ -313,18 +332,16 @@ export default async function OrdersPage({
 }
 
 const headerStyle: React.CSSProperties = {
-    padding: '12px 20px',
-    fontSize: '11px',
-    fontWeight: 800,
-    color: '#94a3b8',
+    padding: '14px 20px',
+    fontSize: '10px',
+    fontWeight: 900,
+    color: 'var(--admin-text-muted)',
     textTransform: 'uppercase',
-    letterSpacing: '0.08em'
+    letterSpacing: '0.1em'
 }
 
 const cellStyle: React.CSSProperties = {
-    padding: '16px 20px',
-    borderBottom: '1px solid #f8fafc',
-    borderTop: '1px solid #f8fafc'
+    padding: '18px 20px',
 }
 
 const labelStyle: React.CSSProperties = {
@@ -338,20 +355,20 @@ const labelStyle: React.CSSProperties = {
 async function DeleteOrderButton({ orderId }: { orderId: string }) {
     return (
         <form action={deleteOrder.bind(null, orderId)}>
-            <button className="del-btn-matte" style={{
-                width: '36px',
-                height: '36px',
-                background: '#fff',
-                borderRadius: '10px',
+            <button style={{
+                width: '32px',
+                height: '32px',
+                background: '#FEF2F2',
+                borderRadius: '8px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#ef4444',
-                border: '1px solid #fee2e2',
+                color: '#EF4444',
+                border: 'none',
                 cursor: 'pointer',
                 transition: 'all 0.2s'
             }}>
-                <Trash2 size={16} />
+                <Trash2 size={14} />
             </button>
         </form>
     )

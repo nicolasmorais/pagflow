@@ -27,6 +27,13 @@ export async function sendAdminPush(title: string, body: string, url: string = '
         const payload = JSON.stringify({ title, body, url });
 
         const promises = subscriptions.map(async (sub) => {
+            // Check if it's a native token
+            if (sub.auth === 'capacitor' || sub.p256dh.startsWith('native-')) {
+                // Native Push (Future FCM implementation)
+                // console.log('Sending native push to:', sub.endpoint);
+                return;
+            }
+
             try {
                 await webpush.sendNotification(
                     {
@@ -39,7 +46,6 @@ export async function sendAdminPush(title: string, body: string, url: string = '
                     payload
                 );
             } catch (error: any) {
-                // Se der erro 410 (Gone) ou 404 (Not Found), a inscrição expirou/foi cancelada. Removemos.
                 if (error.statusCode === 410 || error.statusCode === 404) {
                     await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
                 } else {

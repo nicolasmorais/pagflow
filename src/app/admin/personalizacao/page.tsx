@@ -22,6 +22,7 @@ export default function PersonalizacaoPage() {
     const [checkoutStoreName, setCheckoutStoreName] = useState('')
     const [disableBack, setDisableBack] = useState(false)
     const [disableWa, setDisableWa] = useState(false)
+    const [webhookUrl, setWebhookUrl] = useState('')
 
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
@@ -68,6 +69,9 @@ export default function PersonalizacaoPage() {
                 setCheckoutStoreName(sName || '')
                 setDisableBack(dBack === 'true')
                 setDisableWa(dWa === 'true')
+
+                const wUrl = await getCustomization('webhook_url')
+                setWebhookUrl(wUrl || '')
             } catch (error) {
                 console.error('Error loading settings:', error)
             } finally {
@@ -99,6 +103,7 @@ export default function PersonalizacaoPage() {
             await updateCustomization('checkout_store_name', checkoutStoreName)
             await updateCustomization('checkout_disable_back', disableBack ? 'true' : 'false')
             await updateCustomization('checkout_disable_wa', disableWa ? 'true' : 'false')
+            await updateCustomization('webhook_url', webhookUrl)
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
 
@@ -552,6 +557,39 @@ export default function PersonalizacaoPage() {
                             onFocus={(e) => e.target.style.borderColor = '#4f46e5'}
                             onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                         />
+                    </div>
+
+                    {/* Webhook Integration */}
+                    <div style={{ marginBottom: '32px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <TrendingUp size={18} color="#4f46e5" />
+                            Integração Webhook (Saída)
+                        </label>
+                        <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
+                            Envie os dados de vendas e carrinhos abandonados para outro aplicativo (ex: Zapier, Make, n8n ou seu próprio CRM).
+                        </p>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>URL do Webhook</label>
+                            <input
+                                type="url"
+                                value={webhookUrl}
+                                onChange={(e) => setWebhookUrl(e.target.value)}
+                                placeholder="https://seu-endpoint.com/webhook"
+                                style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    borderRadius: '12px',
+                                    border: '1px solid #e2e8f0',
+                                    fontSize: '14px',
+                                    outline: 'none',
+                                    transition: 'all 0.2s',
+                                    fontFamily: 'inherit'
+                                }}
+                            />
+                            <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
+                                Disparado nos eventos: <strong>Venda Confirmada</strong> e <strong>Carrinho Abandonado</strong>.
+                            </p>
+                        </div>
                     </div>
 
                     {/* Feedback Status */}

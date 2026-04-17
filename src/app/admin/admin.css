@@ -1,17 +1,63 @@
 :root {
     --admin-bg: #F8F9FA;
-    --admin-sidebar: #0F0F10;
+    --admin-sidebar: #121215;
     --admin-sidebar-border: rgba(255, 255, 255, 0.05);
     --admin-card: #ffffff;
-    --admin-border: #E9ECEF;
-    --admin-text-primary: #1A1A18;
-    --admin-text-secondary: rgba(255, 255, 255, 0.5);
-    --admin-text-muted: rgba(255, 255, 255, 0.3);
-    --admin-accent: #1A8C4E;
-    --admin-accent-light: #E8F7EE;
-    --sidebar-text: rgba(255, 255, 255, 0.65);
+    --admin-border: #F1F5F9;
+    --admin-text-primary: #0F172A;
+    --admin-text-secondary: #64748B;
+    --admin-text-muted: #94A3B8;
+    --admin-accent: #000000;
+    --admin-accent-light: #F1F5F9;
+    --sidebar-text: #99999A;
     --sidebar-text-active: #FFFFFF;
-    --sidebar-active-bg: rgba(255, 255, 255, 0.1);
+    --sidebar-active-bg: rgba(255, 255, 255, 0.04);
+}
+
+
+/* Stark Light Theme Utilities */
+.stark-card {
+    background: #fff;
+    border: 1px solid #F1F5F9;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stark-card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+    border-color: #e2e8f0;
+}
+
+
+.stark-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: -0.01em;
+}
+
+.stark-badge.pago {
+    background: #ECFDF5;
+    color: #10B981;
+}
+
+.stark-badge.abandonado {
+    background: #F8FAF6;
+    color: #64748B;
+}
+
+.stark-badge.recusado {
+    background: #FEF2F2;
+    color: #EF4444;
+}
+
+.stark-badge.pendente {
+    background: #FFFBEB;
+    color: #D97706;
 }
 
 /* Orders Page Matte Design */
@@ -41,13 +87,13 @@
 }
 
 .bump-badge {
-    background: #fff7ed !important;
-    color: #f97316 !important;
+    background: #EEF2FF !important;
+    color: #4F46E5 !important;
     font-size: 9px !important;
     font-weight: 800 !important;
     padding: 2px 6px !important;
     border-radius: 4px !important;
-    border: 1px solid #ffedd5 !important;
+    border: 1px solid #E0E7FF !important;
 }
 
 .action-btn-matte {
@@ -181,15 +227,17 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 14px;
+    padding: 12px 14px;
     color: var(--sidebar-text);
-    border-radius: 12px;
-    font-weight: 500;
+    border-radius: 8px;
+    font-weight: 400;
     font-size: 14px;
     transition: all 0.2s ease;
     cursor: pointer;
     text-decoration: none;
-    font-family: 'Space Grotesk', sans-serif;
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
 }
 
 .nav-item:hover {
@@ -200,8 +248,18 @@ body {
 .nav-item.active {
     background: var(--sidebar-active-bg);
     color: var(--sidebar-text-active);
-    font-weight: 700;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-weight: 500;
+}
+
+.nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #d946ef, #f97316);
+    border-radius: 4px;
 }
 
 .nav-icon-box {

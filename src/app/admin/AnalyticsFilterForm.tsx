@@ -22,26 +22,25 @@ export default function AnalyticsFilterForm({
                 onChange={handleSelectChange}
                 style={{
                     padding: '8px 12px',
-                    borderRadius: '12px',
-                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    border: '1px solid var(--admin-border)',
                     fontSize: '13px',
                     fontWeight: 700,
-                    color: '#1e293b',
+                    color: 'var(--admin-text-primary)',
                     background: '#fff',
                     outline: 'none',
                     cursor: 'pointer',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                     minWidth: '155px',
                     fontFamily: 'inherit',
                 }}
             >
-                <option value="today">📅 Hoje</option>
-                <option value="yesterday">📅 Ontem</option>
-                <option value="7dias">📅 Últimos 7 dias</option>
-                <option value="30dias">📅 Últimos 30 dias</option>
-                <option value="mes">📅 Este mês</option>
-                <option value="mes-anterior">📅 Mês anterior</option>
-                <option value="vida">📅 Todo o período</option>
+                <option value="today">Hoje</option>
+                <option value="yesterday">Ontem</option>
+                <option value="7dias">Últimos 7 dias</option>
+                <option value="30dias">Últimos 30 dias</option>
+                <option value="mes">Este mês</option>
+                <option value="mes-anterior">Mês anterior</option>
+                <option value="vida">Todo o período</option>
             </select>
 
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
@@ -49,22 +48,22 @@ export default function AnalyticsFilterForm({
                     type="date"
                     name="from"
                     defaultValue={fromDate}
-                    style={{ padding: '7px 10px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13px', background: '#fff', color: '#374151', outline: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', fontFamily: 'inherit' }}
+                    style={{ padding: '7px 10px', borderRadius: '10px', border: '1px solid var(--admin-border)', fontSize: '13px', background: '#fff', color: 'var(--admin-text-primary)', outline: 'none', fontFamily: 'inherit' }}
                 />
-                <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>–</span>
+                <span style={{ fontSize: '12px', color: 'var(--admin-text-muted)', fontWeight: 600 }}>–</span>
                 <input
                     type="date"
                     name="to"
                     defaultValue={toDate}
-                    style={{ padding: '7px 10px', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13px', background: '#fff', color: '#374151', outline: 'none', boxShadow: '0 1px 3px rgba(0,0,0,0.05)', fontFamily: 'inherit' }}
+                    style={{ padding: '7px 10px', borderRadius: '10px', border: '1px solid var(--admin-border)', fontSize: '13px', background: '#fff', color: 'var(--admin-text-primary)', outline: 'none', fontFamily: 'inherit' }}
                 />
             </div>
 
             <button
                 type="submit"
-                style={{ padding: '8px 16px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', boxShadow: '0 4px 12px rgba(99,102,241,0.3)', fontFamily: 'inherit' }}
+                style={{ padding: '8px 18px', background: 'var(--admin-accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', transition: 'opacity 0.2s' }}
             >
-                Filtrar
+                Filtrar dados
             </button>
         </form>
     )

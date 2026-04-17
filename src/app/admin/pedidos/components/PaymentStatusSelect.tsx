@@ -11,15 +11,15 @@ interface PaymentStatusSelectProps {
 export default function PaymentStatusSelect({ orderId, initialStatus }: PaymentStatusSelectProps) {
     const [status, setStatus] = React.useState(initialStatus)
 
-    const getPaymentColor = (currentStatus: string) => {
+    const getPaymentColors = (currentStatus: string) => {
         const s = currentStatus?.toLowerCase();
         switch (s) {
-            case 'pago': return '#10b981';
-            case 'recusado': return '#ef4444';
-            case 'aguardando': return '#f59e0b';
-            case 'reembolsado': return '#6366f1';
-            case 'processando': return '#3b82f6';
-            default: return '#94a3b8';
+            case 'pago': return { color: '#059669', bg: '#ECFDF5' };
+            case 'recusado': return { color: '#DC2626', bg: '#FEF2F2' };
+            case 'aguardando': return { color: '#D97706', bg: '#FFFBEB' };
+            case 'reembolsado': return { color: '#7C3AED', bg: '#F5F3FF' };
+            case 'processando': return { color: '#2563EB', bg: '#EFF6FF' };
+            default: return { color: '#64748B', bg: '#F1F5F9' };
         }
     }
 
@@ -30,22 +30,24 @@ export default function PaymentStatusSelect({ orderId, initialStatus }: PaymentS
             await updatePaymentStatus(orderId, newStatus)
         } catch (error) {
             console.error('Failed to update payment status:', error)
-            setStatus(initialStatus) // Revert to initial on failure
+            setStatus(initialStatus)
         }
     }
+
+    const colors = getPaymentColors(status);
 
     return (
         <select
             value={status}
             onChange={handleChange}
             style={{
-                fontSize: '0.7rem',
-                fontWeight: 800,
-                color: getPaymentColor(status),
-                background: '#fff',
-                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: colors.color,
+                background: colors.bg,
+                padding: '6px 12px',
                 borderRadius: '8px',
-                border: `1.5px solid ${getPaymentColor(status)}`,
+                border: 'none',
                 cursor: 'pointer',
                 outline: 'none',
                 width: '100%',

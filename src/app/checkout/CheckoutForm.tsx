@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import './checkout.css'
 import ExitPopup from './ExitPopup'
+import { saveOrderProgress } from '../actions'
 
 export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {}, exitPopupConfig }: any) {
     const [step, setStep] = useState(1);
@@ -14,6 +15,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [isMpLoaded, setIsMpLoaded] = useState(false);
     const [accessId, setAccessId] = useState<string | null>(null);
     const [lastTrackedStep, setLastTrackedStep] = useState<number>(0);
+    const [orderId, setOrderId] = useState<string | null>(null);
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
@@ -96,6 +98,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 if (res.success) setAccessId(res.accessId);
             })
             .catch(e => console.error('Tracking Error:', e));
+
+        // Restore orderId from localStorage if exists
+        const savedId = localStorage.getItem('last_order_id');
+        if (savedId) setOrderId(savedId);
 
         return () => clearInterval(timer);
     }, []);
@@ -214,10 +220,33 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
         setErrors(newErrors);
         if (Object.keys(newErrors).length === 0) {
-            setEndereco(prev => ({ ...prev, destinatario: prev.destinatario || dados.nome }));
             setStep(2);
             updateTrackingStep(1); // Report Step 1 Completed
             window.scrollTo(0, 0);
+
+            // Save Progress (Abandonment Lead)
+            const searchParams = new URLSearchParams(window.location.search);
+            saveOrderProgress({
+                id: orderId,
+                fullName: dados.nome,
+                email: dados.email,
+                phone: dados.telefone,
+                cpf: customization?.disableCpf ? null : dados.cpf,
+                productId: product?.id,
+                totalPrice: finalPrice,
+                paymentStatus: 'abandonado',
+                utmSource: searchParams.get('utm_source'),
+                utmMedium: searchParams.get('utm_medium'),
+                utmCampaign: searchParams.get('utm_campaign'),
+                utmTerm: searchParams.get('utm_term'),
+                utmContent: searchParams.get('utm_content'),
+            }).then(res => {
+                if (res.success && res.id) {
+                    setOrderId(res.id);
+                    localStorage.setItem('last_order_id', res.id);
+                }
+            });
+
             return true;
         }
         return false;
@@ -238,6 +267,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             setStep(3);
             updateTrackingStep(2); // Report Step 2 Completed
             window.scrollTo(0, 0);
+
+            // Save Progress (Update with Address)
+            saveOrderProgress({
+                id: orderId,
+                ...endereco,
+                fullName: dados.nome,
+                email: dados.email,
+                phone: dados.telefone,
+                cpf: customization?.disableCpf ? null : dados.cpf,
+                productId: product?.id,
+                totalPrice: finalPrice,
+                paymentStatus: 'abandonado',
+            });
+
             return true;
         }
         return false;

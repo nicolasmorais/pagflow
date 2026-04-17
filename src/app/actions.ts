@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { resend } from '@/lib/resend'
+import { sendWebhook } from '@/lib/webhook-service'
 
 export async function sendConfirmationEmail(orderId: string) {
     try {
@@ -719,6 +720,14 @@ export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pe
             await sendAdminPush(pushTitle, pushBody, '/admin/vendas').catch(e => console.error("Erro no envio do Push:", e));
         }
 
+        // --- WEBHOOK TRIGGER ---
+        if (type === 'sale') {
+            await sendWebhook('SALE_CONFIRMED', order).catch(e => console.error("Webhook Sale Error:", e));
+        } else if (type === 'abandoned') {
+            await sendWebhook('CART_ABANDONED', order).catch(e => console.error("Webhook Abandoned Error:", e));
+        }
+        // -----------------------
+
         if (!email) return;
 
         const isSalesNotify = await getCustomization('notify_sales_enabled');
@@ -762,3 +771,17 @@ export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pe
         console.error('Admin Notification Error:', error);
     }
 }
+
+export async function getTotalRevenue() {
+    try {
+        const paidOrders = await prisma.order.findMany({
+            where: { paymentStatus: 'pago' },
+            select: { totalPrice: true }
+        });
+        return paidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+    } catch (error) {
+        console.error("Error fetching total revenue:", error);
+        return 0;
+    }
+}
+
