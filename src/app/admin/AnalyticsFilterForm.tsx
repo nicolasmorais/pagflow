@@ -19,20 +19,19 @@ export default function AnalyticsFilterForm({
     return (
         <form method="get" className="filter-form" style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
+            flexDirection: 'column',
+            alignItems: 'stretch',
+            gap: '8px',
             width: '100%',
-            flexWrap: 'nowrap',
-            overflowX: 'auto',
-            paddingBottom: '4px',
-            scrollbarWidth: 'none'
+            maxWidth: '340px',
+            marginLeft: 'auto'
         }}>
             <select
                 name="filter"
                 defaultValue={currentFilter}
                 onChange={handleSelectChange}
                 style={{
+                    width: '100%',
                     padding: '8px 12px',
                     borderRadius: '8px',
                     border: '1px solid #e2e8f0',
@@ -42,9 +41,7 @@ export default function AnalyticsFilterForm({
                     background: '#f8fafc',
                     outline: 'none',
                     cursor: 'pointer',
-                    minWidth: '130px',
                     fontFamily: 'inherit',
-                    flexShrink: 0,
                     boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                 }}
             >
@@ -61,20 +58,20 @@ export default function AnalyticsFilterForm({
                 display: 'flex',
                 gap: '6px',
                 alignItems: 'center',
-                flexShrink: 0,
+                width: '100%',
                 background: '#fff',
                 padding: '4px 6px',
                 borderRadius: '8px',
                 border: '1px solid #e2e8f0',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
             }}>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flex: 1, minWidth: 0 }}>
                     <input
                         type="date"
                         name="from"
                         defaultValue={fromDate}
                         className="minimal-date"
-                        style={{ padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
+                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
                     />
                     <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 600 }}>/</span>
                     <input
@@ -82,7 +79,7 @@ export default function AnalyticsFilterForm({
                         name="to"
                         defaultValue={toDate}
                         className="minimal-date"
-                        style={{ padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
+                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
                     />
                 </div>
 
@@ -104,7 +101,8 @@ export default function AnalyticsFilterForm({
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px',
-                        transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        flexShrink: 0
                     }}
                     onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a' }}
                     onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}
