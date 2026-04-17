@@ -785,3 +785,14 @@ export async function getTotalRevenue() {
     }
 }
 
+import { sendAdminPush } from '@/lib/push-service'
+
+export async function testPushNotificationAction() {
+    try {
+        await sendAdminPush('🔔 Teste de Notificação', 'Sua integração de push está funcionando perfeitamente!', '/admin/notificacoes');
+        return { success: true };
+    } catch (error) {
+        console.error('Test push err:', error);
+        return { success: false, error: 'Erro ao enviar push' };
+    }
+}

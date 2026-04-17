@@ -61,6 +61,7 @@ export default function AdminLayout({
 
     const menuItems = [
         { icon: BarChart3, label: 'Dashboard', href: '/admin' },
+        { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },
         { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
         { icon: Activity, label: 'Carrinhos Abandonados', href: '/admin/abandonados' },
         { icon: Package, label: 'Lista de Produtos', href: '/admin/produtos' },
