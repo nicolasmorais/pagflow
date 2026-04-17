@@ -1,5 +1,7 @@
 'use client'
 
+import { Filter } from 'lucide-react'
+
 export default function AnalyticsFilterForm({
     currentFilter,
     fromDate,
@@ -16,10 +18,12 @@ export default function AnalyticsFilterForm({
 
     return (
         <form method="get" className="filter-form" style={{
-            gap: '8px',
+            display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            gap: '12px',
             width: '100%',
+            flexWrap: 'nowrap',
             overflowX: 'auto',
             paddingBottom: '4px',
             scrollbarWidth: 'none'
@@ -30,17 +34,18 @@ export default function AnalyticsFilterForm({
                 onChange={handleSelectChange}
                 style={{
                     padding: '8px 12px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--admin-border)',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
                     fontSize: '13px',
-                    fontWeight: 700,
-                    color: 'var(--admin-text-primary)',
-                    background: '#fff',
+                    fontWeight: 600,
+                    color: '#334155',
+                    background: '#f8fafc',
                     outline: 'none',
                     cursor: 'pointer',
-                    minWidth: '155px',
+                    minWidth: '130px',
                     fontFamily: 'inherit',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                 }}
             >
                 <option value="today">Hoje</option>
@@ -49,32 +54,63 @@ export default function AnalyticsFilterForm({
                 <option value="30dias">Últimos 30 dias</option>
                 <option value="mes">Este mês</option>
                 <option value="mes-anterior">Mês anterior</option>
-                <option value="vida">Todo o período</option>
+                <option value="vida">Todo período</option>
             </select>
 
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                <div className="custom-dates-wrapper" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <div style={{
+                display: 'flex',
+                gap: '6px',
+                alignItems: 'center',
+                flexShrink: 0,
+                background: '#fff',
+                padding: '4px 6px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+            }}>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                     <input
                         type="date"
                         name="from"
                         defaultValue={fromDate}
-                        style={{ padding: '7px 10px', borderRadius: '10px', border: '1px solid var(--admin-border)', fontSize: '13px', background: '#fff', color: 'var(--admin-text-primary)', outline: 'none', fontFamily: 'inherit' }}
+                        className="minimal-date"
+                        style={{ padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
                     />
-                    <span style={{ fontSize: '12px', color: 'var(--admin-text-muted)', fontWeight: 600 }}>–</span>
+                    <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 600 }}>/</span>
                     <input
                         type="date"
                         name="to"
                         defaultValue={toDate}
-                        style={{ padding: '7px 10px', borderRadius: '10px', border: '1px solid var(--admin-border)', fontSize: '13px', background: '#fff', color: 'var(--admin-text-primary)', outline: 'none', fontFamily: 'inherit' }}
+                        className="minimal-date"
+                        style={{ padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
                     />
                 </div>
 
+                <div style={{ width: '1px', height: '16px', background: '#e2e8f0', margin: '0 4px' }} />
+
                 <button
                     type="submit"
-                    className="filter-btn"
-                    style={{ padding: '8px 18px', background: 'var(--admin-accent)', color: '#fff', border: 'none', borderRadius: '10px', fontSize: '13px', fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit', transition: 'opacity 0.2s' }}
+                    style={{
+                        padding: '6px 12px',
+                        background: '#f1f5f9',
+                        color: '#475569',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        fontFamily: 'inherit',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a' }}
+                    onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}
                 >
-                    Filtrar dados
+                    <Filter size={12} />
+                    Filtrar
                 </button>
             </div>
         </form>
