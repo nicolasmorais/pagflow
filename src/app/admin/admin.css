@@ -510,6 +510,19 @@ h6 {
     .dashboard-layout {
         grid-template-columns: 1fr;
     }
+
+    .topbar-greeting {
+        display: none !important;
+    }
+
+    .topbar-container {
+        padding: 16px !important;
+        justify-content: center !important;
+    }
+
+    .topbar-progress-line {
+        width: 120px !important;
+    }
 }
 
 @media (max-width: 480px) {
