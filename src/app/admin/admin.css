@@ -1069,3 +1069,25 @@ h6 {
     box-shadow: 0 0 0 3px rgba(0, 117, 255, 0.1);
     background: white;
 }
+
+/* Analytics Filter Layout */
+.filter-form {
+    max-width: 320px;
+}
+
+/* Desktop: align to right */
+@media (min-width: 1024px) {
+    .filter-form {
+        margin-left: auto;
+        margin-right: 0;
+    }
+}
+
+/* Mobile: align to left, full width or near full width */
+@media (max-width: 1023px) {
+    .filter-form {
+        margin-left: 0;
+        margin-right: auto;
+        max-width: 380px;
+    }
+}

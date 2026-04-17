@@ -23,8 +23,6 @@ export default function AnalyticsFilterForm({
             alignItems: 'stretch',
             gap: '8px',
             width: '100%',
-            maxWidth: '340px',
-            marginLeft: 'auto'
         }}>
             <select
                 name="filter"
