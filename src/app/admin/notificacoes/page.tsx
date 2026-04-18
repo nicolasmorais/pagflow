@@ -2,6 +2,8 @@
 import { prisma } from '@/lib/prisma'
 import { Bell, CheckCircle2, ShoppingCart, Clock } from 'lucide-react'
 import TestPushButton from './TestPushButton' // Client component
+import ClearSubscriptionsButton from './ClearSubscriptionsButton'
+
 export const dynamic = 'force-dynamic';
 
 export default async function NotificacoesPage() {
@@ -68,7 +70,7 @@ export default async function NotificacoesPage() {
                     </div>
                     <div className="page-title-text">
                         <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 900, color: '#1e293b', margin: 0, letterSpacing: '-0.03em' }}>
-                            Notificações do Sistema
+                            Notificacoes do Sistema
                         </h1>
                         <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
                             Acompanhe eventos de vendas e carrinhos abandonados.
@@ -76,7 +78,10 @@ export default async function NotificacoesPage() {
                     </div>
                 </div>
 
-                <TestPushButton />
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <ClearSubscriptionsButton />
+                    <TestPushButton />
+                </div>
             </header>
 
             <div className="stark-card" style={{ padding: '24px' }}>

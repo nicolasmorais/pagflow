@@ -795,3 +795,14 @@ export async function testPushNotificationAction() {
         return { success: false, error: 'Erro ao enviar push' };
     }
 }
+
+export async function clearAllSubscriptionsAction() {
+    try {
+        await prisma.pushSubscription.deleteMany();
+        revalidatePath('/admin/notificacoes');
+        return { success: true };
+    } catch (error) {
+        console.error('Clear subscriptions error:', error);
+        return { success: false };
+    }
+}

@@ -9,14 +9,17 @@ if (!admin.apps.length) {
         if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
             privateKey = privateKey.substring(1, privateKey.length - 1);
         }
-        // Replace both literal \n and real newlines to ensure consistency
-        privateKey = privateKey.replace(/\\n/g, '\n');
+
+        // Handle double-escaped newlines or literal \n
+        privateKey = privateKey.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+
+        console.log(`[Firebase] Key Length: ${privateKey.length}, Starts with: ${privateKey.substring(0, 20)}..., Ends with: ...${privateKey.substring(privateKey.length - 20)}`);
     }
 
     const projectId = process.env.FIREBASE_PROJECT_ID;
     const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 
-    if (projectId && clientEmail && privateKey && privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+    if (projectId && clientEmail && privateKey && privateKey.includes('BEGIN PRIVATE KEY')) {
         try {
             admin.initializeApp({
                 credential: admin.credential.cert({
@@ -27,13 +30,18 @@ if (!admin.apps.length) {
             });
             console.log('Firebase Admin initialized successfully');
         } catch (error) {
-            console.error('Firebase Admin initialization error (Invalid key format?):', error);
+            console.error('Firebase Admin initialization error! Key status:', {
+                hasProjectId: !!projectId,
+                hasClientEmail: !!clientEmail,
+                keyLength: privateKey?.length,
+                keyValidHeader: privateKey?.includes('-----BEGIN PRIVATE KEY-----'),
+                keyValidFooter: privateKey?.includes('-----END PRIVATE KEY-----')
+            });
+            console.error(error);
         }
     } else {
-        // Do not block build if credentials are missing
         if (process.env.NODE_ENV !== 'production' || process.env.NEXT_PHASE !== 'phase-production-build') {
-            const reason = !privateKey ? 'Key missing' : !privateKey.includes('BEGIN') ? 'Invalid PEM header' : 'Missing metadata';
-            console.warn(`Firebase Admin skipped initialization: ${reason}`);
+            console.warn('Firebase Admin skipped: missing or invalid credentials');
         }
     }
 }
