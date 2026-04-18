@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
     try {
         const { token, platform } = await req.json();
+        console.log(`[NativePush] Registration received. Platform: ${platform}, Token prefix: ${token?.slice(0, 30)}...`);
 
         if (!token) {
             return NextResponse.json({ error: "Token inválido" }, { status: 400 });
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest) {
             }
         });
 
+        console.log(`[NativePush] Token saved successfully.`);
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Error saving native push token:", error);

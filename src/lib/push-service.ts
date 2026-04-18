@@ -34,8 +34,11 @@ export async function sendAdminPush(title: string, body: string, url: string = '
         const payload = JSON.stringify({ title, body, url });
 
         const promises = subscriptions.map(async (sub) => {
+            const isNative = sub.auth === 'capacitor' || sub.p256dh.startsWith('native-');
+            console.log(`[Push] Sub ${sub.id}: auth="${sub.auth}", isNative=${isNative}, endpointPrefix="${sub.endpoint.slice(0, 30)}"`);
+
             // 1. Check if it's a native token for FCM
-            if (nativePushEnabled && (sub.auth === 'capacitor' || sub.p256dh.startsWith('native-'))) {
+            if (nativePushEnabled && isNative) {
                 console.log(`[Push] Sending native FCM to: ${sub.endpoint.slice(0, 15)}...`);
                 try {
                     const result = await messaging!.send({
