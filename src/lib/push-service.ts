@@ -25,6 +25,8 @@ export async function sendAdminPush(title: string, body: string, url: string = '
 
     try {
         const subscriptions = await prisma.pushSubscription.findMany();
+        console.log(`[Push] Found ${subscriptions.length} subscriptions total.`);
+
         if (subscriptions.length === 0) return;
 
         const payload = JSON.stringify({ title, body, url });
@@ -32,19 +34,29 @@ export async function sendAdminPush(title: string, body: string, url: string = '
         const promises = subscriptions.map(async (sub) => {
             // 1. Check if it's a native token for FCM
             if (nativePushEnabled && (sub.auth === 'capacitor' || sub.p256dh.startsWith('native-'))) {
+                console.log(`[Push] Sending native FCM to: ${sub.endpoint.slice(0, 15)}...`);
                 try {
-                    await messaging!.send({
-                        token: sub.endpoint, // For native, endpoint stores the FCM token
+                    const result = await messaging!.send({
+                        token: sub.endpoint,
                         notification: { title, body },
                         data: { url },
-                        android: { priority: 'high', notification: { sound: 'default', clickAction: 'FCM_PLUGIN_ACTIVITY' } },
+                        android: {
+                            priority: 'high',
+                            notification: {
+                                sound: 'default',
+                                clickAction: 'FCM_PLUGIN_ACTIVITY',
+                                channelId: 'default'
+                            }
+                        },
                         apns: { payload: { aps: { sound: 'default', badge: 1 } } }
                     });
+                    console.log(`[Push] Native FCM Success: ${result}`);
                 } catch (error: any) {
                     if (error.code === 'messaging/registration-token-not-registered') {
+                        console.warn(`[Push] Token stale, deleting: ${sub.id}`);
                         await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
                     } else {
-                        console.error('FCM Native Push Error:', error);
+                        console.error('[Push] FCM Native Push Error:', error);
                     }
                 }
                 return;

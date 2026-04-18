@@ -7,6 +7,17 @@ import { PushNotifications } from '@capacitor/push-notifications';
 export default function CapacitorInit() {
     useEffect(() => {
         if (Capacitor.isNativePlatform()) {
+            // Create channel for Android
+            if (Capacitor.getPlatform() === 'android') {
+                PushNotifications.createChannel({
+                    id: 'default',
+                    name: 'Default',
+                    description: 'Canal padrão de notificações',
+                    importance: 5, // High
+                    visibility: 1, // Public
+                    sound: 'default'
+                });
+            }
             registerPush();
         }
     }, []);
