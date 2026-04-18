@@ -19,15 +19,17 @@ export async function sendAdminPush(title: string, body: string, url: string = '
     const nativePushEnabled = !!messaging;
 
     if (!webPushEnabled && !nativePushEnabled) {
-        console.warn('Neither Web Push nor Firebase configured. Skipping.');
-        return;
+        console.warn('[Push] Neither Web Push nor Firebase configured. Skipping.');
+        return { success: false, error: 'Push não configurado no servidor (Verifique as chaves Firebase/VAPID)' };
     }
 
     try {
         const subscriptions = await prisma.pushSubscription.findMany();
-        console.log(`[Push] Found ${subscriptions.length} subscriptions total.`);
+        console.log(`[Push] Found ${subscriptions.length} subscriptions in DB.`);
 
-        if (subscriptions.length === 0) return;
+        if (subscriptions.length === 0) {
+            return { success: false, error: 'Nenhum dispositivo registrado. Abra o app ou site primeiro.' };
+        }
 
         const payload = JSON.stringify({ title, body, url });
 

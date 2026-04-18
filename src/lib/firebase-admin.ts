@@ -4,16 +4,29 @@ if (!admin.apps.length) {
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
     if (privateKey) {
-        // Fix for environment variables with quotes or literal \n
-        privateKey = privateKey.trim();
-        if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-            privateKey = privateKey.substring(1, privateKey.length - 1);
+        // Step 1: Basic cleaning
+        let key = privateKey.trim();
+        if (key.startsWith('"') && key.endsWith('"')) {
+            key = key.substring(1, key.length - 1);
         }
 
-        // Handle double-escaped newlines or literal \n
-        privateKey = privateKey.replace(/\\n/g, '\n').replace(/\\r/g, '\r');
+        // Step 2: Fix escaped newlines (very common in Docker/CI)
+        key = key.replace(/\\n/g, '\n').replace(/\\r/g, '');
 
-        console.log(`[Firebase] Key Length: ${privateKey.length}, Starts with: ${privateKey.substring(0, 20)}..., Ends with: ...${privateKey.substring(privateKey.length - 20)}`);
+        // Step 3: Check if PEM structure is valid. If it's one giant line, reformat it.
+        // Some environments strip newlines but keep the header/footer.
+        if (key.includes('BEGIN PRIVATE KEY') && !key.includes('\n', 30)) {
+            const body = key
+                .replace(/-----BEGIN PRIVATE KEY-----/, '')
+                .replace(/-----END PRIVATE KEY-----/, '')
+                .replace(/\s/g, '');
+
+            // Reconstruct properly formatted PEM
+            key = `-----BEGIN PRIVATE KEY-----\n${body}\n-----END PRIVATE KEY-----\n`;
+        }
+
+        privateKey = key;
+        console.log(`[Firebase] Key normalization applied. Original length: ${privateKey.length}`);
     }
 
     const projectId = process.env.FIREBASE_PROJECT_ID;
