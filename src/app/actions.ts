@@ -482,10 +482,33 @@ export async function deleteOrder(orderId: string): Promise<void> {
     try {
         await prisma.order.update({ where: { id: orderId }, data: { deletedAt: new Date() } })
         revalidatePath('/admin/pedidos')
+        revalidatePath('/admin/pedidos/lixeira')
         revalidatePath('/admin')
     } catch (error) {
         console.error('Delete Order Error:', error)
         throw new Error('Falha ao excluir pedido')
+    }
+}
+
+export async function restoreOrder(orderId: string): Promise<void> {
+    try {
+        await prisma.order.update({ where: { id: orderId }, data: { deletedAt: null } })
+        revalidatePath('/admin/pedidos')
+        revalidatePath('/admin/pedidos/lixeira')
+        revalidatePath('/admin')
+    } catch (error) {
+        console.error('Restore Order Error:', error)
+        throw new Error('Falha ao restaurar pedido')
+    }
+}
+
+export async function permanentDeleteOrder(orderId: string): Promise<void> {
+    try {
+        await prisma.order.delete({ where: { id: orderId } })
+        revalidatePath('/admin/pedidos/lixeira')
+    } catch (error) {
+        console.error('Permanent Delete Error:', error)
+        throw new Error('Falha ao excluir permanentemente')
     }
 }
 

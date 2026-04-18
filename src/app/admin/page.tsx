@@ -71,10 +71,10 @@ export default async function AdminPage({
 
     // ── Segments ─────────────────────────────────────────────────────────
     const paidOrders = allOrders.filter(o => o.paymentStatus === 'pago')
-    const abandonedOrders = allOrders.filter(o => o.paymentStatus === 'abandonado')
-    const pendingOrders = allOrders.filter(o => o.paymentStatus === 'aguardando' || o.paymentStatus === 'processando')
+    const abandonedOrders = allOrders.filter(o => ['abandonado', 'processando'].includes(o.paymentStatus || ''))
+    const pendingOrders = allOrders.filter(o => o.paymentStatus === 'aguardando')
     const rejectedOrders = allOrders.filter(o => o.paymentStatus === 'recusado')
-    const nonAbandonedOrders = allOrders.filter(o => o.paymentStatus !== 'abandonado')
+    const nonAbandonedOrders = allOrders.filter(o => !['abandonado', 'processando'].includes(o.paymentStatus || ''))
 
     // ── KPIs ─────────────────────────────────────────────────────────────
     const totalRevenue = paidOrders.reduce((s, o) => s + (o.totalPrice || 0), 0)

@@ -2,8 +2,8 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import { MapPin, Phone, CreditCard, CheckCircle2, XCircle, Clock, ExternalLink, RefreshCw, Trash2 } from 'lucide-react'
 import Link from 'next/link'
-import { deleteOrder } from '../../actions'
 import PaymentStatusSelect from './components/PaymentStatusSelect'
+import DeleteOrderButton from './components/DeleteOrderButton'
 import OrderStatusSelect from './components/OrderStatusSelect'
 import AnalyticsFilterForm from '../AnalyticsFilterForm'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
@@ -86,6 +86,9 @@ export default async function OrdersPage({
                 createdAt: {
                     gte: fromDateUTC,
                     lte: toDateUTC,
+                },
+                paymentStatus: {
+                    notIn: ['abandonado', 'processando']
                 }
             },
             orderBy: { createdAt: 'desc' },
@@ -158,6 +161,26 @@ export default async function OrdersPage({
                             <RefreshCw size={16} />
                         </div>
                     </div>
+                    <Link
+                        href="/admin/pedidos/lixeira"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 16px',
+                            background: '#f1f5f9',
+                            color: '#64748b',
+                            borderRadius: '12px',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            border: '1px solid var(--admin-border)',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <Trash2 size={16} />
+                        Lixeira
+                    </Link>
                     <AnalyticsFilterForm
                         currentFilter={filter}
                         fromDate={fromDate}
@@ -352,24 +375,3 @@ const labelStyle: React.CSSProperties = {
     marginBottom: '6px'
 }
 
-async function DeleteOrderButton({ orderId }: { orderId: string }) {
-    return (
-        <form action={deleteOrder.bind(null, orderId)}>
-            <button style={{
-                width: '32px',
-                height: '32px',
-                background: '#FEF2F2',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#EF4444',
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-            }}>
-                <Trash2 size={14} />
-            </button>
-        </form>
-    )
-}

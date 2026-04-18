@@ -118,6 +118,10 @@ export async function POST(req: NextRequest) {
                     type: 'CPF',
                     number: cpfToSave || '19119119100'
                 },
+                phone: {
+                    area_code: (phone || "").replace(/\D/g, '').slice(0, 2),
+                    number: (phone || "").replace(/\D/g, '').slice(2)
+                },
                 address: {
                     zip_code: orderData.cep?.replace(/\D/g, '') || '',
                     street_name: orderData.rua || '',
@@ -125,6 +129,16 @@ export async function POST(req: NextRequest) {
                     neighborhood: orderData.bairro || '',
                     city: orderData.cidade || '',
                     federal_unit: (orderData.estado || '').toUpperCase()
+                }
+            },
+            shipments: {
+                receiver_address: {
+                    zip_code: orderData.cep?.replace(/\D/g, '') || '',
+                    street_name: orderData.rua || '',
+                    street_number: orderData.numero || '',
+                    neighborhood: orderData.bairro || '',
+                    city_name: orderData.cidade || '',
+                    state_name: (orderData.estado || '').toUpperCase()
                 }
             },
             additional_info: {
@@ -137,7 +151,20 @@ export async function POST(req: NextRequest) {
                         category_id: 'others',
                         description: `Compra realizada no PagFlow - ID ${order.id}`
                     }
-                ]
+                ],
+                payer: {
+                    first_name: fullName.split(' ')[0] || "Cliente",
+                    last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
+                    phone: {
+                        area_code: (phone || "").replace(/\D/g, '').slice(0, 2),
+                        number: (phone || "").replace(/\D/g, '').slice(2)
+                    },
+                    address: {
+                        zip_code: orderData.cep?.replace(/\D/g, '') || '',
+                        street_name: orderData.rua || '',
+                        street_number: orderData.numero || '',
+                    }
+                }
             }
         };
 
