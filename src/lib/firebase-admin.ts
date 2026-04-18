@@ -10,23 +10,18 @@ if (!admin.apps.length) {
             key = key.substring(1, key.length - 1);
         }
 
-        // Step 2: Fix escaped newlines (very common in Docker/CI)
-        key = key.replace(/\\n/g, '\n').replace(/\\r/g, '');
+        // Step 2: Remove all existing whitespace/newlines and PEM headers to get the raw base64
+        const rawBase64 = key
+            .replace(/-----BEGIN PRIVATE KEY-----/, '')
+            .replace(/-----END PRIVATE KEY-----/, '')
+            .replace(/\\n/g, '')
+            .replace(/\s/g, '');
 
-        // Step 3: Check if PEM structure is valid. If it's one giant line, reformat it.
-        // Some environments strip newlines but keep the header/footer.
-        if (key.includes('BEGIN PRIVATE KEY') && !key.includes('\n', 30)) {
-            const body = key
-                .replace(/-----BEGIN PRIVATE KEY-----/, '')
-                .replace(/-----END PRIVATE KEY-----/, '')
-                .replace(/\s/g, '');
+        // Step 3: Reconstruct with strict PEM format (header, 64-char lines, footer)
+        const lines = rawBase64.match(/.{1,64}/g) || [];
+        privateKey = `-----BEGIN PRIVATE KEY-----\n${lines.join('\n')}\n-----END PRIVATE KEY-----\n`;
 
-            // Reconstruct properly formatted PEM
-            key = `-----BEGIN PRIVATE KEY-----\n${body}\n-----END PRIVATE KEY-----\n`;
-        }
-
-        privateKey = key;
-        console.log(`[Firebase] Key normalization applied. Original length: ${privateKey.length}`);
+        console.log(`[Firebase] Key reconstructed with strict PEM format. Body segments: ${lines.length}`);
     }
 
     const projectId = process.env.FIREBASE_PROJECT_ID;
