@@ -75,12 +75,32 @@ export default function AdminLayout({
         { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
     ]
 
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
     return (
         <div className="admin-layout" style={{ fontFamily: '"Space Grotesk", "Nunito", sans-serif' }}>
             <CapacitorInit />
             <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-            <aside className="sidebar desktop-only">
+            {/* Sidebar Overlay (Mobile) */}
+            {isSidebarOpen && (
+                <div
+                    className="sidebar-overlay"
+                    onClick={() => setIsSidebarOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 95
+                    }}
+                />
+            )}
+
+            <aside className={`sidebar ${isSidebarOpen ? 'mobile-open' : 'desktop-only'}`}>
                 <div className="sidebar-top-header">
                     <div className="sidebar-logo">
                         <img
@@ -93,13 +113,14 @@ export default function AdminLayout({
                 <div className="sidebar-scroll">
                     <nav className="sidebar-nav">
                         {menuItems.map((item) => (
-                            <SidebarItem
-                                key={item.label}
-                                icon={item.icon}
-                                label={item.label}
-                                href={item.href}
-                                active={pathname === item.href}
-                            />
+                            <div key={item.label} onClick={() => setIsSidebarOpen(false)}>
+                                <SidebarItem
+                                    icon={item.icon}
+                                    label={item.label}
+                                    href={item.href}
+                                    active={pathname === item.href}
+                                />
+                            </div>
                         ))}
                     </nav>
                 </div>
@@ -120,7 +141,7 @@ export default function AdminLayout({
 
             {/* Main Content Area */}
             <main className="main-content">
-                <TopBar />
+                <TopBar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
                 <div className="main-content-inner">
                     {children}
                 </div>
@@ -132,6 +153,9 @@ export default function AdminLayout({
                     padding: 32px;
                 }
                 @media (max-width: 1024px) {
+                    .mobile-only {
+                        display: flex !important;
+                    }
                     .main-content-inner {
                         padding: 16px;
                         padding-top: 24px;
@@ -139,13 +163,41 @@ export default function AdminLayout({
                     .desktop-only {
                         display: none !important;
                     }
+                    .sidebar.mobile-open {
+                        display: flex !important;
+                        left: 0 !important;
+                        animation: slideIn 0.3s ease-out;
+                    }
+                    @keyframes slideIn {
+                        from { transform: translateX(-100%); }
+                        to { transform: translateX(0); }
+                    }
                     .main-content {
                         margin-left: 0 !important;
                         width: 100% !important;
                         padding-bottom: 80px !important;
                     }
+                    .topbar-container {
+                        padding: 12px 16px !important;
+                    }
+                    .topbar-greeting {
+                        font-size: 13px !important;
+                        max-width: 150px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .topbar-progress {
+                        gap: 8px !important;
+                    }
+                    .topbar-progress-line {
+                        width: 80px !important;
+                    }
                 }
                 @media (max-width: 480px) {
+                    .topbar-greeting {
+                        display: none !important;
+                    }
                     .main-content-inner {
                         padding: 12px;
                         padding-top: 16px;

@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react'
 import { getTotalRevenue } from '@/app/actions'
 
-export default function TopBar() {
+import { Menu } from 'lucide-react'
+
+export default function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     const [todayStr, setTodayStr] = useState('')
     const [revenue, setRevenue] = useState(0)
 
@@ -39,9 +41,29 @@ export default function TopBar() {
             top: 0,
             zIndex: 90
         }}>
-            <span className="topbar-greeting" style={{ fontSize: '15px', color: '#94a3b8', fontWeight: 500 }}>
-                Olá, <strong style={{ color: '#0f172a', fontWeight: 700 }}>Nicolas Morais braga!</strong> Hoje é {todayStr}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button
+                    onClick={onToggleSidebar}
+                    className="mobile-only"
+                    style={{
+                        background: '#f1f5f9',
+                        border: 'none',
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '10px',
+                        display: 'none', // Managed by CSS
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        color: '#0f172a'
+                    }}
+                >
+                    <Menu size={20} />
+                </button>
+                <span className="topbar-greeting" style={{ fontSize: '15px', color: '#94a3b8', fontWeight: 500 }}>
+                    Olá, <strong style={{ color: '#0f172a', fontWeight: 700 }}>Nicolas Morais braga!</strong> Hoje é {todayStr}
+                </span>
+            </div>
 
             {/* Revenue Progress Bar */}
             <div className="topbar-progress" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
