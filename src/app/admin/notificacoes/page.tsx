@@ -1,9 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Bell, CheckCircle2, ShoppingCart, Clock } from 'lucide-react'
 import TestPushButton from './TestPushButton' // Client component
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-
 export const dynamic = 'force-dynamic';
 
 export default async function NotificacoesPage() {
@@ -105,7 +102,9 @@ export default async function NotificacoesPage() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '4px' }}>
                                         <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#1e293b' }}>{notif.title}</h3>
                                         <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                            {format(new Date(notif.date), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                                            {new Intl.DateTimeFormat('pt-BR', {
+                                                day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                                            }).format(new Date(notif.date)).replace(',', ' às')}
                                         </span>
                                     </div>
                                     <p style={{ margin: 0, fontSize: '13px', color: '#64748b', lineHeight: 1.4, fontWeight: 500 }}>

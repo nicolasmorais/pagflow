@@ -1,8 +1,8 @@
 import webpush from 'web-push';
 import { prisma } from './prisma';
+import { messaging } from './firebase-admin';
 
 // Configure Web Push with VAPID keys
-// Need to handle cases where keys might be undefined during build
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
 const privateKey = process.env.VAPID_PRIVATE_KEY || '';
 
@@ -15,8 +15,11 @@ if (publicKey && privateKey) {
 }
 
 export async function sendAdminPush(title: string, body: string, url: string = '/admin') {
-    if (!publicKey || !privateKey) {
-        console.warn('Push VAPID keys not configured. Skipping push notification.');
+    const webPushEnabled = !!(publicKey && privateKey);
+    const nativePushEnabled = !!messaging;
+
+    if (!webPushEnabled && !nativePushEnabled) {
+        console.warn('Neither Web Push nor Firebase configured. Skipping.');
         return;
     }
 
@@ -27,29 +30,45 @@ export async function sendAdminPush(title: string, body: string, url: string = '
         const payload = JSON.stringify({ title, body, url });
 
         const promises = subscriptions.map(async (sub) => {
-            // Check if it's a native token
-            if (sub.auth === 'capacitor' || sub.p256dh.startsWith('native-')) {
-                // Native Push (Future FCM implementation)
-                // console.log('Sending native push to:', sub.endpoint);
+            // 1. Check if it's a native token for FCM
+            if (nativePushEnabled && (sub.auth === 'capacitor' || sub.p256dh.startsWith('native-'))) {
+                try {
+                    await messaging!.send({
+                        token: sub.endpoint, // For native, endpoint stores the FCM token
+                        notification: { title, body },
+                        data: { url },
+                        android: { priority: 'high', notification: { sound: 'default', clickAction: 'FCM_PLUGIN_ACTIVITY' } },
+                        apns: { payload: { aps: { sound: 'default', badge: 1 } } }
+                    });
+                } catch (error: any) {
+                    if (error.code === 'messaging/registration-token-not-registered') {
+                        await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
+                    } else {
+                        console.error('FCM Native Push Error:', error);
+                    }
+                }
                 return;
             }
 
-            try {
-                await webpush.sendNotification(
-                    {
-                        endpoint: sub.endpoint,
-                        keys: {
-                            p256dh: sub.p256dh,
-                            auth: sub.auth,
+            // 2. Web Push (Standard)
+            if (webPushEnabled && sub.auth !== 'capacitor') {
+                try {
+                    await webpush.sendNotification(
+                        {
+                            endpoint: sub.endpoint,
+                            keys: {
+                                p256dh: sub.p256dh,
+                                auth: sub.auth,
+                            },
                         },
-                    },
-                    payload
-                );
-            } catch (error: any) {
-                if (error.statusCode === 410 || error.statusCode === 404) {
-                    await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
-                } else {
-                    console.error('Error sending push to endpoint:', sub.endpoint, error);
+                        payload
+                    );
+                } catch (error: any) {
+                    if (error.statusCode === 410 || error.statusCode === 404) {
+                        await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
+                    } else {
+                        console.error('Web Push Error:', error);
+                    }
                 }
             }
         });
