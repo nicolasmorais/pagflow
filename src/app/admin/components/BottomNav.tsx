@@ -54,10 +54,6 @@ export default function BottomNav() {
                 <ShoppingCart size={22} />
             </Link>
 
-            <div style={{ transform: 'translateY(-2px)' }}>
-                <NotificationCenter />
-            </div>
-
             <Link key={navItems[2].href} href={navItems[2].href} style={getItemStyle(pathname === navItems[2].href)}>
                 <Package size={22} />
             </Link>

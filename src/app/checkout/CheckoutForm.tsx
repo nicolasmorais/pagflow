@@ -220,6 +220,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
         setErrors(newErrors);
         if (Object.keys(newErrors).length === 0) {
+            // Auto-populate destinatario if empty
+            if (!endereco.destinatario) {
+                setEndereco(prev => ({ ...prev, destinatario: dados.nome }));
+            }
+
             setStep(2);
             updateTrackingStep(1); // Report Step 1 Completed
             window.scrollTo(0, 0);
@@ -378,8 +383,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (paymentMethod === 'card' && step === 3 && typeof window !== 'undefined' && isMpLoaded && (window as any).MercadoPago) {
             const initBrick = async () => {
                 const container = document.getElementById('paymentBrick_container');
-                if (!container) return; // Prevent creating if DOM is not ready
-                container.innerHTML = '';
+                if (!container) return;
+                container.innerHTML = '<div style="padding: 24px; text-align: center; color: #5A5A55; font-size: 15px; font-weight: 600;">Carregando sistema de pagamento seguro...</div>';
 
                 const mp = new (window as any).MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!);
                 const bricksBuilder = mp.bricks();
@@ -1073,7 +1078,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 </div>
             </footer>
 
-            {exitPopupConfig?.isEnabled && (
+            {exitPopupConfig?.isEnabled && !done && (
                 <ExitPopup
                     productName={product?.name || 'Produto'}
                     originalPrice={product?.price || basePrice}
@@ -1082,6 +1087,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     timerSeconds={exitPopupConfig.timerSeconds ?? 480}
                     productId={product?.id}
                     isEnabled={true}
+                    canIntercept={step > 1}
                     onAccept={(discountedPrice: number) => {
                         setExitDiscount(discountedPrice)
                         setPaymentMethod('pix')

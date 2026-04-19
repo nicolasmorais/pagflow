@@ -1,61 +1,141 @@
 'use client'
 
 import { Filter } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function AnalyticsFilterForm({
     currentFilter,
+    currentStatus = 'todos',
     fromDate,
     toDate,
+    showStatus = false,
 }: {
     currentFilter: string
+    currentStatus?: string
     fromDate: string
     toDate: string
+    showStatus?: boolean
 }) {
+    const router = useRouter()
+    const searchParams = useSearchParams()
+
     function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
-        const form = e.currentTarget.closest('form') as HTMLFormElement
-        if (form) form.submit()
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('filter', e.target.value)
+        router.push(`?${params.toString()}`)
+    }
+
+    function handleStatusClick(status: string) {
+        const params = new URLSearchParams(searchParams.toString())
+        if (params.get('status') === status) {
+            params.delete('status')
+        } else {
+            params.set('status', status)
+        }
+        router.push(`?${params.toString()}`)
     }
 
     return (
-        <form method="get" className="filter-form">
-            <select
-                name="filter"
-                defaultValue={currentFilter}
-                onChange={handleSelectChange}
-                style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: '#334155',
-                    background: '#f8fafc',
-                    outline: 'none',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-                }}
-            >
-                <option value="today">Hoje</option>
-                <option value="yesterday">Ontem</option>
-                <option value="7dias">Últimos 7 dias</option>
-                <option value="30dias">Últimos 30 dias</option>
-                <option value="mes">Este mês</option>
-                <option value="mes-anterior">Mês anterior</option>
-                <option value="vida">Todo período</option>
-            </select>
+        <form method="get" className="filter-form responsive-filter-row">
+            <div className="status-fixed-group">
+                {showStatus && (
+                    <>
+                        <div
+                            onClick={() => handleStatusClick('pago')}
+                            className="status-btn pago-btn"
+                            style={{
+                                height: '44px',
+                                padding: '0 16px',
+                                borderRadius: '12px',
+                                background: currentStatus === 'pago' ? '#22c55e' : '#f8fafc',
+                                color: currentStatus === 'pago' ? 'white' : '#166534',
+                                border: '1px solid ' + (currentStatus === 'pago' ? '#22c55e' : '#e2e8f0'),
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                minWidth: '70px',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            Pago
+                        </div>
 
-            <div style={{
+                        <div
+                            onClick={() => handleStatusClick('pendente')}
+                            className="status-btn pendente-btn"
+                            style={{
+                                height: '44px',
+                                padding: '0 16px',
+                                borderRadius: '12px',
+                                background: currentStatus === 'pendente' ? '#64748b' : '#f8fafc',
+                                color: currentStatus === 'pendente' ? 'white' : '#475569',
+                                border: '1px solid ' + (currentStatus === 'pendente' ? '#64748b' : '#e2e8f0'),
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                minWidth: '85px',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            Pendente
+                        </div>
+                    </>
+                )}
+
+                <select
+                    name="filter"
+                    defaultValue={currentFilter}
+                    onChange={handleSelectChange}
+                    className="fixed-dates-select"
+                    style={{
+                        height: '44px',
+                        padding: '0 10px',
+                        borderRadius: '12px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#334155',
+                        background: '#f8fafc',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                        minWidth: '130px'
+                    }}
+                >
+                    <option value="today">Hoje</option>
+                    <option value="yesterday">Ontem</option>
+                    <option value="7dias">Últimos 7 dias</option>
+                    <option value="30dias">Últimos 30 dias</option>
+                    <option value="mes">Este mês</option>
+                    <option value="mes-anterior">Mês anterior</option>
+                    <option value="vida">Todo período</option>
+                </select>
+            </div>
+
+            <div className="custom-date-container" style={{
                 display: 'flex',
                 gap: '6px',
                 alignItems: 'center',
-                width: '100%',
+                height: '44px',
                 background: '#fff',
-                padding: '4px 6px',
-                borderRadius: '8px',
+                padding: '0 10px',
+                borderRadius: '12px',
                 border: '1px solid #e2e8f0',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                minWidth: '220px'
             }}>
                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flex: 1, minWidth: 0 }}>
                     <input
@@ -63,7 +143,7 @@ export default function AnalyticsFilterForm({
                         name="from"
                         defaultValue={fromDate}
                         className="minimal-date"
-                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
+                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '13px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 600 }}
                     />
                     <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 600 }}>/</span>
                     <input
@@ -71,7 +151,7 @@ export default function AnalyticsFilterForm({
                         name="to"
                         defaultValue={toDate}
                         className="minimal-date"
-                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '12px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 500 }}
+                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '13px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 600 }}
                     />
                 </div>
 
@@ -79,12 +159,13 @@ export default function AnalyticsFilterForm({
 
                 <button
                     type="submit"
+                    className="filter-submit-btn"
                     style={{
-                        padding: '6px 12px',
+                        padding: '8px 12px',
                         background: '#f1f5f9',
                         color: '#475569',
                         border: 'none',
-                        borderRadius: '6px',
+                        borderRadius: '8px',
                         fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -99,7 +180,7 @@ export default function AnalyticsFilterForm({
                     onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a' }}
                     onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}
                 >
-                    <Filter size={12} />
+                    <Filter size={14} />
                     Filtrar
                 </button>
             </div>

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { resend } from '@/lib/resend'
 import { sendWebhook } from '@/lib/webhook-service'
+import { uploadOrderBackup } from '@/lib/r2'
 
 export async function sendConfirmationEmail(orderId: string) {
     try {
@@ -161,10 +162,15 @@ export async function createOrder(formData: FormData) {
 
 export async function updateOrderStatus(orderId: string, status: string) {
     try {
-        await prisma.order.update({
+        const updated = await prisma.order.update({
             where: { id: orderId },
-            data: { status }
+            data: { status },
+            include: { product: true }
         })
+
+        // Backup update
+        uploadOrderBackup(updated).catch(e => console.error("R2 Backup Error:", e));
+
         revalidatePath('/admin/pedidos')
         revalidatePath('/admin')
         return { success: true }
@@ -175,10 +181,15 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
 export async function updatePaymentStatus(orderId: string, paymentStatus: string) {
     try {
-        await prisma.order.update({
+        const updated = await prisma.order.update({
             where: { id: orderId },
-            data: { paymentStatus }
+            data: { paymentStatus },
+            include: { product: true }
         })
+
+        // Backup update
+        uploadOrderBackup(updated).catch(e => console.error("R2 Backup Error:", e));
+
         revalidatePath('/admin/pedidos')
         revalidatePath('/admin')
         return { success: true }
@@ -343,7 +354,12 @@ export async function saveOrderProgress(data: any) {
                         // Garante que continue como abandonado enquanto navega no checkout
                         paymentStatus: payload.paymentStatus || 'abandonado'
                     },
+                    include: { product: true }
                 });
+
+                // Backup update
+                uploadOrderBackup(updated).catch(e => console.error("R2 Backup Error:", e));
+
                 revalidatePath('/admin/abandonados');
                 revalidatePath('/admin');
                 return { success: true, id: updated.id };
@@ -356,7 +372,12 @@ export async function saveOrderProgress(data: any) {
                 ...payload,
                 paymentStatus: 'abandonado'
             },
+            include: { product: true }
         });
+
+        // Backup creation
+        uploadOrderBackup(created).catch(e => console.error("R2 Backup Error:", e));
+
         revalidatePath('/admin/abandonados');
         revalidatePath('/admin');
 
@@ -827,5 +848,31 @@ export async function clearAllSubscriptionsAction() {
     } catch (error) {
         console.error('Clear subscriptions error:', error);
         return { success: false };
+    }
+}
+
+export async function backupAllPaidOrders() {
+    try {
+        const { prisma } = await import('@/lib/prisma');
+        const { uploadOrderBackup } = await import('@/lib/r2');
+
+        const paidOrders = await prisma.order.findMany({
+            where: { paymentStatus: 'pago' },
+            include: { product: true }
+        });
+
+        console.log(`🚀 [Bulk Backup] Starting for ${paidOrders.length} paid orders...`);
+
+        let successCount = 0;
+        for (const order of paidOrders) {
+            const result = await uploadOrderBackup(order);
+            if (result && (result as any).success) successCount++;
+        }
+
+        console.log(`✅ [Bulk Backup] Finished. ${successCount}/${paidOrders.length} backed up.`);
+        return { success: true, count: successCount, total: paidOrders.length };
+    } catch (error) {
+        console.error("❌ [Bulk Backup] Error:", error);
+        return { success: false, error };
     }
 }

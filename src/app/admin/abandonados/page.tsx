@@ -126,147 +126,236 @@ export default async function AbandonadosPage({
             </div>
 
             {/* ── Abandoned Orders List ── */}
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '16px', padding: '0 4px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 900, color: 'var(--admin-text-primary)' }}>
                     Clientes Identificados ({abandonedOrders.length})
                 </h3>
                 <p style={{ fontSize: '12px', color: 'var(--admin-text-muted)', marginTop: '2px' }}>Clientes que preencheram dados mas não finalizaram a compra</p>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {abandonedOrders.length === 0 && (
+            <div className="orders-container">
+                {abandonedOrders.length === 0 ? (
                     <div className="stark-card" style={{ textAlign: 'center', padding: '3rem' }}>
                         <ShoppingCart size={32} color="#94a3b8" style={{ margin: '0 auto 12px' }} />
                         <p style={{ color: '#94a3b8', fontSize: '13px', fontWeight: 600 }}>Nenhum cliente preencheu dados e abandonou neste período.</p>
                     </div>
-                )}
-
-                {abandonedOrders.length > 0 && (
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: gridLayout,
-                        padding: '0 24px 12px 24px',
-                        color: 'var(--admin-text-secondary)',
-                        fontSize: '0.7rem',
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
-                    }}>
-                        <div>Cliente</div>
-                        <div>Produto</div>
-                        <div>Contato</div>
-                        <div>Valor Potencial</div>
-                        <div style={{ textAlign: 'right' }}>Ações</div>
-                    </div>
-                )}
-
-                {abandonedOrders.map((order: any) => (
-                    <div key={order.id} className="dashboard-order-row" style={{
-                        background: 'var(--admin-card)',
-                        border: '1px solid var(--admin-border)',
-                        borderRadius: '16px',
-                        padding: '16px 24px',
-                        display: 'grid',
-                        gridTemplateColumns: gridLayout,
-                        alignItems: 'center',
-                        gap: '16px',
-                        transition: 'all 0.2s ease',
-                    }}>
-                        {/* Col 1: Customer */}
-                        <div>
-                            <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--admin-text-primary)', margin: '0 0 2px 0' }}>
-                                {order.fullName || 'Sem nome'}
-                            </h3>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-secondary)', marginBottom: '4px' }}>{order.email || 'Sem e-mail'}</div>
-                            <div style={{ fontSize: '0.65rem', color: 'var(--admin-text-secondary)' }}>
-                                {new Date(order.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </div>
-                        </div>
-
-                        {/* Col 2: Product */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            {order.product ? (
-                                <div style={{
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
-                                    color: '#3b82f6',
-                                    background: '#eff6ff',
-                                    padding: '3px 8px',
-                                    borderRadius: '5px',
-                                    border: '1px solid #dbeafe',
-                                    display: 'inline-block',
-                                    width: 'fit-content'
-                                }}>
-                                    {order.product.name}
-                                </div>
-                            ) : (
-                                <span style={{ color: 'var(--admin-text-secondary)', fontSize: '0.8rem' }}>Interesse em produto</span>
-                            )}
-                        </div>
-
-                        {/* Col 3: Contact */}
-                        <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--admin-text-primary)' }}>
-                                <Phone size={14} color="#10b981" />
-                                {order.phone || 'Sem telefone'}
-                            </div>
-                            <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '4px' }}>
-                                CPF: {order.cpf || 'Não preenchido'}
-                            </div>
-                        </div>
-
-                        {/* Col 4: Value */}
-                        <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f59e0b' }}>
-                            R$ {(order.totalPrice || 0).toFixed(2)}
-                        </div>
-
-                        {/* Col 5: Actions */}
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                            <a
-                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}?text=Olá ${(order.fullName || 'Cliente').split(' ')[0]}, vimos que você iniciou a compra do ${order.product?.name || 'nosso produto'} mas não finalizou. Podemos te ajudar?`}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{
-                                    height: '34px',
-                                    padding: '0 12px',
-                                    background: '#e1fae9',
-                                    borderRadius: '8px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#10b981',
-                                    border: '1px solid #d1f7de',
-                                    textDecoration: 'none',
-                                    fontSize: '0.75rem',
-                                    fontWeight: 700,
-                                    gap: '6px'
-                                }}
-                            >
-                                Recuperar <ExternalLink size={14} />
-                            </a>
-
-                            <form action={async () => {
-                                'use server'
-                                await deleteOrder(order.id)
+                ) : (
+                    <>
+                        {/* Desktop Grid View */}
+                        <div className="desktop-orders-table" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: gridLayout,
+                                padding: '0 24px 12px 24px',
+                                color: 'var(--admin-text-secondary)',
+                                fontSize: '0.7rem',
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em'
                             }}>
-                                <button style={{
-                                    width: '34px',
-                                    height: '34px',
-                                    background: '#fff1f2',
-                                    borderRadius: '8px',
-                                    display: 'flex',
+                                <div>Cliente</div>
+                                <div>Produto</div>
+                                <div>Contato</div>
+                                <div>Valor Potencial</div>
+                                <div style={{ textAlign: 'right' }}>Ações</div>
+                            </div>
+
+                            {abandonedOrders.map((order: any) => (
+                                <div key={order.id} className="dashboard-order-row" style={{
+                                    background: 'var(--admin-card)',
+                                    border: '1px solid var(--admin-border)',
+                                    borderRadius: '16px',
+                                    padding: '16px 24px',
+                                    display: 'grid',
+                                    gridTemplateColumns: gridLayout,
                                     alignItems: 'center',
-                                    justifyContent: 'center',
-                                    color: '#e11d48',
-                                    border: '1px solid #ffe4e6',
-                                    cursor: 'pointer'
+                                    gap: '16px',
+                                    transition: 'all 0.2s ease',
                                 }}>
-                                    <Trash2 size={14} />
-                                </button>
-                            </form>
+                                    <div>
+                                        <h3 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--admin-text-primary)', margin: '0 0 2px 0' }}>
+                                            {order.fullName || 'Sem nome'}
+                                        </h3>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--admin-text-secondary)', marginBottom: '4px' }}>{order.email || 'Sem e-mail'}</div>
+                                        <div style={{ fontSize: '0.65rem', color: 'var(--admin-text-secondary)' }}>
+                                            {new Date(order.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {order.product ? (
+                                            <div style={{
+                                                fontSize: '0.8rem',
+                                                fontWeight: 700,
+                                                color: '#3b82f6',
+                                                background: '#eff6ff',
+                                                padding: '3px 8px',
+                                                borderRadius: '5px',
+                                                border: '1px solid #dbeafe',
+                                                display: 'inline-block',
+                                                width: 'fit-content'
+                                            }}>
+                                                {order.product.name}
+                                            </div>
+                                        ) : (
+                                            <span style={{ color: 'var(--admin-text-secondary)', fontSize: '0.8rem' }}>Interesse em produto</span>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--admin-text-primary)' }}>
+                                            <Phone size={14} color="#10b981" />
+                                            {order.phone || 'Sem telefone'}
+                                        </div>
+                                        <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '4px' }}>
+                                            CPF: {order.cpf || 'Não preenchido'}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f59e0b' }}>
+                                        R$ {(order.totalPrice || 0).toFixed(2)}
+                                    </div>
+
+                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                        <a
+                                            href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}?text=Olá ${(order.fullName || 'Cliente').split(' ')[0]}, vimos que você iniciou a compra do ${order.product?.name || 'nosso produto'} mas não finalizou. Podemos te ajudar?`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{
+                                                height: '34px',
+                                                padding: '0 12px',
+                                                background: '#e1fae9',
+                                                borderRadius: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: '#10b981',
+                                                border: '1px solid #d1f7de',
+                                                textDecoration: 'none',
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                gap: '6px'
+                                            }}
+                                        >
+                                            Recuperar <ExternalLink size={14} />
+                                        </a>
+
+                                        <form action={async () => {
+                                            'use server'
+                                            await deleteOrder(order.id)
+                                        }}>
+                                            <button style={{
+                                                width: '34px',
+                                                height: '34px',
+                                                background: '#fff1f2',
+                                                borderRadius: '8px',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: '#e11d48',
+                                                border: '1px solid #ffe4e6',
+                                                cursor: 'pointer'
+                                            }}>
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
-                ))}
+
+                        {/* Mobile List View */}
+                        <div className="mobile-orders-grid">
+                            {abandonedOrders.map((order: any) => (
+                                <div key={order.id} className="mobile-order-card" style={{ padding: '20px', background: '#fff', borderRadius: '16px', border: '1px solid var(--admin-border)', marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--admin-text-primary)', margin: 0 }}>
+                                                {order.fullName || 'Sem nome'}
+                                            </h3>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--admin-text-secondary)', marginTop: '2px' }}>{order.email}</div>
+                                        </div>
+                                        <div style={{ fontSize: '1rem', fontWeight: 900, color: '#f59e0b' }}>
+                                            R$ {order.totalPrice.toFixed(2)}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginBottom: '16px' }}>
+                                        {order.product ? (
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                color: '#3b82f6',
+                                                background: '#eff6ff',
+                                                padding: '4px 10px',
+                                                borderRadius: '6px',
+                                                border: '1px solid #dbeafe',
+                                                display: 'inline-block'
+                                            }}>
+                                                {order.product.name}
+                                            </div>
+                                        ) : (
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--admin-text-secondary)' }}>Interesse em produto</div>
+                                        )}
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, color: 'var(--admin-text-primary)' }}>
+                                                <Phone size={14} color="#10b981" />
+                                                {order.phone || 'Sem telefone'}
+                                            </div>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--admin-text-muted)' }}>
+                                                {new Date(order.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <a
+                                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}?text=Olá ${(order.fullName || 'Cliente').split(' ')[0]}, vimos que você iniciou a compra do ${order.product?.name || 'nosso produto'} mas não finalizou. Podemos te ajudar?`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                style={{
+                                                    height: '38px',
+                                                    padding: '0 14px',
+                                                    background: '#10b981',
+                                                    borderRadius: '10px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    color: '#fff',
+                                                    textDecoration: 'none',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    gap: '6px'
+                                                }}
+                                            >
+                                                Recuperar
+                                            </a>
+                                            <form action={async () => {
+                                                'use server'
+                                                await deleteOrder(order.id)
+                                            }}>
+                                                <button style={{
+                                                    width: '38px',
+                                                    height: '38px',
+                                                    background: '#fff1f2',
+                                                    borderRadius: '10px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: '#e11d48',
+                                                    border: '1px solid #ffe4e6'
+                                                }}>
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     )

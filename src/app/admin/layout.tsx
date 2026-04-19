@@ -19,7 +19,8 @@ import {
     Mail,
     ChevronDown,
     BarChart3,
-    Shield
+    Shield,
+    Zap
 } from 'lucide-react'
 import './admin.css'
 import CapacitorInit from '@/components/CapacitorInit'
@@ -48,8 +49,6 @@ const SidebarItem = ({ icon: Icon, label, href, active, count }: {
 }
 
 import TopBar from './components/TopBar'
-import BottomNav from './components/BottomNav'
-import NotificationCenter from './components/NotificationCenter'
 import { Search } from 'lucide-react'
 
 export default function AdminLayout({
@@ -61,7 +60,7 @@ export default function AdminLayout({
 
     const menuItems = [
         { icon: BarChart3, label: 'Dashboard', href: '/admin' },
-        { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },
+        { icon: Zap, label: 'Monitor de Checkout', href: '/admin/monitor' },
         { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
         { icon: Activity, label: 'Carrinhos Abandonados', href: '/admin/abandonados' },
         { icon: Package, label: 'Lista de Produtos', href: '/admin/produtos' },
@@ -73,6 +72,7 @@ export default function AdminLayout({
         { icon: Shield, label: 'Sistema Anti-Fuga', href: '/admin/antifuga' },
         { icon: Sparkles, label: 'Personalização', href: '/admin/personalizacao' },
         { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
+        { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },
     ]
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -145,7 +145,6 @@ export default function AdminLayout({
                 <div className="main-content-inner">
                     {children}
                 </div>
-                <BottomNav />
             </main>
 
             <style jsx global>{`
@@ -175,7 +174,7 @@ export default function AdminLayout({
                     .main-content {
                         margin-left: 0 !important;
                         width: 100% !important;
-                        padding-bottom: 80px !important;
+                        padding-bottom: 24px !important;
                     }
                     .topbar-container {
                         padding: 12px 16px !important;

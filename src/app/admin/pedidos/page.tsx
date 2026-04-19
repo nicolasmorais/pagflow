@@ -9,6 +9,27 @@ import AnalyticsFilterForm from '../AnalyticsFilterForm'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { getDateFilters } from '@/lib/date-utils'
 
+const headerStyle: React.CSSProperties = {
+    padding: '14px 20px',
+    fontSize: '10px',
+    fontWeight: 900,
+    color: 'var(--admin-text-muted)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em'
+}
+
+const cellStyle: React.CSSProperties = {
+    padding: '18px 20px',
+}
+
+const labelStyle: React.CSSProperties = {
+    fontSize: '10px',
+    fontWeight: 800,
+    color: '#94a3b8',
+    textTransform: 'uppercase',
+    marginBottom: '6px'
+}
+
 async function syncMercadoPagoOrders(orders: any[]) {
     // Only sync if MP token is available
     if (!process.env.MP_ACCESS_TOKEN) return orders;
@@ -69,10 +90,11 @@ async function syncMercadoPagoOrders(orders: any[]) {
 export default async function OrdersPage({
     searchParams,
 }: {
-    searchParams: Promise<{ from?: string; to?: string; filter?: string }>
+    searchParams: Promise<{ from?: string; to?: string; filter?: string; status?: string }>
 }) {
     const params = await searchParams
     const filter = params.filter || '7dias'
+    const status = params.status || 'todos'
     const { fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(
         filter, params.from, params.to
     )
@@ -80,6 +102,12 @@ export default async function OrdersPage({
     let orders: any[] = [];
 
     try {
+        const statusFilter = status === 'pago'
+            ? 'pago'
+            : status === 'pendente'
+                ? { in: ['aguardando', 'recusado'] }
+                : { notIn: ['abandonado', 'processando'] }
+
         orders = await prisma.order.findMany({
             where: {
                 deletedAt: null,
@@ -87,9 +115,7 @@ export default async function OrdersPage({
                     gte: fromDateUTC,
                     lte: toDateUTC,
                 },
-                paymentStatus: {
-                    notIn: ['abandonado', 'processando']
-                }
+                paymentStatus: statusFilter
             },
             orderBy: { createdAt: 'desc' },
             include: { product: true }
@@ -111,21 +137,8 @@ export default async function OrdersPage({
         <div style={{ width: '100%', paddingBottom: '60px' }}>
 
             {/* Header / Toolbar - Full Width */}
-            <div className="page-header" style={{
-                marginBottom: '32px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '24px',
-                padding: '0 8px'
-            }}>
-                <div className="page-title-section" style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--admin-text-muted)', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
-                        <span>Dashboard</span>
-                        <span>/</span>
-                        <span style={{ color: 'var(--admin-text-primary)' }}>Pedidos</span>
-                    </div>
+            <div className="page-header">
+                <div className="page-title-section">
                     <h1 style={{
                         fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                         fontWeight: 900,
@@ -135,56 +148,66 @@ export default async function OrdersPage({
                     }}>
                         Gestão de Pedidos
                     </h1>
+                    <p style={{
+                        color: 'var(--admin-text-secondary)',
+                        fontSize: '14px',
+                        margin: '8px 0 0 0',
+                        fontWeight: 500
+                    }}>
+                        Acompanhe, gerencie e organize todos os seus pedidos em tempo real.
+                    </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    <div style={{ position: 'relative' }}>
-                        <input
-                            type="text"
-                            placeholder="Pesquisar pedidos..."
-                            className="search-input-field"
-                            style={{
-                                padding: '10px 16px',
-                                paddingLeft: '40px',
-                                borderRadius: '12px',
-                                border: '1px solid var(--admin-border)',
-                                fontSize: '13px',
-                                width: '260px',
-                                background: 'white',
-                                outline: 'none',
-                                transition: 'all 0.2s',
-                                fontWeight: 500,
-                                color: 'var(--admin-text-primary)'
-                            }}
-                        />
-                        <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--admin-text-muted)' }}>
-                            <RefreshCw size={16} />
+                <div className="header-controls-container">
+                    <div className="search-trash-row">
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="text"
+                                placeholder="Pesquisar pedidos..."
+                                className="search-input-field"
+                                style={{
+                                    padding: '10px 16px',
+                                    paddingLeft: '40px',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--admin-border)',
+                                    fontSize: '13px',
+                                    width: '100%',
+                                    height: '44px',
+                                    background: 'white',
+                                    outline: 'none',
+                                    transition: 'all 0.2s',
+                                    fontWeight: 500,
+                                    color: 'var(--admin-text-primary)'
+                                }}
+                            />
+                            <div style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--admin-text-muted)' }}>
+                                <RefreshCw size={16} />
+                            </div>
                         </div>
+                        <Link
+                            href="/admin/pedidos/lixeira"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                height: '44px',
+                                background: '#f1f5f9',
+                                color: '#64748b',
+                                borderRadius: '12px',
+                                textDecoration: 'none',
+                                border: '1px solid var(--admin-border)',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <Trash2 size={16} />
+                        </Link>
                     </div>
-                    <Link
-                        href="/admin/pedidos/lixeira"
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '10px 16px',
-                            background: '#f1f5f9',
-                            color: '#64748b',
-                            borderRadius: '12px',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            border: '1px solid var(--admin-border)',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        <Trash2 size={16} />
-                        Lixeira
-                    </Link>
                     <AnalyticsFilterForm
                         currentFilter={filter}
+                        currentStatus={status}
                         fromDate={fromDate}
                         toDate={toDate}
+                        showStatus={true}
                     />
                 </div>
             </div>
@@ -354,24 +377,4 @@ export default async function OrdersPage({
     )
 }
 
-const headerStyle: React.CSSProperties = {
-    padding: '14px 20px',
-    fontSize: '10px',
-    fontWeight: 900,
-    color: 'var(--admin-text-muted)',
-    textTransform: 'uppercase',
-    letterSpacing: '0.1em'
-}
-
-const cellStyle: React.CSSProperties = {
-    padding: '18px 20px',
-}
-
-const labelStyle: React.CSSProperties = {
-    fontSize: '10px',
-    fontWeight: 800,
-    color: '#94a3b8',
-    textTransform: 'uppercase',
-    marginBottom: '6px'
-}
 

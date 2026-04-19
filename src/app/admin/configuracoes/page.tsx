@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Bell, Mail, Loader2, Info } from 'lucide-react'
+import { Save, Bell, Mail, Loader2, Info, Database } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +12,7 @@ export default function ConfiguracoesPage() {
     const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
     const [adminEmail, setAdminEmail] = useState('')
+    const [webhookUrl, setWebhookUrl] = useState('')
     const [notifySales, setNotifySales] = useState(false)
     const [notifyAbandoned, setNotifyAbandoned] = useState(false)
 
@@ -19,10 +20,12 @@ export default function ConfiguracoesPage() {
         async function loadSettings() {
             try {
                 const email = await getCustomization('notify_admin_email')
+                const webhook = await getCustomization('webhook_url')
                 const sales = await getCustomization('notify_sales_enabled')
                 const abandoned = await getCustomization('notify_abandoned_enabled')
 
                 if (email) setAdminEmail(email)
+                if (webhook) setWebhookUrl(webhook)
                 setNotifySales(sales === 'true')
                 setNotifyAbandoned(abandoned === 'true')
             } catch (error) {
@@ -39,10 +42,11 @@ export default function ConfiguracoesPage() {
         setStatus(null)
         try {
             await updateCustomization('notify_admin_email', adminEmail)
+            await updateCustomization('webhook_url', webhookUrl)
             await updateCustomization('notify_sales_enabled', notifySales ? 'true' : 'false')
             await updateCustomization('notify_abandoned_enabled', notifyAbandoned ? 'true' : 'false')
 
-            setStatus({ type: 'success', message: 'Configurações de notificação salvas com sucesso!' })
+            setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
             setTimeout(() => setStatus(null), 3000)
         } catch (error) {
             setStatus({ type: 'error', message: 'Erro ao salvar configurações' })
@@ -149,8 +153,7 @@ export default function ConfiguracoesPage() {
                                 </div>
                             </label>
                         </div>
-
-                        <div style={{ height: '1px', background: '#e2e8f0' }}></div>
+                        <div style={{ height: '1px', background: '#e2e8f0', margin: '16px 0' }}></div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div>
@@ -174,21 +177,60 @@ export default function ConfiguracoesPage() {
                     </div>
                 </div>
 
-                <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        style={{
-                            background: '#10b981', color: '#fff', padding: '14px 28px',
-                            borderRadius: '12px', fontSize: '15px', fontWeight: 600,
-                            display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
-                            opacity: saving ? 0.7 : 1, transition: 'all 0.2s', border: 'none'
-                        }}
-                    >
-                        {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                        {saving ? 'Salvando...' : 'Salvar Configurações'}
-                    </button>
+                <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '24px', border: '1px solid #e2e8f0', marginTop: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                        <div style={{ padding: '8px', background: '#f0f9ff', borderRadius: '10px', color: '#0ea5e9' }}>
+                            <Database size={20} />
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Integração Google Sheets / Webhook</h3>
+                            <p style={{ fontSize: '13px', color: '#64748b' }}>Envie dados dos pedidos para planilhas ou sistemas externos.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
+                            URL do Webhook
+                        </label>
+                        <input
+                            type="url"
+                            value={webhookUrl}
+                            onChange={(e) => setWebhookUrl(e.target.value)}
+                            placeholder="https://script.google.com/macros/s/..."
+                            style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                borderRadius: '10px',
+                                border: '1px solid #e2e8f0',
+                                fontSize: '14px',
+                                background: '#fff',
+                                outline: 'none'
+                            }}
+                        />
+                        <div style={{ marginTop: '10px', padding: '12px', background: '#fff', borderRadius: '8px', border: '1px solid #e0f2fe', display: 'flex', gap: '10px' }}>
+                            <Info size={16} style={{ color: '#0ea5e9', flexShrink: 0, marginTop: '2px' }} />
+                            <p style={{ fontSize: '12px', color: '#0369a1', lineHeight: '1.5' }}>
+                                Cole aqui a URL do seu Google App Script para salvar os pedidos automaticamente em sua planilha.
+                            </p>
+                        </div>
+                    </div>
                 </div>
+            </div>
+
+            <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    style={{
+                        background: '#10b981', color: '#fff', padding: '14px 28px',
+                        borderRadius: '12px', fontSize: '15px', fontWeight: 600,
+                        display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                        opacity: saving ? 0.7 : 1, transition: 'all 0.2s', border: 'none'
+                    }}
+                >
+                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                    {saving ? 'Salvando...' : 'Salvar Configurações'}
+                </button>
             </div>
         </div>
     )

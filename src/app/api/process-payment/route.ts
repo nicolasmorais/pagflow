@@ -102,12 +102,18 @@ export async function POST(req: NextRequest) {
         const baseUrl = `${protocol}://${host}`;
         const notificationUrl = (host?.includes('localhost') || !protocol.includes('https')) ? undefined : `${baseUrl}/api/webhook/mercadopago`;
 
+        const cleanPhone = (phone || "").replace(/\D/g, '');
+        const phoneData = cleanPhone.length >= 10 ? {
+            area_code: cleanPhone.slice(0, 2),
+            number: cleanPhone.slice(2)
+        } : undefined;
+
         let mpPayload: any = {
             transaction_amount: price,
             description: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
             external_reference: order.id,
-            statement_descriptor: "PAGFLOW*PRODUTO", // Nome na fatura do cartão
-            binary_mode: true, // Aprovação instantânea (ideal para produtos digitais/físicos com estoque)
+            statement_descriptor: "PAGFLOW*PRODUTO",
+            binary_mode: true,
             payment_method_id: method === 'pix' ? 'pix' : undefined,
             notification_url: notificationUrl,
             payer: {
@@ -118,10 +124,7 @@ export async function POST(req: NextRequest) {
                     type: 'CPF',
                     number: cpfToSave || '19119119100'
                 },
-                phone: {
-                    area_code: (phone || "").replace(/\D/g, '').slice(0, 2),
-                    number: (phone || "").replace(/\D/g, '').slice(2)
-                },
+                phone: phoneData,
                 address: {
                     zip_code: orderData.cep?.replace(/\D/g, '') || '',
                     street_name: orderData.rua || '',
@@ -129,16 +132,6 @@ export async function POST(req: NextRequest) {
                     neighborhood: orderData.bairro || '',
                     city: orderData.cidade || '',
                     federal_unit: (orderData.estado || '').toUpperCase()
-                }
-            },
-            shipments: {
-                receiver_address: {
-                    zip_code: orderData.cep?.replace(/\D/g, '') || '',
-                    street_name: orderData.rua || '',
-                    street_number: orderData.numero || '',
-                    neighborhood: orderData.bairro || '',
-                    city_name: orderData.cidade || '',
-                    state_name: (orderData.estado || '').toUpperCase()
                 }
             },
             additional_info: {
@@ -155,15 +148,7 @@ export async function POST(req: NextRequest) {
                 payer: {
                     first_name: fullName.split(' ')[0] || "Cliente",
                     last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
-                    phone: {
-                        area_code: (phone || "").replace(/\D/g, '').slice(0, 2),
-                        number: (phone || "").replace(/\D/g, '').slice(2)
-                    },
-                    address: {
-                        zip_code: orderData.cep?.replace(/\D/g, '') || '',
-                        street_name: orderData.rua || '',
-                        street_number: orderData.numero || '',
-                    }
+                    phone: phoneData
                 }
             }
         };
@@ -248,6 +233,21 @@ export async function POST(req: NextRequest) {
                 netReceived: (mpResult as any).transaction_details?.net_received_amount || null
             }
         });
+
+        // ── R2 Backup Trigger ──────────────────────────────────────────────────
+        try {
+            const fullOrder = await prisma.order.findUnique({
+                where: { id: order.id },
+                include: { product: true }
+            });
+            if (fullOrder) {
+                const { uploadOrderBackup } = await import("@/lib/r2");
+                await uploadOrderBackup(fullOrder);
+            }
+        } catch (r2Err) {
+            console.error("Failed to trigger R2 backup:", r2Err);
+        }
+        // ───────────────────────────────────────────────────────────────────────
 
         // 4. Enviar E-mail se aprovado
         if (finalStatus === 'pago') {

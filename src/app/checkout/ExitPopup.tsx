@@ -10,6 +10,7 @@ interface ExitPopupProps {
     timerSeconds: number
     productId?: string
     isEnabled: boolean
+    canIntercept?: boolean
     onAccept: (discountedPrice: number) => void
     onDecline: () => void
 }
@@ -39,8 +40,10 @@ export default function ExitPopup({
     isEnabled,
     onAccept,
     onDecline,
+    canIntercept = true,
 }: ExitPopupProps) {
     const shownRef = useRef(false)
+    const [isReady, setIsReady] = useState(false)
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
     const remainingRef = useRef(timerSeconds)
     const overlayRef = useRef<HTMLDivElement>(null)
@@ -95,6 +98,7 @@ export default function ExitPopup({
     }, [isTestMode])
 
     const show = useCallback(async () => {
+        if (!isReady) return // Don't show during grace period
         const test = isTestMode();
         if ((shownRef.current || alreadyShown()) && !test) return
         if (isBlockedPage()) return
@@ -138,7 +142,7 @@ export default function ExitPopup({
                 hide()
             }
         }, 1000)
-    }, [alreadyShown, isBlockedPage, productId, updateTimer, hide, isTestMode])
+    }, [alreadyShown, isBlockedPage, productId, updateTimer, hide, isTestMode, isReady])
 
     const handleAccept = useCallback(() => {
         if (!isTestMode()) trackEvent('accepted', productId)
@@ -154,6 +158,10 @@ export default function ExitPopup({
 
     useEffect(() => {
         if (!isEnabled) return
+
+        // 5s Grace period
+        const timerReady = setTimeout(() => setIsReady(true), 5000)
+
         const isMobile = () => /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
 
         let isEngaged = false
@@ -164,15 +172,19 @@ export default function ExitPopup({
 
         // ── 1. Desktop: mouse sai pelo topo da janela ──────────────────────
         const onMouseMove = (e: MouseEvent) => {
-            // Desktop não exige engajamento prévio da nossa parte porque o mousemove já garante intenção
             if (e.clientY <= 5) show()
         }
 
         // ── 2. Mobile: botão voltar / swipe voltar interceptado ────────────
-        history.pushState({ exitPopupGuard: true }, '', location.href)
+        // Only push state IF we can intercept, otherwise just let them leave
+        if (canIntercept) {
+            history.pushState({ exitPopupGuard: true }, '', location.href)
+        }
 
         const onPopState = (e: PopStateEvent) => {
             const test = isTestMode();
+            if (!canIntercept) return;
+
             if ((!shownRef.current && !alreadyShown() && !isBlockedPage()) || test) {
                 history.pushState({ exitPopupGuard: true }, '', location.href)
                 if (isEngaged || !isMobile() || test) show()
@@ -181,7 +193,7 @@ export default function ExitPopup({
 
         // ── 3. Comportamento de Scroll (Mobile e Desktop) ──────────────────
         const onScroll = () => {
-            if (window.scrollY > 100) setEngaged()
+            if (window.scrollY > 150) setEngaged()
         }
 
         // ── 4. Mobile: pull-down no topo (intenção de sair) ───────────────
@@ -190,21 +202,18 @@ export default function ExitPopup({
         const onTouchStart = (e: TouchEvent) => {
             touchStartY = e.touches[0].clientY
             touchStartX = e.touches[0].clientX
-            setEngaged() // Qualquer toque no mobile marca como engajado
         }
         const onTouchMove = (e: TouchEvent) => {
             const dy = e.touches[0].clientY - touchStartY
             const dx = Math.abs(e.touches[0].clientX - touchStartX)
             const atTop = window.scrollY <= 0 && touchStartY < 60
-            if (atTop && dy > 60 && dx < 40 && isEngaged) show()
+            // Increased dy threshold to 120px for mobile
+            if (atTop && dy > 120 && dx < 40 && isEngaged) show()
         }
 
         // ── 5. Outros gatilhos ─────────────────────────────────────────────
         const onVisibilityChange = () => {
             if (document.visibilityState === 'hidden' && (isEngaged || !isMobile())) show()
-        }
-        const onPageHide = () => {
-            if (isEngaged || !isMobile()) show()
         }
         const onInteraction = () => {
             setEngaged()
@@ -214,7 +223,6 @@ export default function ExitPopup({
         window.addEventListener('popstate', onPopState)
         window.addEventListener('scroll', onScroll, { passive: true })
         document.addEventListener('visibilitychange', onVisibilityChange)
-        window.addEventListener('pagehide', onPageHide)
         document.addEventListener('mousedown', onInteraction, { passive: true })
 
         if (isMobile()) {
@@ -223,11 +231,11 @@ export default function ExitPopup({
         }
 
         return () => {
+            clearTimeout(timerReady)
             document.removeEventListener('mousemove', onMouseMove, { capture: true })
             window.removeEventListener('popstate', onPopState)
             window.removeEventListener('scroll', onScroll)
             document.removeEventListener('visibilitychange', onVisibilityChange)
-            window.removeEventListener('pagehide', onPageHide)
             document.removeEventListener('mousedown', onInteraction)
             if (isMobile()) {
                 document.removeEventListener('touchstart', onTouchStart)
@@ -235,7 +243,7 @@ export default function ExitPopup({
             }
             if (timerRef.current) clearInterval(timerRef.current)
         }
-    }, [isEnabled, show, alreadyShown, isBlockedPage])
+    }, [isEnabled, show, alreadyShown, isBlockedPage, canIntercept])
 
     if (!isEnabled) return null
 
