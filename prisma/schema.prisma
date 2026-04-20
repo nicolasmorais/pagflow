@@ -43,6 +43,7 @@ model Order {
   utmMedium         String?
   utmSource         String?
   utmTerm           String?
+  lastStepReached   Int?       @default(1)
   emailLogs         EmailLog[]
   product           Product?   @relation(fields: [productId], references: [id])
 }

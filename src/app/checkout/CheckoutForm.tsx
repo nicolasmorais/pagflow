@@ -16,6 +16,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [accessId, setAccessId] = useState<string | null>(null);
     const [lastTrackedStep, setLastTrackedStep] = useState<number>(0);
     const [orderId, setOrderId] = useState<string | null>(null);
+    const [step1Loading, setStep1Loading] = useState(false);
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
@@ -34,6 +35,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         const _tfa = (window as any)._tfa || [];
         _tfa.push({ notify: 'event', name: eventName, id: pixels.taboolaId, ...data });
     };
+
+    const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
+    const basePrice = product?.price || 9;
+    // exitDiscount overrides the normal PIX discount (from anti-exit popup)
+    const effectivePrice = exitDiscount !== null
+        ? exitDiscount
+        : (step === 3 && paymentMethod === 'pix') ? (basePrice * (1 - pixDiscountVal) + shipping.price) : (basePrice + shipping.price);
+    const finalPrice = effectivePrice;
 
     useEffect(() => {
         // Taboola Base Script
@@ -128,19 +137,44 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     }, [step, lastTrackedStep, accessId]);
 
+    // Auto-save progress when payment method is selected
+    useEffect(() => {
+        if (step === 3 && paymentMethod && orderId) {
+            saveOrderProgress({
+                id: orderId,
+                paymentMethod,
+                lastStepReached: 3,
+                paymentStatus: 'abandonado',
+            });
+        }
+    }, [paymentMethod, step, orderId]);
+
+    // Save partial address progress in Step 2 (debounced)
+    useEffect(() => {
+        if (step === 2 && orderId) {
+            const timer = setTimeout(() => {
+                saveOrderProgress({
+                    id: orderId,
+                    ...endereco,
+                    fullName: dados.nome,
+                    email: dados.email,
+                    phone: dados.telefone,
+                    cpf: customization?.disableCpf ? null : dados.cpf,
+                    productId: product?.id,
+                    totalPrice: finalPrice,
+                    lastStepReached: 2,
+                    paymentStatus: 'abandonado',
+                });
+            }, 2000); // 2 second debounce
+            return () => clearTimeout(timer);
+        }
+    }, [endereco, step, orderId, dados, customization?.disableCpf, product?.id, finalPrice]);
+
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     };
-
-    const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
-    const basePrice = product?.price || 9;
-    // exitDiscount overrides the normal PIX discount (from anti-exit popup)
-    const effectivePrice = exitDiscount !== null
-        ? exitDiscount
-        : (step === 3 && paymentMethod === 'pix') ? (basePrice * (1 - pixDiscountVal) + shipping.price) : (basePrice + shipping.price);
-    const finalPrice = effectivePrice;
 
     const handleCEPChange = async (val: string) => {
         const cleanCEP = val.replace(/\D/g, '').slice(0, 8);
@@ -225,6 +259,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 setEndereco(prev => ({ ...prev, destinatario: dados.nome }));
             }
 
+            setStep1Loading(true);
             setStep(2);
             updateTrackingStep(1); // Report Step 1 Completed
             window.scrollTo(0, 0);
@@ -239,6 +274,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 cpf: customization?.disableCpf ? null : dados.cpf,
                 productId: product?.id,
                 totalPrice: finalPrice,
+                lastStepReached: 1,
                 paymentStatus: 'abandonado',
                 utmSource: searchParams.get('utm_source'),
                 utmMedium: searchParams.get('utm_medium'),
@@ -246,11 +282,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 utmTerm: searchParams.get('utm_term'),
                 utmContent: searchParams.get('utm_content'),
             }).then(res => {
+                setStep1Loading(false);
                 if (res.success && res.id) {
                     setOrderId(res.id);
                     localStorage.setItem('last_order_id', res.id);
                 }
-            });
+            }).catch(() => setStep1Loading(false));
 
             return true;
         }
@@ -283,6 +320,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 cpf: customization?.disableCpf ? null : dados.cpf,
                 productId: product?.id,
                 totalPrice: finalPrice,
+                lastStepReached: 2,
                 paymentStatus: 'abandonado',
             });
 
@@ -351,6 +389,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             }
 
             if (result.success) {
+                // Taboola: Track EVERY attempt (approved, declined, pending Pix)
+                trackTaboolaEvent('make_purchase', { value: finalPrice, currency: 'BRL' });
+
                 if (result.paymentStatus === 'recusado') {
                     alert("Pagamento recusado pela operadora.");
                     throw new Error("Pagamento recusado.");
@@ -361,7 +402,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 }
                 setDone(true);
                 updateTrackingStep('payment'); // Funnel Completed!
-                trackTaboolaEvent('purchase', { value: finalPrice, currency: 'BRL' });
             } else {
                 alert("Erro: " + (result.error || "Tente novamente"));
                 throw new Error(result.error || "Erro de validação do pagamento");
@@ -554,7 +594,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     <div className="urgency-bar">
                         <div className="urgency-icon">⏰</div>
                         <div className="urgency-text">
-                            <div className="title">Tempo restante para pagar:</div>
+                            <div className="title" style={{ color: '#7a4a00' }}>Tempo restante para pagar:</div>
                             <div className="desc">Após isso, o pedido é liberado para outro cliente</div>
                         </div>
                         <div className="timer-display" style={{ color: timeLeft <= 120 ? '#c0392b' : 'inherit' }}>{formatTime(timeLeft)}</div>
@@ -790,15 +830,15 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                     {!customization?.disableCpf && (
                                         <div className={`field ${errors.cpf ? 'error' : ''}`}>
-                                            <label className="field-label">CPF</label>
+                                            <label className="field-label">CPF <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(Opcional)</span></label>
                                             <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
                                             {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
-                                            <div className="field-hint-label">Necessário para emissão da nota fiscal</div>
+                                            <div className="field-hint-label">Necessário apenas para emissão de nota fiscal</div>
                                         </div>
                                     )}
 
-                                    <button className="main-cta" onClick={validateStep1}>
-                                        Continuar para a Entrega →
+                                    <button className="main-cta" onClick={validateStep1} disabled={step1Loading}>
+                                        {step1Loading ? 'Carregando...' : 'Continuar para a Entrega →'}
                                     </button>
 
                                 </div>
@@ -1086,7 +1126,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     installments={exitPopupConfig.installments ?? 3}
                     timerSeconds={exitPopupConfig.timerSeconds ?? 480}
                     productId={product?.id}
-                    isEnabled={true}
+                    isEnabled={exitPopupConfig.isEnabled}
                     canIntercept={step > 1}
                     onAccept={(discountedPrice: number) => {
                         setExitDiscount(discountedPrice)

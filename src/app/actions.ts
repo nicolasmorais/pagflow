@@ -342,7 +342,7 @@ export async function updateOrderTracking(orderId: string, trackingCode: string,
 
 export async function saveOrderProgress(data: any) {
     try {
-        const { id, ...payload } = data;
+        const { id, lastStepReached, ...payload } = data;
 
         if (id) {
             const existing = await prisma.order.findUnique({ where: { id } });
@@ -351,6 +351,7 @@ export async function saveOrderProgress(data: any) {
                     where: { id },
                     data: {
                         ...payload,
+                        lastStepReached: lastStepReached || (existing.lastStepReached ? Math.max(existing.lastStepReached, 1) : 1),
                         // Garante que continue como abandonado enquanto navega no checkout
                         paymentStatus: payload.paymentStatus || 'abandonado'
                     },
@@ -370,6 +371,7 @@ export async function saveOrderProgress(data: any) {
         const created = await prisma.order.create({
             data: {
                 ...payload,
+                lastStepReached: lastStepReached || 1,
                 paymentStatus: 'abandonado'
             },
             include: { product: true }

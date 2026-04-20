@@ -49,7 +49,16 @@ export default async function AbandonadosPage({
     const step2Done = checkoutAccesses.filter(a => a.step2Completed).length
     const step3Done = checkoutAccesses.filter(a => a.step3Completed).length
 
-    const gridLayout = 'minmax(180px, 1.2fr) minmax(130px, 0.8fr) minmax(150px, 1fr) minmax(100px, 0.6fr) 180px';
+    const gridLayout = 'minmax(180px, 1.2fr) minmax(130px, 0.8fr) minmax(150px, 1fr) minmax(100px, 0.6fr) minmax(120px, 0.7fr) 180px';
+
+    const getStepLabel = (step: number | null) => {
+        switch (step) {
+            case 1: return { label: 'Dados', color: '#3b82f6', bg: '#eff6ff' };
+            case 2: return { label: 'Entrega', color: '#0ea5e9', bg: '#f0f9ff' };
+            case 3: return { label: 'Pagamento', color: '#f59e0b', bg: '#fffbeb' };
+            default: return { label: 'Início', color: '#6366f1', bg: '#eef2ff' };
+        }
+    }
 
     return (
         <div style={{ width: '100%', padding: '24px' }}>
@@ -157,6 +166,7 @@ export default async function AbandonadosPage({
                                 <div>Produto</div>
                                 <div>Contato</div>
                                 <div>Valor Potencial</div>
+                                <div>Última Etapa</div>
                                 <div style={{ textAlign: 'right' }}>Ações</div>
                             </div>
 
@@ -214,6 +224,27 @@ export default async function AbandonadosPage({
 
                                     <div style={{ fontSize: '1rem', fontWeight: 800, color: '#f59e0b' }}>
                                         R$ {(order.totalPrice || 0).toFixed(2)}
+                                    </div>
+
+                                    <div>
+                                        <div style={{
+                                            ...getStepLabel(order.lastStepReached),
+                                            fontSize: '0.7rem',
+                                            fontWeight: 800,
+                                            padding: '4px 10px',
+                                            borderRadius: '6px',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {getStepLabel(order.lastStepReached).label}
+                                        </div>
+                                        {order.paymentMethod && (
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--admin-text-muted)', marginTop: '4px', fontWeight: 600 }}>
+                                                💳 {order.paymentMethod.toUpperCase()}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -278,6 +309,24 @@ export default async function AbandonadosPage({
                                         <div style={{ fontSize: '1rem', fontWeight: 900, color: '#f59e0b' }}>
                                             R$ {order.totalPrice.toFixed(2)}
                                         </div>
+                                    </div>
+
+                                    <div style={{ marginBottom: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                        <div style={{
+                                            ...getStepLabel(order.lastStepReached),
+                                            fontSize: '0.65rem',
+                                            fontWeight: 900,
+                                            padding: '3px 8px',
+                                            borderRadius: '5px',
+                                            textTransform: 'uppercase'
+                                        }}>
+                                            {getStepLabel(order.lastStepReached).label}
+                                        </div>
+                                        {order.paymentMethod && (
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--admin-text-muted)', fontWeight: 700 }}>
+                                                • {order.paymentMethod.toUpperCase()}
+                                            </span>
+                                        )}
                                     </div>
 
                                     <div style={{ marginBottom: '16px' }}>

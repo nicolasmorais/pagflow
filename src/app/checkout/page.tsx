@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import CheckoutForm from './CheckoutForm'
 import { Metadata } from 'next'
+import Script from 'next/script'
 
 export async function generateMetadata({
     searchParams
@@ -151,18 +152,26 @@ export default async function CheckoutPage({
         }
 
         if (!exitPopupConfig) {
-            exitPopupConfig = { isEnabled: true, discountPct: 50, timerSeconds: 480, installments: 3 }
+            exitPopupConfig = { isEnabled: false, discountPct: 50, timerSeconds: 480, installments: 3 }
         }
     } catch (e) {
         exitPopupConfig = { isEnabled: false }
     }
 
-    return <CheckoutForm
-        product={product}
-        customization={customization}
-        shippingRules={mappedShippingRules}
-        pixels={pixels}
-        availableBumps={mappedOrderBumps}
-        exitPopupConfig={exitPopupConfig}
-    />
+    return (
+        <>
+            <Script
+                src="https://t.contentsquare.net/uxa/da4f1c872e126.js"
+                strategy="afterInteractive"
+            />
+            <CheckoutForm
+                product={product}
+                customization={customization}
+                shippingRules={mappedShippingRules}
+                pixels={pixels}
+                availableBumps={mappedOrderBumps}
+                exitPopupConfig={exitPopupConfig}
+            />
+        </>
+    )
 }

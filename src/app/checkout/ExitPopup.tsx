@@ -98,7 +98,7 @@ export default function ExitPopup({
     }, [isTestMode])
 
     const show = useCallback(async () => {
-        if (!isReady) return // Don't show during grace period
+        if (!isEnabled || !isReady) return // Hard stop if disabled or in grace period
         const test = isTestMode();
         if ((shownRef.current || alreadyShown()) && !test) return
         if (isBlockedPage()) return
@@ -245,7 +245,9 @@ export default function ExitPopup({
         }
     }, [isEnabled, show, alreadyShown, isBlockedPage, canIntercept])
 
-    if (!isEnabled) return null
+    if (!isEnabled) {
+        return null;
+    }
 
     return (
         <>
