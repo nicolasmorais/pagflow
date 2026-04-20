@@ -17,6 +17,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [lastTrackedStep, setLastTrackedStep] = useState<number>(0);
     const [orderId, setOrderId] = useState<string | null>(null);
     const [step1Loading, setStep1Loading] = useState(false);
+    // Live popup state - fetched from DB on mount to override stale SSR prop
+    const [livePopupEnabled, setLivePopupEnabled] = useState<boolean>(exitPopupConfig?.isEnabled ?? false);
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
@@ -29,6 +31,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
+
+    // Fetch live popup config from DB on mount (overrides stale SSR prop)
+    useEffect(() => {
+        fetch('/api/exit-popup/config')
+            .then(r => r.ok ? r.json() : null)
+            .then(cfg => { if (cfg) setLivePopupEnabled(cfg.isEnabled === true); })
+            .catch(() => { /* silently keep SSR default */ });
+    }, []);
 
     const trackTaboolaEvent = (eventName: string, data: any = {}) => {
         if (!pixels?.taboolaId || typeof window === 'undefined') return;
@@ -1118,7 +1128,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 </div>
             </footer>
 
-            {exitPopupConfig?.isEnabled && !done && (
+            {livePopupEnabled && !done && (
                 <ExitPopup
                     productName={product?.name || 'Produto'}
                     originalPrice={product?.price || basePrice}

@@ -98,16 +98,18 @@ export default function ExitPopup({
     }, [isTestMode])
 
     const show = useCallback(async () => {
-        if (!isEnabled || !isReady) return // Hard stop if disabled or in grace period
+        if (!isReady) return // Still in grace period
         const test = isTestMode();
         if ((shownRef.current || alreadyShown()) && !test) return
         if (isBlockedPage()) return
 
-        // Fetch LIVE config from DB before showing
+        // ALWAYS fetch LIVE config from DB before showing - this is the source of truth
         try {
             const res = await fetch('/api/exit-popup/config')
             if (res.ok) {
                 const cfg = await res.json()
+                // Hard stop if disabled in DB (even if prop says enabled)
+                if (cfg.isEnabled === false) return
                 if (cfg.discountPct) {
                     liveDiscountRef.current = cfg.discountPct
                     setLiveDiscountPct(cfg.discountPct)
@@ -116,8 +118,14 @@ export default function ExitPopup({
                     liveTimerRef.current = cfg.timerSeconds
                     setLiveTimerSeconds(cfg.timerSeconds)
                 }
+            } else {
+                // If we can't verify config, don't show the popup
+                return
             }
-        } catch (_) { /* use prop fallback */ }
+        } catch (_) {
+            // If we can't reach the API, don't show the popup
+            return
+        }
 
         shownRef.current = true
         if (!test) sessionStorage.setItem(SESSION_KEY, '1')
