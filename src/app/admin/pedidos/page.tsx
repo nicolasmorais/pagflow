@@ -106,7 +106,7 @@ export default async function OrdersPage({
             ? 'pago'
             : status === 'pendente'
                 ? { in: ['aguardando', 'recusado'] }
-                : { notIn: ['abandonado', 'processando'] }
+                : { notIn: ['abandonado'] }
 
         orders = await prisma.order.findMany({
             where: {

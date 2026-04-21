@@ -100,10 +100,14 @@ export async function POST(req: NextRequest) {
         const { deviceId, idempotencyKey } = body;
         const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
 
-        const protocol = req.headers.get('x-forwarded-proto') || 'http';
+        // ── Construct Base URL and Notification URL for Webhooks ────────────────
+        const protocol = req.headers.get('x-forwarded-proto') || 'https';
         const host = req.headers.get('host');
         const baseUrl = `${protocol}://${host}`;
-        const notificationUrl = (host?.includes('localhost') || !protocol.includes('https')) ? undefined : `${baseUrl}/api/webhook/mercadopago`;
+
+        // Ensure we have a valid public URL for Mercado Pago notifications
+        const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
+        const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/mercadopago`;
 
         const cleanPhone = (phone || "").replace(/\D/g, '');
         const phoneData = cleanPhone.length >= 10 ? {
@@ -224,18 +228,24 @@ export async function POST(req: NextRequest) {
 
         const finalStatus = statusMap[mpResult.status || ''] || 'recusado';
 
-        await prisma.order.update({
-            where: { id: order.id },
-            data: {
-                paymentStatus: finalStatus,
-                status: finalStatus === 'pago' ? 'processando' : 'pendente',
-                mpPaymentId: String(mpResult.id),
-                installments: mpResult.installments || null,
-                installmentAmount: (mpResult as any).transaction_details?.installment_amount || null,
-                cardBrand: mpResult.payment_method_id || null,
-                netReceived: (mpResult as any).transaction_details?.net_received_amount || null
-            }
-        });
+        try {
+            await prisma.order.update({
+                where: { id: order.id },
+                data: {
+                    paymentStatus: finalStatus,
+                    status: finalStatus === 'pago' ? 'processando' : 'pendente',
+                    mpPaymentId: String(mpResult.id),
+                    installments: mpResult.installments || null,
+                    installmentAmount: (mpResult as any).transaction_details?.installment_amount || null,
+                    cardBrand: mpResult.payment_method_id || null,
+                    netReceived: (mpResult as any).transaction_details?.net_received_amount || null
+                }
+            });
+            console.log("Order updated successfully with MP Result ID:", mpResult.id);
+        } catch (dbErr) {
+            console.error("DEBUG: Failed to update order in DB, but payment was created in MP:", dbErr);
+            // We don't throw here to ensure the user gets a response if possible
+        }
 
         // ── R2 Backup Trigger ──────────────────────────────────────────────────
         try {

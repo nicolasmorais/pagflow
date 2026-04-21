@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
         const url = new URL(req.url);
         const topic = url.searchParams.get("topic") || url.searchParams.get("type");
         const id = url.searchParams.get("data.id") || url.searchParams.get("id");
+        console.log(`[Webhook MP] Topic: ${topic}, ID: ${id}`);
 
         let paymentId = id;
 
@@ -123,6 +124,8 @@ export async function POST(req: NextRequest) {
                     ]
                 }
             });
+
+            console.log(`[Webhook MP] Find Order result - ID: ${order?.id || 'NOT FOUND'} for paymentId: ${paymentId}`);
 
             if (order) {
                 if (order.paymentStatus !== finalStatus) {
