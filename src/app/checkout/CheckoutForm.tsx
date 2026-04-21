@@ -105,6 +105,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             campaign: searchParams.get('utm_campaign'),
             term: searchParams.get('utm_term'),
             content: searchParams.get('utm_content'),
+            placement: searchParams.get('utm_placement'),
+            utmId: searchParams.get('utm_id'),
+            creativeName: searchParams.get('utm_creative_name'),
         };
 
         fetch('/api/checkout-access', {
@@ -174,6 +177,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     totalPrice: finalPrice,
                     lastStepReached: 2,
                     paymentStatus: 'abandonado',
+                    utmSource: new URLSearchParams(window.location.search).get('utm_source'),
+                    utmMedium: new URLSearchParams(window.location.search).get('utm_medium'),
+                    utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign'),
+                    utmTerm: new URLSearchParams(window.location.search).get('utm_term'),
+                    utmContent: new URLSearchParams(window.location.search).get('utm_content'),
+                    utmPlacement: new URLSearchParams(window.location.search).get('utm_placement'),
+                    utmId: new URLSearchParams(window.location.search).get('utm_id'),
+                    utmCreativeName: new URLSearchParams(window.location.search).get('utm_creative_name'),
                 });
             }, 2000); // 2 second debounce
             return () => clearTimeout(timer);
@@ -291,6 +302,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 utmCampaign: searchParams.get('utm_campaign'),
                 utmTerm: searchParams.get('utm_term'),
                 utmContent: searchParams.get('utm_content'),
+                utmPlacement: searchParams.get('utm_placement'),
+                utmId: searchParams.get('utm_id'),
+                utmCreativeName: searchParams.get('utm_creative_name'),
             }).then(res => {
                 setStep1Loading(false);
                 if (res.success && res.id) {
@@ -379,6 +393,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     utmCampaign: searchParams.get('utm_campaign'),
                     utmTerm: searchParams.get('utm_term'),
                     utmContent: searchParams.get('utm_content'),
+                    utmPlacement: searchParams.get('utm_placement'),
+                    utmId: searchParams.get('utm_id'),
+                    utmCreativeName: searchParams.get('utm_creative_name'),
                 },
                 deviceId: deviceId
             };

@@ -63,6 +63,9 @@ export async function POST(req: NextRequest) {
             utmCampaign: orderData.utmCampaign || null,
             utmTerm: orderData.utmTerm || null,
             utmContent: orderData.utmContent || null,
+            utmPlacement: orderData.utmPlacement || null,
+            utmId: orderData.utmId || null,
+            utmCreativeName: orderData.utmCreativeName || null,
         };
 
         let order;

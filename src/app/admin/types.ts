@@ -16,11 +16,13 @@ export type AnalyticsKpis = {
     abandonedOrders: number; pendingOrders: number; rejectedOrders: number
     conversionRate: number; avgTicket: number; bumpRate: number
 }
-export type CheckoutAccessData = { 
-    total: number; 
-    uniqueVisitors: number; 
+export type CheckoutAccessData = {
+    total: number;
+    uniqueVisitors: number;
     bySource: { source: string; count: number }[];
     byCampaign: { campaign: string; count: number }[];
+    byPlacement: { placement: string; count: number }[];
+    byCreative: { creative: string; count: number }[];
     byProduct: { productId: string | null; productName: string; count: number }[];
     dailyAccess: { date: string; count: number }[];
     conversionRate: number;

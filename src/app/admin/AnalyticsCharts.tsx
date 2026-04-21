@@ -541,6 +541,32 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                     )}
                 </SectionCard>
             </div>
+
+            <div className="analytics-2col-wide">
+                <SectionCard title="Por Posicionamento" subtitle="Acessos por posicionamento UTM">
+                    {checkoutAccess.byPlacement.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                            {checkoutAccess.byPlacement.slice(0, 5).map((item, i) => (
+                                <SourceRow key={i} label={item.placement} count={item.count} color={['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#f97316'][i % 5]} max={checkoutAccess.byPlacement[0]?.count || 1} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>Sem dados</p>
+                    )}
+                </SectionCard>
+
+                <SectionCard title="Por Criativo" subtitle="Acessos por criativo UTM">
+                    {checkoutAccess.byCreative.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                            {checkoutAccess.byCreative.slice(0, 5).map((item, i) => (
+                                <SourceRow key={i} label={item.creative} count={item.count} color={['#f97316', '#10b981', '#6366f1', '#f59e0b', '#3b82f6'][i % 5]} max={checkoutAccess.byCreative[0]?.count || 1} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>Sem dados</p>
+                    )}
+                </SectionCard>
+            </div>
         </>
     )
 }

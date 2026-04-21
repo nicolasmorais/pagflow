@@ -210,6 +210,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             <UtmItem label="Campaign" value={order.utmCampaign} color="#a78bfa" />
                             <UtmItem label="Content" value={order.utmContent} color="#c4b5fd" />
                             <UtmItem label="Term" value={order.utmTerm} color="#ddd6fe" />
+                            <UtmItem label="Placement" value={order.utmPlacement} color="#7c3aed" />
+                            <UtmItem label="Campaign ID/Name" value={order.utmId} color="#8b5cf6" />
+                            <UtmItem label="Creative" value={order.utmCreativeName} color="#a78bfa" />
                             {!order.utmSource && !order.utmMedium && (
                                 <p style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic', margin: 0 }}>
                                     Nenhum dado de rastreamento disponível.

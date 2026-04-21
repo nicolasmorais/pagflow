@@ -5,7 +5,7 @@ import crypto from "crypto";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { productId, source, medium, campaign, term, content } = body;
+    const { productId, source, medium, campaign, term, content, placement, utmId, creativeName } = body;
 
     const newId = crypto.randomUUID();
 
@@ -17,7 +17,10 @@ export async function POST(req: NextRequest) {
         medium: medium || null,
         campaign: campaign || null,
         term: term || null,
-        content: content || null
+        content: content || null,
+        placement: placement || null,
+        utmId: utmId || null,
+        creativeName: creativeName || null
       }
     });
 

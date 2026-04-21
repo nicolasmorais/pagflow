@@ -202,6 +202,8 @@ export default async function AdminPage({
     const accessTotal = accesses.length
     const accessBySourceMap = new Map<string, number>()
     const accessByCampaignMap = new Map<string, number>()
+    const accessByPlacementMap = new Map<string, number>()
+    const accessByCreativeMap = new Map<string, number>()
     const accessByProductMap = new Map<string | null, number>()
 
     for (const access of accesses) {
@@ -210,6 +212,12 @@ export default async function AdminPage({
 
         const camp = access.campaign || '(none)'
         accessByCampaignMap.set(camp, (accessByCampaignMap.get(camp) || 0) + 1)
+
+        const place = access.placement || '(none)'
+        accessByPlacementMap.set(place, (accessByPlacementMap.get(place) || 0) + 1)
+
+        const creative = access.creativeName || '(none)'
+        accessByCreativeMap.set(creative, (accessByCreativeMap.get(creative) || 0) + 1)
 
         const prod = access.productId || null
         accessByProductMap.set(prod, (accessByProductMap.get(prod) || 0) + 1)
@@ -239,6 +247,16 @@ export default async function AdminPage({
         .sort((a, b) => b.count - a.count)
         .slice(0, 10)
 
+    const byPlacement = Array.from(accessByPlacementMap.entries())
+        .map(([placement, count]) => ({ placement, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+
+    const byCreative = Array.from(accessByCreativeMap.entries())
+        .map(([creative, count]) => ({ creative, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+
     const byProduct = Array.from(accessByProductMap.entries())
         .map(([productId, count]) => ({
             productId,
@@ -259,6 +277,8 @@ export default async function AdminPage({
         uniqueVisitors: accessTotal,
         bySource,
         byCampaign,
+        byPlacement,
+        byCreative,
         byProduct,
         dailyAccess,
         conversionRate: accessConversionRate,

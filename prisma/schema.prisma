@@ -43,6 +43,9 @@ model Order {
   utmMedium         String?
   utmSource         String?
   utmTerm           String?
+  utmPlacement      String?
+  utmId             String?
+  utmCreativeName   String?
   lastStepReached   Int?       @default(1)
   emailLogs         EmailLog[]
   product           Product?   @relation(fields: [productId], references: [id])
@@ -172,6 +175,9 @@ model sales {
   utm_campaign          String?   @db.VarChar(255)
   utm_term              String?   @db.VarChar(255)
   utm_content           String?   @db.VarChar(255)
+  utm_placement         String?   @db.VarChar(255)
+  utm_id                String?   @db.VarChar(255)
+  utm_creative_name     String?   @db.VarChar(255)
   payment_detail        String?
   accepted_bumps        Json?
   payment_method        String?   @db.VarChar(50)
@@ -210,6 +216,9 @@ model CheckoutAccess {
   campaign         String?
   term             String?
   content          String?
+  placement        String?
+  utmId            String?
+  creativeName     String?
   createdAt        DateTime @default(now())
   step1Completed   Boolean  @default(false)
   step2Completed   Boolean  @default(false)

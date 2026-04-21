@@ -49,7 +49,7 @@ export default async function AbandonadosPage({
     const step2Done = checkoutAccesses.filter(a => a.step2Completed).length
     const step3Done = checkoutAccesses.filter(a => a.step3Completed).length
 
-    const gridLayout = 'minmax(180px, 1.2fr) minmax(130px, 0.8fr) minmax(150px, 1fr) minmax(100px, 0.6fr) minmax(120px, 0.7fr) 180px';
+    const gridLayout = 'minmax(180px, 1.2fr) minmax(130px, 0.8fr) minmax(130px, 0.8fr) minmax(150px, 1fr) minmax(100px, 0.6fr) minmax(120px, 0.7fr) 180px';
 
     const getStepLabel = (step: number | null) => {
         switch (step) {
@@ -164,6 +164,7 @@ export default async function AbandonadosPage({
                             }}>
                                 <div>Cliente</div>
                                 <div>Produto</div>
+                                <div>Origem</div>
                                 <div>Contato</div>
                                 <div>Valor Potencial</div>
                                 <div>Última Etapa</div>
@@ -210,6 +211,16 @@ export default async function AbandonadosPage({
                                         ) : (
                                             <span style={{ color: 'var(--admin-text-secondary)', fontSize: '0.8rem' }}>Interesse em produto</span>
                                         )}
+                                    </div>
+
+                                    <div>
+                                        <div
+                                            style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '2px' }}
+                                            title={`Medium: ${order.utmMedium || '-'}\nContent: ${order.utmContent || '-'}\nTerm: ${order.utmTerm || '-'}\nPlacement: ${order.utmPlacement || '-'}\nID: ${order.utmId || '-'}\nCreative: ${order.utmCreativeName || '-'}`}
+                                        >
+                                            <span style={{ color: '#7c3aed', fontWeight: 800 }}>{order.utmSource || 'Direto'}</span>
+                                            <span style={{ fontSize: '10px', opacity: 0.8 }}>{order.utmCampaign || '-'}</span>
+                                        </div>
                                     </div>
 
                                     <div>
@@ -329,23 +340,33 @@ export default async function AbandonadosPage({
                                         )}
                                     </div>
 
-                                    <div style={{ marginBottom: '16px' }}>
-                                        {order.product ? (
-                                            <div style={{
-                                                fontSize: '0.75rem',
-                                                fontWeight: 700,
-                                                color: '#3b82f6',
-                                                background: '#eff6ff',
-                                                padding: '4px 10px',
-                                                borderRadius: '6px',
-                                                border: '1px solid #dbeafe',
-                                                display: 'inline-block'
-                                            }}>
-                                                {order.product.name}
+                                    <div style={{ marginBottom: '16px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                                        <div>
+                                            <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 800, marginBottom: '4px' }}>PRODUTO</div>
+                                            {order.product ? (
+                                                <div style={{
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 700,
+                                                    color: '#3b82f6',
+                                                    background: '#eff6ff',
+                                                    padding: '4px 10px',
+                                                    borderRadius: '6px',
+                                                    border: '1px solid #dbeafe',
+                                                    display: 'inline-block'
+                                                }}>
+                                                    {order.product.name}
+                                                </div>
+                                            ) : (
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--admin-text-secondary)' }}>Interesse</div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 800, marginBottom: '4px' }}>ORIGEM</div>
+                                            <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                                                <span style={{ color: '#7c3aed', fontWeight: 800 }}>{order.utmSource || 'Direto'}</span>
+                                                {order.utmCampaign && <span style={{ marginLeft: '4px', opacity: 0.8 }}>({order.utmCampaign})</span>}
                                             </div>
-                                        ) : (
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--admin-text-secondary)' }}>Interesse em produto</div>
-                                        )}
+                                        </div>
                                     </div>
 
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
