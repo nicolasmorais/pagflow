@@ -23,7 +23,7 @@ import {
     Zap
 } from 'lucide-react'
 import './admin.css'
-import CapacitorInit from '@/components/CapacitorInit'
+
 
 const SidebarItem = ({ icon: Icon, label, href, active, count }: {
     icon: any,
@@ -79,7 +79,7 @@ export default function AdminLayout({
 
     return (
         <div className="admin-layout" style={{ fontFamily: '"Space Grotesk", "Nunito", sans-serif' }}>
-            <CapacitorInit />
+
             <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
             {/* Sidebar Overlay (Mobile) */}
