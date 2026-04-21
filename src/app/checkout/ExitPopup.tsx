@@ -98,7 +98,7 @@ export default function ExitPopup({
     }, [isTestMode])
 
     const show = useCallback(async () => {
-        if (!isReady) return // Still in grace period
+        if (!isReady || !canIntercept) return // Still in grace period or cannot intercept (wrong step)
         const test = isTestMode();
         if ((shownRef.current || alreadyShown()) && !test) return
         if (isBlockedPage()) return

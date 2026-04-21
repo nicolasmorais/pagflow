@@ -1154,7 +1154,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     timerSeconds={exitPopupConfig.timerSeconds ?? 480}
                     productId={product?.id}
                     isEnabled={exitPopupConfig.isEnabled}
-                    canIntercept={step > 1}
+                    canIntercept={step === 1}
                     onAccept={(discountedPrice: number) => {
                         setExitDiscount(discountedPrice)
                         setPaymentMethod('pix')
