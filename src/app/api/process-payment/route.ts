@@ -70,17 +70,25 @@ export async function POST(req: NextRequest) {
 
         let order;
         if (orderId) {
-            // ── Security: only allow updating orders still in "abandonado" state ──
-            // This prevents someone from hijacking a paid order via a leaked orderId
+            // ── Update existing order if found and not yet paid ──────────────────
+            // This prevents creating duplicate orphan records when the user's
+            // orderId is already linked to a specific payment attempt.
             const existing = await prisma.order.findUnique({ where: { id: orderId } });
 
-            if (existing && existing.paymentStatus === 'abandonado') {
+            if (existing && existing.paymentStatus !== 'pago') {
+                // Update ANY non-paid order — not just 'abandonado' status
+                // Fixes race condition where autosave could have changed status
                 order = await prisma.order.update({
                     where: { id: orderId },
                     data: orderDataToSave
                 });
+            } else if (!existing) {
+                // orderId was passed but not found in DB — create new
+                order = await prisma.order.create({
+                    data: orderDataToSave
+                });
             } else {
-                // Order doesn't exist or is already past abandoned state → create new
+                // existing.paymentStatus === 'pago' → already paid, create new order
                 order = await prisma.order.create({
                     data: orderDataToSave
                 });
