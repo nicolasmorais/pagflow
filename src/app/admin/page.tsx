@@ -46,6 +46,7 @@ export default async function AdminPage({
     // ── Fetch all orders ──────────────────────────────────────────────────
     const allOrders = await prisma.order.findMany({
         where: {
+            deletedAt: null,
             createdAt: {
                 gte: fromDateUTC,
                 lte: toDateUTC,
