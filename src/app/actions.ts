@@ -825,7 +825,10 @@ export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pe
 export async function getTotalRevenue() {
     try {
         const paidOrders = await prisma.order.findMany({
-            where: { paymentStatus: 'pago' },
+            where: {
+                paymentStatus: 'pago',
+                deletedAt: null
+            },
             select: { totalPrice: true }
         });
         return paidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
