@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import './checkout.css'
@@ -24,7 +24,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
     const defaultShipping = shippingRules && shippingRules.length > 0
         ? shippingRules[0]
-        : { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' };
+        : { name: 'Entrega EconÃ´mica', price: 0, delivery_time: 'Chega em atÃ© 7 dias Ãºteis' };
     const [shipping, setShipping] = useState(defaultShipping);
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | ''>('');
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
@@ -96,7 +96,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
         const timer = setInterval(() => setTimeLeft(prev => prev > 0 ? prev - 1 : 0), 1000);
 
-        // ── Funnel Tracking Logic ──
+        // â”€â”€ Funnel Tracking Logic â”€â”€
         const searchParams = new URLSearchParams(window.location.search);
         const utmData = {
             productId: product?.id,
@@ -223,7 +223,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const buscarCep = async () => {
         const c = endereco.cep.replace(/\D/g, '');
-        if (c.length !== 8) { alert('Por favor, digite um CEP válido com 8 números.'); return; }
+        if (c.length !== 8) { alert('Por favor, digite um CEP vÃ¡lido com 8 nÃºmeros.'); return; }
         try {
             const response = await fetch(`https://viacep.com.br/ws/${c}/json/`);
             const data = await response.json();
@@ -261,15 +261,15 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (!dados.nome) newErrors.nome = 'Informe seu nome completo';
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!dados.email || !emailRegex.test(dados.email)) newErrors.email = 'E-mail inválido';
+        if (!dados.email || !emailRegex.test(dados.email)) newErrors.email = 'E-mail invÃ¡lido';
 
         const cleanTel = dados.telefone.replace(/\D/g, '');
-        if (cleanTel.length < 10) newErrors.telefone = 'WhatsApp inválido';
+        if (cleanTel.length < 10) newErrors.telefone = 'WhatsApp invÃ¡lido';
 
         if (!customization?.disableCpf) {
             const cleanCpf = dados.cpf.replace(/\D/g, '');
             if (cleanCpf.length > 0 && cleanCpf.length !== 11) {
-                newErrors.cpf = 'CPF inválido';
+                newErrors.cpf = 'CPF invÃ¡lido';
             }
         }
 
@@ -320,10 +320,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const validateStep2 = () => {
         let newErrors: Record<string, string> = {};
-        if (!endereco.destinatario) newErrors.destinatario = 'Informe o destinatário';
-        if (endereco.cep.replace(/\D/g, '').length !== 8) newErrors.cep = 'CEP inválido';
+        if (!endereco.destinatario) newErrors.destinatario = 'Informe o destinatÃ¡rio';
+        if (endereco.cep.replace(/\D/g, '').length !== 8) newErrors.cep = 'CEP invÃ¡lido';
         if (!endereco.rua) newErrors.rua = 'Informe a rua';
-        if (!endereco.numero) newErrors.numero = 'Informe o número';
+        if (!endereco.numero) newErrors.numero = 'Informe o nÃºmero';
         if (!endereco.bairro) newErrors.bairro = 'Informe o bairro';
         if (!endereco.cidade) newErrors.cidade = 'Informe a cidade';
         if (!endereco.estado) newErrors.estado = 'Selecione o estado';
@@ -363,7 +363,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             const currentMethod = paymentMethod === 'card' ? 'credit_card' : paymentMethod;
             let tokenData: any = null;
 
-            // Se brickData existir, ele já vem tokenizado pelo Mercado Pago Brick
+            // Se brickData existir, ele jÃ¡ vem tokenizado pelo Mercado Pago Brick
             if (brickData) {
                 const payloadSrc = brickData.formData ? brickData.formData : brickData;
                 tokenData = {
@@ -431,12 +431,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 updateTrackingStep('payment'); // Funnel Completed!
             } else {
                 alert("Erro: " + (result.error || "Tente novamente"));
-                throw new Error(result.error || "Erro de validação do pagamento");
+                throw new Error(result.error || "Erro de validaÃ§Ã£o do pagamento");
             }
         } catch (e) {
             console.error("ERRO DE PROCESSAMENTO:", e);
-            if (!(e instanceof Error) || e.message === "Erro de conexão") {
-                alert("Erro de conexão. Verifique sua rede.");
+            if (!(e instanceof Error) || e.message === "Erro de conexÃ£o") {
+                alert("Erro de conexÃ£o. Verifique sua rede.");
             }
             throw e;
         } finally { setLoading(false); }
@@ -473,7 +473,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         },
                     };
 
-                    console.log("🔹 [DEBUG] O que está sendo enviado na inicialização do Mercado Pago:", initPayload);
+                    console.log("ðŸ”¹ [DEBUG] O que estÃ¡ sendo enviado na inicializaÃ§Ã£o do Mercado Pago:", initPayload);
 
                     const controller = await bricksBuilder.create('cardPayment', 'paymentBrick_container', {
                         initialization: initPayload,
@@ -493,12 +493,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 return new Promise((resolve, reject) => {
                                     console.log("Card FormData Completo:", formData);
 
-                                    // Validar se o Brick gerou um token válido
+                                    // Validar se o Brick gerou um token vÃ¡lido
                                     const tokenSrc = formData?.formData || formData;
                                     if (!tokenSrc || !tokenSrc.token) {
-                                        console.error("❌ Token não gerado pelo Brick. Possível bloqueio CORS/WAF do Mercado Pago.");
-                                        alert("Não foi possível processar o cartão. O sistema de segurança bloqueou a operação. Tente novamente ou utilize o PIX.");
-                                        reject(new Error("Token do cartão não disponível"));
+                                        console.error("âŒ Token nÃ£o gerado pelo Brick. PossÃ­vel bloqueio CORS/WAF do Mercado Pago.");
+                                        alert("NÃ£o foi possÃ­vel processar o cartÃ£o. O sistema de seguranÃ§a bloqueou a operaÃ§Ã£o. Tente novamente ou utilize o PIX.");
+                                        reject(new Error("Token do cartÃ£o nÃ£o disponÃ­vel"));
                                         return;
                                     }
 
@@ -533,7 +533,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 try { brickController.unmount(); } catch (e) { }
                 (window as any).cardBrickController = null;
             } else if ((window as any).cardBrickController) {
-                // Caso a promessa ainda não tinha retornado
+                // Caso a promessa ainda nÃ£o tinha retornado
                 try { (window as any).cardBrickController.unmount(); } catch (e) { }
                 (window as any).cardBrickController = null;
             }
@@ -545,12 +545,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             <div className="progress-inner">
                 <div className="progress-steps">
                     <div className="prog-step">
-                        <div className={`prog-circle ${step > 1 ? 'done' : step === 1 ? 'active' : 'next'}`}>{step > 1 ? '✓' : '1'}</div>
+                        <div className={`prog-circle ${step > 1 ? 'done' : step === 1 ? 'active' : 'next'}`}>{step > 1 ? 'âœ“' : '1'}</div>
                         <div className={`prog-label ${step > 1 ? 'done' : step === 1 ? 'active' : ''}`}>Seus Dados</div>
                     </div>
                     <div className={`prog-line ${step > 1 ? 'done' : ''}`}></div>
                     <div className="prog-step">
-                        <div className={`prog-circle ${step > 2 ? 'done' : step === 2 ? 'active' : 'next'}`}>{step > 2 ? '✓' : '2'}</div>
+                        <div className={`prog-circle ${step > 2 ? 'done' : step === 2 ? 'active' : 'next'}`}>{step > 2 ? 'âœ“' : '2'}</div>
                         <div className={`prog-label ${step > 2 ? 'done' : step === 2 ? 'active' : ''}`}>Entrega</div>
                     </div>
                     <div className={`prog-line ${step > 2 ? 'done' : ''}`}></div>
@@ -616,21 +616,21 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <path d="M6 12.5l4 4 8-8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
                                 </div>
-                                <h1>Pedido Reservado!<br />Falta s&#243; o pagamento</h1>
-                                <p className="subtitle">Seu pedido est&#225; <strong>guardado por {formatTime(timeLeft)}.</strong><br />Finalize agora para garantir o envio hoje.</p>
+                                <h1>Pedido Reservado!<br />Falta só o pagamento</h1>
+                                <p className="subtitle">Seu pedido está <strong>guardado por {formatTime(timeLeft)}.</strong><br />Finalize agora para garantir o envio hoje.</p>
                             </div>
 
                             <div className="urgency-bar">
-                                <div className="urgency-icon">&#9200;</div>
+                                <div className="urgency-icon">⏰</div>
                                 <div className="urgency-text">
                                     <div className="title" style={{ color: '#7a4a00' }}>Tempo restante para pagar:</div>
-                                    <div className="desc">Ap&#243;s isso, o pedido &#233; liberado para outro cliente</div>
+                                    <div className="desc">Após isso, o pedido é liberado para outro cliente</div>
                                 </div>
                                 <div className="timer-display" style={{ color: timeLeft <= 120 ? '#c0392b' : 'inherit' }}>{formatTime(timeLeft)}</div>
                             </div>
 
                             <div className="pix-main-card">
-                                <div className="card-title">Pague com Pix &#8212; r&#225;pido e f&#225;cil</div>
+                                <div className="card-title">Pague com Pix — rápido e fácil</div>
                                 <div className="card-sub">Abra o app do seu banco e escaneie o QR Code abaixo</div>
                                 <div className="qr-wrapper">
                                     {pixData?.qrCodeBase64 && (
@@ -638,8 +638,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" />
                                         </div>
                                     )}
-                                    <div className="or-divider"><span>ou copie o c&#243;digo</span></div>
-                                    <div className="pix-code-box">{pixData?.qrCode || 'Gerando c&#243;digo PIX...'}</div>
+                                    <div className="or-divider"><span>ou copie o código</span></div>
+                                    <div className="pix-code-box">{pixData?.qrCode || 'Gerando código PIX...'}</div>
                                     <button
                                         className={`copy-btn ${copied ? 'copied' : ''}`}
                                         onClick={() => {
@@ -651,7 +651,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <svg className="copy-icon" viewBox="0 0 24 24">
                                             <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
                                         </svg>
-                                        {copied ? 'C&#243;digo Copiado!' : 'Copiar C&#243;digo Pix'}
+                                        {copied ? 'Código Copiado!' : 'Copiar Código Pix'}
                                     </button>
                                 </div>
                             </div>
@@ -663,7 +663,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div className="avatar">CA</div>
                                 </div>
                                 <div className="social-text">
-                                    <strong>47 pessoas compraram</strong> hoje. Maria de Santos pagou h&#225; 3 minutos e j&#225; recebeu a confirma&#231;&#227;o por e-mail.
+                                    <strong>47 pessoas compraram</strong> hoje. Maria de Santos pagou há 3 minutos e já recebeu a confirmação por e-mail.
                                 </div>
                             </div>
 
@@ -672,22 +672,22 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 <div className="step-row">
                                     <div className="step-num">1</div>
                                     <div>
-                                        <div className="step-title">Confirma&#231;&#227;o por e-mail em minutos</div>
-                                        <div className="step-desc">Ap&#243;s o pagamento, voc&#234; recebe a confirma&#231;&#227;o do pedido em <strong>{dados.email}</strong>.</div>
+                                        <div className="step-title">Confirmação por e-mail em minutos</div>
+                                        <div className="step-desc">Após o pagamento, você recebe a confirmação do pedido em <strong>{dados.email}</strong>.</div>
                                     </div>
                                 </div>
                                 <div className="step-row">
                                     <div className="step-num">2</div>
                                     <div>
-                                        <div className="step-title">Separa&#231;&#227;o e envio do pedido</div>
-                                        <div className="step-desc">Pagamentos feitos at&#233; as 14h saem no mesmo dia. Ap&#243;s isso, no pr&#243;ximo dia &#250;til.</div>
+                                        <div className="step-title">Separação e envio do pedido</div>
+                                        <div className="step-desc">Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.</div>
                                     </div>
                                 </div>
                                 <div className="step-row">
                                     <div className="step-num">3</div>
                                     <div>
-                                        <div className="step-title">C&#243;digo de rastreio por e-mail</div>
-                                        <div className="step-desc">Assim que o pedido sair, voc&#234; recebe o link de rastreio direto no seu e-mail.</div>
+                                        <div className="step-title">Código de rastreio por e-mail</div>
+                                        <div className="step-desc">Assim que o pedido sair, você recebe o link de rastreio direto no seu e-mail.</div>
                                     </div>
                                 </div>
                             </div>
@@ -715,7 +715,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </svg>
                                 </div>
                                 <h1 className="cc-hero-title">Pagamento Aprovado!<br />Pedido confirmado.</h1>
-                                <p className="cc-hero-sub">Seu cart&#227;o foi cobrado com sucesso.<br />Confira os detalhes abaixo.</p>
+                                <p className="cc-hero-sub">Seu cartão foi cobrado com sucesso.<br />Confira os detalhes abaixo.</p>
                             </div>
 
                             {/* RECIBO */}
@@ -730,15 +730,15 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="cc-value">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                                     </div>
                                     <div className="cc-receipt-row">
-                                        <div className="cc-label">M&#233;todo</div>
-                                        <div className="cc-value">Cart&#227;o de cr&#233;dito</div>
+                                        <div className="cc-label">Método</div>
+                                        <div className="cc-value">Cartão de crédito</div>
                                     </div>
                                     <div className="cc-receipt-row">
                                         <div className="cc-label">Status</div>
-                                        <div className="cc-value cc-green">&#10003; Aprovado</div>
+                                        <div className="cc-value cc-green">✓ Aprovado</div>
                                     </div>
                                     <div className="cc-receipt-row">
-                                        <div className="cc-label">Confirma&#231;&#227;o enviada para</div>
+                                        <div className="cc-label">Confirmação enviada para</div>
                                         <div className="cc-value" style={{ fontSize: '13px' }}>{dados.email}</div>
                                     </div>
                                 </div>
@@ -748,11 +748,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
                             </div>
 
-                            {/* CART&#195;O VISUAL */}
+                            {/* CARTÃO VISUAL */}
                             <div className="cc-card-visual-wrap">
                                 <div className="cc-card-visual">
                                     <div className="cc-card-chip"></div>
-                                    <div className="cc-card-number">&#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226;</div>
+                                    <div className="cc-card-number">•••• •••• •••• ••••</div>
                                     <div className="cc-card-bottom">
                                         <div>
                                             <div className="cc-card-holder-label">Titular</div>
@@ -768,7 +768,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
                             </div>
 
-                            {/* PR&#211;XIMOS PASSOS */}
+                            {/* PRÓXIMOS PASSOS */}
                             <div className="cc-steps-card">
                                 <div className="cc-steps-title">O que acontece agora?</div>
                                 <div className="cc-step-item">
@@ -776,7 +776,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <svg viewBox="0 0 24 24" fill="none"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill="#0d6e4a" /></svg>
                                     </div>
                                     <div>
-                                        <div className="cc-step-text-title">Confirma&#231;&#227;o por e-mail</div>
+                                        <div className="cc-step-text-title">Confirmação por e-mail</div>
                                         <div className="cc-step-text-desc">O comprovante do pedido foi enviado para <strong>{dados.email}</strong> agora.</div>
                                     </div>
                                 </div>
@@ -785,8 +785,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <svg viewBox="0 0 24 24" fill="none"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" fill="#0d6e4a" /></svg>
                                     </div>
                                     <div>
-                                        <div className="cc-step-text-title">Separa&#231;&#227;o e envio</div>
-                                        <div className="cc-step-text-desc">Pedidos confirmados at&#233; as 14h saem no mesmo dia. Ap&#243;s isso, no pr&#243;ximo dia &#250;til.</div>
+                                        <div className="cc-step-text-title">Separação e envio</div>
+                                        <div className="cc-step-text-desc">Pedidos confirmados até as 14h saem no mesmo dia. Após isso, no próximo dia útil.</div>
                                     </div>
                                 </div>
                                 <div className="cc-step-item">
@@ -795,7 +795,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                     <div>
                                         <div className="cc-step-text-title">Rastreio por e-mail</div>
-                                        <div className="cc-step-text-desc">Assim que o pedido sair, voc&#234; recebe o c&#243;digo de rastreio direto no e-mail.</div>
+                                        <div className="cc-step-text-desc">Assim que o pedido sair, você recebe o código de rastreio direto no e-mail.</div>
                                     </div>
                                 </div>
                             </div>
@@ -817,7 +817,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             </div>
 
                             <div className="cc-help">
-                                D&#250;vidas? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a>
+                                Dúvidas? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a>
                             </div>
                         </div>
                     )}
@@ -836,37 +836,37 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             <div className={`screen ${step === 1 ? 'active' : ''}`}>
                                 <div className="card">
                                     {renderProgressBar()}
-                                    <div className="step-title"><span className="step-icon">👤</span> Passo 1 — Seus Dados</div>
-                                    <div className="step-sub">Precisamos de algumas informações básicas para continuar.</div>
+                                    <div className="step-title"><span className="step-icon">ðŸ‘¤</span> Passo 1 â€” Seus Dados</div>
+                                    <div className="step-sub">Precisamos de algumas informaÃ§Ãµes bÃ¡sicas para continuar.</div>
 
                                     <div className={`field ${errors.nome ? 'error' : ''}`}>
                                         <label className="field-label">Seu Nome Completo *</label>
                                         <input type="text" placeholder="Ex: Maria Aparecida Santos" value={dados.nome} onChange={e => { setDados({ ...dados, nome: e.target.value }); if (errors.nome) setErrors(prev => { const n = { ...prev }; delete n.nome; return n; }); }} />
-                                        {errors.nome && <div className="error-msg">⚠️ {errors.nome}</div>}
+                                        {errors.nome && <div className="error-msg">âš ï¸ {errors.nome}</div>}
                                     </div>
                                     <div className={`field ${errors.email ? 'error' : ''}`}>
                                         <label className="field-label">Seu E-mail *</label>
                                         <input type="email" placeholder="Ex: maria@email.com" value={dados.email} onChange={e => { setDados({ ...dados, email: e.target.value }); if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; }); }} />
-                                        {errors.email && <div className="error-msg">⚠️ {errors.email}</div>}
-                                        <div className="field-hint-label">Vamos enviar a confirmação do pedido para este e-mail</div>
+                                        {errors.email && <div className="error-msg">âš ï¸ {errors.email}</div>}
+                                        <div className="field-hint-label">Vamos enviar a confirmaÃ§Ã£o do pedido para este e-mail</div>
                                     </div>
                                     <div className={`field ${errors.telefone ? 'error' : ''}`}>
                                         <label className="field-label">Seu WhatsApp *</label>
                                         <input type="text" placeholder="(11) 91234-5678" maxLength={15} value={dados.telefone} onChange={e => handleMaskDados('telefone', e.target.value, formatTel)} />
-                                        {errors.telefone && <div className="error-msg">⚠️ {errors.telefone}</div>}
+                                        {errors.telefone && <div className="error-msg">âš ï¸ {errors.telefone}</div>}
                                         <div className="field-hint-label">Para avisar quando o produto sair para entrega</div>
                                     </div>
                                     {!customization?.disableCpf && (
                                         <div className={`field ${errors.cpf ? 'error' : ''}`}>
                                             <label className="field-label">CPF <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(Opcional)</span></label>
                                             <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
-                                            {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
-                                            <div className="field-hint-label">Necessário apenas para emissão de nota fiscal</div>
+                                            {errors.cpf && <div className="error-msg">âš ï¸ {errors.cpf}</div>}
+                                            <div className="field-hint-label">NecessÃ¡rio apenas para emissÃ£o de nota fiscal</div>
                                         </div>
                                     )}
 
                                     <button className="main-cta" onClick={validateStep1} disabled={step1Loading}>
-                                        {step1Loading ? 'Carregando...' : 'Continuar para a Entrega →'}
+                                        {step1Loading ? 'Carregando...' : 'Continuar para a Entrega â†’'}
                                     </button>
 
                                 </div>
@@ -875,14 +875,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             <div className={`screen ${step === 2 ? 'active' : ''}`}>
                                 <div className="card">
                                     {renderProgressBar()}
-                                    <button className="back-link" onClick={() => setStep(1)}>← Voltar</button>
-                                    <div className="step-title"><span className="step-icon">📦</span> Passo 2 — Endereço de Entrega</div>
+                                    <button className="back-link" onClick={() => setStep(1)}>â† Voltar</button>
+                                    <div className="step-title"><span className="step-icon">ðŸ“¦</span> Passo 2 â€” EndereÃ§o de Entrega</div>
                                     <div className="step-sub">Para onde vamos enviar o seu produto?</div>
 
                                     <div className={`field ${errors.destinatario ? 'error' : ''}`}>
-                                        <label className="field-label">Destinatário *</label>
+                                        <label className="field-label">DestinatÃ¡rio *</label>
                                         <input type="text" placeholder="Nome de quem vai receber" value={endereco.destinatario} onChange={e => handleMaskEnd('destinatario', e.target.value, v => v)} />
-                                        {errors.destinatario && <div className="error-msg">⚠️ {errors.destinatario}</div>}
+                                        {errors.destinatario && <div className="error-msg">âš ï¸ {errors.destinatario}</div>}
                                     </div>
 
                                     <div className={`field ${errors.cep ? 'error' : ''}`}>
@@ -890,21 +890,21 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="cep-row">
                                             <input type="text" placeholder="00000-000" maxLength={9} value={endereco.cep} onChange={e => handleCEPChange(e.target.value)} style={{ width: '100%' }} />
                                         </div>
-                                        {errors.cep && <div className="error-msg">⚠️ {errors.cep}</div>}
-                                        <div className="field-hint-label">Digite seu CEP e o endereço será preenchido automaticamente</div>
+                                        {errors.cep && <div className="error-msg">âš ï¸ {errors.cep}</div>}
+                                        <div className="field-hint-label">Digite seu CEP e o endereÃ§o serÃ¡ preenchido automaticamente</div>
                                     </div>
 
                                     <div className={`field ${errors.rua ? 'error' : ''}`}>
                                         <label className="field-label">Rua ou Avenida *</label>
                                         <input type="text" placeholder="Ex: Rua das Flores" value={endereco.rua} onChange={e => handleMaskEnd('rua', e.target.value, v => v)} />
-                                        {errors.rua && <div className="error-msg">⚠️ {errors.rua}</div>}
+                                        {errors.rua && <div className="error-msg">âš ï¸ {errors.rua}</div>}
                                     </div>
 
                                     <div className="two-col">
                                         <div className={`field ${errors.numero ? 'error' : ''}`}>
-                                            <label className="field-label">Número *</label>
+                                            <label className="field-label">NÃºmero *</label>
                                             <input type="text" placeholder="Ex: 123" value={endereco.numero} onChange={e => handleMaskEnd('numero', e.target.value, v => v)} />
-                                            {errors.numero && <div className="error-msg">⚠️ {errors.numero}</div>}
+                                            {errors.numero && <div className="error-msg">âš ï¸ {errors.numero}</div>}
                                         </div>
                                         <div className="field">
                                             <label className="field-label">Complemento</label>
@@ -916,12 +916,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className={`field ${errors.bairro ? 'error' : ''}`}>
                                             <label className="field-label">Bairro *</label>
                                             <input type="text" placeholder="Nome do bairro" value={endereco.bairro} onChange={e => handleMaskEnd('bairro', e.target.value, v => v)} />
-                                            {errors.bairro && <div className="error-msg">⚠️ {errors.bairro}</div>}
+                                            {errors.bairro && <div className="error-msg">âš ï¸ {errors.bairro}</div>}
                                         </div>
                                         <div className={`field ${errors.cidade ? 'error' : ''}`}>
                                             <label className="field-label">Cidade *</label>
-                                            <input type="text" placeholder="Ex: São Paulo" value={endereco.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
-                                            {errors.cidade && <div className="error-msg">⚠️ {errors.cidade}</div>}
+                                            <input type="text" placeholder="Ex: SÃ£o Paulo" value={endereco.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
+                                            {errors.cidade && <div className="error-msg">âš ï¸ {errors.cidade}</div>}
                                         </div>
                                     </div>
 
@@ -933,25 +933,25 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 <option key={uf} value={uf}>{uf}</option>
                                             ))}
                                         </select>
-                                        {errors.estado && <div className="error-msg">⚠️ {errors.estado}</div>}
+                                        {errors.estado && <div className="error-msg">âš ï¸ {errors.estado}</div>}
                                     </div>
 
-                                    <div className="frete-title">🚚 Escolha a forma de entrega:</div>
+                                    <div className="frete-title">ðŸšš Escolha a forma de entrega:</div>
                                     {(shippingRules && shippingRules.length > 0 ? shippingRules : [
-                                        { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' }
+                                        { name: 'Entrega EconÃ´mica', price: 0, delivery_time: 'Chega em atÃ© 7 dias Ãºteis' }
                                     ]).map((opt: any, idx: number) => (
                                         <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
                                             <div className="frete-radio"></div>
                                             <div className="frete-info">
-                                                <div className="frete-name">{opt.name} {opt.price === 0 && <span className="frete-tag">GRÁTIS</span>}</div>
-                                                <div className="frete-days">📅 {opt.delivery_time}</div>
+                                                <div className="frete-name">{opt.name} {opt.price === 0 && <span className="frete-tag">GRÃTIS</span>}</div>
+                                                <div className="frete-days">ðŸ“… {opt.delivery_time}</div>
                                             </div>
-                                            <div className={`frete-price ${opt.price === 0 ? 'free' : ''}`}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
+                                            <div className={`frete-price ${opt.price === 0 ? 'free' : ''}`}>{opt.price === 0 ? 'GRÃTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
                                         </div>
                                     ))}
 
                                     <button className="main-cta" style={{ marginTop: '10px' }} onClick={validateStep2}>
-                                        Ir para Pagamento →
+                                        Ir para Pagamento â†’
                                     </button>
 
                                 </div>
@@ -960,9 +960,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             <div className={`screen ${step === 3 ? 'active' : ''}`}>
                                 <div className="card">
                                     {renderProgressBar()}
-                                    <button className="back-link" onClick={() => setStep(2)}>← Voltar</button>
-                                    <div className="step-title"><span className="step-icon">💳</span> Passo 3 — Pagamento</div>
-                                    <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
+                                    <button className="back-link" onClick={() => setStep(2)}>â† Voltar</button>
+                                    <div className="step-title"><span className="step-icon">ðŸ’³</span> Passo 3 â€” Pagamento</div>
+                                    <div className="step-sub">Escolha como prefere pagar. Ã‰ simples e seguro!</div>
 
                                     {pixDiscountVal > 0 && exitDiscount === null && (
                                         <div style={{
@@ -979,14 +979,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             fontWeight: 500,
                                             lineHeight: 1.5
                                         }}>
-                                            <span style={{ fontSize: '18px', flexShrink: 0 }}>⚡</span>
+                                            <span style={{ fontSize: '18px', flexShrink: 0 }}>âš¡</span>
                                             <div>
-                                                <strong>Atenção:</strong> Pagando por PIX sai por{' '}
+                                                <strong>AtenÃ§Ã£o:</strong> Pagando por PIX sai por{' '}
                                                 <strong style={{ color: '#059669' }}>
                                                     R$ {(basePrice * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
                                                 </strong>
-                                                {' '}+ frete rápido <strong>GRÁTIS</strong>{' '}
-                                                <span style={{ opacity: 0.85 }}>(chega em 5 dias úteis)</span> 🚀
+                                                {' '}+ frete rÃ¡pido <strong>GRÃTIS</strong>{' '}
+                                                <span style={{ opacity: 0.85 }}>(chega em 5 dias Ãºteis)</span> ðŸš€
                                             </div>
                                         </div>
                                     )}
@@ -998,18 +998,18 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </div>
                                         <div className="pay-info">
                                             <div className="pay-name">PIX</div>
-                                            <div className="pay-desc">Pague pelo aplicativo do banco — aprovação na hora</div>
+                                            <div className="pay-desc">Pague pelo aplicativo do banco â€” aprovaÃ§Ã£o na hora</div>
                                         </div>
                                         {pixDiscountVal > 0 && exitDiscount === null && <div className="pay-tag green">{customization?.pixDiscount}% OFF</div>}
                                     </div>
                                     {paymentMethod === 'pix' && (
                                         <div className="pix-box" style={{ marginTop: '12px', background: 'transparent', border: 'none', padding: '0' }}>
                                             <div className="pix-box-body" style={{ color: '#444', fontSize: '13.5px', textAlign: 'left', padding: '0 8px', marginBottom: '12px', fontWeight: '500' }}>
-                                                A confirmação de pagamento é realizada em poucos minutos. Utilize o aplicativo do seu banco para pagar.
+                                                A confirmaÃ§Ã£o de pagamento Ã© realizada em poucos minutos. Utilize o aplicativo do seu banco para pagar.
                                             </div>
                                             <div className="pix-expire-box">
                                                 <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '22px', flexShrink: 0 }}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" /></svg>
-                                                <span>O código PIX expira em 10 minutos. Pague dentro do prazo para garantir sua compra.</span>
+                                                <span>O cÃ³digo PIX expira em 10 minutos. Pague dentro do prazo para garantir sua compra.</span>
                                             </div>
                                             <button className="main-cta" onClick={() => finalizar()} disabled={loading} style={{ marginTop: '16px', background: 'var(--green-btn)', width: '100%', height: '54px' }}>
                                                 {loading ? 'Processando...' : 'GERAR PIX'}
@@ -1019,12 +1019,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                                     <div className={`pay-card ${paymentMethod === 'card' ? 'selected' : ''}`} onClick={() => setPaymentMethod('card')} style={{ marginTop: '12px' }}>
                                         <div className="pay-radio"></div>
-                                        <div className="pay-icon-wrap">💳</div>
+                                        <div className="pay-icon-wrap">ðŸ’³</div>
                                         <div className="pay-info">
-                                            <div className="pay-name">Cartão de Crédito</div>
-                                            <div className="pay-desc">Parcele em até 10x sem juros</div>
+                                            <div className="pay-name">CartÃ£o de CrÃ©dito</div>
+                                            <div className="pay-desc">Parcele em atÃ© 10x sem juros</div>
                                         </div>
-                                        <div className="pay-tag gray">Até 10x</div>
+                                        <div className="pay-tag gray">AtÃ© 10x</div>
                                     </div>
 
                                     {paymentMethod === 'card' && (
@@ -1080,7 +1080,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <>
                                         <div className="product-row">
                                             <div className="product-img">
-                                                {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
+                                                {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : 'ðŸ§´'}
                                             </div>
                                             <div>
                                                 <div className="product-name">{product?.name || "Kit Gel DermaVit 3 Unidades"}</div>
@@ -1089,9 +1089,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </div>
                                         <div className="price-table">
                                             <div className="price-row"><span>Subtotal</span><span>R$ {basePrice.toFixed(2).replace('.', ',')}</span></div>
-                                            <div className="price-row"><span>Frete</span><span className="green">{shipping.price === 0 ? 'GRÁTIS' : `R$ ${shipping.price.toFixed(2).replace('.', ',')}`}</span></div>
+                                            <div className="price-row"><span>Frete</span><span className="green">{shipping.price === 0 ? 'GRÃTIS' : `R$ ${shipping.price.toFixed(2).replace('.', ',')}`}</span></div>
                                             {step === 3 && paymentMethod === 'pix' && pixDiscountVal > 0 && (
-                                                <div className="price-row"><span>Desconto PIX ({customization?.pixDiscount}%)</span><span className="green">− R$ {(basePrice * pixDiscountVal).toFixed(2).replace('.', ',')}</span></div>
+                                                <div className="price-row"><span>Desconto PIX ({customization?.pixDiscount}%)</span><span className="green">âˆ’ R$ {(basePrice * pixDiscountVal).toFixed(2).replace('.', ',')}</span></div>
                                             )}
                                             <div className="price-row total"><span>Total</span><span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span></div>
                                         </div>
@@ -1101,14 +1101,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                             <div className="trust-card">
                                 {[
-                                    { icon: '✈️', title: 'Envio Rápido', p: 'Seu produto é enviado diretamente para o seu endereço, com rastreamento pelo WhatsApp.' },
-                                    { icon: '🔄', title: 'Trocas e Devoluções', p: 'Se não gostar ou chegar com problema, trocamos ou devolvemos em até 7 dias. Sem complicação.' },
-                                    { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' }
+                                    { icon: 'âœˆï¸', title: 'Envio RÃ¡pido', p: 'Seu produto Ã© enviado diretamente para o seu endereÃ§o, com rastreamento pelo WhatsApp.' },
+                                    { icon: 'ðŸ”„', title: 'Trocas e DevoluÃ§Ãµes', p: 'Se nÃ£o gostar ou chegar com problema, trocamos ou devolvemos em atÃ© 7 dias. Sem complicaÃ§Ã£o.' },
+                                    { icon: 'ðŸ”’', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estÃ£o completamente seguros conosco.' }
                                 ].map((t, i) => (
                                     <div key={i} className="trust-item">
                                         <div className="trust-icon">{t.icon}</div>
                                         <div className="trust-text">
-                                            <div className="stars">★★★★★</div>
+                                            <div className="stars">â˜…â˜…â˜…â˜…â˜…</div>
                                             <h4>{t.title}</h4>
                                             <p>{t.p}</p>
                                         </div>
@@ -1166,3 +1166,4 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         </div>
     );
 }
+
