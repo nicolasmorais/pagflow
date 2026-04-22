@@ -104,9 +104,11 @@ export default async function OrdersPage({
     try {
         const statusFilter = status === 'pago'
             ? 'pago'
-            : status === 'pendente'
-                ? { in: ['aguardando', 'recusado'] }
-                : { notIn: ['abandonado'] }
+            : status === 'aguardando'
+                ? { in: ['aguardando', 'processando'] }
+                : status === 'recusado'
+                    ? 'recusado'
+                    : { in: ['pago', 'aguardando', 'processando', 'recusado', 'reembolsado'] }; // Equivalent to ignoring 'abandonado'. Directly explicitly listing the valid statuses the user wants.
 
         orders = await prisma.order.findMany({
             where: {

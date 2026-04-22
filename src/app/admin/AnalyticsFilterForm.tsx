@@ -67,15 +67,15 @@ export default function AnalyticsFilterForm({
                         </div>
 
                         <div
-                            onClick={() => handleStatusClick('pendente')}
-                            className="status-btn pendente-btn"
+                            onClick={() => handleStatusClick('aguardando')}
+                            className="status-btn aguardando-btn"
                             style={{
                                 height: '44px',
                                 padding: '0 16px',
                                 borderRadius: '12px',
-                                background: currentStatus === 'pendente' ? '#64748b' : '#f8fafc',
-                                color: currentStatus === 'pendente' ? 'white' : '#475569',
-                                border: '1px solid ' + (currentStatus === 'pendente' ? '#64748b' : '#e2e8f0'),
+                                background: currentStatus === 'aguardando' ? '#d97706' : '#f8fafc',
+                                color: currentStatus === 'aguardando' ? 'white' : '#b45309',
+                                border: '1px solid ' + (currentStatus === 'aguardando' ? '#d97706' : '#e2e8f0'),
                                 fontSize: '11px',
                                 fontWeight: 800,
                                 display: 'flex',
@@ -89,7 +89,33 @@ export default function AnalyticsFilterForm({
                                 whiteSpace: 'nowrap'
                             }}
                         >
-                            Pendente
+                            Aguardando
+                        </div>
+
+                        <div
+                            onClick={() => handleStatusClick('recusado')}
+                            className="status-btn recusado-btn"
+                            style={{
+                                height: '44px',
+                                padding: '0 16px',
+                                borderRadius: '12px',
+                                background: currentStatus === 'recusado' ? '#dc2626' : '#f8fafc',
+                                color: currentStatus === 'recusado' ? 'white' : '#991b1b',
+                                border: '1px solid ' + (currentStatus === 'recusado' ? '#dc2626' : '#e2e8f0'),
+                                fontSize: '11px',
+                                fontWeight: 800,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                minWidth: '85px',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            Recusado
                         </div>
                     </>
                 )}

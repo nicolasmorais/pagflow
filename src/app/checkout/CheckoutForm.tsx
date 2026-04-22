@@ -607,51 +607,101 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         <div className="bc-badge">Banco Central do Brasil</div>
                     </div>
 
-                    <div className="success-hero">
-                        <div className="check-circle-wrapper">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="12" fill="#1a6b3a" />
-                                <path d="M6 12.5l4 4 8-8" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </div>
-                        <h1>Pedido Reservado!<br />Falta só o pagamento</h1>
-                        <p className="subtitle">Seu pedido está <strong>guardado por {formatTime(timeLeft)}.</strong><br />Finalize agora para garantir o envio hoje.</p>
-                    </div>
-
-                    <div className="urgency-bar">
-                        <div className="urgency-icon">⏰</div>
-                        <div className="urgency-text">
-                            <div className="title" style={{ color: '#7a4a00' }}>Tempo restante para pagar:</div>
-                            <div className="desc">Após isso, o pedido é liberado para outro cliente</div>
-                        </div>
-                        <div className="timer-display" style={{ color: timeLeft <= 120 ? '#c0392b' : 'inherit' }}>{formatTime(timeLeft)}</div>
-                    </div>
-
-                    {paymentMethod === 'pix' && pixData ? (
-                        <div className="pix-main-card">
-                            <div className="card-title">Pague com Pix — rápido e fácil</div>
-                            <div className="card-sub">Abra o app do seu banco e escaneie o QR Code abaixo</div>
-                            <div className="qr-wrapper">
-                                <div className="qr-frame">
-                                    <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" />
-                                </div>
-                                <div className="or-divider"><span>ou copie o código</span></div>
-                                <div className="pix-code-box">{pixData.qrCode}</div>
-                                <button
-                                    className={`copy-btn ${copied ? 'copied' : ''}`}
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(pixData.qrCode);
-                                        setCopied(true);
-                                        setTimeout(() => setCopied(false), 3000);
-                                    }}
-                                >
-                                    <svg className="copy-icon" viewBox="0 0 24 24">
-                                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                    {paymentMethod === 'pix' ? (
+                        <>
+                            <div className="success-hero">
+                                <div className="check-circle-wrapper">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="12" r="12" fill="#1a6b3a" />
+                                        <path d="M6 12.5l4 4 8-8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
-                                    {copied ? 'Código Copiado!' : 'Copiar Código Pix'}
-                                </button>
+                                </div>
+                                <h1>Pedido Reservado!<br />Falta s&#243; o pagamento</h1>
+                                <p className="subtitle">Seu pedido est&#225; <strong>guardado por {formatTime(timeLeft)}.</strong><br />Finalize agora para garantir o envio hoje.</p>
                             </div>
-                        </div>
+
+                            <div className="urgency-bar">
+                                <div className="urgency-icon">&#9200;</div>
+                                <div className="urgency-text">
+                                    <div className="title" style={{ color: '#7a4a00' }}>Tempo restante para pagar:</div>
+                                    <div className="desc">Ap&#243;s isso, o pedido &#233; liberado para outro cliente</div>
+                                </div>
+                                <div className="timer-display" style={{ color: timeLeft <= 120 ? '#c0392b' : 'inherit' }}>{formatTime(timeLeft)}</div>
+                            </div>
+
+                            <div className="pix-main-card">
+                                <div className="card-title">Pague com Pix &#8212; r&#225;pido e f&#225;cil</div>
+                                <div className="card-sub">Abra o app do seu banco e escaneie o QR Code abaixo</div>
+                                <div className="qr-wrapper">
+                                    {pixData?.qrCodeBase64 && (
+                                        <div className="qr-frame">
+                                            <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" />
+                                        </div>
+                                    )}
+                                    <div className="or-divider"><span>ou copie o c&#243;digo</span></div>
+                                    <div className="pix-code-box">{pixData?.qrCode || 'Gerando c&#243;digo PIX...'}</div>
+                                    <button
+                                        className={`copy-btn ${copied ? 'copied' : ''}`}
+                                        onClick={() => {
+                                            if (pixData?.qrCode) navigator.clipboard.writeText(pixData.qrCode);
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 3000);
+                                        }}
+                                    >
+                                        <svg className="copy-icon" viewBox="0 0 24 24">
+                                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                                        </svg>
+                                        {copied ? 'C&#243;digo Copiado!' : 'Copiar C&#243;digo Pix'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="social-proof">
+                                <div className="avatar-group">
+                                    <div className="avatar">MJ</div>
+                                    <div className="avatar">RS</div>
+                                    <div className="avatar">CA</div>
+                                </div>
+                                <div className="social-text">
+                                    <strong>47 pessoas compraram</strong> hoje. Maria de Santos pagou h&#225; 3 minutos e j&#225; recebeu a confirma&#231;&#227;o por e-mail.
+                                </div>
+                            </div>
+
+                            <div className="pix-main-card" style={{ marginTop: '12px' }}>
+                                <div className="card-title" style={{ marginBottom: '14px' }}>O que acontece depois?</div>
+                                <div className="step-row">
+                                    <div className="step-num">1</div>
+                                    <div>
+                                        <div className="step-title">Confirma&#231;&#227;o por e-mail em minutos</div>
+                                        <div className="step-desc">Ap&#243;s o pagamento, voc&#234; recebe a confirma&#231;&#227;o do pedido em <strong>{dados.email}</strong>.</div>
+                                    </div>
+                                </div>
+                                <div className="step-row">
+                                    <div className="step-num">2</div>
+                                    <div>
+                                        <div className="step-title">Separa&#231;&#227;o e envio do pedido</div>
+                                        <div className="step-desc">Pagamentos feitos at&#233; as 14h saem no mesmo dia. Ap&#243;s isso, no pr&#243;ximo dia &#250;til.</div>
+                                    </div>
+                                </div>
+                                <div className="step-row">
+                                    <div className="step-num">3</div>
+                                    <div>
+                                        <div className="step-title">C&#243;digo de rastreio por e-mail</div>
+                                        <div className="step-desc">Assim que o pedido sair, voc&#234; recebe o link de rastreio direto no seu e-mail.</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="trust-strip-footer">
+                                <div className="trust-item"><div className="trust-dot"></div>Pix oficial do Banco Central</div>
+                                <div className="trust-item"><div className="trust-dot"></div>Dados criptografados</div>
+                                <div className="trust-item"><div className="trust-dot"></div>Compra garantida</div>
+                            </div>
+
+                            <div className="help-row">
+                                <p>Precisa de ajuda? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a></p>
+                            </div>
+                        </>
                     ) : (
                         <div className="card-confirm-page">
                             {/* HERO */}
@@ -665,7 +715,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </svg>
                                 </div>
                                 <h1 className="cc-hero-title">Pagamento Aprovado!<br />Pedido confirmado.</h1>
-                                <p className="cc-hero-sub">Seu cartão foi cobrado com sucesso.<br />Confira os detalhes abaixo.</p>
+                                <p className="cc-hero-sub">Seu cart&#227;o foi cobrado com sucesso.<br />Confira os detalhes abaixo.</p>
                             </div>
 
                             {/* RECIBO */}
@@ -680,15 +730,15 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="cc-value">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
                                     </div>
                                     <div className="cc-receipt-row">
-                                        <div className="cc-label">Método</div>
-                                        <div className="cc-value">Cartão de crédito</div>
+                                        <div className="cc-label">M&#233;todo</div>
+                                        <div className="cc-value">Cart&#227;o de cr&#233;dito</div>
                                     </div>
                                     <div className="cc-receipt-row">
                                         <div className="cc-label">Status</div>
-                                        <div className="cc-value cc-green">✓ Aprovado</div>
+                                        <div className="cc-value cc-green">&#10003; Aprovado</div>
                                     </div>
                                     <div className="cc-receipt-row">
-                                        <div className="cc-label">Confirmação enviada para</div>
+                                        <div className="cc-label">Confirma&#231;&#227;o enviada para</div>
                                         <div className="cc-value" style={{ fontSize: '13px' }}>{dados.email}</div>
                                     </div>
                                 </div>
@@ -698,11 +748,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
                             </div>
 
-                            {/* CARTÃO VISUAL */}
+                            {/* CART&#195;O VISUAL */}
                             <div className="cc-card-visual-wrap">
                                 <div className="cc-card-visual">
                                     <div className="cc-card-chip"></div>
-                                    <div className="cc-card-number">•••• •••• •••• ••••</div>
+                                    <div className="cc-card-number">&#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226; &#8226;&#8226;&#8226;&#8226;</div>
                                     <div className="cc-card-bottom">
                                         <div>
                                             <div className="cc-card-holder-label">Titular</div>
@@ -718,7 +768,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
                             </div>
 
-                            {/* PRÓXIMOS PASSOS */}
+                            {/* PR&#211;XIMOS PASSOS */}
                             <div className="cc-steps-card">
                                 <div className="cc-steps-title">O que acontece agora?</div>
                                 <div className="cc-step-item">
@@ -726,7 +776,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <svg viewBox="0 0 24 24" fill="none"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill="#0d6e4a" /></svg>
                                     </div>
                                     <div>
-                                        <div className="cc-step-text-title">Confirmação por e-mail</div>
+                                        <div className="cc-step-text-title">Confirma&#231;&#227;o por e-mail</div>
                                         <div className="cc-step-text-desc">O comprovante do pedido foi enviado para <strong>{dados.email}</strong> agora.</div>
                                     </div>
                                 </div>
@@ -735,8 +785,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <svg viewBox="0 0 24 24" fill="none"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" fill="#0d6e4a" /></svg>
                                     </div>
                                     <div>
-                                        <div className="cc-step-text-title">Separação e envio</div>
-                                        <div className="cc-step-text-desc">Pedidos confirmados até as 14h saem no mesmo dia. Após isso, no próximo dia útil.</div>
+                                        <div className="cc-step-text-title">Separa&#231;&#227;o e envio</div>
+                                        <div className="cc-step-text-desc">Pedidos confirmados at&#233; as 14h saem no mesmo dia. Ap&#243;s isso, no pr&#243;ximo dia &#250;til.</div>
                                     </div>
                                 </div>
                                 <div className="cc-step-item">
@@ -745,7 +795,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                     <div>
                                         <div className="cc-step-text-title">Rastreio por e-mail</div>
-                                        <div className="cc-step-text-desc">Assim que o pedido sair, você recebe o código de rastreio direto no e-mail.</div>
+                                        <div className="cc-step-text-desc">Assim que o pedido sair, voc&#234; recebe o c&#243;digo de rastreio direto no e-mail.</div>
                                     </div>
                                 </div>
                             </div>
@@ -767,59 +817,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             </div>
 
                             <div className="cc-help">
-                                Dúvidas? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a>
+                                D&#250;vidas? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a>
                             </div>
                         </div>
                     )}
-
-                    <div className="social-proof">
-                        <div className="avatar-group">
-                            <div className="avatar">MJ</div>
-                            <div className="avatar">RS</div>
-                            <div className="avatar">CA</div>
-                        </div>
-                        <div className="social-text">
-                            <strong>47 pessoas compraram</strong> hoje. Maria de Santos pagou há 3 minutos e já recebeu a confirmação por e-mail.
-                        </div>
-                    </div>
-
-                    <div className="pix-main-card" style={{ marginTop: '12px' }}>
-                        <div className="card-title" style={{ marginBottom: '14px' }}>O que acontece depois?</div>
-
-                        <div className="step-row">
-                            <div className="step-num">1</div>
-                            <div>
-                                <div className="step-title">Confirmação por e-mail em minutos</div>
-                                <div className="step-desc">Após o pagamento, você recebe a confirmação do pedido em <strong>{dados.email}</strong>.</div>
-                            </div>
-                        </div>
-
-                        <div className="step-row">
-                            <div className="step-num">2</div>
-                            <div>
-                                <div className="step-title">Separação e envio do pedido</div>
-                                <div className="step-desc">Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.</div>
-                            </div>
-                        </div>
-
-                        <div className="step-row">
-                            <div className="step-num">3</div>
-                            <div>
-                                <div className="step-title">Código de rastreio por e-mail</div>
-                                <div className="step-desc">Assim que o pedido sair, você recebe o link de rastreio direto no seu e-mail.</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="trust-strip-footer">
-                        <div className="trust-item"><div className="trust-dot"></div>Pix oficial do Banco Central</div>
-                        <div className="trust-item"><div className="trust-dot"></div>Dados criptografados</div>
-                        <div className="trust-item"><div className="trust-dot"></div>Compra garantida</div>
-                    </div>
-
-                    <div className="help-row">
-                        <p>Precisa de ajuda? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a></p>
-                    </div>
                 </div>
             ) : (
                 <>

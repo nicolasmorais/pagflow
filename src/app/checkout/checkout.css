@@ -240,11 +240,26 @@ body {
 
 /* SCREEN */
 .screen {
-    display: none
+    display: none;
 }
 
 .screen.active {
-    display: block
+    display: block;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.screen-transition-wrap {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.screen-transition-wrap.show {
+    opacity: 1;
+}
+
+/* When checkout is done (pix/card confirmation), keep wrapper visible */
+.is-done .screen-transition-wrap {
+    opacity: 1;
 }
 
 /* CARD */

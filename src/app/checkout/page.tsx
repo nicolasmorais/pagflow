@@ -12,18 +12,17 @@ export async function generateMetadata({
     const params = await searchParams
     const productId = params.p
 
-    let productName = 'Checkout'
-    if (productId) {
-        const p = await prisma.product.findUnique({
+    const [product, storeSetting] = await Promise.all([
+        productId ? prisma.product.findUnique({
             where: { id: productId },
             select: { name: true }
+        }) : Promise.resolve(null),
+        prisma.customization_settings.findFirst({
+            where: { key: 'checkout_store_name' }
         })
-        if (p) productName = p.name
-    }
+    ]);
 
-    const storeSetting = await prisma.customization_settings.findFirst({
-        where: { key: 'checkout_store_name' }
-    })
+    const productName = product?.name || 'Checkout'
     const storeName = storeSetting?.value || 'PagFlow Checkout'
 
     return {
@@ -40,13 +39,44 @@ export default async function CheckoutPage({
     const params = await searchParams
     const productId = params.p
 
-    let product: any = null
-
-    if (productId) {
-        product = await prisma.product.findUnique({
+    // Parallelize all database queries for much faster SSR load time
+    const [dbProduct, settings, orderBumps, shippingRules] = await Promise.all([
+        productId ? prisma.product.findUnique({
             where: { id: productId }
+        }) : Promise.resolve(null),
+
+        prisma.customization_settings.findMany({
+            where: {
+                key: {
+                    in: [
+                        'checkout_logo', 'checkout_footer_text', 'checkout_primary_color',
+                        'checkout_button_color', 'checkout_bg_color', 'checkout_alert_text',
+                        'checkout_alert_bg_color', 'checkout_pix_badge_text', 'checkout_pix_badge_color',
+                        'checkout_pix_badge_bg', 'checkout_pix_discount', 'checkout_card_discount',
+                        'checkout_disable_cpf', 'checkout_store_name', 'checkout_disable_back',
+                        'marketing_taboola_id', 'marketing_facebook_id', 'marketing_google_id',
+                        'checkout_disable_wa', 'checkout_support_email', 'checkout_support_phone'
+                    ]
+                }
+            }
+        }),
+
+        prisma.orderBump.findMany({
+            where: {
+                OR: [
+                    { productId: null },
+                    { productId: productId || '' }
+                ]
+            }
+        }),
+
+        prisma.shipping_rules.findMany({
+            where: { is_active: true },
+            orderBy: { price: 'asc' }
         })
-    }
+    ]);
+
+    let product = dbProduct;
 
     // Default product if none found or no ID provided
     if (!product) {
@@ -55,37 +85,8 @@ export default async function CheckoutPage({
             name: 'Produto Padrão',
             price: 0,
             imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop'
-        }
+        } as any
     }
-
-    // Fetch customization settings
-    const settings = await prisma.customization_settings.findMany({
-        where: {
-            key: {
-                in: [
-                    'checkout_logo',
-                    'checkout_footer_text',
-                    'checkout_primary_color',
-                    'checkout_button_color',
-                    'checkout_bg_color',
-                    'checkout_alert_text',
-                    'checkout_alert_bg_color',
-                    'checkout_pix_badge_text',
-                    'checkout_pix_badge_color',
-                    'checkout_pix_badge_bg',
-                    'checkout_pix_discount',
-                    'checkout_card_discount',
-                    'checkout_disable_cpf',
-                    'checkout_store_name',
-                    'checkout_disable_back',
-                    'marketing_taboola_id',
-                    'marketing_facebook_id',
-                    'marketing_google_id',
-                    'checkout_disable_wa'
-                ]
-            }
-        }
-    })
 
     const customization = {
         logo: settings.find((s: any) => s.key === 'checkout_logo')?.value || '',
@@ -103,7 +104,9 @@ export default async function CheckoutPage({
         disableCpf: settings.find((s: any) => s.key === 'checkout_disable_cpf')?.value === 'true',
         storeName: settings.find((s: any) => s.key === 'checkout_store_name')?.value || 'PagFlow',
         disableBack: settings.find((s: any) => s.key === 'checkout_disable_back')?.value === 'true',
-        disableWa: settings.find((s: any) => s.key === 'checkout_disable_wa')?.value === 'true'
+        disableWa: settings.find((s: any) => s.key === 'checkout_disable_wa')?.value === 'true',
+        supportEmail: settings.find((s: any) => s.key === 'checkout_support_email')?.value || '',
+        supportPhone: settings.find((s: any) => s.key === 'checkout_support_phone')?.value || ''
     }
 
     const pixels = {
@@ -111,15 +114,6 @@ export default async function CheckoutPage({
         facebookId: settings.find((s: any) => s.key === 'marketing_facebook_id')?.value || '',
         googleId: settings.find((s: any) => s.key === 'marketing_google_id')?.value || ''
     }
-
-    const orderBumps = await prisma.orderBump.findMany({
-        where: {
-            OR: [
-                { productId: null },
-                { productId: productId || '' }
-            ]
-        }
-    });
 
     // Map order bumps to simple objects
     const mappedOrderBumps = orderBumps.map((bump: any) => ({
@@ -130,25 +124,18 @@ export default async function CheckoutPage({
         imageUrl: bump.imageUrl
     }))
 
-    // Fetch shipping rules
-    const shippingRules = await prisma.shipping_rules.findMany({
-        where: { is_active: true },
-        orderBy: { price: 'asc' }
-    })
-
     // Map shipping rules to numbers because Decimal can't be passed to client components easily
     const mappedShippingRules = shippingRules.map((rule: any) => ({
         ...rule,
         price: Number(rule.price)
     }));
 
-    // Fetch exit popup config
+    // Fetch exit popup config (needs separate try/catch since model might not exist or be generated differently)
     let exitPopupConfig: any = null
     try {
         const p: any = prisma;
-        const model = p.exitPopupConfig;
-        if (model) {
-            exitPopupConfig = await model.findFirst()
+        if (p.exitPopupConfig) {
+            exitPopupConfig = await p.exitPopupConfig.findFirst()
         }
 
         if (!exitPopupConfig) {
