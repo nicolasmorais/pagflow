@@ -243,6 +243,7 @@ export async function POST(req: NextRequest) {
                     paymentStatus: finalStatus,
                     status: finalStatus === 'pago' ? 'processando' : 'pendente',
                     mpPaymentId: String(mpResult.id),
+                    totalPrice: mpResult.transaction_amount ? Number(mpResult.transaction_amount) : undefined,
                     installments: mpResult.installments || null,
                     installmentAmount: (mpResult as any).transaction_details?.installment_amount || null,
                     cardBrand: mpResult.payment_method_id || null,

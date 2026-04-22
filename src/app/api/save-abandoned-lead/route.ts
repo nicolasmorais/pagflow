@@ -82,10 +82,10 @@ export async function POST(req: NextRequest) {
             // Try to update existing order, but NEVER downgrade status from active payment states
             const existing = await prisma.order.findUnique({ where: { id } });
             if (existing) {
-                // Protect all statuses beyond 'abandonado' — do not overwrite with autosave
+                // Protect all statuses beyond 'abandonado' — do not overwrite ANYTHING with autosave
                 const PROTECTED_STATUSES = ['processando', 'aguardando', 'pago', 'recusado', 'reembolsado'];
                 if (PROTECTED_STATUSES.includes(existing.paymentStatus || '')) {
-                    return NextResponse.json({ success: true, id, note: "status protected" });
+                    return NextResponse.json({ success: true, id, note: "order locked (active payment)" });
                 }
                 const updated = await prisma.order.update({
                     where: { id },
