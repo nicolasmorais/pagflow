@@ -15,6 +15,8 @@ export default function MarketingPage() {
     const [taboolaId, setTaboolaId] = useState('')
     const [facebookId, setFacebookId] = useState('')
     const [googleAdsId, setGoogleAdsId] = useState('')
+    const [googleAnalyticsId, setGoogleAnalyticsId] = useState('')
+    const [googleAdsConvLabel, setGoogleAdsConvLabel] = useState('')
 
     useEffect(() => {
         async function loadPixels() {
@@ -22,10 +24,14 @@ export default function MarketingPage() {
                 const taboola = await getCustomization('marketing_taboola_id')
                 const facebook = await getCustomization('marketing_facebook_id')
                 const google = await getCustomization('marketing_google_id')
+                const ga = await getCustomization('marketing_ga_id')
+                const convLabel = await getCustomization('marketing_google_conv_label')
 
                 setTaboolaId(taboola || '')
                 setFacebookId(facebook || '')
                 setGoogleAdsId(google || '')
+                setGoogleAnalyticsId(ga || '')
+                setGoogleAdsConvLabel(convLabel || '')
             } catch (error) {
                 console.error('Error loading pixels:', error)
             } finally {
@@ -44,6 +50,8 @@ export default function MarketingPage() {
             await updateCustomization('marketing_taboola_id', taboolaId)
             await updateCustomization('marketing_facebook_id', facebookId)
             await updateCustomization('marketing_google_id', googleAdsId)
+            await updateCustomization('marketing_ga_id', googleAnalyticsId)
+            await updateCustomization('marketing_google_conv_label', googleAdsConvLabel)
 
             setStatus({ type: 'success', message: 'Pixels de marketing atualizados com sucesso!' })
             setTimeout(() => setStatus(null), 3000)
@@ -123,6 +131,25 @@ export default function MarketingPage() {
                         />
                     </div>
 
+                    {/* Google Analytics (GA4) */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>Google Analytics ID (GA4)</label>
+                        <input
+                            type="text"
+                            value={googleAnalyticsId}
+                            onChange={(e) => setGoogleAnalyticsId(e.target.value)}
+                            placeholder="Ex: G-XXXXXXXXXX"
+                            style={{
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                outline: 'none',
+                                fontSize: '14px'
+                            }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>ID de medição do Google Analytics 4 (começa com G-)</span>
+                    </div>
+
                     {/* Google Ads */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <label style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>Google Ads Pixel ID</label>
@@ -139,6 +166,26 @@ export default function MarketingPage() {
                                 fontSize: '14px'
                             }}
                         />
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>ID de conversão do Google Ads (começa com AW-)</span>
+                    </div>
+
+                    {/* Google Ads Conversion Label */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>Google Ads Conversion Label</label>
+                        <input
+                            type="text"
+                            value={googleAdsConvLabel}
+                            onChange={(e) => setGoogleAdsConvLabel(e.target.value)}
+                            placeholder="Ex: AbCdEfGhIjKlMnO"
+                            style={{
+                                padding: '12px 16px',
+                                borderRadius: '12px',
+                                border: '1px solid #e2e8f0',
+                                outline: 'none',
+                                fontSize: '14px'
+                            }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#94a3b8' }}>Label de conversão de compra (encontre em Google Ads → Conversões)</span>
                     </div>
 
                     {status && (

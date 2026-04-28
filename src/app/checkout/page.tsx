@@ -55,6 +55,7 @@ export default async function CheckoutPage({
                         'checkout_pix_badge_bg', 'checkout_pix_discount', 'checkout_card_discount',
                         'checkout_disable_cpf', 'checkout_store_name', 'checkout_disable_back',
                         'marketing_taboola_id', 'marketing_facebook_id', 'marketing_google_id',
+                        'marketing_ga_id', 'marketing_google_conv_label',
                         'checkout_disable_wa', 'checkout_support_email', 'checkout_support_phone'
                     ]
                 }
@@ -112,7 +113,9 @@ export default async function CheckoutPage({
     const pixels = {
         taboolaId: settings.find((s: any) => s.key === 'marketing_taboola_id')?.value || '',
         facebookId: settings.find((s: any) => s.key === 'marketing_facebook_id')?.value || '',
-        googleId: settings.find((s: any) => s.key === 'marketing_google_id')?.value || ''
+        googleId: settings.find((s: any) => s.key === 'marketing_google_id')?.value || '',
+        googleAnalyticsId: settings.find((s: any) => s.key === 'marketing_ga_id')?.value || '',
+        googleAdsConvLabel: settings.find((s: any) => s.key === 'marketing_google_conv_label')?.value || ''
     }
 
     // Map order bumps to simple objects

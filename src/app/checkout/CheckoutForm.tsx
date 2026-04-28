@@ -46,6 +46,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         _tfa.push({ notify: 'event', name: eventName, id: pixels.taboolaId, ...data });
     };
 
+    // ── Google Analytics / Google Ads gtag helper ──
+    const trackGoogleEvent = (eventName: string, params: Record<string, any> = {}) => {
+        if (typeof window === 'undefined') return;
+        const gtag = (window as any).gtag;
+        if (!gtag) return;
+        gtag('event', eventName, params);
+    };
+
     const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
     const basePrice = product?.price || 9;
     // exitDiscount overrides the normal PIX discount (from anti-exit popup)
@@ -65,6 +73,33 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             s.src = `https://cdn.taboola.com/libtr/${pixels.taboolaId}/tfa.js`;
             document.head.appendChild(s);
             trackTaboolaEvent('start_checkout');
+        }
+
+        // ── Google Analytics (GA4) + Google Ads gtag.js ──
+        if (!document.getElementById('gtag-script')) {
+            const gtagScript = document.createElement('script');
+            gtagScript.id = 'gtag-script';
+            gtagScript.async = true;
+            gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=G-FQKVQXLFES`;
+            document.head.appendChild(gtagScript);
+
+            (window as any).dataLayer = (window as any).dataLayer || [];
+            (window as any).gtag = function () { (window as any).dataLayer.push(arguments); };
+            (window as any).gtag('js', new Date());
+            (window as any).gtag('config', 'G-FQKVQXLFES');
+
+
+            // 5. Fire begin_checkout event
+            trackGoogleEvent('begin_checkout', {
+                currency: 'BRL',
+                value: product?.price || 0,
+                items: [{
+                    item_id: product?.id || 'default',
+                    item_name: product?.name || 'Produto',
+                    price: product?.price || 0,
+                    quantity: 1
+                }]
+            });
         }
 
         // Injetar MP SDK V2 manualmente
@@ -158,6 +193,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 paymentMethod,
                 lastStepReached: 3,
                 paymentStatus: 'abandonado',
+            });
+            // Google Analytics: add_payment_info event
+            trackGoogleEvent('add_payment_info', {
+                currency: 'BRL',
+                value: finalPrice,
+                payment_type: paymentMethod === 'pix' ? 'pix' : 'credit_card',
+                items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: product?.price || 0, quantity: 1 }]
             });
         }
     }, [paymentMethod, step, orderId]);
@@ -283,6 +325,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             setStep1Loading(true);
             setStep(2);
             updateTrackingStep(1); // Report Step 1 Completed
+            trackGoogleEvent('add_contact_info', {
+                currency: 'BRL',
+                value: finalPrice,
+                items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: product?.price || 0, quantity: 1 }]
+            });
             window.scrollTo(0, 0);
 
             // Save Progress (Abandonment Lead)
@@ -332,6 +379,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (Object.keys(newErrors).length === 0) {
             setStep(3);
             updateTrackingStep(2); // Report Step 2 Completed
+            trackGoogleEvent('add_shipping_info', {
+                currency: 'BRL',
+                value: finalPrice,
+                shipping_tier: shipping?.name || 'Standard',
+                items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: product?.price || 0, quantity: 1 }]
+            });
             window.scrollTo(0, 0);
 
             // Save Progress (Update with Address)
@@ -418,6 +471,25 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             if (result.success) {
                 // Taboola: Track EVERY attempt (approved, declined, pending Pix)
                 trackTaboolaEvent('make_purchase', { value: finalPrice, currency: 'BRL' });
+
+                // Google Analytics: purchase event
+                trackGoogleEvent('purchase', {
+                    transaction_id: result.orderId || orderId || crypto.randomUUID(),
+                    value: finalPrice,
+                    currency: 'BRL',
+                    payment_type: paymentMethod === 'pix' ? 'pix' : 'credit_card',
+                    items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: product?.price || 0, quantity: 1 }]
+                });
+
+                // Google Ads: conversion event
+                if (pixels?.googleId && pixels?.googleAdsConvLabel) {
+                    trackGoogleEvent('conversion', {
+                        send_to: `${pixels.googleId}/${pixels.googleAdsConvLabel}`,
+                        value: finalPrice,
+                        currency: 'BRL',
+                        transaction_id: result.orderId || orderId || ''
+                    });
+                }
 
                 if (result.paymentStatus === 'recusado') {
                     alert("Pagamento recusado pela operadora.");
