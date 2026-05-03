@@ -538,7 +538,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             const initBrick = async () => {
                 const container = document.getElementById('paymentBrick_container');
                 if (!container) return;
-                container.innerHTML = '<div style="padding: 24px; text-align: center; color: #5A5A55; font-size: 15px; font-weight: 600;">Carregando sistema de pagamento seguro...</div>';
+                container.innerHTML = '';
 
                 const mp = new (window as any).MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!);
                 const bricksBuilder = mp.bricks();
