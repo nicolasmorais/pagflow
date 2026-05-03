@@ -403,6 +403,7 @@ export async function createProduct(formData: FormData): Promise<void> {
     const costValue = formData.get('cost')
     const cost = costValue ? parseFloat(costValue as string) : 0
     let imageUrl = formData.get('imageUrl') as string
+    const isDigital = formData.get('isDigital') === 'true'
 
     if (!imageUrl || imageUrl.trim() === '') {
         imageUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop';
@@ -417,7 +418,8 @@ export async function createProduct(formData: FormData): Promise<void> {
             name,
             price: isNaN(price) ? 0 : price,
             imageUrl: imageUrl || null,
-            cost: isNaN(cost) ? 0 : cost
+            cost: isNaN(cost) ? 0 : cost,
+            isDigital
         }
 
         await prisma.product.create({
@@ -438,13 +440,14 @@ export async function updateProduct(formData: FormData): Promise<void> {
     const costValue = formData.get('cost')
     const cost = costValue ? parseFloat(costValue as string) : 0
     let imageUrl = formData.get('imageUrl') as string
+    const isDigital = formData.get('isDigital') === 'true'
 
     if (!id || !name || isNaN(price)) {
         throw new Error('Preencha os campos obrigatórios')
     }
 
     try {
-        console.log('UPDATING PRODUCT:', { id, name, price, cost, imageUrl })
+        console.log('UPDATING PRODUCT:', { id, name, price, cost, imageUrl, isDigital })
 
         if (isNaN(price)) {
             console.error('PRICE IS NaN')
@@ -455,7 +458,8 @@ export async function updateProduct(formData: FormData): Promise<void> {
             name,
             price: Number(price),
             imageUrl: imageUrl || null,
-            cost: isNaN(cost) ? 0 : Number(cost)
+            cost: isNaN(cost) ? 0 : Number(cost),
+            isDigital
         }
 
         const existingProduct = await prisma.product.findUnique({ where: { id } })
@@ -486,7 +490,8 @@ export async function duplicateProduct(productId: string): Promise<void> {
                 name: `${product.name} (Cópia)`,
                 price: product.price,
                 imageUrl: product.imageUrl,
-                commission: product.commission
+                commission: product.commission,
+                isDigital: product.isDigital
             }
         })
         revalidatePath('/admin/produtos')

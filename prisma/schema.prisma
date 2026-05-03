@@ -61,6 +61,7 @@ model Product {
   commission Float       @default(0)
   storeName  String?     @default("PagFlow")
   cost       Float       @default(0)
+  isDigital  Boolean     @default(false)
   orders     Order[]
   orderBumps OrderBump[]
 }

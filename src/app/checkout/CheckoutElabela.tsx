@@ -94,6 +94,21 @@ export default function CheckoutForm({ product, customization, shippingRules = [
       });
     }
 
+    // ── Microsoft Clarity ──
+    if (!document.getElementById('clarity-script')) {
+      const clarityScript = document.createElement('script');
+      clarityScript.id = 'clarity-script';
+      clarityScript.type = 'text/javascript';
+      clarityScript.innerHTML = `
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "wgy8utofnr");
+      `;
+      document.head.appendChild(clarityScript);
+    }
+
     // Injetar MP SDK V2 manualmente
     if (!document.getElementById('mp-v2')) {
       const script = document.createElement('script');
@@ -314,7 +329,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
       }
 
       setStep1Loading(true);
-      setStep(2);
+      setStep(product?.isDigital ? 3 : 2);
       updateTrackingStep(1);
       trackGoogleEvent('add_contact_info', {
         currency: 'BRL',
@@ -611,14 +626,18 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             <div className={`prog-circle ${step > 1 ? 'done' : step === 1 ? 'active' : 'next'}`}>{step > 1 ? '✓' : '1'}</div>
             <div className={`prog-label ${step > 1 ? 'done' : step === 1 ? 'active' : ''}`}>Seus Dados</div>
           </div>
-          <div className={`prog-line ${step > 1 ? 'done' : ''}`}></div>
+          {!product?.isDigital && (
+            <>
+              <div className={`prog-line ${step > 1 ? 'done' : ''}`}></div>
+              <div className="prog-step">
+                <div className={`prog-circle ${step > 2 ? 'done' : step === 2 ? 'active' : 'next'}`}>{step > 2 ? '✓' : '2'}</div>
+                <div className={`prog-label ${step > 2 ? 'done' : step === 2 ? 'active' : ''}`}>Entrega</div>
+              </div>
+            </>
+          )}
+          <div className={`prog-line ${step >= (product?.isDigital ? 3 : 2) ? 'done' : ''}`}></div>
           <div className="prog-step">
-            <div className={`prog-circle ${step > 2 ? 'done' : step === 2 ? 'active' : 'next'}`}>{step > 2 ? '✓' : '2'}</div>
-            <div className={`prog-label ${step > 2 ? 'done' : step === 2 ? 'active' : ''}`}>Entrega</div>
-          </div>
-          <div className={`prog-line ${step > 2 ? 'done' : ''}`}></div>
-          <div className="prog-step">
-            <div className={`prog-circle ${step === 3 ? 'active' : 'next'}`}>3</div>
+            <div className={`prog-circle ${step === 3 ? 'active' : 'next'}`}>{product?.isDigital ? '2' : '3'}</div>
             <div className={`prog-label ${step === 3 ? 'active' : ''}`}>Pagamento</div>
           </div>
         </div>
@@ -726,7 +745,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                   <div className="avatar">CA</div>
                 </div>
                 <div className="social-text">
-                  <strong>47 pessoas compraram</strong> hoje. Maria de Santos pagou há 3 minutos e já recebeu a confirmação por e-mail.
+                  <strong>47 pessoas compraram</strong> hoje. Maria de Santos pagou há 3 minutos e {product?.isDigital ? 'já recebeu o acesso no e-mail.' : 'já recebeu a confirmação por e-mail.'}
                 </div>
               </div>
 
@@ -742,17 +761,19 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 <div className="step-row">
                   <div className="step-num">2</div>
                   <div>
-                    <div className="step-title">Separação e envio do pedido</div>
-                    <div className="step-desc">Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.</div>
+                    <div className="step-title">{product?.isDigital ? 'Acesso liberado após o pagamento' : 'Separação e envio do pedido'}</div>
+                    <div className="step-desc">{product?.isDigital ? 'Assim que o pagamento for confirmado, você receberá os dados de acesso no seu e-mail.' : 'Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
                   </div>
                 </div>
-                <div className="step-row">
-                  <div className="step-num">3</div>
-                  <div>
-                    <div className="step-title">Código de rastreio por e-mail</div>
-                    <div className="step-desc">Assim que o pedido sair, você recebe o link de rastreio direto no seu e-mail.</div>
+                {!product?.isDigital && (
+                  <div className="step-row">
+                    <div className="step-num">3</div>
+                    <div>
+                      <div className="step-title">Código de rastreio por e-mail</div>
+                      <div className="step-desc">Assim que o pedido sair, você recebe o link de rastreio direto no seu e-mail.</div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="trust-strip-footer">
@@ -929,7 +950,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                   )}
 
                   <button className="main-cta" onClick={validateStep1} disabled={step1Loading}>
-                    {step1Loading ? 'Carregando...' : 'Continuar para a Entrega →'}
+                    {step1Loading ? 'Carregando...' : (product?.isDigital ? 'Continuar para o Pagamento →' : 'Continuar para a Entrega →')}
                   </button>
 
                 </div>
@@ -1023,8 +1044,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
               <div className={`screen ${step === 3 ? 'active' : ''}`}>
                 <div className="card">
                   {renderProgressBar()}
-                  <button className="back-link" onClick={() => setStep(2)}>← Voltar</button>
-                  <div className="step-title"><span className="step-icon">💳</span> Passo 3 — Pagamento</div>
+                  <button className="back-link" onClick={() => setStep(product?.isDigital ? 1 : 2)}>← Voltar</button>
+                  <div className="step-title"><span className="step-icon">💳</span> Passo {product?.isDigital ? '2' : '3'} — Pagamento</div>
                   <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
 
                   {pixDiscountVal > 0 && exitDiscount === null && (
@@ -1048,8 +1069,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         <strong style={{ color: '#059669' }}>
                           R$ {(basePrice * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
                         </strong>
-                        {' '}+ frete rápido <strong>GRÁTIS</strong>{' '}
-                        <span style={{ opacity: 0.85 }}>(chega em 5 dias úteis)</span> 🚀
+                        {product?.isDigital ? (
+                          <> + acesso <strong>IMEDIATO</strong> <span style={{ opacity: 0.85 }}>(no seu e-mail)</span> ⚡</>
+                        ) : (
+                          <> + frete rápido <strong>GRÁTIS</strong> <span style={{ opacity: 0.85 }}>(chega em 5 dias úteis)</span> 🚀</>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1152,7 +1176,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     </div>
                     <div className="price-table">
                       <div className="price-row"><span>Subtotal</span><span>R$ {basePrice.toFixed(2).replace('.', ',')}</span></div>
-                      <div className="price-row"><span>Frete</span><span className="green">{shipping.price === 0 ? 'GRÁTIS' : `R$ ${shipping.price.toFixed(2).replace('.', ',')}`}</span></div>
+                      {!product?.isDigital && (
+                        <div className="price-row"><span>Frete</span><span className="green">{shipping.price === 0 ? 'GRÁTIS' : `R$ ${shipping.price.toFixed(2).replace('.', ',')}`}</span></div>
+                      )}
+                      {product?.isDigital && (
+                        <div className="price-row"><span>Entrega Digital</span><span className="green">GRÁTIS</span></div>
+                      )}
                       {step === 3 && paymentMethod === 'pix' && pixDiscountVal > 0 && (
                         <div className="price-row"><span>Desconto PIX ({customization?.pixDiscount}%)</span><span className="green">− R$ {(basePrice * pixDiscountVal).toFixed(2).replace('.', ',')}</span></div>
                       )}
@@ -1163,20 +1192,37 @@ export default function CheckoutForm({ product, customization, shippingRules = [
               </div>
 
               <div className="trust-card">
-                {[
-                  { icon: '✈️', title: 'Envio Rápido', p: 'Seu produto é enviado diretamente para o seu endereço, com rastreamento pelo WhatsApp.' },
-                  { icon: '🔄', title: 'Trocas e Devoluções', p: 'Se não gostar ou chegar com problema, trocamos ou devolvemos em até 7 dias. Sem complicação.' },
-                  { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' }
-                ].map((t, i) => (
-                  <div key={i} className="trust-item">
-                    <div className="trust-icon">{t.icon}</div>
-                    <div className="trust-text">
-                      <div className="stars">★★★★★</div>
-                      <h4>{t.title}</h4>
-                      <p>{t.p}</p>
+                {product?.isDigital ? (
+                  [
+                    { icon: '✅', title: 'Acesso Imediato', p: 'Assim que o pagamento é confirmado, o link chega no seu e-mail em minutos. Sem espera, sem frete.' },
+                    { icon: '🔄', title: 'Garantia de 7 Dias', p: 'Se não gostar por qualquer motivo, devolvemos 100% do seu dinheiro. Sem perguntas, sem burocracia.' },
+                    { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros. Ambiente criptografado e certificado.' }
+                  ].map((t, i) => (
+                    <div key={i} className="trust-item">
+                      <div className="trust-icon">{t.icon}</div>
+                      <div className="trust-text">
+                        <div className="stars">★★★★★</div>
+                        <h4>{t.title}</h4>
+                        <p>{t.p}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  [
+                    { icon: '✈️', title: 'Envio Rápido', p: 'Seu produto é enviado diretamente para o seu endereço, com rastreamento pelo WhatsApp.' },
+                    { icon: '🔄', title: 'Trocas e Devoluções', p: 'Se não gostar ou chegar com problema, trocamos ou devolvemos em até 7 dias. Sem complicação.' },
+                    { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' }
+                  ].map((t, i) => (
+                    <div key={i} className="trust-item">
+                      <div className="trust-icon">{t.icon}</div>
+                      <div className="trust-text">
+                        <div className="stars">★★★★★</div>
+                        <h4>{t.title}</h4>
+                        <p>{t.p}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
 
 
