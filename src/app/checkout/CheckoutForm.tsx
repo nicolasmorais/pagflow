@@ -763,24 +763,26 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 <div className="step-row">
                                     <div className="step-num">1</div>
                                     <div>
-                                        <div className="step-title">Confirmação por e-mail em minutos</div>
-                                        <div className="step-desc">Após o pagamento, você recebe a confirmação do pedido em <strong>{dados.email}</strong>.</div>
+                                        <div className="step-title">{product?.isDigital ? 'Acesso enviado para seu e-mail' : 'Confirmação por e-mail em minutos'}</div>
+                                        <div className="step-desc">{product?.isDigital ? `Assim que o pagamento for detectado, o link de acesso será enviado para ` : `Após o pagamento, você recebe a confirmação do pedido em `}<strong>{dados.email}</strong>.</div>
                                     </div>
                                 </div>
                                 <div className="step-row">
                                     <div className="step-num">2</div>
                                     <div>
-                                        <div className="step-title">Separação e envio do pedido</div>
-                                        <div className="step-desc">Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.</div>
+                                        <div className="step-title">{product?.isDigital ? 'Verifique sua caixa de entrada' : 'Separação e envio do pedido'}</div>
+                                        <div className="step-desc">{product?.isDigital ? 'O e-mail chega em até 5 minutos. Verifique também sua pasta de Spam ou Promoções.' : 'Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
                                     </div>
                                 </div>
-                                <div className="step-row">
-                                    <div className="step-num">3</div>
-                                    <div>
-                                        <div className="step-title">Código de rastreio por e-mail</div>
-                                        <div className="step-desc">Assim que o pedido sair, você recebe o link de rastreio direto no seu e-mail.</div>
+                                {!product?.isDigital && (
+                                    <div className="step-row">
+                                        <div className="step-num">3</div>
+                                        <div>
+                                            <div className="step-title">Código de rastreio por e-mail</div>
+                                            <div className="step-desc">Assim que o pedido sair, você recebe o link de rastreio direto no seu e-mail.</div>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             <div className="trust-strip-footer">

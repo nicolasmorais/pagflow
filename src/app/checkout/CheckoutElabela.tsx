@@ -754,15 +754,15 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 <div className="step-row">
                   <div className="step-num">1</div>
                   <div>
-                    <div className="step-title">Confirmação por e-mail em minutos</div>
-                    <div className="step-desc">Após o pagamento, você recebe a confirmação do pedido em <strong>{dados.email}</strong>.</div>
+                    <div className="step-title">{product?.isDigital ? 'Acesso enviado para seu e-mail' : 'Confirmação por e-mail em minutos'}</div>
+                    <div className="step-desc">{product?.isDigital ? `Assim que o pagamento for detectado, o link de acesso será enviado para ` : `Após o pagamento, você recebe a confirmação do pedido em `}<strong>{dados.email}</strong>.</div>
                   </div>
                 </div>
                 <div className="step-row">
                   <div className="step-num">2</div>
                   <div>
-                    <div className="step-title">{product?.isDigital ? 'Acesso liberado após o pagamento' : 'Separação e envio do pedido'}</div>
-                    <div className="step-desc">{product?.isDigital ? 'Assim que o pagamento for confirmado, você receberá os dados de acesso no seu e-mail.' : 'Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
+                    <div className="step-title">{product?.isDigital ? 'Verifique sua caixa de entrada' : 'Separação e envio do pedido'}</div>
+                    <div className="step-desc">{product?.isDigital ? 'O e-mail chega em até 5 minutos. Verifique também sua pasta de Spam ou Promoções.' : 'Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
                   </div>
                 </div>
                 {!product?.isDigital && (
@@ -869,19 +869,21 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     <svg viewBox="0 0 24 24" fill="none"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" fill="#0d6e4a" /></svg>
                   </div>
                   <div>
-                    <div className="cc-step-text-title">Separação e envio</div>
-                    <div className="cc-step-text-desc">Pedidos confirmados até as 14h saem no mesmo dia. Após isso, no próximo dia útil.</div>
+                    <div className="cc-step-text-title">{product?.isDigital ? 'Acesso imediato' : 'Separação e envio'}</div>
+                    <div className="cc-step-text-desc">{product?.isDigital ? 'Seu link de acesso será liberado assim que o pagamento for confirmado.' : 'Pedidos confirmados até as 14h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
                   </div>
                 </div>
-                <div className="cc-step-item">
-                  <div className="cc-step-dot">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#0d6e4a" /></svg>
+                {!product?.isDigital && (
+                  <div className="cc-step-item">
+                    <div className="cc-step-dot">
+                      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#0d6e4a" /></svg>
+                    </div>
+                    <div>
+                      <div className="cc-step-text-title">Rastreio por e-mail</div>
+                      <div className="cc-step-text-desc">Assim que o pedido sair, você recebe o código de rastreio direto no e-mail.</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="cc-step-text-title">Rastreio por e-mail</div>
-                    <div className="cc-step-text-desc">Assim que o pedido sair, você recebe o código de rastreio direto no e-mail.</div>
-                  </div>
-                </div>
+                )}
               </div>
 
               {/* TRUST */}
