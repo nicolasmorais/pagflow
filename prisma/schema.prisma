@@ -62,6 +62,7 @@ model Product {
   storeName  String?     @default("PagFlow")
   cost       Float       @default(0)
   isDigital  Boolean     @default(false)
+  accessLink String?
   orders     Order[]
   orderBumps OrderBump[]
 }

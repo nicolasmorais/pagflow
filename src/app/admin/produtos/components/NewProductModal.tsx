@@ -10,6 +10,7 @@ interface NewProductModalProps {
 
 export default function NewProductModal({ onClose }: NewProductModalProps) {
     const [loading, setLoading] = useState(false)
+    const [isDigital, setIsDigital] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         setLoading(true)
@@ -258,10 +259,34 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                             </div>
                         </div>
                         <label className="switch">
-                            <input type="checkbox" name="isDigital" value="true" />
+                            <input
+                                type="checkbox"
+                                name="isDigital"
+                                value="true"
+                                checked={isDigital}
+                                onChange={e => setIsDigital(e.target.checked)}
+                            />
                             <span className="slider round"></span>
                         </label>
                     </div>
+
+                    {isDigital && (
+                        <div className="form-group" style={{ animation: 'modalSlideUp 0.3s ease-out' }}>
+                            <label className="form-label">
+                                <Plus size={14} /> Link de Acesso (Google Drive, etc)
+                            </label>
+                            <input
+                                name="accessLink"
+                                type="url"
+                                className="form-input"
+                                placeholder="https://drive.google.com/..."
+                                required={isDigital}
+                            />
+                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                                Este link será enviado automaticamente por e-mail após a confirmação do pagamento.
+                            </div>
+                        </div>
+                    )}
 
 
 
