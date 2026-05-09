@@ -589,7 +589,7 @@ export default function PersonalizacaoPage() {
                             Integração Webhook (Saída)
                         </label>
                         <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
-                            Envie os dados de vendas e carrinhos abandonados para outro aplicativo (ex: Zapier, Make, n8n ou seu próprio CRM).
+                            Envie os dados de vendas para outro aplicativo (ex: Zapier, Make, n8n ou seu próprio CRM).
                         </p>
                         <div>
                             <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>URL do Webhook</label>
@@ -610,7 +610,7 @@ export default function PersonalizacaoPage() {
                                 }}
                             />
                             <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
-                                Disparado nos eventos: <strong>Venda Confirmada</strong> e <strong>Carrinho Abandonado</strong>.
+                                Disparado nos eventos: <strong>Venda Confirmada</strong>.
                             </p>
                         </div>
                     </div>

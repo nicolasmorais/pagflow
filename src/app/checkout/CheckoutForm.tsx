@@ -2,23 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import './checkout.css'
-import ExitPopup from './ExitPopup'
-import { saveOrderProgress } from '../actions'
 
-export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {}, exitPopupConfig }: any) {
+export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
     const [step, setStep] = useState(1);
     const [isSummaryOpen, setIsSummaryOpen] = useState(true);
-    const [exitDiscount, setExitDiscount] = useState<number | null>(null);
     const [loading, setLoading] = useState(false);
     const [timeLeft, setTimeLeft] = useState(14 * 60 + 52);
     const [done, setDone] = useState(false);
     const [isMpLoaded, setIsMpLoaded] = useState(false);
-    const [accessId, setAccessId] = useState<string | null>(null);
-    const [lastTrackedStep, setLastTrackedStep] = useState<number>(0);
-    const [orderId, setOrderId] = useState<string | null>(null);
     const [step1Loading, setStep1Loading] = useState(false);
-    // Live popup state - fetched from DB on mount to override stale SSR prop
-    const [livePopupEnabled, setLivePopupEnabled] = useState<boolean>(exitPopupConfig?.isEnabled ?? false);
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
@@ -32,13 +24,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
 
-    // Fetch live popup config from DB on mount (overrides stale SSR prop)
     useEffect(() => {
-        fetch('/api/exit-popup/config')
-            .then(r => r.ok ? r.json() : null)
-            .then(cfg => { if (cfg) setLivePopupEnabled(cfg.isEnabled === true); })
-            .catch(() => { /* silently keep SSR default */ });
-
         // TEST MODE: Force success screen for preview
         const params = new URLSearchParams(window.location.search);
         const testMode = params.get('test');
@@ -71,10 +57,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
     const basePrice = product?.price || 9;
-    // exitDiscount overrides the normal PIX discount (from anti-exit popup)
-    const effectivePrice = exitDiscount !== null
-        ? exitDiscount
-        : (step === 3 && paymentMethod === 'pix') ? (basePrice * (1 - pixDiscountVal) + shipping.price) : (basePrice + shipping.price);
+    
+    const effectivePrice = (step === 3 && paymentMethod === 'pix') ? (basePrice * (1 - pixDiscountVal) + shipping.price) : (basePrice + shipping.price);
     const finalPrice = effectivePrice;
 
     useEffect(() => {
@@ -103,8 +87,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             (window as any).gtag('js', new Date());
             (window as any).gtag('config', 'G-FQKVQXLFES');
 
-
-            // 5. Fire begin_checkout event
+            // Fire begin_checkout event
             trackGoogleEvent('begin_checkout', {
                 currency: 'BRL',
                 value: product?.price || 0,
@@ -150,7 +133,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             document.body.appendChild(s);
         }
 
-        // Tentar resolver CORS em localhost via Referrer Policy
+        // Referrer Policy
         if (!document.getElementById('referrer-meta')) {
             const meta = document.createElement('meta');
             meta.id = 'referrer-meta';
@@ -161,107 +144,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
         const timer = setInterval(() => setTimeLeft(prev => prev > 0 ? prev - 1 : 0), 1000);
 
-        // ── Funnel Tracking Logic ──
-        const searchParams = new URLSearchParams(window.location.search);
-        const utmData = {
-            productId: product?.id,
-            source: searchParams.get('utm_source'),
-            medium: searchParams.get('utm_medium'),
-            campaign: searchParams.get('utm_campaign'),
-            term: searchParams.get('utm_term'),
-            content: searchParams.get('utm_content'),
-            placement: searchParams.get('utm_placement'),
-            utmId: searchParams.get('utm_id'),
-            creativeName: searchParams.get('utm_creative_name'),
-        };
-
-        fetch('/api/checkout-access', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(utmData)
-        })
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) setAccessId(res.accessId);
-            })
-            .catch(e => console.error('Tracking Error:', e));
-
-        // Restore orderId from localStorage if exists
-        const savedId = localStorage.getItem('last_order_id');
-        if (savedId) setOrderId(savedId);
-
         return () => clearInterval(timer);
     }, []);
 
-    const updateTrackingStep = async (stepValue: number | string) => {
-        if (!accessId) return;
-        try {
-            await fetch('/api/checkout-access', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ accessId, step: stepValue })
-            });
-        } catch (e) {
-            console.error('Update Tracking Error:', e);
-        }
-    };
-
-    useEffect(() => {
-        if (step === 3 && lastTrackedStep < 3) {
-            updateTrackingStep(3);
-            setLastTrackedStep(3);
-        } else if (step > lastTrackedStep && step < 3) {
-            setLastTrackedStep(step);
-        }
-    }, [step, lastTrackedStep, accessId]);
-
-    // Auto-save progress when payment method is selected
-    useEffect(() => {
-        if (step === 3 && paymentMethod && orderId) {
-            saveOrderProgress({
-                id: orderId,
-                paymentMethod,
-                lastStepReached: 3,
-                paymentStatus: 'abandonado',
-            });
-            // Google Analytics: add_payment_info event
-            trackGoogleEvent('add_payment_info', {
-                currency: 'BRL',
-                value: finalPrice,
-                payment_type: paymentMethod === 'pix' ? 'pix' : 'credit_card',
-                items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: product?.price || 0, quantity: 1 }]
-            });
-        }
-    }, [paymentMethod, step, orderId]);
-
-    // Save partial address progress in Step 2 (debounced)
-    useEffect(() => {
-        if (step === 2 && orderId) {
-            const timer = setTimeout(() => {
-                saveOrderProgress({
-                    id: orderId,
-                    ...endereco,
-                    fullName: dados.nome,
-                    email: dados.email,
-                    phone: dados.telefone,
-                    cpf: customization?.disableCpf ? null : dados.cpf,
-                    productId: product?.id,
-                    totalPrice: finalPrice,
-                    lastStepReached: 2,
-                    paymentStatus: 'abandonado',
-                    utmSource: new URLSearchParams(window.location.search).get('utm_source'),
-                    utmMedium: new URLSearchParams(window.location.search).get('utm_medium'),
-                    utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign'),
-                    utmTerm: new URLSearchParams(window.location.search).get('utm_term'),
-                    utmContent: new URLSearchParams(window.location.search).get('utm_content'),
-                    utmPlacement: new URLSearchParams(window.location.search).get('utm_placement'),
-                    utmId: new URLSearchParams(window.location.search).get('utm_id'),
-                    utmCreativeName: new URLSearchParams(window.location.search).get('utm_creative_name'),
-                });
-            }, 2000); // 2 second debounce
-            return () => clearTimeout(timer);
-        }
-    }, [endereco, step, orderId, dados, customization?.disableCpf, product?.id, finalPrice]);
+    // Auto-save progress and tracking removed per user request (Deep Cleanup)
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -300,7 +186,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             const response = await fetch(`https://viacep.com.br/ws/${c}/json/`);
             const data = await response.json();
             if (!data.erro) {
-                setEndereco(prev => ({ ...prev, rua: data.logradouro, bairro: data.bairro, cidade: data.localidade, estado: data.uf }));
+                setEndereco(prev => ({ ...prev, rua: data.logradouro, bairro: data.bairro, city: data.localidade, estado: data.uf }));
             }
         } catch (e) { }
     };
@@ -347,48 +233,17 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
         setErrors(newErrors);
         if (Object.keys(newErrors).length === 0) {
-            // Auto-populate destinatario if empty
             if (!endereco.destinatario) {
                 setEndereco(prev => ({ ...prev, destinatario: dados.nome }));
             }
 
-            setStep1Loading(true);
             setStep(product?.isDigital ? 3 : 2);
-            updateTrackingStep(1); // Report Step 1 Completed
             trackGoogleEvent('add_contact_info', {
                 currency: 'BRL',
                 value: finalPrice,
                 items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: product?.price || 0, quantity: 1 }]
             });
             window.scrollTo(0, 0);
-
-            // Save Progress (Abandonment Lead)
-            const searchParams = new URLSearchParams(window.location.search);
-            saveOrderProgress({
-                id: orderId,
-                fullName: dados.nome,
-                email: dados.email,
-                phone: dados.telefone,
-                cpf: customization?.disableCpf ? null : dados.cpf,
-                productId: product?.id,
-                totalPrice: finalPrice,
-                lastStepReached: 1,
-                paymentStatus: 'abandonado',
-                utmSource: searchParams.get('utm_source'),
-                utmMedium: searchParams.get('utm_medium'),
-                utmCampaign: searchParams.get('utm_campaign'),
-                utmTerm: searchParams.get('utm_term'),
-                utmContent: searchParams.get('utm_content'),
-                utmPlacement: searchParams.get('utm_placement'),
-                utmId: searchParams.get('utm_id'),
-                utmCreativeName: searchParams.get('utm_creative_name'),
-            }).then(res => {
-                setStep1Loading(false);
-                if (res.success && res.id) {
-                    setOrderId(res.id);
-                    localStorage.setItem('last_order_id', res.id);
-                }
-            }).catch(() => setStep1Loading(false));
 
             return true;
         }
@@ -408,7 +263,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         setErrors(newErrors);
         if (Object.keys(newErrors).length === 0) {
             setStep(3);
-            updateTrackingStep(2); // Report Step 2 Completed
             trackGoogleEvent('add_shipping_info', {
                 currency: 'BRL',
                 value: finalPrice,
@@ -416,20 +270,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: product?.price || 0, quantity: 1 }]
             });
             window.scrollTo(0, 0);
-
-            // Save Progress (Update with Address)
-            saveOrderProgress({
-                id: orderId,
-                ...endereco,
-                fullName: dados.nome,
-                email: dados.email,
-                phone: dados.telefone,
-                cpf: customization?.disableCpf ? null : dados.cpf,
-                productId: product?.id,
-                totalPrice: finalPrice,
-                lastStepReached: 2,
-                paymentStatus: 'abandonado',
-            });
 
             return true;
         }
@@ -465,7 +305,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 method: currentMethod,
                 cardData: tokenData,
                 brickData: brickData, // Envia para o backend processar via BrickData
-                orderId: localStorage.getItem('last_order_id'),
+                orderId: null,
                 orderData: {
                     ...dados,
                     ...endereco,
@@ -504,7 +344,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                 // Google Analytics: purchase event
                 trackGoogleEvent('purchase', {
-                    transaction_id: result.orderId || orderId || crypto.randomUUID(),
+                    transaction_id: result.orderId || crypto.randomUUID(),
                     value: finalPrice,
                     currency: 'BRL',
                     payment_type: paymentMethod === 'pix' ? 'pix' : 'credit_card',
@@ -517,7 +357,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         send_to: `${pixels.googleId}/${pixels.googleAdsConvLabel}`,
                         value: finalPrice,
                         currency: 'BRL',
-                        transaction_id: result.orderId || orderId || ''
+                        transaction_id: result.orderId || ''
                     });
                 }
 
@@ -530,7 +370,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     setTimeLeft(10 * 60);
                 }
                 setDone(true);
-                updateTrackingStep('payment'); // Funnel Completed!
             } else {
                 alert("Erro: " + (result.error || "Tente novamente"));
                 throw new Error(result.error || "Erro de validação do pagamento");
@@ -1117,7 +956,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 <div className="step-title">Passo {product?.isDigital ? '2' : '3'} — Pagamento</div>
                                 <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
 
-                                {pixDiscountVal > 0 && exitDiscount === null && (
+                                {pixDiscountVal > 0 && (
                                     <div style={{
                                         background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
                                         border: '1.5px solid #6ee7b7',
@@ -1219,23 +1058,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 </div>
             </footer>
 
-            {livePopupEnabled && !done && (
-                <ExitPopup
-                    productName={product?.name || 'Produto'}
-                    originalPrice={product?.price || basePrice}
-                    discountPct={exitPopupConfig.discountPct ?? 50}
-                    installments={exitPopupConfig.installments ?? 3}
-                    timerSeconds={exitPopupConfig.timerSeconds ?? 480}
-                    productId={product?.id}
-                    isEnabled={exitPopupConfig.isEnabled}
-                    canIntercept={step === 1}
-                    onAccept={(discountedPrice: number) => {
-                        setExitDiscount(discountedPrice)
-                        setPaymentMethod('pix')
-                    }}
-                    onDecline={() => { }}
-                />
-            )}
+
         </div>
     );
 }

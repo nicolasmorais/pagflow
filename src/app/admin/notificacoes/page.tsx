@@ -32,13 +32,6 @@ export default async function NotificacoesPage() {
             bg = '#d1fae5';
             title = 'Compra Aprovada!';
             description = `Pagamento de ${order.fullName || 'Cliente'} aprovado. Receita: ${formatMoney(order.netReceived || order.totalPrice)}.`;
-        } else if (order.paymentStatus === 'abandonado' || order.paymentStatus === 'processando') {
-            type = 'abandoned';
-            icon = ShoppingCart;
-            color = '#ef4444';
-            bg = '#fee2e2';
-            title = 'Carrinho Abandonado';
-            description = `${order.fullName || 'Um cliente'} deixou ${order.product?.name || 'itens'} no carrinho.`;
         }
 
         return {
@@ -46,7 +39,7 @@ export default async function NotificacoesPage() {
             date: order.createdAt,
             type, icon, color, bg, title, description
         }
-    }).filter(n => n.type === 'approved' || n.type === 'abandoned' || n.type === 'pending');
+    }).filter(n => n.type === 'approved' || n.type === 'pending');
 
     return (
         <div style={{ width: '100%', paddingBottom: '60px' }}>
@@ -73,7 +66,7 @@ export default async function NotificacoesPage() {
                             Notificacoes do Sistema
                         </h1>
                         <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
-                            Acompanhe eventos de vendas e carrinhos abandonados.
+                            Acompanhe eventos de vendas e pagamentos pendentes.
                         </p>
                     </div>
                 </div>

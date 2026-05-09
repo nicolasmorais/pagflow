@@ -24,7 +24,7 @@ model Order {
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   productId         String?
-  paymentStatus     String     @default("abandonado")
+  paymentStatus     String     @default("pago")
   trackingCode      String?
   trackingUrl       String?
   recipient         String?
@@ -38,15 +38,6 @@ model Order {
   cardBrand         String?
   netReceived       Float?
   deletedAt         DateTime?
-  utmCampaign       String?
-  utmContent        String?
-  utmMedium         String?
-  utmSource         String?
-  utmTerm           String?
-  utmPlacement      String?
-  utmId             String?
-  utmCreativeName   String?
-  lastStepReached   Int?       @default(1)
   emailLogs         EmailLog[]
   product           Product?   @relation(fields: [productId], references: [id])
 }
@@ -78,15 +69,6 @@ model OrderBump {
   updatedAt   DateTime @updatedAt
   productId   String?
   product     Product? @relation(fields: [productId], references: [id])
-}
-
-model ad_spends {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  amount      Decimal   @db.Decimal(10, 2)
-  spend_date  DateTime  @db.Date
-  description String?
-  views       Int?
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
 }
 
 model customization_settings {
@@ -210,24 +192,6 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 }
 
-model CheckoutAccess {
-  id               String   @id @default(cuid())
-  productId        String?
-  source           String?
-  medium           String?
-  campaign         String?
-  term             String?
-  content          String?
-  placement        String?
-  utmId            String?
-  creativeName     String?
-  createdAt        DateTime @default(now())
-  step1Completed   Boolean  @default(false)
-  step2Completed   Boolean  @default(false)
-  step3Completed   Boolean  @default(false)
-  paymentCompleted Boolean  @default(false)
-}
-
 model EmailLog {
   id      String   @id @default(cuid())
   orderId String
@@ -236,20 +200,4 @@ model EmailLog {
   error   String?
   sentAt  DateTime @default(now())
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-}
-
-model ExitPopupConfig {
-  id           String   @id @default(cuid())
-  isEnabled    Boolean  @default(true)
-  discountPct  Int      @default(50)
-  timerSeconds Int      @default(480)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model ExitPopupEvent {
-  id        String   @id @default(cuid())
-  event     String   // "shown" | "accepted" | "declined" | "expired"
-  productId String?
-  createdAt DateTime @default(now())
 }

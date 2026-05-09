@@ -137,57 +137,19 @@ function SectionCard({ title, subtitle, children, style, accent }: {
     )
 }
 
-// ── Funnel Bar ────────────────────────────────────────────────────────────────
-function FunnelStep({ label, count, pct, color, icon }: { label: string; count: number; pct: number; color: string; icon: string }) {
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 900, color: 'var(--admin-text-primary)' }}>{label}</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '14px', fontWeight: 900, color: 'black' }}>{count}</span>
-                    <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--admin-text-muted)', background: '#F1F5F9', padding: '2px 7px', borderRadius: '4px' }}>{pct}%</span>
-                </div>
-            </div>
-            <div style={{ width: '100%', height: '8px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '4px', transition: 'width 0.6s ease' }} />
-            </div>
-        </div>
-    )
-}
-
-// ── Source Row ────────────────────────────────────────────────────────────────
-function SourceRow({ label, count, color, max }: { label: string; count: number; color: string; max: number }) {
-    const pct = max > 0 ? Math.round((count / max) * 100) : 0
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: '#FFFFFF', borderRadius: '10px', border: '1px solid var(--admin-border)' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--admin-text-primary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-            <div style={{ width: '60px', height: '4px', background: '#F1F5F9', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
-                <div style={{ width: `${pct}%`, height: '100%', background: '#0F172A', borderRadius: '4px' }} />
-            </div>
-            <span style={{ fontSize: '13px', fontWeight: 900, color: 'var(--admin-text-primary)', flexShrink: 0, minWidth: '24px', textAlign: 'right' }}>{count}</span>
-        </div>
-    )
-}
-
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
     if (!data) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Carregando dados...</div>
-    const { kpis, dailyData, paymentMethods, installments, cardBrands, topProducts, topStates, statusBreakdown, bumpStats, checkoutAccess } = data
+
+    const {
+        kpis, dailyData, paymentMethods, installments,
+        cardBrands, topProducts, topStates, statusBreakdown, bumpStats
+    } = data
 
     const maxState = topStates[0]?.revenue || 1
     const maxProduct = topProducts[0]?.revenue || 1
-    const maxSource = checkoutAccess.bySource[0]?.count || 1
-    const maxCampaign = checkoutAccess.byCampaign[0]?.count || 1
 
     const PIE_COLORS = ['#0F172A', '#475569', '#94A3B8', '#CBD5E1']
-    const funnelTotal = kpis.abandonedOrders + kpis.pendingOrders + kpis.paidOrders + kpis.rejectedOrders || 1
-    const funnelSteps = [
-        { label: 'Iniciaram checkout', count: funnelTotal, color: '#0F172A', pct: 100 },
-        { label: 'Não abandonaram', count: kpis.totalOrders, color: '#475569', pct: Math.round((kpis.totalOrders / funnelTotal) * 100) },
-        { label: 'Pagamento pago', count: kpis.paidOrders, color: '#0F172A', pct: Math.round((kpis.paidOrders / funnelTotal) * 100) },
-    ]
 
     return (
         <>
@@ -196,14 +158,13 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                 <KpiCard featured icon={DollarSign} label="Faturamento" value={`R$ ${fmt(kpis.totalRevenue)}`} sub={kpis.netRevenue > 0 ? `Líq. R$ ${fmt(kpis.netRevenue)}` : undefined} />
                 <KpiCard icon={ShoppingBag} label="Total de Pedidos" value={String(kpis.totalOrders)} />
                 <KpiCard icon={CheckCircle2} label="Pagos" value={String(kpis.paidOrders)} />
-                <KpiCard icon={ShoppingCart} label="Abandonados" value={String(kpis.abandonedOrders)} />
                 <KpiCard icon={TrendingUp} label="Conversão" value={`${kpis.conversionRate.toFixed(1)}%`} badge={kpis.conversionRate >= 50 ? { text: 'Ótimo', color: '#059669', bg: '#ECFDF5' } : undefined} />
                 <KpiCard icon={Ticket} label="Ticket Médio" value={`R$ ${fmt(kpis.avgTicket)}`} />
                 <KpiCard icon={XCircle} label="Recusados" value={String(kpis.rejectedOrders)} />
                 <KpiCard icon={Zap} label="Taxa Order Bump" value={`${kpis.bumpRate.toFixed(1)}%`} sub={`${bumpStats.withBump} pedidos`} />
             </div>
 
-            {/* ── Revenue Chart + Funnel ── */}
+            {/* ── Revenue Chart + Status Breakdown ── */}
             <div className="analytics-2col-wide">
                 <SectionCard title="Receita Diária" subtitle="Evolução financeira no período">
                     <ResponsiveContainer width="100%" height={210}>
@@ -235,25 +196,16 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                     </div>
                 </SectionCard>
 
-                <SectionCard title="Funil de Conversão" subtitle="Total acumulado" accent="linear-gradient(90deg, #10b981, #3b82f6)">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                        {funnelSteps.map((step, i) => (
-                            <FunnelStep key={i} label={step.label} count={step.count} pct={step.pct} color={step.color} icon={['🔵', '🟦', '✅'][i]} />
+                <SectionCard title="Distribuição de Status" subtitle="Status dos pedidos no período" accent="linear-gradient(90deg, #10b981, #3b82f6)">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', minHeight: '200px', justifyContent: 'center' }}>
+                        {statusBreakdown.map(s => (
+                            <div key={s.status} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: s.color, flexShrink: 0, boxShadow: `0 0 8px ${s.color}60` }} />
+                                <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: 700, flex: 1 }}>{s.label}</span>
+                                <span style={{ fontSize: '14px', fontWeight: 900, color: s.color }}>{s.count}</span>
+                                <span style={{ fontSize: '11px', color: '#64748b', width: '40px', textAlign: 'right', fontWeight: 800 }}>{s.percentage}%</span>
+                            </div>
                         ))}
-                    </div>
-
-                    <div style={{ marginTop: '22px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
-                        <p style={{ margin: '0 0 12px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Distribuição de status</p>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {statusBreakdown.map(s => (
-                                <div key={s.status} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color, flexShrink: 0, boxShadow: `0 0 6px ${s.color}60` }} />
-                                    <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600, flex: 1 }}>{s.label}</span>
-                                    <span style={{ fontSize: '12px', fontWeight: 800, color: s.color }}>{s.count}</span>
-                                    <span style={{ fontSize: '10px', color: '#94a3b8', width: '32px', textAlign: 'right', fontWeight: 700 }}>{s.percentage}%</span>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </SectionCard>
             </div>
@@ -437,133 +389,6 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
 
                     {bumpStats.withBump === 0 && bumpStats.withoutBump === 0 && (
                         <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '16px 0 0' }}>Sem pedidos pagos ainda</p>
-                    )}
-                </SectionCard>
-            </div>
-
-            {/* ── Checkout Funnel Section ── */}
-            <SectionCard title="Funil de Conversão — Checkout" subtitle="Etapas do checkout em tempo real" accent="linear-gradient(90deg, #6366f1, #3b82f6, #10b981)">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px', marginBottom: '22px' }}>
-                    {[
-                        { label: 'Acessaram', value: checkoutAccess.total, color: '#6366f1', bg: '#eef2ff' },
-                        { label: 'Dados', value: checkoutAccess.funnel.step1, color: '#3b82f6', bg: '#eff6ff' },
-                        { label: 'Entrega', value: checkoutAccess.funnel.step2, color: '#0ea5e9', bg: '#f0f9ff' },
-                        { label: 'Pagamento', value: checkoutAccess.funnel.step3, color: '#10b981', bg: '#ecfdf5' },
-                        { label: 'Converteram', value: checkoutAccess.funnel.payment, color: '#059669', bg: '#d1fae5' },
-                    ].map((item) => (
-                        <div key={item.label} style={{ background: item.bg, borderRadius: '12px', padding: '14px 12px', textAlign: 'center', border: `1px solid ${item.color}20` }}>
-                            <p style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 900, color: item.color }}>{item.value}</p>
-                            <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: item.color, opacity: 0.75, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{item.label}</p>
-                        </div>
-                    ))}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {[
-                        { step: 'Dados do cliente', count: checkoutAccess.funnel.step1, color: '#6366f1', icon: '👤', pct: checkoutAccess.total > 0 ? Math.round((checkoutAccess.funnel.step1 / checkoutAccess.total) * 100) : 0 },
-                        { step: 'Endereço de entrega', count: checkoutAccess.funnel.step2, color: '#3b82f6', icon: '📦', pct: checkoutAccess.total > 0 ? Math.round((checkoutAccess.funnel.step2 / checkoutAccess.total) * 100) : 0 },
-                        { step: 'Chegaram ao pagamento', count: checkoutAccess.funnel.step3, color: '#10b981', icon: '💳', pct: checkoutAccess.total > 0 ? Math.round((checkoutAccess.funnel.step3 / checkoutAccess.total) * 100) : 0 },
-                        { step: 'Pagamento concluído', count: checkoutAccess.funnel.payment, color: '#059669', icon: '✅', pct: checkoutAccess.total > 0 ? Math.round((checkoutAccess.funnel.payment / checkoutAccess.total) * 100) : 0 },
-                    ].map((item, i) => (
-                        <FunnelStep key={i} label={item.step} count={item.count} pct={item.pct} color={item.color} icon={item.icon} />
-                    ))}
-                </div>
-            </SectionCard>
-
-            {/* ── Checkout Access Section ── */}
-            <div className="analytics-2col-wide">
-                <SectionCard title="Acessos ao Checkout" subtitle="Visitantes e conversão" accent="linear-gradient(90deg, #3b82f6, #6366f1)">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
-                        {[
-                            { label: 'Total de Acessos', value: checkoutAccess.total, color: '#6366f1' },
-                            { label: 'Taxa de Conversão', value: `${checkoutAccess.conversionRate.toFixed(1)}%`, color: checkoutAccess.conversionRate >= 50 ? '#10b981' : '#f59e0b' },
-                        ].map(item => (
-                            <div key={item.label} style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                                <p style={{ margin: '0 0 4px', fontSize: '10px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{item.label}</p>
-                                <p style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: item.color, letterSpacing: '-0.03em' }}>{item.value}</p>
-                            </div>
-                        ))}
-                    </div>
-
-                    {checkoutAccess.dailyAccess.length > 0 && (
-                        <ResponsiveContainer width="100%" height={170}>
-                            <AreaChart data={checkoutAccess.dailyAccess} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="accessGrad" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.28} />
-                                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} interval={4} />
-                                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                                <Tooltip content={<BarTooltip />} />
-                                <Area type="monotone" dataKey="count" name="accesses" stroke="#3b82f6" strokeWidth={2.5} fill="url(#accessGrad)" dot={false} activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 0 }} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    )}
-                </SectionCard>
-
-                <SectionCard title="Origem dos Acessos" subtitle="Por fonte UTM" accent="linear-gradient(90deg, #10b981, #6366f1)">
-                    {checkoutAccess.bySource.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                            {checkoutAccess.bySource.slice(0, 5).map((item, i) => (
-                                <SourceRow key={i} label={item.source} count={item.count} color={PIE_COLORS[i % PIE_COLORS.length]} max={maxSource} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>Sem dados de acesso</p>
-                    )}
-                </SectionCard>
-            </div>
-
-            <div className="analytics-2col-wide">
-                <SectionCard title="Por Produto" subtitle="Acessos por produto">
-                    {checkoutAccess.byProduct.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                            {checkoutAccess.byProduct.slice(0, 5).map((item, i) => (
-                                <SourceRow key={i} label={item.productName} count={item.count} color={PIE_COLORS[i % PIE_COLORS.length]} max={checkoutAccess.byProduct[0]?.count || 1} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>Sem dados</p>
-                    )}
-                </SectionCard>
-
-                <SectionCard title="Campanhas" subtitle="Acessos por campanha UTM">
-                    {checkoutAccess.byCampaign.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                            {checkoutAccess.byCampaign.slice(0, 5).map((item, i) => (
-                                <SourceRow key={i} label={item.campaign} count={item.count} color={['#10b981', '#6366f1', '#f59e0b', '#3b82f6', '#f97316'][i % 5]} max={maxCampaign} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>Sem dados</p>
-                    )}
-                </SectionCard>
-            </div>
-
-            <div className="analytics-2col-wide">
-                <SectionCard title="Por Posicionamento" subtitle="Acessos por posicionamento UTM">
-                    {checkoutAccess.byPlacement.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                            {checkoutAccess.byPlacement.slice(0, 5).map((item, i) => (
-                                <SourceRow key={i} label={item.placement} count={item.count} color={['#6366f1', '#10b981', '#f59e0b', '#3b82f6', '#f97316'][i % 5]} max={checkoutAccess.byPlacement[0]?.count || 1} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>Sem dados</p>
-                    )}
-                </SectionCard>
-
-                <SectionCard title="Por Criativo" subtitle="Acessos por criativo UTM">
-                    {checkoutAccess.byCreative.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
-                            {checkoutAccess.byCreative.slice(0, 5).map((item, i) => (
-                                <SourceRow key={i} label={item.creative} count={item.count} color={['#f97316', '#10b981', '#6366f1', '#f59e0b', '#3b82f6'][i % 5]} max={checkoutAccess.byCreative[0]?.count || 1} />
-                            ))}
-                        </div>
-                    ) : (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '20px 0' }}>Sem dados</p>
                     )}
                 </SectionCard>
             </div>

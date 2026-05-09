@@ -48,7 +48,6 @@ export default async function VendasPage() {
     const orders = await prisma.order.findMany({
         where: {
             deletedAt: null,
-            NOT: { paymentStatus: { in: ['abandonado', 'processando'] } }
         },
         orderBy: { createdAt: 'desc' },
         include: { product: true }

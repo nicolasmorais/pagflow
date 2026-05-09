@@ -349,62 +349,6 @@ export async function updateOrderTracking(orderId: string, trackingCode: string,
     }
 }
 
-export async function saveOrderProgress(data: any) {
-    try {
-        const { id, lastStepReached, ...payload } = data;
-
-        if (id) {
-            const existing = await prisma.order.findUnique({ where: { id } });
-            if (existing) {
-                const updatedStatus = payload.paymentStatus || 'abandonado';
-                const finalStatus = (existing.paymentStatus === 'pago' && updatedStatus !== 'pago')
-                    ? 'pago'
-                    : updatedStatus;
-
-                const updated = await prisma.order.update({
-                    where: { id },
-                    data: {
-                        ...payload,
-                        lastStepReached: lastStepReached || (existing.lastStepReached ? Math.max(existing.lastStepReached, 1) : 1),
-                        paymentStatus: finalStatus
-                    },
-                    include: { product: true }
-                });
-
-                // Backup update
-                uploadOrderBackup(updated).catch(e => console.error("R2 Backup Error:", e));
-
-                revalidatePath('/admin/abandonados');
-                revalidatePath('/admin');
-                return { success: true, id: updated.id };
-            }
-        }
-
-        // Caso não tenha id ou o id não exista no banco, cria um novo
-        const created = await prisma.order.create({
-            data: {
-                ...payload,
-                lastStepReached: lastStepReached || 1,
-                paymentStatus: 'abandonado'
-            },
-            include: { product: true }
-        });
-
-        // Backup creation
-        uploadOrderBackup(created).catch(e => console.error("R2 Backup Error:", e));
-
-        revalidatePath('/admin/abandonados');
-        revalidatePath('/admin');
-
-        // Notify Admin
-        await sendAdminNotification('abandoned', { ...payload, id: created.id }).catch(e => console.error(e));
-
-        return { success: true, id: created.id };
-    } catch (error) {
-        console.error('Save Progress Error:', error);
-        return { success: false };
-    }
-}
 export async function createProduct(formData: FormData): Promise<void> {
     const name = formData.get('name') as string
     const priceValue = formData.get('price')
@@ -764,7 +708,7 @@ export async function deleteEmailTemplate(id: string) {
 
 import { sendAdminPush } from "@/lib/push-service";
 
-export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pending', order: any) {
+export async function sendAdminNotification(type: 'sale' | 'pix_pending', order: any) {
     try {
         const email = await getCustomization('notify_admin_email');
 
@@ -776,9 +720,6 @@ export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pe
             const method = order.paymentMethod === 'pix' ? 'PIX' : 'CARTÃO';
             pushTitle = `✅ Compra realizada - ${method}`;
             pushBody = `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
-        } else if (type === 'abandoned') {
-            pushTitle = `🚨 Carrinho Abandonado`;
-            pushBody = `Cliente: ${order.fullName || 'Sem nome'}`;
         } else if (type === 'pix_pending') {
             pushTitle = `⏳ PIX Gerado (Pendente)`;
             pushBody = `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
@@ -792,18 +733,14 @@ export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pe
         // --- WEBHOOK TRIGGER ---
         if (type === 'sale') {
             await sendWebhook('SALE_CONFIRMED', order).catch(e => console.error("Webhook Sale Error:", e));
-        } else if (type === 'abandoned') {
-            await sendWebhook('CART_ABANDONED', order).catch(e => console.error("Webhook Abandoned Error:", e));
         }
         // -----------------------
 
         if (!email) return;
 
         const isSalesNotify = await getCustomization('notify_sales_enabled');
-        const isAbandonedNotify = await getCustomization('notify_abandoned_enabled');
 
         if (type === 'sale' && isSalesNotify !== 'true') return;
-        if (type === 'abandoned' && isAbandonedNotify !== 'true') return;
 
         let subject = '';
         let htmlContent = '';
@@ -816,15 +753,6 @@ export async function sendAdminNotification(type: 'sale' | 'abandoned' | 'pix_pe
                 <p><strong>Cliente:</strong> ${order.fullName}</p>
                 <p><strong>Valor:</strong> R$ ${order.totalPrice?.toFixed(2) || '0.00'}</p>
                 <p>Acesse o painel para processar a venda.</p>
-            `;
-        } else if (type === 'abandoned') {
-            subject = `🛒 Carrinho Abandonado: ${order.fullName || 'Sem nome'}`;
-            htmlContent = `
-                <h2>Um cliente abandonou o carrinho</h2>
-                <p><strong>Cliente:</strong> ${order.fullName || 'Sem nome'}</p>
-                <p><strong>Telefone/WhatsApp:</strong> ${order.phone || 'Não informado'}</p>
-                <p><strong>E-mail:</strong> ${order.email || 'Não informado'}</p>
-                <p>Acesse o painel para entrar em contato com o cliente.</p>
             `;
         }
 

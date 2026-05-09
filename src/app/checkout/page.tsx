@@ -134,20 +134,6 @@ export default async function CheckoutPage({
         price: Number(rule.price)
     }));
 
-    // Fetch exit popup config (needs separate try/catch since model might not exist or be generated differently)
-    let exitPopupConfig: any = null
-    try {
-        const p: any = prisma;
-        if (p.exitPopupConfig) {
-            exitPopupConfig = await p.exitPopupConfig.findFirst()
-        }
-
-        if (!exitPopupConfig) {
-            exitPopupConfig = { isEnabled: false, discountPct: 50, timerSeconds: 480, installments: 3 }
-        }
-    } catch (e) {
-        exitPopupConfig = { isEnabled: false }
-    }
 
     return (
         <>
@@ -161,7 +147,6 @@ export default async function CheckoutPage({
                 shippingRules={mappedShippingRules}
                 pixels={pixels}
                 availableBumps={mappedOrderBumps}
-                exitPopupConfig={exitPopupConfig}
             />
         </>
     )

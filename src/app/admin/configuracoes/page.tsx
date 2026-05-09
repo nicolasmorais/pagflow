@@ -14,7 +14,6 @@ export default function ConfiguracoesPage() {
     const [adminEmail, setAdminEmail] = useState('')
     const [webhookUrl, setWebhookUrl] = useState('')
     const [notifySales, setNotifySales] = useState(false)
-    const [notifyAbandoned, setNotifyAbandoned] = useState(false)
 
     useEffect(() => {
         async function loadSettings() {
@@ -22,12 +21,7 @@ export default function ConfiguracoesPage() {
                 const email = await getCustomization('notify_admin_email')
                 const webhook = await getCustomization('webhook_url')
                 const sales = await getCustomization('notify_sales_enabled')
-                const abandoned = await getCustomization('notify_abandoned_enabled')
-
-                if (email) setAdminEmail(email)
-                if (webhook) setWebhookUrl(webhook)
                 setNotifySales(sales === 'true')
-                setNotifyAbandoned(abandoned === 'true')
             } catch (error) {
                 console.error("Failed to load settings:", error)
             } finally {
@@ -44,7 +38,6 @@ export default function ConfiguracoesPage() {
             await updateCustomization('notify_admin_email', adminEmail)
             await updateCustomization('webhook_url', webhookUrl)
             await updateCustomization('notify_sales_enabled', notifySales ? 'true' : 'false')
-            await updateCustomization('notify_abandoned_enabled', notifyAbandoned ? 'true' : 'false')
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
             setTimeout(() => setStatus(null), 3000)
@@ -130,7 +123,7 @@ export default function ConfiguracoesPage() {
                                 }}
                             />
                         </div>
-                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>Onde você deseja receber os avisos sobre vendas e abandonos.</p>
+                        <p style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>Onde você deseja receber os avisos sobre vendas.</p>
                     </div>
 
                     <div style={{ padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -153,29 +146,9 @@ export default function ConfiguracoesPage() {
                                 </div>
                             </label>
                         </div>
-                        <div style={{ height: '1px', background: '#e2e8f0', margin: '16px 0' }}></div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <div>
-                                <h3 style={{ fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>Carrinhos Abandonados</h3>
-                                <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>Ser avisado quando um cliente não concluir a compra.</p>
-                            </div>
-                            <label style={{ display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
-                                <input type="checkbox" className="sr-only peer" checked={notifyAbandoned} onChange={(e) => setNotifyAbandoned(e.target.checked)} />
-                                <div style={{
-                                    width: '44px', height: '24px', backgroundColor: notifyAbandoned ? '#10b981' : '#cbd5e1',
-                                    position: 'relative', transition: 'background-color 0.2s', borderRadius: '999px'
-                                }}>
-                                    <div style={{
-                                        position: 'absolute', top: '2px', left: notifyAbandoned ? '22px' : '2px',
-                                        width: '20px', height: '20px', backgroundColor: '#fff', borderRadius: '50%',
-                                        transition: 'left 0.2s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                    }}></div>
-                                </div>
-                            </label>
-                        </div>
                     </div>
                 </div>
+            </div>
 
                 <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '24px', border: '1px solid #e2e8f0', marginTop: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>

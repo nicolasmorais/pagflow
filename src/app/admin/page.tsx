@@ -5,7 +5,7 @@ import { getDateFilters, dateToBrazilDateStr, formatDateStr, getBrazilNow } from
 import { BarChart3 } from 'lucide-react'
 import AnalyticsCharts from './AnalyticsCharts'
 import AnalyticsFilterForm from './AnalyticsFilterForm'
-import type { AnalyticsData, CheckoutAccessData } from './types'
+import type { AnalyticsData } from './types'
 
 
 export default async function AdminPage({
@@ -18,30 +18,6 @@ export default async function AdminPage({
     const { now, todayStr, fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(
         params.filter, params.from, params.to
     )
-
-    // ── Fetch checkout accesses ─────────────────────────────────────────────
-    let accesses: any[] = []
-    try {
-        accesses = await prisma.checkoutAccess.findMany({
-            where: {
-                createdAt: {
-                    gte: fromDateUTC,
-                    lte: toDateUTC,
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 500
-        })
-    } catch (e) {
-        console.error('CheckoutAccess query error:', e)
-    }
-
-    // ── Calculate funnel stats ─────────────────────────────────────────────
-    const totalAccesses = accesses.length;
-    const step1Count = accesses.filter((a: any) => a.step1Completed).length;
-    const step2Count = accesses.filter((a: any) => a.step2Completed).length;
-    const step3Count = accesses.filter((a: any) => a.step3Completed).length;
-    const paymentCount = accesses.filter((a: any) => a.paymentCompleted).length;
 
     // ── Fetch all orders ──────────────────────────────────────────────────
     const allOrders = await prisma.order.findMany({
@@ -72,21 +48,19 @@ export default async function AdminPage({
 
     // ── Segments ─────────────────────────────────────────────────────────
     const paidOrders = allOrders.filter(o => o.paymentStatus === 'pago')
-    const abandonedOrders = allOrders.filter(o => o.paymentStatus === 'abandonado')
     const pendingOrders = allOrders.filter(o => ['aguardando', 'processando'].includes(o.paymentStatus || ''))
     const rejectedOrders = allOrders.filter(o => o.paymentStatus === 'recusado')
-    const nonAbandonedOrders = allOrders.filter(o => o.paymentStatus !== 'abandonado')
 
     // ── KPIs ─────────────────────────────────────────────────────────────
     const totalRevenue = paidOrders.reduce((s, o) => s + (o.totalPrice || 0), 0)
     const netRevenue = paidOrders.reduce((s, o) => s + (o.netReceived || 0), 0)
-    const conversionRate = nonAbandonedOrders.length > 0
-        ? (paidOrders.length / nonAbandonedOrders.length) * 100
+    const conversionRate = allOrders.length > 0
+        ? (paidOrders.length / allOrders.length) * 100
         : 0
     const avgTicket = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0
     const bumpOrders = allOrders.filter(o => o.hasBump)
-    const bumpRate = nonAbandonedOrders.length > 0
-        ? (bumpOrders.length / nonAbandonedOrders.length) * 100
+    const bumpRate = allOrders.length > 0
+        ? (bumpOrders.length / allOrders.length) * 100
         : 0
 
     // ── Daily data (last 30 days) ─────────────────────────────────────────
@@ -178,7 +152,6 @@ export default async function AdminPage({
         { status: 'pago', label: 'Pago', count: paidOrders.length, percentage: Math.round((paidOrders.length / totalAll) * 100), color: '#16a34a', bg: '#dcfce7' },
         { status: 'aguardando', label: 'Aguardando', count: pendingOrders.length, percentage: Math.round((pendingOrders.length / totalAll) * 100), color: '#d97706', bg: '#fef3c7' },
         { status: 'recusado', label: 'Recusado', count: rejectedOrders.length, percentage: Math.round((rejectedOrders.length / totalAll) * 100), color: '#dc2626', bg: '#fee2e2' },
-        { status: 'abandonado', label: 'Abandonado', count: abandonedOrders.length, percentage: Math.round((abandonedOrders.length / totalAll) * 100), color: '#94a3b8', bg: '#f1f5f9' },
     ]
 
     // ── Bump stats ────────────────────────────────────────────────────────
@@ -195,111 +168,13 @@ export default async function AdminPage({
         nonBumpAvgTicket: paidWithoutBump.length > 0 ? nonBumpRevenue / paidWithoutBump.length : 0,
     }
 
-    // ── Checkout Access Stats ────────────────────────────────────────────
-    const productMapWithNull = new Map<string | null, string>(products.map(p => [p.id, p.name]))
-    productMapWithNull.set(null, 'Sem produto')
-    productMapWithNull.set('', 'Sem produto')
-
-    const accessTotal = accesses.length
-    const accessBySourceMap = new Map<string, number>()
-    const accessByCampaignMap = new Map<string, number>()
-    const accessByPlacementMap = new Map<string, number>()
-    const accessByCreativeMap = new Map<string, number>()
-    const accessByProductMap = new Map<string | null, number>()
-
-    for (const access of accesses) {
-        const src = access.source || '(direct)'
-        accessBySourceMap.set(src, (accessBySourceMap.get(src) || 0) + 1)
-
-        const camp = access.campaign || '(none)'
-        accessByCampaignMap.set(camp, (accessByCampaignMap.get(camp) || 0) + 1)
-
-        const place = access.placement || '(none)'
-        accessByPlacementMap.set(place, (accessByPlacementMap.get(place) || 0) + 1)
-
-        const creative = access.creativeName || '(none)'
-        accessByCreativeMap.set(creative, (accessByCreativeMap.get(creative) || 0) + 1)
-
-        const prod = access.productId || null
-        accessByProductMap.set(prod, (accessByProductMap.get(prod) || 0) + 1)
-    }
-
-    const accessDailyMap = new Map<string, number>()
-    for (let i = 29; i >= 0; i--) {
-        const d = new Date(now)
-        d.setDate(d.getDate() - i)
-        accessDailyMap.set(formatDateStr(d), 0)
-    }
-    for (const access of accesses) {
-        if (access.createdAt < thirtyDaysAgo) continue
-        const key = dateToBrazilDateStr(access.createdAt)
-        if (accessDailyMap.has(key)) {
-            accessDailyMap.set(key, accessDailyMap.get(key)! + 1)
-        }
-    }
-
-    const bySource = Array.from(accessBySourceMap.entries())
-        .map(([source, count]) => ({ source, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
-
-    const byCampaign = Array.from(accessByCampaignMap.entries())
-        .map(([campaign, count]) => ({ campaign, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
-
-    const byPlacement = Array.from(accessByPlacementMap.entries())
-        .map(([placement, count]) => ({ placement, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
-
-    const byCreative = Array.from(accessByCreativeMap.entries())
-        .map(([creative, count]) => ({ creative, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
-
-    const byProduct = Array.from(accessByProductMap.entries())
-        .map(([productId, count]) => ({
-            productId,
-            productName: productMapWithNull.get(productId as string) || 'Produto removido',
-            count
-        }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10)
-
-    const dailyAccess = Array.from(accessDailyMap.entries())
-        .map(([date, count]) => ({ date: new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), count }))
-        .sort((a, b) => a.date.localeCompare(b.date))
-
-    const accessConversionRate = accessTotal > 0 ? (paidOrders.length / accessTotal) * 100 : 0
-
-    const checkoutAccess: CheckoutAccessData = {
-        total: accessTotal,
-        uniqueVisitors: accessTotal,
-        bySource,
-        byCampaign,
-        byPlacement,
-        byCreative,
-        byProduct,
-        dailyAccess,
-        conversionRate: accessConversionRate,
-        funnel: {
-            step1: step1Count,
-            step2: step2Count,
-            step3: step3Count,
-            payment: paymentCount,
-        },
-        recentAccessIds: [],
-    }
-
     // ── Final data object ─────────────────────────────────────────────────
     const data: AnalyticsData = {
         kpis: {
             totalRevenue,
             netRevenue,
-            totalOrders: nonAbandonedOrders.length,
+            totalOrders: allOrders.length,
             paidOrders: paidOrders.length,
-            abandonedOrders: abandonedOrders.length,
             pendingOrders: pendingOrders.length,
             rejectedOrders: rejectedOrders.length,
             conversionRate,
@@ -314,7 +189,6 @@ export default async function AdminPage({
         topStates,
         statusBreakdown,
         bumpStats,
-        checkoutAccess,
     }
 
     return (

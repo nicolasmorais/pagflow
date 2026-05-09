@@ -60,16 +60,12 @@ export default function AdminLayout({
 
     const menuItems = [
         { icon: BarChart3, label: 'Dashboard', href: '/admin' },
-        { icon: Zap, label: 'Monitor de Checkout', href: '/admin/monitor' },
         { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
-        { icon: Activity, label: 'Carrinhos Abandonados', href: '/admin/abandonados' },
         { icon: Package, label: 'Lista de Produtos', href: '/admin/produtos' },
         { icon: Truck, label: 'Configurações de Frete', href: '/admin/ecommerce' },
         { icon: Target, label: 'Pixel de Marketing', href: '/admin/marketing' },
         { icon: Sparkles, label: 'Order Bumps', href: '/admin/ordem' },
-        { icon: Activity, label: 'ROI de Anúncios', href: '/admin/roi' },
         { icon: Mail, label: 'Automação de E-mails', href: '/admin/emails' },
-        { icon: Shield, label: 'Sistema Anti-Fuga', href: '/admin/antifuga' },
         { icon: Sparkles, label: 'Personalização', href: '/admin/personalizacao' },
         { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
         { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },

@@ -13,27 +13,10 @@ export type BumpStats = {
 export type AnalyticsKpis = {
     totalRevenue: number; netRevenue: number
     totalOrders: number; paidOrders: number
-    abandonedOrders: number; pendingOrders: number; rejectedOrders: number
+    pendingOrders: number; rejectedOrders: number
     conversionRate: number; avgTicket: number; bumpRate: number
 }
-export type CheckoutAccessData = {
-    total: number;
-    uniqueVisitors: number;
-    bySource: { source: string; count: number }[];
-    byCampaign: { campaign: string; count: number }[];
-    byPlacement: { placement: string; count: number }[];
-    byCreative: { creative: string; count: number }[];
-    byProduct: { productId: string | null; productName: string; count: number }[];
-    dailyAccess: { date: string; count: number }[];
-    conversionRate: number;
-    funnel: {
-        step1: number;
-        step2: number;
-        step3: number;
-        payment: number;
-    };
-    recentAccessIds: string[];
-}
+
 export type AnalyticsData = {
     kpis: AnalyticsKpis
     dailyData: DailyData[]
@@ -44,5 +27,4 @@ export type AnalyticsData = {
     topStates: StateData[]
     statusBreakdown: StatusBreakdown[]
     bumpStats: BumpStats
-    checkoutAccess: CheckoutAccessData
 }

@@ -108,7 +108,7 @@ export default async function OrdersPage({
                 ? { in: ['aguardando', 'processando'] }
                 : status === 'recusado'
                     ? 'recusado'
-                    : { in: ['pago', 'aguardando', 'processando', 'recusado', 'reembolsado'] }; // Equivalent to ignoring 'abandonado'. Directly explicitly listing the valid statuses the user wants.
+                    : { in: ['pago', 'aguardando', 'processando', 'recusado', 'reembolsado'] };
 
         orders = await prisma.order.findMany({
             where: {
@@ -239,7 +239,6 @@ export default async function OrdersPage({
                                         <th style={headerStyle}>CLIENTE</th>
                                         <th style={headerStyle}>PRODUTO</th>
                                         <th style={headerStyle}>VALOR TOTAL</th>
-                                        <th style={headerStyle}>ORIGEM</th>
                                         <th style={headerStyle}>PAGAMENTO</th>
                                         <th style={headerStyle}>LOGÍSTICA</th>
                                         <th style={{ ...headerStyle, textAlign: 'right' }}>DATA</th>
@@ -282,15 +281,6 @@ export default async function OrdersPage({
                                             <td style={cellStyle}>
                                                 <div style={{ fontSize: '16px', fontWeight: 900, color: 'black', fontFamily: 'var(--font-space-grotesk)' }}>
                                                     R$ {(order.totalPrice || 0).toFixed(2)}
-                                                </div>
-                                            </td>
-                                            <td style={cellStyle}>
-                                                <div
-                                                    style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, display: 'flex', flexDirection: 'column', gap: '2px' }}
-                                                    title={`Medium: ${order.utmMedium || '-'}\nContent: ${order.utmContent || '-'}\nTerm: ${order.utmTerm || '-'}\nPlacement: ${order.utmPlacement || '-'}\nID: ${order.utmId || '-'}\nCreative: ${order.utmCreativeName || '-'}`}
-                                                >
-                                                    <span style={{ color: '#7c3aed', fontWeight: 800 }}>{order.utmSource || 'Direto'}</span>
-                                                    <span style={{ fontSize: '10px', opacity: 0.8 }}>{order.utmCampaign || '-'}</span>
                                                 </div>
                                             </td>
                                             <td style={cellStyle}>
@@ -357,14 +347,6 @@ export default async function OrdersPage({
                                         <div>
                                             <div style={labelStyle}>LOGÍSTICA</div>
                                             <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
-                                        </div>
-                                    </div>
-
-                                    <div style={{ marginBottom: '16px' }}>
-                                        <div style={labelStyle}>ORIGEM</div>
-                                        <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
-                                            <span style={{ color: '#7c3aed', fontWeight: 800 }}>{order.utmSource || 'Direto'}</span>
-                                            {order.utmCampaign && <span style={{ marginLeft: '8px', opacity: 0.8 }}>({order.utmCampaign})</span>}
                                         </div>
                                     </div>
 

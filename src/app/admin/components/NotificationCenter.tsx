@@ -8,7 +8,7 @@ interface Notification {
     title: string
     message: string
     time: string
-    type: 'sale' | 'abandoned' | 'system'
+    type: 'sale' | 'system'
     read: boolean
 }
 
@@ -21,14 +21,6 @@ export default function NotificationCenter() {
             message: 'Você recebeu um novo pedido de R$ 197,00',
             time: '2 min atrás',
             type: 'sale',
-            read: false
-        },
-        {
-            id: '2',
-            title: 'Carrinho Abandonado',
-            message: 'João Silva deixou o checkout',
-            time: '15 min atrás',
-            type: 'abandoned',
             read: false
         },
         {
@@ -61,7 +53,6 @@ export default function NotificationCenter() {
     const getIcon = (type: string) => {
         switch (type) {
             case 'sale': return <ShoppingCart size={16} color="#10b981" />
-            case 'abandoned': return <AlertCircle size={16} color="#f59e0b" />
             default: return <Package size={16} color="#3b82f6" />
         }
     }
