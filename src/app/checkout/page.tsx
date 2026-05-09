@@ -51,7 +51,7 @@ export default async function CheckoutPage({
                     in: [
                         'checkout_logo', 'checkout_footer_text', 'checkout_primary_color',
                         'checkout_button_color', 'checkout_bg_color', 'checkout_alert_text',
-                        'checkout_alert_bg_color', 'checkout_pix_badge_text', 'checkout_pix_badge_color',
+                        'checkout_alert_bg_color', 'checkout_alert_color', 'checkout_pix_badge_text', 'checkout_pix_badge_color',
                         'checkout_pix_badge_bg', 'checkout_pix_discount', 'checkout_card_discount',
                         'checkout_disable_cpf', 'checkout_store_name', 'checkout_disable_back',
                         'marketing_taboola_id', 'marketing_facebook_id', 'marketing_google_id',
@@ -97,6 +97,7 @@ export default async function CheckoutPage({
         bgColor: settings.find((s: any) => s.key === 'checkout_bg_color')?.value || '#f0f9ff',
         alertText: settings.find((s: any) => s.key === 'checkout_alert_text')?.value || '',
         alertBg: settings.find((s: any) => s.key === 'checkout_alert_bg_color')?.value || '#e64a19',
+        alertColor: settings.find((s: any) => s.key === 'checkout_alert_color')?.value || '#111111',
         pixBadgeText: settings.find((s: any) => s.key === 'checkout_pix_badge_text')?.value || '',
         pixBadgeColor: settings.find((s: any) => s.key === 'checkout_pix_badge_color')?.value || '#ffffff',
         pixBadgeBg: settings.find((s: any) => s.key === 'checkout_pix_badge_bg')?.value || '#10b981',

@@ -27,6 +27,7 @@ export default function PersonalizacaoPage() {
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
     const [alertBg, setAlertBg] = useState('#e64a19')
+    const [alertColor, setAlertColor] = useState('#111111')
 
     // PIX Badge States
     const [pixBadgeText, setPixBadgeText] = useState('')
@@ -43,6 +44,7 @@ export default function PersonalizacaoPage() {
                 const bg = await getCustomization('checkout_bg_color')
                 const alertTxt = await getCustomization('checkout_alert_text')
                 const alertB = await getCustomization('checkout_alert_bg_color')
+                const alertC = await getCustomization('checkout_alert_color')
                 const pText = await getCustomization('checkout_pix_badge_text')
                 const pColor = await getCustomization('checkout_pix_badge_color')
                 const pBg = await getCustomization('checkout_pix_badge_bg')
@@ -60,6 +62,7 @@ export default function PersonalizacaoPage() {
                 if (bg) setBgColor(bg)
                 if (alertTxt) setAlertText(alertTxt)
                 if (alertB) setAlertBg(alertB)
+                if (alertC) setAlertColor(alertC)
                 if (pText) setPixBadgeText(pText)
                 if (pColor) setPixBadgeColor(pColor)
                 if (pBg) setPixBadgeBg(pBg)
@@ -94,6 +97,7 @@ export default function PersonalizacaoPage() {
             await updateCustomization('checkout_bg_color', bgColor)
             await updateCustomization('checkout_alert_text', alertText)
             await updateCustomization('checkout_alert_bg_color', alertBg)
+            await updateCustomization('checkout_alert_color', alertColor)
             await updateCustomization('checkout_pix_badge_text', pixBadgeText)
             await updateCustomization('checkout_pix_badge_color', pixBadgeColor)
             await updateCustomization('checkout_pix_badge_bg', pixBadgeBg)
@@ -226,21 +230,40 @@ export default function PersonalizacaoPage() {
                                 style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #fed7aa', fontSize: '14px', outline: 'none' }}
                             />
                         </div>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#c2410c', marginBottom: '6px' }}>Cor de Fundo da Barra</label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <input
-                                    type="color"
-                                    value={alertBg}
-                                    onChange={(e) => setAlertBg(e.target.value)}
-                                    style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                />
-                                <input
-                                    type="text"
-                                    value={alertBg}
-                                    onChange={(e) => setAlertBg(e.target.value)}
-                                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #fed7aa', borderRadius: '10px', fontSize: '13px' }}
-                                />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#c2410c', marginBottom: '6px' }}>Cor do Texto da Barra</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <input
+                                        type="color"
+                                        value={alertColor}
+                                        onChange={(e) => setAlertColor(e.target.value)}
+                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={alertColor}
+                                        onChange={(e) => setAlertColor(e.target.value)}
+                                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #fed7aa', borderRadius: '10px', fontSize: '13px' }}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#c2410c', marginBottom: '6px' }}>Cor de Fundo da Barra</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <input
+                                        type="color"
+                                        value={alertBg}
+                                        onChange={(e) => setAlertBg(e.target.value)}
+                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
+                                    />
+                                    <input
+                                        type="text"
+                                        value={alertBg}
+                                        onChange={(e) => setAlertBg(e.target.value)}
+                                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #fed7aa', borderRadius: '10px', fontSize: '13px' }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>

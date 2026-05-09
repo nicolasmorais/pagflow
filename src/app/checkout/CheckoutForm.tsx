@@ -38,6 +38,21 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             .then(r => r.ok ? r.json() : null)
             .then(cfg => { if (cfg) setLivePopupEnabled(cfg.isEnabled === true); })
             .catch(() => { /* silently keep SSR default */ });
+
+        // TEST MODE: Force success screen for preview
+        const params = new URLSearchParams(window.location.search);
+        const testMode = params.get('test');
+        if (testMode === 'pix') {
+            setPaymentMethod('pix');
+            setPixData({ 
+                qrCode: '00020126580014br.gov.bcb.pix013688735ef-c3ea-420c-a616-6a4fc9d061a520400005303986', 
+                qrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' 
+            });
+            setDone(true);
+        } else if (testMode === 'card') {
+            setPaymentMethod('card');
+            setDone(true);
+        }
     }, []);
 
     const trackTaboolaEvent = (eventName: string, data: any = {}) => {
@@ -628,27 +643,25 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     }, [paymentMethod, step, isMpLoaded, finalPrice, dados.email, dados.cpf]);
 
     const renderProgressBar = () => (
-        <div className="progress-wrap" style={{ borderBottom: 'none', padding: '0 0 24px 0', background: 'transparent' }}>
+        <div className="progress">
             <div className="progress-inner">
-                <div className="progress-steps">
-                    <div className="prog-step">
-                        <div className={`prog-circle ${step > 1 ? 'done' : step === 1 ? 'active' : 'next'}`}>{step > 1 ? '✓' : '1'}</div>
-                        <div className={`prog-label ${step > 1 ? 'done' : step === 1 ? 'active' : ''}`}>Seus Dados</div>
-                    </div>
-                    {!product?.isDigital && (
-                        <>
-                            <div className={`prog-line ${step > 1 ? 'done' : ''}`}></div>
-                            <div className="prog-step">
-                                <div className={`prog-circle ${step > 2 ? 'done' : step === 2 ? 'active' : 'next'}`}>{step > 2 ? '✓' : '2'}</div>
-                                <div className={`prog-label ${step > 2 ? 'done' : step === 2 ? 'active' : ''}`}>Entrega</div>
-                            </div>
-                        </>
-                    )}
-                    <div className={`prog-line ${step >= (product?.isDigital ? 3 : 2) ? 'done' : ''}`}></div>
-                    <div className="prog-step">
-                        <div className={`prog-circle ${step === 3 ? 'active' : 'next'}`}>{product?.isDigital ? '2' : '3'}</div>
-                        <div className={`prog-label ${step === 3 ? 'active' : ''}`}>Pagamento</div>
-                    </div>
+                <div className="prog-step">
+                    <div className={`prog-dot ${step > 1 ? 'done' : step === 1 ? 'active' : 'next'}`}>{step > 1 ? '✓' : '1'}</div>
+                    <div className={`prog-lbl ${step > 1 ? 'done' : step === 1 ? 'active' : ''}`}>Seus Dados</div>
+                </div>
+                {!product?.isDigital && (
+                    <>
+                        <div className={`prog-line ${step > 1 ? 'done' : ''}`}></div>
+                        <div className="prog-step">
+                            <div className={`prog-dot ${step > 2 ? 'done' : step === 2 ? 'active' : 'next'}`}>{step > 2 ? '✓' : '2'}</div>
+                            <div className={`prog-lbl ${step > 2 ? 'done' : step === 2 ? 'active' : ''}`}>Entrega</div>
+                        </div>
+                    </>
+                )}
+                <div className={`prog-line ${step >= (product?.isDigital ? 3 : 2) ? 'done' : ''}`}></div>
+                <div className="prog-step">
+                    <div className={`prog-dot ${step === 3 ? 'active' : 'next'}`}>{product?.isDigital ? '2' : '3'}</div>
+                    <div className={`prog-lbl ${step === 3 ? 'active' : ''}`}>Pagamento</div>
                 </div>
             </div>
         </div>
@@ -659,30 +672,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             <style dangerouslySetInnerHTML={{
                 __html: `
                 :root {
-                    --bg: ${customization?.bgColor || '#F5F3EE'};
-                    --green: ${customization?.primaryColor || '#1A8C4E'};
-                    --green-btn: ${customization?.buttonColor || '#22A85F'};
-                    --green-btn-hover: ${customization?.primaryColor || '#1A8C4E'};
-                    --red: #B83030;
-                    --red-light: #FDECEA;
+                    ${customization?.primaryColor ? `--green: ${customization.primaryColor};` : ''}
                 }
-                .field.error input, .field.error select { border-color: var(--red) !important; background: var(--red-light); }
-                .error-msg { color: var(--red); font-size: 12px; font-weight: 700; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
             `}} />
-            <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Merriweather:wght@400;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet" />
+            <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
             {loading && <div className="loading-overlay"><div className="loading-spinner"></div><p style={{ marginTop: '20px', fontWeight: 800 }}>Processando...</p></div>}
 
             <div className="header">
-                <div className="header-side"></div>
                 <div className="logo">
                     {customization?.logo ? <img src={customization.logo} alt="Logo" style={{ maxHeight: '42px' }} /> : (customization?.storeName || 'ELABELA')}
                 </div>
-                <div className="header-side">
-                    <div className="secure-badge-subtle">
-                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" /></svg>
-                        <span>PAGAMENTO<br />100% SEGURO</span>
-                    </div>
+                <div className="secure">
+                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                    PAGAMENTO 100% SEGURO
                 </div>
             </div>
 
@@ -699,220 +702,232 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     </div>
 
                     {paymentMethod === 'pix' ? (
-                        <>
-                            <div className="success-hero">
-                                <div className="check-circle-wrapper">
-                                    <svg viewBox="0 0 24 24" fill="none">
-                                        <circle cx="12" cy="12" r="12" fill="#1a6b3a" />
-                                        <path d="M6 12.5l4 4 8-8" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
+                        <div className="pix-page-wrapper">
+                            <div className="success-page-content">
+                                {/* STATUS */}
+                                <div className="status-top">
+                                    <div className="check-circle">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                    <div className="status-title">Pedido reservado!<br />Falta só o pagamento.</div>
+                                    <div className="status-sub" style={{ marginTop: '6px' }}>Escaneie o QR Code ou copie o código abaixo</div>
                                 </div>
-                                <h1>Pedido Reservado!<br />Falta só o pagamento</h1>
-                                <p className="subtitle">Seu pedido está <strong>guardado por {formatTime(timeLeft)}.</strong><br />Finalize agora para garantir o envio hoje.</p>
-                            </div>
 
-                            <div className="urgency-bar">
-                                <div className="urgency-icon">⏰</div>
-                                <div className="urgency-text">
-                                    <div className="title" style={{ color: '#7a4a00' }}>Tempo restante para pagar:</div>
-                                    <div className="desc">Após isso, o pedido é liberado para outro cliente</div>
+                                {/* MAIN CARD */}
+                                <div className="pix-card">
+                                    <div className="qr-section">
+                                        <div className="qr-instruction">Abra o app do banco e escaneie o QR Code</div>
+                                        <div className="qr-wrap">
+                                            {pixData?.qrCodeBase64 ? (
+                                                <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" />
+                                            ) : (
+                                                <div style={{ color: '#ccc', fontSize: '12px' }}>Gerando QR Code...</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="or-divider-pix"><span>OU COPIE O CÓDIGO</span></div>
+
+                                    <div className="code-section">
+                                        <div className="code-box">{pixData?.qrCode || 'Gerando código PIX...'}</div>
+                                        <button
+                                            className={`pix-copy-btn ${copied ? 'copied' : ''}`}
+                                            onClick={() => {
+                                                if (pixData?.qrCode) {
+                                                    navigator.clipboard.writeText(pixData.qrCode);
+                                                    setCopied(true);
+                                                    setTimeout(() => setCopied(false), 3000);
+                                                }
+                                            }}
+                                        >
+                                            {copied ? (
+                                                <>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                                    Código Copiado!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                                    Copiar Código PIX
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="timer-display" style={{ color: timeLeft <= 120 ? '#c0392b' : 'inherit' }}>{formatTime(timeLeft)}</div>
-                            </div>
 
-                            <div className="pix-main-card">
-                                <div className="card-title">Pague com Pix — rápido e fácil</div>
-                                <div className="card-sub">Abra o app do seu banco e escaneie o QR Code abaixo</div>
-                                <div className="qr-wrapper">
-                                    {pixData?.qrCodeBase64 && (
-                                        <div className="qr-frame">
-                                            <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" />
+                                {/* NEXT STEPS */}
+                                <div className="steps-card">
+                                    <div className="steps-title">O que acontece depois?</div>
+                                    <div className="step-row-pix">
+                                        <div className="step-num-pix">1</div>
+                                        <div className="step-text-pix">
+                                            {product?.isDigital ? 'Acesso enviado para seu e-mail' : 'Confirmação por e-mail em minutos'} <span>— assim que o pagamento for identificado em <strong>{dados.email}</strong></span>
+                                        </div>
+                                    </div>
+                                    <div className="step-row-pix">
+                                        <div className="step-num-pix">2</div>
+                                        <div className="step-text-pix">
+                                            {product?.isDigital ? 'Verifique sua caixa de entrada' : 'Separação e envio do pedido'} <span>— {product?.isDigital ? 'o acesso chega em até 5 minutos.' : 'pagamentos até as 15h saem no mesmo dia.'}</span>
+                                        </div>
+                                    </div>
+                                    {!product?.isDigital && (
+                                        <div className="step-row-pix">
+                                            <div className="step-num-pix">3</div>
+                                            <div className="step-text-pix">Código de rastreio por e-mail <span>— acompanhe sua entrega em tempo real</span></div>
                                         </div>
                                     )}
-                                    <div className="or-divider"><span>ou copie o código</span></div>
-                                    <div className="pix-code-box">{pixData?.qrCode || 'Gerando código PIX...'}</div>
-                                    <button
-                                        className={`copy-btn ${copied ? 'copied' : ''}`}
-                                        onClick={() => {
-                                            if (pixData?.qrCode) navigator.clipboard.writeText(pixData.qrCode);
-                                            setCopied(true);
-                                            setTimeout(() => setCopied(false), 3000);
-                                        }}
-                                    >
-                                        <svg className="copy-icon" viewBox="0 0 24 24">
-                                            <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
-                                        </svg>
-                                        {copied ? 'Código Copiado!' : 'Copiar Código Pix'}
-                                    </button>
                                 </div>
-                            </div>
 
-                            <div className="social-proof">
-                                <div className="avatar-group">
-                                    <div className="avatar">MJ</div>
-                                    <div className="avatar">RS</div>
-                                    <div className="avatar">CA</div>
-                                </div>
-                                <div className="social-text">
-                                    <strong>47 pessoas compraram</strong> hoje. Maria de Santos pagou há 3 minutos e {product?.isDigital ? 'já recebeu o acesso no e-mail.' : 'já recebeu a confirmação por e-mail.'}
-                                </div>
-                            </div>
-
-                            <div className="pix-main-card" style={{ marginTop: '12px' }}>
-                                <div className="card-title" style={{ marginBottom: '14px' }}>O que acontece depois?</div>
-                                <div className="step-row">
-                                    <div className="step-num">1</div>
-                                    <div>
-                                        <div className="step-title">{product?.isDigital ? 'Acesso enviado para seu e-mail' : 'Confirmação por e-mail em minutos'}</div>
-                                        <div className="step-desc">{product?.isDigital ? `Assim que o pagamento for detectado, o link de acesso será enviado para ` : `Após o pagamento, você recebe a confirmação do pedido em `}<strong>{dados.email}</strong>.</div>
+                                {/* TRUST */}
+                                <div className="trust-row-pix">
+                                    <div className="trust-item-pix">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                        PIX oficial Banco Central
+                                    </div>
+                                    <div className="trust-item-pix">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                        Dados criptografados
+                                    </div>
+                                    <div className="trust-item-pix">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                        Compra garantida
                                     </div>
                                 </div>
-                                <div className="step-row">
-                                    <div className="step-num">2</div>
-                                    <div>
-                                        <div className="step-title">{product?.isDigital ? 'Verifique sua caixa de entrada' : 'Separação e envio do pedido'}</div>
-                                        <div className="step-desc">{product?.isDigital ? 'O e-mail chega em até 5 minutos. Verifique também sua pasta de Spam ou Promoções.' : 'Pagamentos feitos até as 14h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
-                                    </div>
+
+                                <div className="help-row" style={{ marginTop: '20px' }}>
+                                    <p style={{ fontSize: '13px', color: '#777', textAlign: 'center' }}>
+                                        Precisa de ajuda? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`} style={{ color: '#111', fontWeight: 700, textDecoration: 'none' }}>Entre em contato por e-mail</a>
+                                    </p>
                                 </div>
-                                {!product?.isDigital && (
-                                    <div className="step-row">
-                                        <div className="step-num">3</div>
-                                        <div>
-                                            <div className="step-title">Código de rastreio por e-mail</div>
-                                            <div className="step-desc">Assim que o pedido sair, você recebe o link de rastreio direto no seu e-mail.</div>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
 
-                            <div className="trust-strip-footer">
-                                <div className="trust-item"><div className="trust-dot"></div>Pix oficial do Banco Central</div>
-                                <div className="trust-item"><div className="trust-dot"></div>Dados criptografados</div>
-                                <div className="trust-item"><div className="trust-dot"></div>Compra garantida</div>
-                            </div>
-
-                            <div className="help-row">
-                                <p>Precisa de ajuda? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a></p>
-                            </div>
-                        </>
+                            {/* TOAST */}
+                            <div className={`pix-toast ${copied ? 'show' : ''}`}>✓ Código copiado!</div>
+                        </div>
                     ) : (
                         <div className="card-confirm-page">
-                            {/* HERO */}
-                            <div className="cc-hero">
-                                <div className="cc-confetti-ring">
-                                    <svg viewBox="0 0 88 88" fill="none">
-                                        <circle cx="44" cy="44" r="40" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
-                                        <circle cx="44" cy="44" r="30" fill="rgba(255,255,255,0.15)" />
-                                        <circle cx="44" cy="44" r="22" fill="#fff" />
-                                        <path d="M32 44l8 8 16-16" stroke="#0d6e4a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
+                            <div className="cc-container">
+                                {/* HERO */}
+                                <div className="cc-hero">
+                                    <div className="cc-hero-circle">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                    </div>
+                                    <div className="cc-hero-title">Pagamento Aprovado!<br/>Pedido confirmado.</div>
+                                    <div className="cc-hero-sub" style={{ marginTop: '8px' }}>O comprovante foi enviado para o seu e-mail.</div>
                                 </div>
-                                <h1 className="cc-hero-title">Pagamento Aprovado!<br />Pedido confirmado.</h1>
-                                <p className="cc-hero-sub">Seu cartão foi cobrado com sucesso.<br />Confira os detalhes abaixo.</p>
-                            </div>
 
-                            {/* RECIBO */}
-                            <div className="cc-receipt">
-                                <div className="cc-receipt-header">
-                                    <div className="cc-tag">Aprovado</div>
-                                    <div className="cc-order-id">Pedido <span>#{String(Date.now()).slice(-5)}</span></div>
-                                </div>
-                                <div className="cc-receipt-rows">
-                                    <div className="cc-receipt-row">
-                                        <div className="cc-label">Data</div>
-                                        <div className="cc-value">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+                                {/* ORDER DETAILS */}
+                                <div className="cc-card">
+                                    <div className="cc-card-head">
+                                        <svg width="14" height="14" viewBox="0 0 20 20" fill="var(--green)"><path d="M4 4h12v12H4z" fill="none" stroke="var(--green)" strokeWidth="1.5"/><path d="M8 10l2 2 4-4" stroke="var(--green)" strokeWidth="1.5" strokeLinecap="round" fill="none"/></svg>
+                                        <div className="cc-card-head-title">Detalhes do pedido</div>
                                     </div>
-                                    <div className="cc-receipt-row">
-                                        <div className="cc-label">Método</div>
-                                        <div className="cc-value">Cartão de crédito</div>
-                                    </div>
-                                    <div className="cc-receipt-row">
-                                        <div className="cc-label">Status</div>
-                                        <div className="cc-value cc-green">✓ Aprovado</div>
-                                    </div>
-                                    <div className="cc-receipt-row">
-                                        <div className="cc-label">Confirmação enviada para</div>
-                                        <div className="cc-value" style={{ fontSize: '13px' }}>{dados.email}</div>
-                                    </div>
-                                </div>
-                                <div className="cc-total-row">
-                                    <div className="cc-label">Total cobrado</div>
-                                    <div className="cc-total-value">R$ {(product?.price || 0).toFixed(2).replace('.', ',')}</div>
-                                </div>
-                            </div>
-
-                            {/* CARTÃO VISUAL */}
-                            <div className="cc-card-visual-wrap">
-                                <div className="cc-card-visual">
-                                    <div className="cc-card-chip"></div>
-                                    <div className="cc-card-number">•••• •••• •••• ••••</div>
-                                    <div className="cc-card-bottom">
-                                        <div>
-                                            <div className="cc-card-holder-label">Titular</div>
-                                            <div className="cc-card-holder-name">{(dados.nome || 'TITULAR').toUpperCase()}</div>
+                                    <div className="cc-card-body">
+                                        <div className="cc-detail-row">
+                                            <span className="cc-detail-label">Pedido</span>
+                                            <span className="cc-detail-value">#{String(Date.now()).slice(-5)}</span>
                                         </div>
-                                        <div className="cc-card-flag">
-                                            <div className="cc-card-flag-circles">
-                                                <div className="cc-circle-red"></div>
-                                                <div className="cc-circle-orange"></div>
+                                        <div className="cc-detail-row">
+                                            <span className="cc-detail-label">Data</span>
+                                            <span className="cc-detail-value">{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às {new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
+                                        <div className="cc-detail-row">
+                                            <span className="cc-detail-label">Método</span>
+                                            <span className="cc-detail-value">Cartão de crédito</span>
+                                        </div>
+                                        <div className="cc-detail-row">
+                                            <span className="cc-detail-label">Status</span>
+                                            <span className="cc-detail-value">
+                                                <span className="cc-badge-ok">
+                                                    <svg viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.7 5.3a1 1 0 010 1.4l-7 7a1 1 0 01-1.4 0l-3-3a1 1 0 111.4-1.4L9 11.58l6.3-6.28a1 1 0 011.4 0z" clip-rule="evenodd"/></svg>
+                                                    Aprovado
+                                                </span>
+                                            </span>
+                                        </div>
+                                        <div className="cc-detail-row">
+                                            <span className="cc-detail-label">Total cobrado</span>
+                                            <span className="cc-detail-value green">R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* NEXT STEPS */}
+                                <div className="cc-card">
+                                    <div className="cc-card-head">
+                                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="var(--green)" strokeWidth="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3" strokeLinecap="round"/></svg>
+                                        <div className="cc-card-head-title">O que acontece agora?</div>
+                                    </div>
+                                    <div className="cc-card-body cc-steps">
+                                        <div className="cc-step-row">
+                                            <div className="cc-step-icon">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1-.9-2 2-2z"/>
+                                                    <polyline points="22,6 12,13 2,6"/>
+                                                </svg>
+                                            </div>
+                                            <div className="cc-step-body">
+                                                <div className="cc-step-name">Confirmação por e-mail</div>
+                                                <div className="cc-step-desc">O comprovante do pedido foi enviado agora para o seu e-mail <strong>{dados.email}</strong>.</div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {/* PRÓXIMOS PASSOS */}
-                            <div className="cc-steps-card">
-                                <div className="cc-steps-title">O que acontece agora?</div>
-                                <div className="cc-step-item">
-                                    <div className="cc-step-dot">
-                                        <svg viewBox="0 0 24 24" fill="none"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" fill="#0d6e4a" /></svg>
-                                    </div>
-                                    <div>
-                                        <div className="cc-step-text-title">Confirmação por e-mail</div>
-                                        <div className="cc-step-text-desc">O comprovante do pedido foi enviado para <strong>{dados.email}</strong> agora.</div>
-                                    </div>
-                                </div>
-                                <div className="cc-step-item">
-                                    <div className="cc-step-dot">
-                                        <svg viewBox="0 0 24 24" fill="none"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" fill="#0d6e4a" /></svg>
-                                    </div>
-                                    <div>
-                                        <div className="cc-step-text-title">{product?.isDigital ? 'Acesso imediato' : 'Separação e envio'}</div>
-                                        <div className="cc-step-text-desc">{product?.isDigital ? 'Seu link de acesso será liberado assim que o pagamento for confirmado.' : 'Pedidos confirmados até as 14h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
-                                    </div>
-                                </div>
-                                {!product?.isDigital && (
-                                    <div className="cc-step-item">
-                                        <div className="cc-step-dot">
-                                            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#0d6e4a" /></svg>
+                                        <div className="cc-step-row">
+                                            <div className="cc-step-icon">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                                    <rect x="1" y="3" width="15" height="13" rx="1"/>
+                                                    <path d="M16 8h4l3 5v3h-7V8z"/>
+                                                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                                                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                                                </svg>
+                                            </div>
+                                            <div className="cc-step-body">
+                                                <div className="cc-step-name">{product?.isDigital ? 'Acesso imediato' : 'Separação e envio'}</div>
+                                                <div className="cc-step-desc">{product?.isDigital ? 'Seu acesso chega em até 5 minutos no e-mail cadastrado.' : 'Pedidos confirmados até 15h saem no mesmo dia. Após isso, no próximo dia útil.'}</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div className="cc-step-text-title">Rastreio por e-mail</div>
-                                            <div className="cc-step-text-desc">Assim que o pedido sair, você recebe o código de rastreio direto no e-mail.</div>
-                                        </div>
+
+                                        {!product?.isDigital && (
+                                            <div className="cc-step-row">
+                                                <div className="cc-step-icon">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                                                        <circle cx="12" cy="10" r="3"/>
+                                                    </svg>
+                                                </div>
+                                                <div className="cc-step-body">
+                                                    <div className="cc-step-name">Rastreio por e-mail</div>
+                                                    <div className="cc-step-desc">Assim que o pedido sair, você recebe o código de rastreio diretamente no e-mail.</div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </div>
 
-                            {/* TRUST */}
-                            <div className="cc-trust-row">
-                                <div className="cc-trust-item">
-                                    <svg viewBox="0 0 24 24" fill="#0d6e4a" width="14" height="14"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" /></svg>
-                                    Compra protegida
+                                {/* TRUST */}
+                                <div className="cc-trust-row">
+                                    <div className="cc-trust-item">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                        Compra protegida
+                                    </div>
+                                    <div className="cc-trust-item">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                        Dados criptografados
+                                    </div>
+                                    <div className="cc-trust-item">
+                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                        PCI-DSS
+                                    </div>
                                 </div>
-                                <div className="cc-trust-item">
-                                    <svg viewBox="0 0 24 24" fill="#0d6e4a" width="14" height="14"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" /></svg>
-                                    Dados criptografados
-                                </div>
-                                <div className="cc-trust-item">
-                                    <svg viewBox="0 0 24 24" fill="#0d6e4a" width="14" height="14"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
-                                    PCI DSS
-                                </div>
-                            </div>
 
-                            <div className="cc-help">
-                                Dúvidas? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`}>Entre em contato por e-mail</a>
+                                <div className="help-row" style={{ marginTop: '20px' }}>
+                                    <p style={{ fontSize: '13px', color: '#777', textAlign: 'center' }}>
+                                        Precisa de ajuda? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`} style={{ color: '#111', fontWeight: 700, textDecoration: 'none' }}>Entre em contato por e-mail</a>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -920,289 +935,66 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             ) : (
                 <>
                     {customization?.alertText && (
-                        <div className="header-strip" style={{ backgroundColor: customization.alertBg }}>
+                        <div className="header-strip" style={{ backgroundColor: customization.alertBg, color: customization.alertColor || '#111' }}>
                             {customization.alertText}
                         </div>
                     )}
 
-                    <div className="layout">
-                        <div className="form-col">
+                    {renderProgressBar()}
 
-                            <div className={`screen ${step === 1 ? 'active' : ''}`}>
-                                <div className="card">
-                                    {renderProgressBar()}
-                                    <div className="step-title"><span className="step-icon">👤</span> Passo 1 — Seus Dados</div>
-                                    <div className="step-sub">Precisamos de algumas informações básicas para continuar.</div>
-
-                                    <div className={`field ${errors.nome ? 'error' : ''}`}>
-                                        <label className="field-label">Seu Nome Completo *</label>
-                                        <input type="text" placeholder="Ex: Maria Aparecida Santos" value={dados.nome} onChange={e => { setDados({ ...dados, nome: e.target.value }); if (errors.nome) setErrors(prev => { const n = { ...prev }; delete n.nome; return n; }); }} />
-                                        {errors.nome && <div className="error-msg">⚠️ {errors.nome}</div>}
-                                    </div>
-                                    <div className={`field ${errors.email ? 'error' : ''}`}>
-                                        <label className="field-label">Seu E-mail *</label>
-                                        <input type="email" placeholder="Ex: maria@email.com" value={dados.email} onChange={e => { setDados({ ...dados, email: e.target.value }); if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; }); }} />
-                                        {errors.email && <div className="error-msg">⚠️ {errors.email}</div>}
-                                        <div className="field-hint-label">Vamos enviar a confirmação do pedido para este e-mail</div>
-                                    </div>
-                                    <div className={`field ${errors.telefone ? 'error' : ''}`}>
-                                        <label className="field-label">Seu WhatsApp *</label>
-                                        <input type="text" placeholder="(11) 91234-5678" maxLength={15} value={dados.telefone} onChange={e => handleMaskDados('telefone', e.target.value, formatTel)} />
-                                        {errors.telefone && <div className="error-msg">⚠️ {errors.telefone}</div>}
-                                        <div className="field-hint-label">{product?.isDigital ? 'Para receber o acesso ao produto via WhatsApp' : 'Para avisar quando o produto sair para entrega'}</div>
-                                    </div>
-                                    {!customization?.disableCpf && (
-                                        <div className={`field ${errors.cpf ? 'error' : ''}`}>
-                                            <label className="field-label">CPF <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(Opcional)</span></label>
-                                            <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
-                                            {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
-                                            <div className="field-hint-label">Necessário apenas para emissão de nota fiscal</div>
-                                        </div>
-                                    )}
-
-                                    <button className="main-cta" onClick={validateStep1} disabled={step1Loading}>
-                                        {step1Loading ? 'Carregando...' : (product?.isDigital ? 'Continuar para o Pagamento →' : 'Continuar para a Entrega →')}
-                                    </button>
-
-                                </div>
+                    <div className="page">
+                        <div className="prod-summary">
+                            <div className="prod-img">
+                                {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
                             </div>
-
-                            <div className={`screen ${step === 2 ? 'active' : ''}`}>
-                                <div className="card">
-                                    {renderProgressBar()}
-                                    <button className="back-link" onClick={() => setStep(1)}>← Voltar</button>
-                                    <div className="step-title"><span className="step-icon">📦</span> Passo 2 — Endereço de Entrega</div>
-                                    <div className="step-sub">Para onde vamos enviar o seu produto?</div>
-
-                                    <div className={`field ${errors.destinatario ? 'error' : ''}`}>
-                                        <label className="field-label">Destinatário *</label>
-                                        <input type="text" placeholder="Nome de quem vai receber" value={endereco.destinatario} onChange={e => handleMaskEnd('destinatario', e.target.value, v => v)} />
-                                        {errors.destinatario && <div className="error-msg">⚠️ {errors.destinatario}</div>}
-                                    </div>
-
-                                    <div className={`field ${errors.cep ? 'error' : ''}`}>
-                                        <label className="field-label">CEP *</label>
-                                        <div className="cep-row">
-                                            <input type="text" placeholder="00000-000" maxLength={9} value={endereco.cep} onChange={e => handleCEPChange(e.target.value)} style={{ width: '100%' }} />
-                                        </div>
-                                        {errors.cep && <div className="error-msg">⚠️ {errors.cep}</div>}
-                                        <div className="field-hint-label">Digite seu CEP e o endereço será preenchido automaticamente</div>
-                                    </div>
-
-                                    <div className={`field ${errors.rua ? 'error' : ''}`}>
-                                        <label className="field-label">Rua ou Avenida *</label>
-                                        <input type="text" placeholder="Ex: Rua das Flores" value={endereco.rua} onChange={e => handleMaskEnd('rua', e.target.value, v => v)} />
-                                        {errors.rua && <div className="error-msg">⚠️ {errors.rua}</div>}
-                                    </div>
-
-                                    <div className="two-col">
-                                        <div className={`field ${errors.numero ? 'error' : ''}`}>
-                                            <label className="field-label">Número *</label>
-                                            <input type="text" placeholder="Ex: 123" value={endereco.numero} onChange={e => handleMaskEnd('numero', e.target.value, v => v)} />
-                                            {errors.numero && <div className="error-msg">⚠️ {errors.numero}</div>}
-                                        </div>
-                                        <div className="field">
-                                            <label className="field-label">Complemento</label>
-                                            <input type="text" placeholder="Apto, Bloco... (opcional)" value={endereco.complemento} onChange={e => handleMaskEnd('complemento', e.target.value, v => v)} />
-                                        </div>
-                                    </div>
-
-                                    <div className="two-col">
-                                        <div className={`field ${errors.bairro ? 'error' : ''}`}>
-                                            <label className="field-label">Bairro *</label>
-                                            <input type="text" placeholder="Nome do bairro" value={endereco.bairro} onChange={e => handleMaskEnd('bairro', e.target.value, v => v)} />
-                                            {errors.bairro && <div className="error-msg">⚠️ {errors.bairro}</div>}
-                                        </div>
-                                        <div className={`field ${errors.cidade ? 'error' : ''}`}>
-                                            <label className="field-label">Cidade *</label>
-                                            <input type="text" placeholder="Ex: São Paulo" value={endereco.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
-                                            {errors.cidade && <div className="error-msg">⚠️ {errors.cidade}</div>}
-                                        </div>
-                                    </div>
-
-                                    <div className={`field ${errors.estado ? 'error' : ''}`}>
-                                        <label className="field-label">Estado *</label>
-                                        <select value={endereco.estado} onChange={e => handleMaskEnd('estado', e.target.value, v => v)}>
-                                            <option value="">Selecione o seu estado</option>
-                                            {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
-                                                <option key={uf} value={uf}>{uf}</option>
-                                            ))}
-                                        </select>
-                                        {errors.estado && <div className="error-msg">⚠️ {errors.estado}</div>}
-                                    </div>
-
-                                    <div className="frete-title">🚚 Escolha a forma de entrega:</div>
-                                    {(shippingRules && shippingRules.length > 0 ? shippingRules : [
-                                        { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' }
-                                    ]).map((opt: any, idx: number) => (
-                                        <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
-                                            <div className="frete-radio"></div>
-                                            <div className="frete-info">
-                                                <div className="frete-name">{opt.name} {opt.price === 0 && <span className="frete-tag">GRÁTIS</span>}</div>
-                                                <div className="frete-days">📅 {opt.delivery_time}</div>
-                                            </div>
-                                            <div className={`frete-price ${opt.price === 0 ? 'free' : ''}`}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
-                                        </div>
-                                    ))}
-
-                                    <button className="main-cta" style={{ marginTop: '10px' }} onClick={validateStep2}>
-                                        Ir para Pagamento →
-                                    </button>
-
-                                </div>
+                            <div className="prod-info">
+                                <div className="prod-name">{product?.name || "Produto"}</div>
+                                <div className="prod-qty">Quantidade: 1</div>
                             </div>
-
-                            <div className={`screen ${step === 3 ? 'active' : ''}`}>
-                                <div className="card">
-                                    {renderProgressBar()}
-                                    <button className="back-link" onClick={() => setStep(product?.isDigital ? 1 : 2)}>← Voltar</button>
-                                    <div className="step-title"><span className="step-icon">💳</span> Passo {product?.isDigital ? '2' : '3'} — Pagamento</div>
-                                    <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
-
-                                    {pixDiscountVal > 0 && exitDiscount === null && (
-                                        <div style={{
-                                            background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                                            border: '1.5px solid #6ee7b7',
-                                            borderRadius: '12px',
-                                            padding: '12px 16px',
-                                            marginBottom: '16px',
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            gap: '10px',
-                                            fontSize: '13.5px',
-                                            color: '#065f46',
-                                            fontWeight: 500,
-                                            lineHeight: 1.5
-                                        }}>
-                                            <span style={{ fontSize: '18px', flexShrink: 0 }}>⚡</span>
-                                            <div>
-                                                <strong>Atenção:</strong> Pagando por PIX sai por{' '}
-                                                <strong style={{ color: '#059669' }}>
-                                                    R$ {(basePrice * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
-                                                </strong>
-                                                {product?.isDigital ? (
-                                                    <> + acesso <strong>IMEDIATO</strong> <span style={{ opacity: 0.85 }}>(no seu e-mail)</span> ⚡</>
-                                                ) : (
-                                                    <> + frete rápido <strong>GRÁTIS</strong> <span style={{ opacity: 0.85 }}>(chega em 5 dias úteis)</span> 🚀</>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className={`pay-card ${paymentMethod === 'pix' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix')}>
-                                        <div className="pay-radio"></div>
-                                        <div className="pay-icon-wrap">
-                                            <img src="https://pub-da9fd1c19b8e45d691d67626b9a7ba6d.r2.dev/1775608116043-2889edc1-1a70-456a-a32c-e3f050102347.png" alt="Pix" style={{ width: '32px', height: 'auto' }} />
-                                        </div>
-                                        <div className="pay-info">
-                                            <div className="pay-name">PIX</div>
-                                            <div className="pay-desc">Pague pelo aplicativo do banco — aprovação na hora</div>
-                                        </div>
-                                        {pixDiscountVal > 0 && exitDiscount === null && <div className="pay-tag green">{customization?.pixDiscount}% OFF</div>}
-                                    </div>
-                                    {paymentMethod === 'pix' && (
-                                        <div className="pix-box" style={{ marginTop: '12px', background: 'transparent', border: 'none', padding: '0' }}>
-                                            <div className="pix-box-body" style={{ color: '#444', fontSize: '13.5px', textAlign: 'left', padding: '0 8px', marginBottom: '12px', fontWeight: '500' }}>
-                                                A confirmação de pagamento é realizada em poucos minutos. Utilize o aplicativo do seu banco para pagar.
-                                            </div>
-                                            <div className="pix-expire-box">
-                                                <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '22px', flexShrink: 0 }}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z" /></svg>
-                                                <span>O código PIX expira em 10 minutos. Pague dentro do prazo para garantir sua compra.</span>
-                                            </div>
-                                            <button className="main-cta" onClick={() => finalizar()} disabled={loading} style={{ marginTop: '16px', background: 'var(--green-btn)', width: '100%', height: '54px' }}>
-                                                {loading ? 'Processando...' : 'GERAR PIX'}
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    <div className={`pay-card ${paymentMethod === 'card' ? 'selected' : ''}`} onClick={() => setPaymentMethod('card')} style={{ marginTop: '12px' }}>
-                                        <div className="pay-radio"></div>
-                                        <div className="pay-icon-wrap">💳</div>
-                                        <div className="pay-info">
-                                            <div className="pay-name">Cartão de Crédito</div>
-                                            <div className="pay-desc">Parcele em até 10x sem juros</div>
-                                        </div>
-                                        <div className="pay-tag gray">Até 10x</div>
-                                    </div>
-
-                                    {paymentMethod === 'card' && (
-                                        <div id="paymentBrick_container" style={{ marginTop: '16px' }}></div>
-                                    )}
-
-
-
-
-
-
-                                </div>
-                            </div>
-
+                            <div className="prod-price">R$ {finalPrice.toFixed(2).replace('.', ',')}</div>
                         </div>
 
-                        <div className="aside">
-                            <div className="product-card">
-                                <div
-                                    className="product-card-title"
-                                    onClick={() => setIsSummaryOpen(!isSummaryOpen)}
-                                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
-                                >
-                                    {isSummaryOpen ? (
-                                        <span>Resumo do Pedido</span>
-                                    ) : (
-                                        <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'space-between', fontSize: '15px', marginRight: '12px' }}>
-                                            <span style={{ fontWeight: 600, color: '#333', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>
-                                                {product?.name || "Kit Gel DermaVit"}
-                                            </span>
-                                            <span style={{ fontWeight: 800, color: '#1e293b' }}>
-                                                R$ {finalPrice.toFixed(2).replace('.', ',')}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <svg
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        style={{
-                                            width: '20px',
-                                            height: '20px',
-                                            flexShrink: 0,
-                                            transform: isSummaryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                            transition: 'transform 0.3s ease'
-                                        }}
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                                    </svg>
+                        <div className={`screen ${step === 1 ? 'active' : ''}`}>
+                            <div className="card">
+                                <div className="step-title">Identificação</div>
+                                <div className="step-sub">Precisamos de algumas informações básicas para continuar.</div>
+
+                                <div className={`field ${errors.nome ? 'error' : ''}`}>
+                                    <label className="field-label">Seu Nome Completo *</label>
+                                    <input type="text" placeholder="Ex: Maria Aparecida Santos" value={dados.nome} onChange={e => { setDados({ ...dados, nome: e.target.value }); if (errors.nome) setErrors(prev => { const n = { ...prev }; delete n.nome; return n; }); }} />
+                                    {errors.nome && <div className="error-msg">⚠️ {errors.nome}</div>}
                                 </div>
-                                {isSummaryOpen && (
-                                    <>
-                                        <div className="product-row">
-                                            <div className="product-img">
-                                                {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
-                                            </div>
-                                            <div>
-                                                <div className="product-name">{product?.name || "Kit Gel DermaVit 3 Unidades"}</div>
-                                                <div className="product-qty">Quantidade: 1</div>
-                                            </div>
-                                        </div>
-                                        <div className="price-table">
-                                            <div className="price-row"><span>Subtotal</span><span>R$ {basePrice.toFixed(2).replace('.', ',')}</span></div>
-                                            {!product?.isDigital && (
-                                                <div className="price-row"><span>Frete</span><span className="green">{shipping.price === 0 ? 'GRÁTIS' : `R$ ${shipping.price.toFixed(2).replace('.', ',')}`}</span></div>
-                                            )}
-                                            {product?.isDigital && (
-                                                <div className="price-row"><span>Entrega Digital</span><span className="green">GRÁTIS</span></div>
-                                            )}
-                                            {step === 3 && paymentMethod === 'pix' && pixDiscountVal > 0 && (
-                                                <div className="price-row"><span>Desconto PIX ({customization?.pixDiscount}%)</span><span className="green">− R$ {(basePrice * pixDiscountVal).toFixed(2).replace('.', ',')}</span></div>
-                                            )}
-                                            <div className="price-row total"><span>Total</span><span>R$ {finalPrice.toFixed(2).replace('.', ',')}</span></div>
-                                        </div>
-                                    </>
+                                <div className={`field ${errors.email ? 'error' : ''}`}>
+                                    <label className="field-label">Seu E-mail *</label>
+                                    <input type="email" placeholder="Ex: maria@email.com" value={dados.email} onChange={e => { setDados({ ...dados, email: e.target.value }); if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; }); }} />
+                                    {errors.email && <div className="error-msg">⚠️ {errors.email}</div>}
+                                    <div className="field-hint">Vamos enviar a confirmação do pedido para este e-mail</div>
+                                </div>
+                                <div className={`field ${errors.telefone ? 'error' : ''}`}>
+                                    <label className="field-label">Seu WhatsApp *</label>
+                                    <input type="text" placeholder="(11) 91234-5678" maxLength={15} value={dados.telefone} onChange={e => handleMaskDados('telefone', e.target.value, formatTel)} />
+                                    {errors.telefone && <div className="error-msg">⚠️ {errors.telefone}</div>}
+                                    <div className="field-hint">{product?.isDigital ? 'Para receber o acesso ao produto via WhatsApp' : 'Para avisar quando o produto sair para entrega'}</div>
+                                </div>
+                                {!customization?.disableCpf && (
+                                    <div className={`field ${errors.cpf ? 'error' : ''}`}>
+                                        <label className="field-label">CPF <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(Opcional)</span></label>
+                                        <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
+                                        {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
+                                        <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
+                                    </div>
                                 )}
+
+                                <button className="cta-btn" onClick={validateStep1} disabled={step1Loading}>
+                                    {step1Loading ? 'Carregando...' : (product?.isDigital ? 'Continuar para o Pagamento' : 'Continuar para a Entrega')}
+                                </button>
+                                <div className="cta-note">
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                    Pagamento processado com segurança via Mercado Pago
+                                </div>
                             </div>
 
-                            <div className="trust-card">
+                            <div className="trust-section">
                                 {product?.isDigital ? (
                                     [
                                         { icon: '✅', title: 'Acesso Imediato', p: 'Assim que o pagamento é confirmado, o link chega no seu e-mail em minutos. Sem espera, sem frete.' },
@@ -1210,11 +1002,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros. Ambiente criptografado e certificado.' }
                                     ].map((t, i) => (
                                         <div key={i} className="trust-item">
-                                            <div className="trust-icon">{t.icon}</div>
-                                            <div className="trust-text">
-                                                <div className="stars">★★★★★</div>
-                                                <h4>{t.title}</h4>
-                                                <p>{t.p}</p>
+                                            <div className="t-icon">{t.icon}</div>
+                                            <div className="t-body">
+                                                <div className="t-stars">★★★★★</div>
+                                                <div className="t-name">{t.title}</div>
+                                                <div className="t-desc">{t.p}</div>
                                             </div>
                                         </div>
                                     ))
@@ -1225,27 +1017,188 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' }
                                     ].map((t, i) => (
                                         <div key={i} className="trust-item">
-                                            <div className="trust-icon">{t.icon}</div>
-                                            <div className="trust-text">
-                                                <div className="stars">★★★★★</div>
-                                                <h4>{t.title}</h4>
-                                                <p>{t.p}</p>
+                                            <div className="t-icon">{t.icon}</div>
+                                            <div className="t-body">
+                                                <div className="t-stars">★★★★★</div>
+                                                <div className="t-name">{t.title}</div>
+                                                <div className="t-desc">{t.p}</div>
                                             </div>
                                         </div>
                                     ))
                                 )}
                             </div>
-
-
                         </div>
+
+                        <div className={`screen ${step === 2 ? 'active' : ''}`}>
+                            <div className="card">
+                                <button className="back-btn" onClick={() => setStep(1)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                    Voltar
+                                </button>
+                                <div className="step-title">Passo 2 — Endereço de Entrega</div>
+                                <div className="step-sub">Para onde vamos enviar o seu produto?</div>
+
+                                <div className={`field ${errors.cep ? 'error' : ''}`}>
+                                    <label className="field-label">CEP *</label>
+                                    <div className="cep-row">
+                                        <input type="text" placeholder="00000-000" maxLength={9} value={endereco.cep} onChange={e => handleCEPChange(e.target.value)} />
+                                    </div>
+                                    {errors.cep && <div className="error-msg">⚠️ {errors.cep}</div>}
+                                </div>
+                                <div className={`field ${errors.rua ? 'error' : ''}`}>
+                                    <label className="field-label">Rua ou Avenida *</label>
+                                    <input type="text" placeholder="Ex: Rua das Flores" value={endereco.rua} onChange={e => handleMaskEnd('rua', e.target.value, v => v)} />
+                                    {errors.rua && <div className="error-msg">⚠️ {errors.rua}</div>}
+                                </div>
+                                <div className="two">
+                                    <div className={`field ${errors.numero ? 'error' : ''}`}>
+                                        <label className="field-label">Número *</label>
+                                        <input type="text" placeholder="Ex: 123" value={endereco.numero} onChange={e => handleMaskEnd('numero', e.target.value, v => v)} />
+                                        {errors.numero && <div className="error-msg">⚠️ {errors.numero}</div>}
+                                    </div>
+                                    <div className="field">
+                                        <label className="field-label">Complemento</label>
+                                        <input type="text" placeholder="Apto, Bloco..." value={endereco.complemento} onChange={e => handleMaskEnd('complemento', e.target.value, v => v)} />
+                                    </div>
+                                </div>
+                                <div className="two">
+                                    <div className={`field ${errors.bairro ? 'error' : ''}`}>
+                                        <label className="field-label">Bairro *</label>
+                                        <input type="text" placeholder="Nome do bairro" value={endereco.bairro} onChange={e => handleMaskEnd('bairro', e.target.value, v => v)} />
+                                        {errors.bairro && <div className="error-msg">⚠️ {errors.bairro}</div>}
+                                    </div>
+                                    <div className={`field ${errors.cidade ? 'error' : ''}`}>
+                                        <label className="field-label">Cidade *</label>
+                                        <input type="text" placeholder="Ex: São Paulo" value={endereco.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
+                                        {errors.cidade && <div className="error-msg">⚠️ {errors.cidade}</div>}
+                                    </div>
+                                </div>
+                                <div className={`field ${errors.estado ? 'error' : ''}`}>
+                                    <label className="field-label">Estado *</label>
+                                    <select value={endereco.estado} onChange={e => handleMaskEnd('estado', e.target.value, v => v)}>
+                                        <option value="">Selecione o estado</option>
+                                        {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                                            <option key={uf} value={uf}>{uf}</option>
+                                        ))}
+                                    </select>
+                                    {errors.estado && <div className="error-msg">⚠️ {errors.estado}</div>}
+                                </div>
+
+                                <div className="section-label">🚚 Formas de Entrega</div>
+                                {(shippingRules && shippingRules.length > 0 ? shippingRules : [
+                                    { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' }
+                                ]).map((opt: any, idx: number) => (
+                                    <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
+                                        <div className="frad"></div>
+                                        <div>
+                                            <div className="frete-name" style={{display:'flex', alignItems:'center'}}>{opt.name} {opt.price === 0 && <span className="tag-free">GRÁTIS</span>}</div>
+                                            <div className="frete-sub">{opt.delivery_time}</div>
+                                        </div>
+                                        <div className={`frete-cost ${opt.price === 0 ? 'free' : ''}`} style={{marginLeft:'auto'}}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
+                                    </div>
+                                ))}
+
+                                <button className="cta-btn" style={{ marginTop: '14px' }} onClick={validateStep2}>
+                                    Ir para Pagamento
+                                </button>
+                                <div className="cta-note">
+                                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                    Pagamento processado com segurança via Mercado Pago
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={`screen ${step === 3 ? 'active' : ''}`}>
+                            <div className="card">
+                                <button className="back-btn" onClick={() => setStep(product?.isDigital ? 1 : 2)}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                                    Voltar
+                                </button>
+                                <div className="step-title">Passo {product?.isDigital ? '2' : '3'} — Pagamento</div>
+                                <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
+
+                                {pixDiscountVal > 0 && exitDiscount === null && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                                        border: '1.5px solid #6ee7b7',
+                                        borderRadius: '12px',
+                                        padding: '12px 16px',
+                                        marginBottom: '16px',
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: '10px',
+                                        fontSize: '13.5px',
+                                        color: '#065f46',
+                                        fontWeight: 500,
+                                        lineHeight: 1.5
+                                    }}>
+                                        <span style={{ fontSize: '18px', flexShrink: 0 }}>⚡</span>
+                                        <div>
+                                            <strong>Atenção:</strong> Pagando por PIX sai por{' '}
+                                            <strong style={{ color: '#059669' }}>
+                                                R$ {(basePrice * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
+                                            </strong>
+                                            {product?.isDigital ? (
+                                                <> + acesso <strong>IMEDIATO</strong> <span style={{ opacity: 0.85 }}>(no seu e-mail)</span> ⚡</>
+                                            ) : (
+                                                <> + frete rápido <strong>GRÁTIS</strong> <span style={{ opacity: 0.85 }}>(chega em 5 dias úteis)</span> 🚀</>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className={`pay-opt ${paymentMethod === 'pix' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix')}>
+                                    <div className="prad"></div>
+                                    <div className="pay-icon" style={{color:'#00B69B'}}>
+                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+                                    </div>
+                                    <div style={{flex:1}}>
+                                        <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>PIX <span className="pay-badge g">Aprovação na hora</span></div>
+                                        <div className="pay-desc">Pagamento rápido e seguro</div>
+                                    </div>
+                                </div>
+                                {paymentMethod === 'pix' && (
+                                    <div className="pix-box">
+                                        <p>A confirmação de pagamento é realizada em poucos minutos.<br/>Utilize o aplicativo do seu banco para pagar.</p>
+                                        <button className="cta-btn" onClick={() => finalizar()} disabled={loading} style={{ marginTop: '16px' }}>
+                                            {loading ? 'Processando...' : 'GERAR PIX'}
+                                        </button>
+                                        <div className="cta-note" style={{marginTop:'12px'}}>
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                            Pagamento processado com segurança via Mercado Pago
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className={`pay-opt ${paymentMethod === 'card' ? 'selected' : ''}`} onClick={() => setPaymentMethod('card')} style={{marginTop:'10px'}}>
+                                    <div className="prad"></div>
+                                    <div className="pay-icon" style={{color:'#444'}}>💳</div>
+                                    <div style={{flex:1}}>
+                                        <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>Cartão de Crédito <span className="pay-badge n">Até 10x</span></div>
+                                        <div className="pay-desc">Pague com segurança</div>
+                                    </div>
+                                </div>
+                                {paymentMethod === 'card' && (
+                                    <div className="card-extra">
+                                        <div id="paymentBrick_container" style={{ marginTop: '0px' }}></div>
+                                        <div className="cta-note" style={{marginTop:'12px'}}>
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                            Pagamento processado com segurança via Mercado Pago
+                                        </div>
+                                    </div>
+                                )}
+
+                            </div>
+                        </div>
+
                     </div>
                 </>
             )}
 
             {!customization?.disableWa && (
-                <a className="wa-float" href="https://wa.me/5511999999999" target="_blank" rel="noreferrer">
+                <a className="wa" href="https://wa.me/5511999999999" target="_blank" rel="noreferrer">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.77-.87-2.04-.97s-.47-.15-.67.15-.77.97-.94 1.17-.35.22-.65.07a8.14 8.14 0 01-2.4-1.48 9 9 0 01-1.66-2.07c-.17-.3 0-.46.13-.61l.43-.5c.14-.16.18-.3.27-.5s.05-.37-.02-.52-.67-1.6-.91-2.2c-.24-.57-.49-.5-.67-.5s-.37-.01-.57-.01a1.1 1.1 0 00-.8.37 3.36 3.36 0 00-1.05 2.5 5.84 5.84 0 001.22 3.1 13.38 13.38 0 005.13 4.52c.72.31 1.28.5 1.72.64a4.14 4.14 0 001.9.12 3.08 3.08 0 002.02-1.43 2.5 2.5 0 00.17-1.43c-.07-.12-.27-.19-.57-.34zM12 2a10 10 0 00-8.7 14.93L2 22l5.25-1.38A10 10 0 1012 2z" /></svg>
-                    Precisa de ajuda?
+                    Dúvidas? Fale conosco
                 </a>
             )}
 
