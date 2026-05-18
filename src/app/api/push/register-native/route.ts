@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
         const { token, platform } = await req.json();
         console.log(`[NativePush] Registration received. Platform: ${platform}, Token prefix: ${token?.slice(0, 30)}...`);
 
-        if (!token) {
+        if (!token || typeof token !== 'string' || token.length < 50) {
             return NextResponse.json({ error: "Token inválido" }, { status: 400 });
         }
 

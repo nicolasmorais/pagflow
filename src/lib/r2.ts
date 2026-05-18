@@ -1,21 +1,31 @@
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
 
-const s3 = new S3Client({
-    region: process.env.S3_REGION || "auto",
-    endpoint: process.env.S3_ENDPOINT!,
-    credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY!,
-        secretAccessKey: process.env.S3_SECRET_KEY!,
-    },
-    forcePathStyle: true,
-})
+let s3: S3Client | null = null
+
+function getS3Client(): S3Client | null {
+    if (s3) return s3
+    if (!process.env.S3_ENDPOINT || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
+        return null
+    }
+    s3 = new S3Client({
+        region: process.env.S3_REGION || "auto",
+        endpoint: process.env.S3_ENDPOINT,
+        credentials: {
+            accessKeyId: process.env.S3_ACCESS_KEY,
+            secretAccessKey: process.env.S3_SECRET_KEY,
+        },
+        forcePathStyle: true,
+    })
+    return s3
+}
 
 /**
  * Uploads a JSON backup of an order to R2.
  */
 export async function uploadOrderBackup(order: any) {
-    if (!process.env.S3_BUCKET) {
-        console.warn('S3_BUCKET not configured. Skipping R2 backup.');
+    const client = getS3Client()
+    if (!client || !process.env.S3_BUCKET) {
+        console.warn('R2 not configured. Skipping backup.');
         return;
     }
 
@@ -32,7 +42,7 @@ export async function uploadOrderBackup(order: any) {
             ContentType: 'application/json',
         });
 
-        await s3.send(command);
+        await client.send(command);
         console.log(`✅ [R2 Backup] Uploaded successfully: ${key}`);
         return { success: true, key };
     } catch (error) {
@@ -45,7 +55,8 @@ export async function uploadOrderBackup(order: any) {
  * Uploads a generic file to R2 (e.g., product images).
  */
 export async function uploadFile(file: Buffer, fileName: string, contentType: string) {
-    if (!process.env.S3_BUCKET) return null;
+    const client = getS3Client()
+    if (!client || !process.env.S3_BUCKET) return null;
 
     try {
         const key = `uploads/${Date.now()}_${fileName}`;
@@ -56,7 +67,7 @@ export async function uploadFile(file: Buffer, fileName: string, contentType: st
             ContentType: contentType,
         });
 
-        await s3.send(command);
+        await client.send(command);
 
         // Construct public URL if a custom domain exists or use the default R2 dev domain 
         // Note: R2 needs a public bucket or a worker to serve files if no custom domain is set.

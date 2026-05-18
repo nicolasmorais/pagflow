@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { RotateCcw, Trash2 } from 'lucide-react'
-import { restoreOrder, permanentDeleteOrder } from '../../../../actions'
+import { restoreOrder, permanentDeleteOrder } from '@/app/actions'
 
 export function RestoreButton({ orderId }: { orderId: string }) {
     return (

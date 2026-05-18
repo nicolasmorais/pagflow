@@ -2,8 +2,20 @@
 
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import { checkRateLimit } from '@/lib/rate-limit'
+import { headers } from 'next/headers'
 
 export async function loginAction(formData: FormData) {
+    const headersList = await headers()
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || headersList.get('x-real-ip')
+        || 'unknown'
+
+    const { limited } = checkRateLimit(`login:${ip}`, 5, 60_000)
+    if (limited) {
+        return { error: 'Muitas tentativas. Aguarde 1 minuto.' }
+    }
+
     const password = formData.get('password') as string
 
     const adminPassword = process.env.ADMIN_PASSWORD

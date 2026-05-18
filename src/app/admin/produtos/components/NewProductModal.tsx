@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { X, Plus, Package, DollarSign, Image as ImageIcon, Percent, Loader2 } from 'lucide-react'
-import { createProduct } from '../../../actions'
+import { createProduct } from '@/app/actions'
 
 interface NewProductModalProps {
     onClose: () => void

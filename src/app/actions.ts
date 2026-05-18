@@ -1,10 +1,18 @@
 'use server'
 
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { resend } from '@/lib/resend'
 import { sendWebhook } from '@/lib/webhook-service'
 import { uploadOrderBackup } from '@/lib/r2'
+
+async function requireAdmin() {
+    const cookieStore = await cookies()
+    if (cookieStore.get('admin_auth')?.value !== 'authenticated') {
+        throw new Error('Não autorizado')
+    }
+}
 
 export async function sendConfirmationEmail(orderId: string) {
     try {
@@ -120,6 +128,7 @@ export async function sendConfirmationEmail(orderId: string) {
 }
 
 export async function createOrder(formData: FormData) {
+    await requireAdmin()
     const productId = formData.get('productId') as string
     const fullName = formData.get('fullName') as string
     const email = formData.get('email') as string
@@ -170,6 +179,7 @@ export async function createOrder(formData: FormData) {
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
+    await requireAdmin()
     try {
         const updated = await prisma.order.update({
             where: { id: orderId },
@@ -189,6 +199,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
 }
 
 export async function updatePaymentStatus(orderId: string, paymentStatus: string) {
+    await requireAdmin()
     try {
         const updated = await prisma.order.update({
             where: { id: orderId },
@@ -209,6 +220,7 @@ export async function updatePaymentStatus(orderId: string, paymentStatus: string
 }
 
 export async function sendTrackingEmail(orderId: string) {
+    await requireAdmin()
     try {
         const order = await prisma.order.findUnique({
             where: { id: orderId },
@@ -322,6 +334,7 @@ export async function getEmailLogs(orderId: string) {
 }
 
 export async function updateOrderTracking(orderId: string, trackingCode: string, trackingUrl?: string) {
+    await requireAdmin()
     try {
         await prisma.order.update({
             where: { id: orderId },
@@ -350,6 +363,7 @@ export async function updateOrderTracking(orderId: string, trackingCode: string,
 }
 
 export async function createProduct(formData: FormData): Promise<void> {
+    await requireAdmin()
     const name = formData.get('name') as string
     const priceValue = formData.get('price')
     const price = priceValue ? parseFloat(priceValue as string) : NaN
@@ -388,6 +402,7 @@ export async function createProduct(formData: FormData): Promise<void> {
 }
 
 export async function updateProduct(formData: FormData): Promise<void> {
+    await requireAdmin()
     const id = formData.get('id') as string
     const name = formData.get('name') as string
     const priceValue = formData.get('price')
@@ -438,6 +453,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
 }
 
 export async function duplicateProduct(productId: string): Promise<void> {
+    await requireAdmin()
     try {
         const product = await prisma.product.findUnique({ where: { id: productId } })
         if (!product) throw new Error('Produto não encontrado')
@@ -460,6 +476,7 @@ export async function duplicateProduct(productId: string): Promise<void> {
 }
 
 export async function deleteProduct(productId: string): Promise<void> {
+    await requireAdmin()
     try {
         await prisma.product.delete({ where: { id: productId } })
         revalidatePath('/admin/produtos')
@@ -469,6 +486,7 @@ export async function deleteProduct(productId: string): Promise<void> {
     }
 }
 export async function deleteOrder(orderId: string): Promise<void> {
+    await requireAdmin()
     try {
         await prisma.order.update({ where: { id: orderId }, data: { deletedAt: new Date() } })
         revalidatePath('/admin/pedidos')
@@ -481,6 +499,7 @@ export async function deleteOrder(orderId: string): Promise<void> {
 }
 
 export async function restoreOrder(orderId: string): Promise<void> {
+    await requireAdmin()
     try {
         await prisma.order.update({ where: { id: orderId }, data: { deletedAt: null } })
         revalidatePath('/admin/pedidos')
@@ -493,6 +512,7 @@ export async function restoreOrder(orderId: string): Promise<void> {
 }
 
 export async function permanentDeleteOrder(orderId: string): Promise<void> {
+    await requireAdmin()
     try {
         await prisma.order.delete({ where: { id: orderId } })
         revalidatePath('/admin/pedidos/lixeira')
@@ -504,6 +524,7 @@ export async function permanentDeleteOrder(orderId: string): Promise<void> {
 
 // Customization Actions
 export async function updateCustomization(key: string, value: string) {
+    await requireAdmin()
     try {
         await prisma.customization_settings.upsert({
             where: { key },
@@ -550,6 +571,7 @@ export async function getShippingRules() {
 }
 
 export async function createShippingRule(data: { name: string, price: number, delivery_time: string }) {
+    await requireAdmin()
     try {
         await prisma.shipping_rules.create({
             data: {
@@ -569,6 +591,7 @@ export async function createShippingRule(data: { name: string, price: number, de
 }
 
 export async function updateShippingRule(id: string, data: { name: string, price: number, delivery_time: string, is_active: boolean }) {
+    await requireAdmin()
     try {
         await prisma.shipping_rules.update({
             where: { id },
@@ -589,6 +612,7 @@ export async function updateShippingRule(id: string, data: { name: string, price
 }
 
 export async function deleteShippingRule(id: string) {
+    await requireAdmin()
     try {
         await prisma.shipping_rules.delete({ where: { id } })
         revalidatePath('/checkout')
@@ -601,6 +625,7 @@ export async function deleteShippingRule(id: string) {
 }
 
 export async function setupInitialShipping() {
+    await requireAdmin()
     try {
         const count = await prisma.shipping_rules.count()
         if (count === 0) {
@@ -621,6 +646,7 @@ export async function setupInitialShipping() {
 }
 
 export async function createOrderBump(formData: FormData) {
+    await requireAdmin()
     const name = formData.get('name') as string
     const price = Number(formData.get('price'))
     const description = formData.get('description') as string
@@ -641,6 +667,7 @@ export async function createOrderBump(formData: FormData) {
 }
 
 export async function deleteOrderBump(id: string) {
+    await requireAdmin()
     await prisma.orderBump.delete({
         where: { id }
     })
@@ -648,6 +675,7 @@ export async function deleteOrderBump(id: string) {
 }
 
 export async function toggleOrderBump(id: string, isActive: boolean) {
+    await requireAdmin()
     await prisma.orderBump.update({
         where: { id },
         data: { isActive }
@@ -667,6 +695,7 @@ export async function getEmailTemplates() {
 }
 
 export async function createEmailTemplate(data: { name: string, slug: string, subject: string, content: string }) {
+    await requireAdmin()
     try {
         const template = await prisma.emailTemplate.create({
             data
@@ -680,6 +709,7 @@ export async function createEmailTemplate(data: { name: string, slug: string, su
 }
 
 export async function updateEmailTemplate(id: string, data: { name?: string, slug?: string, subject?: string, content?: string, isActive?: boolean }) {
+    await requireAdmin()
     try {
         const template = await prisma.emailTemplate.update({
             where: { id },
@@ -694,6 +724,7 @@ export async function updateEmailTemplate(id: string, data: { name?: string, slu
 }
 
 export async function deleteEmailTemplate(id: string) {
+    await requireAdmin()
     try {
         await prisma.emailTemplate.delete({
             where: { id }
@@ -770,6 +801,7 @@ export async function sendAdminNotification(type: 'sale' | 'pix_pending', order:
 }
 
 export async function getTotalRevenue() {
+    await requireAdmin()
     try {
         const paidOrders = await prisma.order.findMany({
             where: {
@@ -785,8 +817,35 @@ export async function getTotalRevenue() {
     }
 }
 
+export async function getTodayRevenue() {
+    await requireAdmin()
+    try {
+        const now = new Date()
+        const startOfDay = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+        startOfDay.setHours(0, 0, 0, 0)
+
+        const paidOrders = await prisma.order.findMany({
+            where: {
+                paymentStatus: 'pago',
+                deletedAt: null,
+                createdAt: { gte: startOfDay },
+            },
+            select: { totalPrice: true }
+        })
+
+        return {
+            revenue: paidOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0),
+            orders: paidOrders.length,
+        }
+    } catch (error) {
+        console.error("Error fetching today revenue:", error)
+        return { revenue: 0, orders: 0 }
+    }
+}
+
 
 export async function testPushNotificationAction() {
+    await requireAdmin()
     try {
         await sendAdminPush('🔔 Teste de Notificação', 'Sua integração de push está funcionando perfeitamente!', '/admin/notificacoes');
         return { success: true };
@@ -797,6 +856,7 @@ export async function testPushNotificationAction() {
 }
 
 export async function clearAllSubscriptionsAction() {
+    await requireAdmin()
     try {
         await prisma.pushSubscription.deleteMany();
         revalidatePath('/admin/notificacoes');
@@ -808,6 +868,7 @@ export async function clearAllSubscriptionsAction() {
 }
 
 export async function backupAllPaidOrders() {
+    await requireAdmin()
     try {
         const { prisma } = await import('@/lib/prisma');
         const { uploadOrderBackup } = await import('@/lib/r2');

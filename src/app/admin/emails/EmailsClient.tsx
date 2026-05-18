@@ -77,37 +77,287 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
     const handleCreateDefaults = async () => {
         const defaults = [
             {
-                name: 'Confirmação de Compra',
+                name: 'Compra Aprovada',
                 slug: 'confirmation',
                 subject: 'Pedido Aprovado! #{{orderId}}',
-                content: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; border: 1px solid #e2e8f0; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
-    <div style="background: #0075ff; padding: 40px 20px; text-align: center; color: white;">
-        <h1 style="margin: 0; font-size: 28px; font-weight: 800;">Tudo pronto!</h1>
-        <p style="opacity: 0.9; margin-top: 10px; font-size: 16px;">Olá, {{firstName}}, sua compra foi confirmada com sucesso.</p>
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#059669,#10b981);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">✅</div>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pagamento Aprovado!</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, seu pedido foi confirmado.</p>
     </div>
-    <div style="padding: 40px;">
-        <div style="margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px;">
-            <p style="font-size: 14px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px;">Detalhes do Produto</p>
-            <h2 style="font-size: 20px; color: #1e293b; margin: 0;">{{productName}}</h2>
-            <p style="font-size: 16px; font-weight: 700; color: #0075ff; margin-top: 5px;">R$ {{totalPrice}}</p>
+
+    <!-- Body -->
+    <div style="padding:32px;">
+
+        <!-- Order Info -->
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#059669;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
+            <p style="margin:0;font-size:20px;font-weight:800;color:#065f46;">#{{orderId}}</p>
         </div>
-        <div style="background: #f8fafc; padding: 25px; border-radius: 16px; border: 1px solid #f1f5f9;">
-            <p style="font-size: 14px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px;">Endereço de Entrega</p>
-            <p style="margin: 0; line-height: 1.6; color: #475569;">
-                {{rua}}, {{numero}}<br>
-                {{bairro}}<br>
-                {{cidade}} - CEP: {{cep}}
-            </p>
+
+        <!-- Product -->
+        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:20px;margin-bottom:20px;">
+            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Produto</p>
+            <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">{{productName}}</h2>
+            <p style="margin:6px 0 0;font-size:22px;font-weight:900;color:#059669;">R$ {{totalPrice}}</p>
         </div>
-        <div style="margin-top: 40px; text-align: center;">
-            <p style="font-size: 14px; color: #64748b; margin-bottom: 20px;">Qualquer dúvida, estamos à disposição!</p>
-            <div style="font-weight: 800; color: #1e293b; font-size: 18px;">Equipe PagFlow</div>
+
+        <!-- Payment -->
+        <div style="margin-bottom:24px;">
+            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Pagamento</p>
+            <p style="margin:0;font-size:14px;font-weight:700;color:#0f172a;">{{paymentMethod}}</p>
+        </div>
+
+        <!-- Address -->
+        <div style="background:#f8fafc;border-radius:12px;padding:18px;margin-bottom:28px;">
+            <p style="margin:0 0 10px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Endereço de Entrega</p>
+            <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">{{fullAddress}}</p>
+        </div>
+
+        <p style="margin:0;text-align:center;font-size:14px;color:#64748b;">Qualquer dúvida, responda este e-mail.</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
+    </div>
+
+</div>
+</body>
+</html>`
+            },
+            {
+                name: 'Compra Recusada',
+                slug: 'rejected',
+                subject: 'Pagamento não aprovado - Pedido #{{orderId}}',
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#dc2626,#ef4444);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">❌</div>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pagamento Não Aprovado</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, houve um problema com seu pagamento.</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:32px;">
+
+        <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#dc2626;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
+            <p style="margin:0;font-size:20px;font-weight:800;color:#991b1b;">#{{orderId}}</p>
+        </div>
+
+        <div style="margin-bottom:24px;">
+            <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0f172a;">O que aconteceu?</h2>
+            <p style="margin:0;font-size:14px;color:#64748b;line-height:1.6;">Seu pagamento não foi aprovado pela operadora. Isso pode acontecer por diversos motivos:</p>
+            <ul style="margin:12px 0 0;padding-left:20px;font-size:14px;color:#64748b;line-height:1.8;">
+                <li>Dados do cartão incorretos</li>
+                <li>Limite insuficiente</li>
+                <li>Cartão bloqueado para compras online</li>
+                <li>Senha incorreta</li>
+            </ul>
+        </div>
+
+        <div style="background:#f8fafc;border-radius:12px;padding:20px;margin-bottom:28px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Produto</p>
+            <h3 style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">{{productName}}</h3>
+            <p style="margin:6px 0 0;font-size:18px;font-weight:900;color:#0f172a;">R$ {{totalPrice}}</p>
+        </div>
+
+        <div style="text-align:center;margin-bottom:20px;">
+            <p style="margin:0;font-size:14px;color:#64748b;">Você pode tentar novamente com outro cartão ou método de pagamento.</p>
         </div>
     </div>
-    <div style="background: #f1f5f9; padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;">
-        <p>© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
+
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
     </div>
-</div>`
+
+</div>
+</body>
+</html>`
+            },
+            {
+                name: 'PIX Pendente',
+                slug: 'pix_pending',
+                subject: 'Seu PIX está aguardando pagamento - #{{orderId}}',
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#d97706,#f59e0b);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⏳</div>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">PIX Aguardando Pagamento</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, finalize seu pagamento via PIX.</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:32px;">
+
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#d97706;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
+            <p style="margin:0;font-size:20px;font-weight:800;color:#92400e;">#{{orderId}}</p>
+        </div>
+
+        <div style="margin-bottom:24px;">
+            <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0f172a;">Como pagar com PIX:</h2>
+            <ol style="margin:0;padding-left:20px;font-size:14px;color:#475569;line-height:2;">
+                <li>Abra o aplicativo do seu banco</li>
+                <li>Escolha a opção <strong>PIX</strong></li>
+                <li>Escaneie o QR Code ou cole o código copia e cola</li>
+                <li>Confirme o pagamento</li>
+            </ol>
+        </div>
+
+        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:20px;margin-bottom:20px;">
+            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Produto</p>
+            <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">{{productName}}</h2>
+            <p style="margin:6px 0 0;font-size:22px;font-weight:900;color:#d97706;">R$ {{totalPrice}}</p>
+        </div>
+
+        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:24px;text-align:center;">
+            <p style="margin:0;font-size:13px;color:#92400e;font-weight:700;">⏰ O PIX expira em 30 minutos. Pague agora para garantir seu pedido!</p>
+        </div>
+    </div>
+
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
+    </div>
+
+</div>
+</body>
+</html>`
+            },
+            {
+                name: 'Código de Rastreio',
+                slug: 'tracking',
+                subject: 'Seu pedido foi enviado! 📦 #{{orderId}}',
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#2563eb,#3b82f6);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">📦</div>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pedido Enviado!</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, seu pedido está a caminho!</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:32px;">
+
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
+            <p style="margin:0;font-size:20px;font-weight:800;color:#1e40af;">#{{orderId}}</p>
+        </div>
+
+        <!-- Tracking Code -->
+        <div style="background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px;padding:24px;margin-bottom:20px;text-align:center;">
+            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Código de Rastreio</p>
+            <p style="margin:0;font-size:24px;font-weight:900;color:#0f172a;letter-spacing:0.05em;">{{trackingCode}}</p>
+        </div>
+
+        <!-- Tracking Button -->
+        <div style="text-align:center;margin-bottom:24px;">
+            <a href="{{trackingUrl}}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;padding:14px 36px;border-radius:12px;font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+                Rastrear Meu Pedido
+            </a>
+            <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">Clique no botão para acompanhar sua entrega</p>
+        </div>
+
+        <div style="margin-bottom:24px;">
+            <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0f172a;">Ou rastreie manualmente:</h2>
+            <ol style="margin:0;padding-left:20px;font-size:14px;color:#475569;line-height:2;">
+                <li>Acesse o site dos <strong>Correios</strong> ou transportadora</li>
+                <li>Cole o código de rastreio acima</li>
+                <li>Acompanhe a entrega em tempo real</li>
+            </ol>
+        </div>
+
+        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:20px;margin-bottom:20px;">
+            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Produto</p>
+            <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">{{productName}}</h2>
+        </div>
+
+        <!-- Address -->
+        <div style="background:#f8fafc;border-radius:12px;padding:18px;margin-bottom:28px;">
+            <p style="margin:0 0 10px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Endereço de Entrega</p>
+            <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">{{fullAddress}}</p>
+        </div>
+    </div>
+
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
+    </div>
+
+</div>
+</body>
+</html>`
+            },
+            {
+                name: 'Pedido Entregue',
+                slug: 'delivered',
+                subject: 'Seu pedido foi entregue! 🎉 #{{orderId}}',
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#7c3aed,#8b5cf6);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🎉</div>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pedido Entregue!</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, seu pedido foi entregue com sucesso.</p>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:32px;">
+
+        <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#7c3aed;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
+            <p style="margin:0;font-size:20px;font-weight:800;color:#5b21b6;">#{{orderId}}</p>
+        </div>
+
+        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:20px;margin-bottom:20px;">
+            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Produto Entregue</p>
+            <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">{{productName}}</h2>
+        </div>
+
+        <div style="background:#faf5ff;border-radius:12px;padding:24px;margin-bottom:28px;text-align:center;">
+            <p style="margin:0 0 12px;font-size:14px;color:#5b21b6;font-weight:700;">Avalie sua experiência!</p>
+            <p style="margin:0;font-size:13px;color:#7c3aed;line-height:1.6;">Sua opinião nos ajuda a melhorar. Se tiver qualquer dúvida ou problema, responda este e-mail.</p>
+        </div>
+
+        <div style="text-align:center;">
+            <p style="margin:0;font-size:14px;color:#64748b;">Obrigado por comprar conosco! 💜</p>
+            <p style="margin:8px 0 0;font-size:16px;font-weight:800;color:#0f172a;">Equipe PagFlow</p>
+        </div>
+    </div>
+
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
+    </div>
+
+</div>
+</body>
+</html>`
             }
         ];
 
@@ -122,13 +372,24 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
         <div style={{ display: 'flex', height: 'calc(100vh - 40px)', margin: '-20px', background: '#f8fafc', overflow: 'hidden' }}>
             {/* Sidebar List */}
             <div style={{ width: '350px', background: 'white', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', boxShadow: '10px 0 30px rgba(0,0,0,0.02)' }}>
-                <div style={{ padding: '32px 24px', borderBottom: '1px solid #f1f5f9' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>E-mails</h2>
-                        <button onClick={handleNew} style={{ background: '#0075ff', color: 'white', border: 'none', borderRadius: '12px', padding: '10px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 700, boxShadow: '0 4px 12px rgba(0, 117, 255, 0.2)' }}>
-                            <Plus size={18} /> Novo
+                <div style={{ padding: '24px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 }}>E-mails</h2>
+                        <button onClick={handleNew} style={{ background: '#0f172a', color: 'white', border: 'none', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', fontWeight: 700 }}>
+                            <Plus size={14} /> Novo
                         </button>
                     </div>
+                    <button onClick={handleCreateDefaults} style={{
+                        width: '100%', padding: '10px', borderRadius: '10px', border: '1px dashed #e2e8f0',
+                        background: '#f8fafc', color: '#64748b', fontSize: '12px', fontWeight: 700,
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        transition: 'all 0.15s',
+                    }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = '#0f172a'; e.currentTarget.style.color = '#0f172a' }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}
+                    >
+                        <Plus size={14} /> Gerar templates padrão
+                    </button>
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
@@ -216,7 +477,7 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                 {/* Editor Surface */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '40px' }}>
                     {!showPreview ? (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '40px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
                                 {/* Info Section */}
                                 <div style={{ padding: '32px', background: 'white', border: '1px solid #e2e8f0', borderRadius: '24px' }}>

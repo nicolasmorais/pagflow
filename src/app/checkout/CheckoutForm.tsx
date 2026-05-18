@@ -186,7 +186,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             const response = await fetch(`https://viacep.com.br/ws/${c}/json/`);
             const data = await response.json();
             if (!data.erro) {
-                setEndereco(prev => ({ ...prev, rua: data.logradouro, bairro: data.bairro, city: data.localidade, estado: data.uf }));
+                setEndereco(prev => ({ ...prev, rua: data.logradouro, bairro: data.bairro, cidade: data.localidade, estado: data.uf }));
             }
         } catch (e) { }
     };
@@ -782,6 +782,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     {renderProgressBar()}
 
                     <div className="page">
+                        <div className="layout">
+                        <div className="form-col">
                         <div className="prod-summary">
                             <div className="prod-img">
                                 {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
@@ -833,6 +835,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
                             </div>
 
+                        </div>
+
+                        {/* Sidebar Trust Badges - Desktop Only */}
+                        <aside className="aside">
                             <div className="trust-section">
                                 {product?.isDigital ? (
                                     [
@@ -866,6 +872,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     ))
                                 )}
                             </div>
+                        </aside>
+
+                        </div>
                         </div>
 
                         <div className={`screen ${step === 2 ? 'active' : ''}`}>

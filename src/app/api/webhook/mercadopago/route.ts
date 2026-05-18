@@ -14,7 +14,7 @@ import crypto from "crypto";
  */
 function validateMpSignature(req: NextRequest, rawDataId: string | null): boolean {
     const secret = process.env.MP_WEBHOOK_SECRET;
-    if (!secret) return true; // Skip if secret not configured
+    if (!secret) return false; // Reject if secret not configured
 
     const xSignature = req.headers.get("x-signature");
     const xRequestId = req.headers.get("x-request-id");

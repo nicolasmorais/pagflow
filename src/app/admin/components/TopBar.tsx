@@ -1,100 +1,109 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import { getTotalRevenue } from '@/app/actions'
-
-import { Menu } from 'lucide-react'
+import { getTodayRevenue } from '@/app/actions'
+import { DollarSign, ShoppingCart, TrendingUp, Menu } from 'lucide-react'
 
 export default function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     const [todayStr, setTodayStr] = useState('')
-    const [revenue, setRevenue] = useState(0)
+    const [data, setData] = useState<{ revenue: number; orders: number } | null>(null)
 
     useEffect(() => {
-        // Run on client side to avoid hydration mismatch
         const d = new Date()
         const formatted = new Intl.DateTimeFormat('pt-BR', {
             weekday: 'long',
             day: 'numeric',
             month: 'long',
-            year: 'numeric'
         }).format(d)
         setTodayStr(formatted)
 
-        // Fetch paid revenue
-        getTotalRevenue().then(res => setRevenue(res || 0))
+        getTodayRevenue().then(res => setData(res))
     }, [])
 
     if (!todayStr) return null
 
-    const GOAL = 10000;
-    const progress = Math.min((revenue / GOAL) * 100, 100);
+    const revenue = data?.revenue || 0
+    const orders = data?.orders || 0
+    const avg = orders > 0 ? revenue / orders : 0
 
     return (
         <div className="topbar-container" style={{
-            padding: '22px 32px',
+            padding: '16px 32px',
             background: '#fff',
-            borderBottom: '1px solid var(--admin-sidebar-border)',
+            borderBottom: '1px solid #f1f5f9',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             position: 'sticky',
             top: 0,
-            zIndex: 90
+            zIndex: 90,
+            gap: '16px',
         }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
                 <button
                     onClick={onToggleSidebar}
                     className="mobile-only"
                     style={{
                         background: '#f1f5f9',
                         border: 'none',
-                        width: '40px',
-                        height: '40px',
+                        width: '38px',
+                        height: '38px',
                         borderRadius: '10px',
-                        display: 'none', // Managed by CSS
+                        display: 'none',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        color: '#0f172a'
+                        color: '#0f172a',
+                        flexShrink: 0,
                     }}
                 >
-                    <Menu size={20} />
+                    <Menu size={18} />
                 </button>
-                <span className="topbar-greeting" style={{ fontSize: '15px', color: '#94a3b8', fontWeight: 500 }}>
-                    Olá, <strong style={{ color: '#0f172a', fontWeight: 700 }}>Nicolas Morais braga!</strong> Hoje é {todayStr}
-                </span>
+                <div style={{ minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Hoje</p>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', fontWeight: 700, textTransform: 'capitalize' }}>{todayStr}</p>
+                </div>
             </div>
 
-            {/* Revenue Progress Bar */}
-            <div className="topbar-progress" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(revenue)}
-                    </span>
+            <div className="topbar-stats" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <DollarSign size={16} color="#16a34a" strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>Vendas Hoje</p>
+                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(revenue)}
+                        </p>
+                    </div>
                 </div>
 
-                <div className="topbar-progress-line" style={{
-                    width: '180px',
-                    height: '10px',
-                    background: '#f1f5f9',
-                    borderRadius: '5px',
-                    overflow: 'hidden',
-                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
-                }}>
-                    <div style={{
-                        height: '100%',
-                        width: `${progress}%`,
-                        background: 'linear-gradient(90deg, #3b82f6, #10b981)',
-                        borderRadius: '5px',
-                        transition: 'width 1s ease-in-out'
-                    }} />
+                <div style={{ width: '1px', height: '28px', background: '#f1f5f9' }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ShoppingCart size={16} color="#3b82f6" strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>Pedidos Pagos</p>
+                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{orders}</p>
+                    </div>
                 </div>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: '#10b981' }}>
-                    10k
-                </span>
+
+                <div style={{ width: '1px', height: '28px', background: '#f1f5f9' }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#faf5ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <TrendingUp size={16} color="#8b5cf6" strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>Ticket Médio</p>
+                        <p style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(avg)}
+                        </p>
+                    </div>
+                </div>
             </div>
-
         </div>
     )
 }
-

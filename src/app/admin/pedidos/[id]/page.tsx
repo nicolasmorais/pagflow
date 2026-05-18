@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
-import { deleteOrder } from '../../../actions'
+import { deleteOrder } from '@/app/actions'
 import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
 

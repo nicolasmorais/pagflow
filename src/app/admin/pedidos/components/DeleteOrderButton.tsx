@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Trash2 } from 'lucide-react'
-import { deleteOrder } from '../../../actions'
+import { deleteOrder } from '@/app/actions'
 
 export default function DeleteOrderButton({ orderId }: { orderId: string }) {
     const handleDelete = async (e: React.FormEvent) => {

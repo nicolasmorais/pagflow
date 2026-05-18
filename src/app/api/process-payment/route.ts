@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MercadoPagoConfig, Payment, CardToken } from "mercadopago";
+import { MercadoPagoConfig, Payment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -58,14 +58,7 @@ export async function POST(req: NextRequest) {
             hasBump: Array.isArray(selectedBumpIds) && selectedBumpIds.length > 0,
             selectedBumps: Array.isArray(selectedBumpIds) ? selectedBumpIds : [],
             product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined,
-            utmSource: orderData.utmSource || null,
-            utmMedium: orderData.utmMedium || null,
-            utmCampaign: orderData.utmCampaign || null,
-            utmTerm: orderData.utmTerm || null,
-            utmContent: orderData.utmContent || null,
-            utmPlacement: orderData.utmPlacement || null,
-            utmId: orderData.utmId || null,
-            utmCreativeName: orderData.utmCreativeName || null,
+            // UTM fields are not in the Order schema. To persist them, add columns to the Order model.
         };
 
         let order;

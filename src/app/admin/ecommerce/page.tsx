@@ -1,301 +1,229 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, CheckCircle2, AlertCircle, Loader2, Truck, DollarSign, Clock } from 'lucide-react'
+import { Plus, Trash2, Edit2, Check, X, Loader2, Truck, Clock, Package } from 'lucide-react'
 import { getShippingRules, createShippingRule, updateShippingRule, deleteShippingRule, setupInitialShipping } from '@/app/actions'
-
-export const dynamic = 'force-dynamic';
 
 export default function EcommercePage() {
     const [rules, setRules] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const [isEditing, setIsEditing] = useState<string | null>(null)
-    const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
+    const [editingId, setEditingId] = useState<string | null>(null)
 
-    // Form states
-    const [name, setName] = useState('')
-    const [price, setPrice] = useState('0')
-    const [deliveryTime, setDeliveryTime] = useState('')
+    // Quick create
+    const [qName, setQName] = useState('')
+    const [qPrice, setQPrice] = useState('')
+    const [qTime, setQTime] = useState('')
 
-    useEffect(() => {
-        loadRules()
-    }, [])
+    // Edit form
+    const [eName, setEName] = useState('')
+    const [ePrice, setEPrice] = useState('')
+    const [eTime, setETime] = useState('')
+
+    useEffect(() => { loadRules() }, [])
 
     async function loadRules() {
         setLoading(true)
         try {
-            const data = await getShippingRules()
+            let data = await getShippingRules()
             if (data.length === 0) {
-                // If no rules, try to setup initial ones
                 await setupInitialShipping()
-                const seeded = await getShippingRules()
-                setRules(seeded)
-            } else {
-                setRules(data)
+                data = await getShippingRules()
             }
-        } catch (error) {
-            console.error('Error loading rules:', error)
-        } finally {
-            setLoading(false)
-        }
+            setRules(data)
+        } catch (e) { console.error(e) }
+        finally { setLoading(false) }
     }
 
-    const resetForm = () => {
-        setName('')
-        setPrice('0')
-        setDeliveryTime('')
-        setIsEditing(null)
-    }
-
-    const handleSave = async (e: React.FormEvent) => {
+    async function handleCreate(e: React.FormEvent) {
         e.preventDefault()
+        if (!qName.trim() || !qPrice.trim()) return
         setSaving(true)
-        setStatus(null)
-
         try {
-            if (isEditing) {
-                await updateShippingRule(isEditing, {
-                    name,
-                    price: parseFloat(price),
-                    delivery_time: deliveryTime,
-                    is_active: true
-                })
-                setStatus({ type: 'success', message: 'Frete atualizado com sucesso!' })
-            } else {
-                await createShippingRule({
-                    name,
-                    price: parseFloat(price),
-                    delivery_time: deliveryTime
-                })
-                setStatus({ type: 'success', message: 'Novo frete criado com sucesso!' })
-            }
-            resetForm()
+            await createShippingRule({ name: qName.trim(), price: parseFloat(qPrice.replace(',', '.')), delivery_time: qTime.trim() || 'A definir' })
+            setQName(''); setQPrice(''); setQTime('')
             await loadRules()
-            setTimeout(() => setStatus(null), 3000)
-        } catch (error: any) {
-            setStatus({ type: 'error', message: error.message || 'Erro ao salvar frete' })
-        } finally {
-            setSaving(false)
-        }
+        } catch (err: any) { alert(err.message) }
+        finally { setSaving(false) }
     }
 
-    const handleEdit = (rule: any) => {
-        setIsEditing(rule.id)
-        setName(rule.name)
-        setPrice(rule.price.toString())
-        setDeliveryTime(rule.delivery_time || '')
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+    function startEdit(rule: any) {
+        setEditingId(rule.id)
+        setEName(rule.name)
+        setEPrice(rule.price.toString())
+        setETime(rule.delivery_time || '')
     }
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Tem certeza que deseja excluir esta opção de frete?')) return
-
+    async function handleUpdate() {
+        if (!editingId || !eName.trim()) return
+        setSaving(true)
         try {
-            await deleteShippingRule(id)
-            setStatus({ type: 'success', message: 'Frete excluído com sucesso!' })
+            await updateShippingRule(editingId, { name: eName.trim(), price: parseFloat(ePrice.replace(',', '.')), delivery_time: eTime.trim(), is_active: true })
+            setEditingId(null)
             await loadRules()
-        } catch (error: any) {
-            setStatus({ type: 'error', message: error.message || 'Erro ao excluir frete' })
-        }
+        } catch (err: any) { alert(err.message) }
+        finally { setSaving(false) }
     }
 
-    if (loading && rules.length === 0) {
+    async function handleDelete(id: string) {
+        if (!confirm('Excluir esta opção de frete?')) return
+        try { await deleteShippingRule(id); await loadRules() } catch (err: any) { alert(err.message) }
+    }
+
+    if (loading) {
         return (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-                <Loader2 className="animate-spin" size={32} color="#4f46e5" />
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '40vh' }}>
+                <Loader2 size={28} color="#0f172a" style={{ animation: 'spin 1s linear infinite' }} />
             </div>
         )
     }
 
     return (
-        <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px 0' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '32px' }}>
+        <div style={{ width: '100%', paddingBottom: '60px' }}>
+            <style jsx>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
-                {/* Form Section */}
-                <div>
-                    <div style={{
-                        background: '#fff',
-                        borderRadius: '20px',
-                        padding: '32px',
-                        border: '1px solid #e2e8f0',
-                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
-                        position: 'sticky',
-                        top: '20px'
-                    }}>
-                        <header style={{ marginBottom: '24px' }}>
-                            <h2 style={{ fontSize: '18px', fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <Trash2 size={20} color="#4f46e5" />
-                                {isEditing ? 'Editar Frete' : 'Novo Frete'}
-                            </h2>
-                        </header>
-
-                        <form onSubmit={handleSave}>
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Nome do Frete *</label>
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    placeholder="Ex: Entrega Expressa"
-                                    required
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
-                                />
-                            </div>
-
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Preço (R$) *</label>
-                                <div style={{ position: 'relative' }}>
-                                    <div style={{ position: 'absolute', left: '12px', top: '12px', color: '#94a3b8' }}>R$</div>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        value={price}
-                                        onChange={(e) => setPrice(e.target.value)}
-                                        required
-                                        style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: '24px' }}>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Tempo Estimado</label>
-                                <input
-                                    type="text"
-                                    value={deliveryTime}
-                                    onChange={(e) => setDeliveryTime(e.target.value)}
-                                    placeholder="Ex: 2 a 5 dias úteis"
-                                    style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
-                                />
-                            </div>
-
-                            {status && (
-                                <div style={{
-                                    padding: '12px',
-                                    borderRadius: '10px',
-                                    marginBottom: '20px',
-                                    fontSize: '13px',
-                                    background: status.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                                    color: status.type === 'success' ? '#16a34a' : '#dc2626',
-                                    border: `1px solid ${status.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px'
-                                }}>
-                                    {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
-                                    {status.message}
-                                </div>
-                            )}
-
-                            <div style={{ display: 'flex', gap: '10px' }}>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    style={{
-                                        flex: 2,
-                                        padding: '12px',
-                                        background: '#4f46e5',
-                                        color: '#fff',
-                                        borderRadius: '10px',
-                                        border: 'none',
-                                        fontWeight: '600',
-                                        cursor: saving ? 'not-allowed' : 'pointer',
-                                        display: 'flex',
-                                        justifyContent: 'center',
-                                        alignItems: 'center',
-                                        gap: '8px'
-                                    }}
-                                >
-                                    {saving ? <Loader2 className="animate-spin" size={18} /> : isEditing ? 'Atualizar' : 'Salvar Frete'}
-                                </button>
-                                {isEditing && (
-                                    <button
-                                        type="button"
-                                        onClick={resetForm}
-                                        style={{
-                                            flex: 1,
-                                            padding: '12px',
-                                            background: '#f1f5f9',
-                                            color: '#475569',
-                                            borderRadius: '10px',
-                                            border: 'none',
-                                            fontWeight: '600',
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        Cancelar
-                                    </button>
-                                )}
-                            </div>
-                        </form>
+            {/* Header */}
+            <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                        <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Frete</h1>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8', fontWeight: 500 }}>{rules.length} opções configuradas</p>
                     </div>
                 </div>
 
-                {/* List Section */}
-                <div>
-                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        Opções de Frete Ativas
-                        <span style={{ fontSize: '12px', fontWeight: '500', padding: '2px 8px', background: '#e0e7ff', color: '#4338ca', borderRadius: '12px' }}>{rules.length}</span>
-                    </h3>
+                {/* Quick Create */}
+                <form onSubmit={handleCreate} style={{
+                    display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap',
+                    background: '#fff', border: '1px solid #f1f5f9', borderRadius: '14px',
+                    padding: '10px 12px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                }}>
+                    <input value={qName} onChange={e => setQName(e.target.value)} placeholder="Nome do frete" required
+                        style={{ flex: '1 1 160px', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '13px', color: '#0f172a', outline: 'none', fontWeight: 500 }} />
+                    <div style={{ position: 'relative', flex: '0 1 120px' }}>
+                        <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#94a3b8', fontWeight: 700 }}>R$</span>
+                        <input value={qPrice} onChange={e => setQPrice(e.target.value)} placeholder="0,00" required
+                            style={{ width: '100%', padding: '10px 14px 10px 36px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '13px', color: '#0f172a', outline: 'none', fontWeight: 600 }} />
+                    </div>
+                    <input value={qTime} onChange={e => setQTime(e.target.value)} placeholder="Prazo (ex: 5 dias)"
+                        style={{ flex: '1 1 140px', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '13px', color: '#0f172a', outline: 'none', fontWeight: 500 }} />
+                    <button type="submit" disabled={saving || !qName.trim() || !qPrice.trim()}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '10px 20px', borderRadius: '10px', border: 'none',
+                            background: '#0f172a', color: '#fff', fontSize: '13px', fontWeight: 700,
+                            cursor: saving ? 'wait' : 'pointer', opacity: (!qName.trim() || !qPrice.trim()) ? 0.4 : 1,
+                            whiteSpace: 'nowrap', transition: 'all 0.15s',
+                        }}>
+                        {saving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Plus size={16} />}
+                        Criar
+                    </button>
+                </form>
+            </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                        {rules.map((rule) => (
+            {/* List */}
+            {rules.length === 0 ? (
+                <div style={{
+                    background: '#fff', border: '1px solid #f1f5f9', borderRadius: '18px',
+                    padding: '60px 40px', textAlign: 'center',
+                }}>
+                    <div style={{ width: '64px', height: '64px', background: '#f8fafc', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                        <Package size={28} color="#cbd5e1" />
+                    </div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', margin: '0 0 8px' }}>Nenhum frete configurado</h3>
+                    <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Use o campo acima para criar sua primeira opção.</p>
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {rules.map(rule => {
+                        const isEditing = editingId === rule.id
+                        return (
                             <div key={rule.id} style={{
-                                background: '#fff',
-                                padding: '20px',
-                                borderRadius: '16px',
-                                border: '1px solid #e2e8f0',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                transition: 'all 0.2s'
+                                background: '#fff', border: isEditing ? '1px solid #0f172a' : '1px solid #f1f5f9',
+                                borderRadius: '14px', padding: isEditing ? '16px' : '14px 16px',
+                                transition: 'all 0.15s',
                             }}>
-                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Truck size={20} color="#64748b" />
-                                    </div>
+                                {isEditing ? (
+                                    /* Edit Mode */
                                     <div>
-                                        <h4 style={{ fontSize: '15px', fontWeight: '600', color: '#1e293b', margin: 0 }}>{rule.name}</h4>
-                                        <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-                                            <span style={{ fontSize: '13px', color: '#22c55e', fontWeight: '600', display: 'center', alignItems: 'center', gap: '4px' }}>
-                                                <DollarSign size={14} />
-                                                {parseFloat(rule.price) === 0 ? 'Grátis' : `R$ ${parseFloat(rule.price).toFixed(2).replace('.', ',')}`}
-                                            </span>
-                                            <span style={{ fontSize: '13px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                <Clock size={14} />
-                                                {rule.delivery_time}
-                                            </span>
+                                        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                                            <input value={eName} onChange={e => setEName(e.target.value)} placeholder="Nome"
+                                                style={{ flex: '1 1 160px', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '13px', color: '#0f172a', outline: 'none', fontWeight: 500 }} />
+                                            <div style={{ position: 'relative', flex: '0 1 120px' }}>
+                                                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#94a3b8', fontWeight: 700 }}>R$</span>
+                                                <input value={ePrice} onChange={e => setEPrice(e.target.value)} placeholder="0,00"
+                                                    style={{ width: '100%', padding: '10px 14px 10px 36px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '13px', color: '#0f172a', outline: 'none', fontWeight: 600 }} />
+                                            </div>
+                                            <input value={eTime} onChange={e => setETime(e.target.value)} placeholder="Prazo"
+                                                style={{ flex: '1 1 140px', padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', fontSize: '13px', color: '#0f172a', outline: 'none', fontWeight: 500 }} />
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                            <button onClick={() => setEditingId(null)} style={{
+                                                padding: '8px 16px', borderRadius: '8px', border: '1px solid #e2e8f0',
+                                                background: '#fff', color: '#475569', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                                            }}>Cancelar</button>
+                                            <button onClick={handleUpdate} disabled={saving} style={{
+                                                padding: '8px 16px', borderRadius: '8px', border: 'none',
+                                                background: '#0f172a', color: '#fff', fontSize: '12px', fontWeight: 700,
+                                                cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px',
+                                            }}>
+                                                {saving ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <Check size={14} />}
+                                                Salvar
+                                            </button>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        onClick={() => handleEdit(rule)}
-                                        style={{ padding: '8px', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', color: '#64748b' }}
-                                    >
-                                        <Edit2 size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(rule.id)}
-                                        style={{ padding: '8px', borderRadius: '8px', border: '1px solid #fecaca', background: '#fff', cursor: 'pointer', color: '#ef4444' }}
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
+                                ) : (
+                                    /* View Mode */
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
+                                            <div style={{
+                                                width: '38px', height: '38px', borderRadius: '10px',
+                                                background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                            }}>
+                                                <Truck size={18} color="#64748b" />
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rule.name}</h4>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '2px' }}>
+                                                    <span style={{ fontSize: '12px', fontWeight: 800, color: parseFloat(rule.price) === 0 ? '#059669' : '#0f172a' }}>
+                                                        {parseFloat(rule.price) === 0 ? 'Grátis' : `R$ ${parseFloat(rule.price).toFixed(2).replace('.', ',')}`}
+                                                    </span>
+                                                    {rule.delivery_time && (
+                                                        <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                            <Clock size={11} /> {rule.delivery_time}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                            <button onClick={() => startEdit(rule)} style={{
+                                                width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #e2e8f0',
+                                                background: '#fff', color: '#64748b', cursor: 'pointer', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
+                                            }}
+                                                onMouseEnter={e => { e.currentTarget.style.borderColor = '#0f172a'; e.currentTarget.style.color = '#0f172a' }}
+                                                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}
+                                            >
+                                                <Edit2 size={14} />
+                                            </button>
+                                            <button onClick={() => handleDelete(rule.id)} style={{
+                                                width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #fee2e2',
+                                                background: '#fff', color: '#ef4444', cursor: 'pointer', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
+                                            }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2' }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        ))}
-
-                        {rules.length === 0 && !loading && (
-                            <div style={{ padding: '40px', textAlign: 'center', background: '#f8fafc', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
-                                <Truck size={32} color="#94a3b8" style={{ margin: '0 auto 12px' }} />
-                                <p style={{ color: '#64748b', fontSize: '14px' }}>Nenhuma regra de frete configurada.</p>
-                            </div>
-                        )}
-                    </div>
+                        )
+                    })}
                 </div>
-
-            </div>
+            )}
         </div>
     )
 }

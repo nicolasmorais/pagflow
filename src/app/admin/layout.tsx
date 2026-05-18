@@ -4,138 +4,120 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-    Home,
+    BarChart3,
     ShoppingCart,
-    ShoppingBag,
     Package,
     Truck,
-    Megaphone,
     Target,
     Sparkles,
-    Settings,
-    Activity,
-    LogOut,
-    Bell,
     Mail,
-    ChevronDown,
-    BarChart3,
-    Shield,
-    Zap
+    Settings,
+    Bell,
+    LogOut,
+    Menu,
+    X
 } from 'lucide-react'
+import TopBar from './components/TopBar'
 import './admin.css'
 
+const menuSections = [
+    {
+        label: 'Visão Geral',
+        items: [
+            { icon: BarChart3, label: 'Dashboard', href: '/admin' },
+            { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
+        ]
+    },
+    {
+        label: 'Catálogo',
+        items: [
+            { icon: Package, label: 'Produtos', href: '/admin/produtos' },
+            { icon: Truck, label: 'Frete', href: '/admin/ecommerce' },
+            { icon: Sparkles, label: 'Order Bumps', href: '/admin/ordem' },
+        ]
+    },
+    {
+        label: 'Marketing',
+        items: [
+            { icon: Target, label: 'Pixels', href: '/admin/marketing' },
+            { icon: Mail, label: 'E-mails', href: '/admin/emails' },
+            { icon: Sparkles, label: 'Personalização', href: '/admin/personalizacao' },
+        ]
+    },
+    {
+        label: 'Sistema',
+        items: [
+            { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
+            { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },
+        ]
+    },
+]
 
-const SidebarItem = ({ icon: Icon, label, href, active, count }: {
-    icon: any,
-    label: string,
-    href: string,
-    active: boolean,
-    count?: number
-}) => {
-    return (
-        <Link
-            href={href}
-            className={`nav-item ${active ? 'active' : ''}`}
-        >
-            <div className="nav-icon-box">
-                <Icon className="nav-item-icon" />
-            </div>
-            <span>{label}</span>
-            {count !== undefined && count > 0 && (
-                <span className="nav-count">{count}</span>
-            )}
-        </Link>
-    )
-}
-
-import TopBar from './components/TopBar'
-import { Search } from 'lucide-react'
-
-export default function AdminLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-
-    const menuItems = [
-        { icon: BarChart3, label: 'Dashboard', href: '/admin' },
-        { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
-        { icon: Package, label: 'Lista de Produtos', href: '/admin/produtos' },
-        { icon: Truck, label: 'Configurações de Frete', href: '/admin/ecommerce' },
-        { icon: Target, label: 'Pixel de Marketing', href: '/admin/marketing' },
-        { icon: Sparkles, label: 'Order Bumps', href: '/admin/ordem' },
-        { icon: Mail, label: 'Automação de E-mails', href: '/admin/emails' },
-        { icon: Sparkles, label: 'Personalização', href: '/admin/personalizacao' },
-        { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
-        { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },
-    ]
-
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
     return (
         <div className="admin-layout" style={{ fontFamily: '"Space Grotesk", "Nunito", sans-serif' }}>
-
             <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-            {/* Sidebar Overlay (Mobile) */}
+            {/* Mobile Overlay */}
             {isSidebarOpen && (
-                <div
-                    className="sidebar-overlay"
-                    onClick={() => setIsSidebarOpen(false)}
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background: 'rgba(0,0,0,0.5)',
-                        backdropFilter: 'blur(4px)',
-                        zIndex: 95
-                    }}
-                />
+                <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
             )}
 
-            <aside className={`sidebar ${isSidebarOpen ? 'mobile-open' : 'desktop-only'}`}>
-                <div className="sidebar-top-header">
+            <aside className={`sidebar ${isSidebarOpen ? 'mobile-open' : ''}`}>
+                {/* Logo */}
+                <div className="sidebar-header">
                     <div className="sidebar-logo">
                         <img
                             src="https://pub-da9fd1c19b8e45d691d67626b9a7ba6d.r2.dev/1774828533696-1774828360577-019d3c03-84c9-7750-9ed0-2cd31fab976b.png"
                             alt="PagFlow"
                         />
                     </div>
+                    <button className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)}>
+                        <X size={18} />
+                    </button>
                 </div>
 
-                <div className="sidebar-scroll">
-                    <nav className="sidebar-nav">
-                        {menuItems.map((item) => (
-                            <div key={item.label} onClick={() => setIsSidebarOpen(false)}>
-                                <SidebarItem
-                                    icon={item.icon}
-                                    label={item.label}
-                                    href={item.href}
-                                    active={pathname === item.href}
-                                />
-                            </div>
-                        ))}
-                    </nav>
-                </div>
-
-                <div className="sidebar-footer">
-                    <div className="user-profile">
-                        <div className="user-avatar">AD</div>
-                        <div className="user-info">
-                            <span className="user-name">Admin</span>
-                            <span className="user-role">Premium Account</span>
+                {/* Navigation */}
+                <nav className="sidebar-nav">
+                    {menuSections.map((section) => (
+                        <div key={section.label} className="sidebar-section">
+                            <span className="sidebar-section-label">{section.label}</span>
+                            {section.items.map((item) => {
+                                const isActive = pathname === item.href
+                                return (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        className={`sidebar-link ${isActive ? 'active' : ''}`}
+                                        onClick={() => setIsSidebarOpen(false)}
+                                    >
+                                        <item.icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
+                                        <span>{item.label}</span>
+                                    </Link>
+                                )
+                            })}
                         </div>
-                        <Link href="/" title="Sair" className="logout-btn">
+                    ))}
+                </nav>
+
+                {/* Footer */}
+                <div className="sidebar-footer">
+                    <div className="sidebar-user">
+                        <div className="sidebar-user-avatar">AD</div>
+                        <div className="sidebar-user-info">
+                            <span className="sidebar-user-name">Admin</span>
+                            <span className="sidebar-user-role">Premium</span>
+                        </div>
+                        <Link href="/" title="Sair" className="sidebar-logout">
                             <LogOut size={16} />
                         </Link>
                     </div>
                 </div>
             </aside>
 
-            {/* Main Content Area */}
             <main className="main-content">
                 <TopBar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
                 <div className="main-content-inner">
@@ -144,59 +126,20 @@ export default function AdminLayout({
             </main>
 
             <style jsx global>{`
-                .main-content-inner {
-                    padding: 32px;
+                .main-content-inner { padding: 28px 40px; }
+                @media (max-width: 1400px) {
+                    .main-content-inner { padding: 24px 28px; }
                 }
                 @media (max-width: 1024px) {
-                    .mobile-only {
-                        display: flex !important;
-                    }
-                    .main-content-inner {
-                        padding: 16px;
-                        padding-top: 24px;
-                    }
-                    .desktop-only {
-                        display: none !important;
-                    }
-                    .sidebar.mobile-open {
-                        display: flex !important;
-                        left: 0 !important;
-                        animation: slideIn 0.3s ease-out;
-                    }
-                    @keyframes slideIn {
-                        from { transform: translateX(-100%); }
-                        to { transform: translateX(0); }
-                    }
-                    .main-content {
-                        margin-left: 0 !important;
-                        width: 100% !important;
-                        padding-bottom: 24px !important;
-                    }
-                    .topbar-container {
-                        padding: 12px 16px !important;
-                    }
-                    .topbar-greeting {
-                        font-size: 13px !important;
-                        max-width: 150px;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                    }
-                    .topbar-progress {
-                        gap: 8px !important;
-                    }
-                    .topbar-progress-line {
-                        width: 80px !important;
-                    }
+                    .main-content-inner { padding: 16px; padding-top: 20px; }
+                    .sidebar:not(.mobile-open) { display: none !important; }
+                    .sidebar.mobile-open { display: flex !important; animation: slideIn 0.25s ease-out; }
+                    @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+                    .main-content { margin-left: 0 !important; width: 100% !important; }
+                    .topbar-container { padding: 12px 16px !important; }
                 }
                 @media (max-width: 480px) {
-                    .topbar-greeting {
-                        display: none !important;
-                    }
-                    .main-content-inner {
-                        padding: 12px;
-                        padding-top: 16px;
-                    }
+                    .main-content-inner { padding: 12px; padding-top: 16px; }
                 }
             `}</style>
         </div>

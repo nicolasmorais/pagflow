@@ -10,6 +10,16 @@ export type BumpStats = {
     bumpRevenue: number; nonBumpRevenue: number
     bumpAvgTicket: number; nonBumpAvgTicket: number
 }
+export type HourlyData = { hour: string; orders: number }
+export type WeekdayData = { day: string; revenue: number; orders: number }
+export type RecentOrder = {
+    id: string; fullName: string; totalPrice: number
+    paymentStatus: string; paymentMethod: string; createdAt: string
+}
+export type PrevPeriodKpis = {
+    totalRevenue: number; totalOrders: number; paidOrders: number; conversionRate: number; avgTicket: number
+}
+
 export type AnalyticsKpis = {
     totalRevenue: number; netRevenue: number
     totalOrders: number; paidOrders: number
@@ -27,4 +37,8 @@ export type AnalyticsData = {
     topStates: StateData[]
     statusBreakdown: StatusBreakdown[]
     bumpStats: BumpStats
+    hourlyData: HourlyData[]
+    weekdayData: WeekdayData[]
+    recentOrders: RecentOrder[]
+    prevKpis: PrevPeriodKpis
 }

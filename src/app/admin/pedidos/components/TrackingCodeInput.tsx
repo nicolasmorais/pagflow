@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Truck, Check, Edit2 } from 'lucide-react'
-import { updateOrderTracking } from '../../../actions'
+import { updateOrderTracking } from '@/app/actions'
 
 interface TrackingCodeInputProps {
     orderId: string

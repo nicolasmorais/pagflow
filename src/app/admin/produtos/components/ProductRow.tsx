@@ -3,7 +3,7 @@
 import React from 'react'
 import { Copy, Trash2, ExternalLink, Edit2, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
-import { duplicateProduct, deleteProduct } from '../../../actions'
+import { duplicateProduct, deleteProduct } from '@/app/actions'
 import EditProductModal from './EditProductModal'
 
 interface ProductRowProps {

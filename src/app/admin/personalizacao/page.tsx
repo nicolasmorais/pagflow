@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone, TrendingUp } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
 
-export const dynamic = 'force-dynamic';
-
 export default function PersonalizacaoPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -129,7 +127,7 @@ export default function PersonalizacaoPage() {
     }
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px 0' }}>
+        <div style={{ maxWidth: '900px', padding: '20px 0' }}>
             <div style={{
                 background: '#fff',
                 borderRadius: '20px',

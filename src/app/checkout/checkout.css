@@ -89,7 +89,7 @@ body{font-family:'Manrope',sans-serif !important;background:var(--bg);color:var(
     .aside {
         width: 100%;
         position: static;
-        order: -1;
+        order: 1;
     }
     .page {
         max-width: 560px;

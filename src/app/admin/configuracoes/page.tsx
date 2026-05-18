@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { Save, Bell, Mail, Loader2, Info, Database } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
 
-export const dynamic = 'force-dynamic';
-
 export default function ConfiguracoesPage() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -21,6 +19,8 @@ export default function ConfiguracoesPage() {
                 const email = await getCustomization('notify_admin_email')
                 const webhook = await getCustomization('webhook_url')
                 const sales = await getCustomization('notify_sales_enabled')
+                if (email) setAdminEmail(email)
+                if (webhook) setWebhookUrl(webhook)
                 setNotifySales(sales === 'true')
             } catch (error) {
                 console.error("Failed to load settings:", error)
@@ -57,7 +57,7 @@ export default function ConfiguracoesPage() {
     }
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '60px' }}>
+        <div style={{ maxWidth: '900px', paddingBottom: '60px' }}>
             <div style={{ marginBottom: '24px' }}>
                 <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>
                     Configurações do Sistema
@@ -150,42 +150,41 @@ export default function ConfiguracoesPage() {
                 </div>
             </div>
 
-                <div style={{ padding: '24px', background: '#f8fafc', borderRadius: '24px', border: '1px solid #e2e8f0', marginTop: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                        <div style={{ padding: '8px', background: '#f0f9ff', borderRadius: '10px', color: '#0ea5e9' }}>
-                            <Database size={20} />
-                        </div>
-                        <div>
-                            <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Integração Google Sheets / Webhook</h3>
-                            <p style={{ fontSize: '13px', color: '#64748b' }}>Envie dados dos pedidos para planilhas ou sistemas externos.</p>
-                        </div>
+            <div style={{ padding: '24px', background: '#fff', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', marginTop: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <div style={{ padding: '8px', background: '#f0f9ff', borderRadius: '10px', color: '#0ea5e9' }}>
+                        <Database size={20} />
                     </div>
-
                     <div>
-                        <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
-                            URL do Webhook
-                        </label>
-                        <input
-                            type="url"
-                            value={webhookUrl}
-                            onChange={(e) => setWebhookUrl(e.target.value)}
-                            placeholder="https://script.google.com/macros/s/..."
-                            style={{
-                                width: '100%',
-                                padding: '12px 16px',
-                                borderRadius: '10px',
-                                border: '1px solid #e2e8f0',
-                                fontSize: '14px',
-                                background: '#fff',
-                                outline: 'none'
-                            }}
-                        />
-                        <div style={{ marginTop: '10px', padding: '12px', background: '#fff', borderRadius: '8px', border: '1px solid #e0f2fe', display: 'flex', gap: '10px' }}>
-                            <Info size={16} style={{ color: '#0ea5e9', flexShrink: 0, marginTop: '2px' }} />
-                            <p style={{ fontSize: '12px', color: '#0369a1', lineHeight: '1.5' }}>
-                                Cole aqui a URL do seu Google App Script para salvar os pedidos automaticamente em sua planilha.
-                            </p>
-                        </div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Integração Google Sheets / Webhook</h3>
+                        <p style={{ fontSize: '13px', color: '#64748b' }}>Envie dados dos pedidos para planilhas ou sistemas externos.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#334155', marginBottom: '8px' }}>
+                        URL do Webhook
+                    </label>
+                    <input
+                        type="url"
+                        value={webhookUrl}
+                        onChange={(e) => setWebhookUrl(e.target.value)}
+                        placeholder="https://script.google.com/macros/s/..."
+                        style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            borderRadius: '10px',
+                            border: '1px solid #e2e8f0',
+                            fontSize: '14px',
+                            background: '#fff',
+                            outline: 'none'
+                        }}
+                    />
+                    <div style={{ marginTop: '10px', padding: '12px', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #e0f2fe', display: 'flex', gap: '10px' }}>
+                        <Info size={16} style={{ color: '#0ea5e9', flexShrink: 0, marginTop: '2px' }} />
+                        <p style={{ fontSize: '12px', color: '#0369a1', lineHeight: '1.5' }}>
+                            Cole aqui a URL do seu Google App Script para salvar os pedidos automaticamente em sua planilha.
+                        </p>
                     </div>
                 </div>
             </div>

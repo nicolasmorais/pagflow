@@ -2,7 +2,6 @@ export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
 import { getDateFilters, dateToBrazilDateStr, formatDateStr, getBrazilNow } from '@/lib/date-utils'
-import { BarChart3 } from 'lucide-react'
 import AnalyticsCharts from './AnalyticsCharts'
 import AnalyticsFilterForm from './AnalyticsFilterForm'
 import type { AnalyticsData } from './types'
@@ -30,6 +29,7 @@ export default async function AdminPage({
         },
         select: {
             id: true,
+            fullName: true,
             paymentStatus: true,
             paymentMethod: true,
             totalPrice: true,
@@ -63,6 +63,24 @@ export default async function AdminPage({
         ? (bumpOrders.length / allOrders.length) * 100
         : 0
 
+    // ── Previous period comparison ────────────────────────────────────────
+    const periodMs = toDateUTC.getTime() - fromDateUTC.getTime()
+    const prevFromUTC = new Date(fromDateUTC.getTime() - periodMs)
+    const prevToUTC = new Date(fromDateUTC.getTime() - 1)
+
+    const prevOrders = await prisma.order.findMany({
+        where: { deletedAt: null, createdAt: { gte: prevFromUTC, lte: prevToUTC } },
+        select: { paymentStatus: true, totalPrice: true }
+    })
+    const prevPaid = prevOrders.filter(o => o.paymentStatus === 'pago')
+    const prevKpis = {
+        totalRevenue: prevPaid.reduce((s, o) => s + (o.totalPrice || 0), 0),
+        totalOrders: prevOrders.length,
+        paidOrders: prevPaid.length,
+        conversionRate: prevOrders.length > 0 ? (prevPaid.length / prevOrders.length) * 100 : 0,
+        avgTicket: prevPaid.length > 0 ? prevPaid.reduce((s, o) => s + (o.totalPrice || 0), 0) / prevPaid.length : 0,
+    }
+
     // ── Daily data (last 30 days) ─────────────────────────────────────────
     const thirtyDaysAgo = new Date(now)
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
@@ -89,6 +107,42 @@ export default async function AdminPage({
         date: new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
         ...data,
     }))
+
+    // ── Hourly distribution ───────────────────────────────────────────────
+    const hourlyMap = new Map<string, number>()
+    for (let h = 0; h < 24; h++) hourlyMap.set(String(h).padStart(2, '0'), 0)
+    for (const o of allOrders) {
+        const h = new Date(o.createdAt).toLocaleString('pt-BR', { hour: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' })
+        hourlyMap.set(h, (hourlyMap.get(h) || 0) + 1)
+    }
+    const hourlyData = Array.from(hourlyMap.entries()).map(([hour, orders]) => ({ hour: `${hour}h`, orders }))
+
+    // ── Weekday distribution ──────────────────────────────────────────────
+    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
+    const weekdayMap = new Map<string, { revenue: number; orders: number }>()
+    for (const d of dayNames) weekdayMap.set(d, { revenue: 0, orders: 0 })
+    for (const o of allOrders) {
+        const d = dayNames[new Date(o.createdAt).getDay()]
+        const ex = weekdayMap.get(d)!
+        weekdayMap.set(d, {
+            revenue: ex.revenue + (o.paymentStatus === 'pago' ? (o.totalPrice || 0) : 0),
+            orders: ex.orders + 1,
+        })
+    }
+    const weekdayData = dayNames.map(d => ({ day: d, ...weekdayMap.get(d)! }))
+
+    // ── Recent orders ────────────────────────────────────────────────────
+    const recentOrders = allOrders
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 5)
+        .map(o => ({
+            id: o.id,
+            fullName: o.fullName || 'Cliente',
+            totalPrice: o.totalPrice || 0,
+            paymentStatus: o.paymentStatus || 'pendente',
+            paymentMethod: o.paymentMethod || 'pix',
+            createdAt: o.createdAt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }),
+        }))
 
     // ── Payment methods ───────────────────────────────────────────────────
     const pixCount = paidOrders.filter(o => o.paymentMethod === 'pix').length
@@ -189,10 +243,14 @@ export default async function AdminPage({
         topStates,
         statusBreakdown,
         bumpStats,
+        hourlyData,
+        weekdayData,
+        recentOrders,
+        prevKpis,
     }
 
     return (
-        <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '40px' }}>
+        <div style={{ paddingBottom: '40px' }}>
 
             {/* Header */}
             <header className="page-header" style={{
@@ -221,8 +279,6 @@ export default async function AdminPage({
                     toDate={toDate}
                 />
             </header>
-
-
 
             <AnalyticsCharts data={data} />
         </div>
