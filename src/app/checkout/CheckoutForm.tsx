@@ -11,12 +11,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [done, setDone] = useState(false);
     const [isMpLoaded, setIsMpLoaded] = useState(false);
     const [step1Loading, setStep1Loading] = useState(false);
+    const [cepResolved, setCepResolved] = useState(false);
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
     const defaultShipping = shippingRules && shippingRules.length > 0
         ? shippingRules[0]
-        : { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' };
+        : { name: 'Entrega Econômica', price: 0, delivery_time: '7' };
     const [shipping, setShipping] = useState(defaultShipping);
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | ''>('');
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
@@ -62,8 +63,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const finalPrice = effectivePrice;
 
     useEffect(() => {
+        // Validar IDs de pixel (apenas alfanumérico e hífen)
+        const isValidPixelId = (id: string) => /^[a-zA-Z0-9_-]+$/.test(id);
+
         // Taboola Base Script
-        if (pixels?.taboolaId && !document.getElementById('taboola-pixel')) {
+        if (pixels?.taboolaId && isValidPixelId(pixels.taboolaId) && !document.getElementById('taboola-pixel')) {
             const _tfa = (window as any)._tfa || [];
             (window as any)._tfa = _tfa;
             const s = document.createElement('script');
@@ -174,6 +178,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         cidade: data.localidade,
                         estado: data.uf
                     }));
+                    setCepResolved(true);
                 }
             } catch (e) { }
         }
@@ -187,6 +192,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             const data = await response.json();
             if (!data.erro) {
                 setEndereco(prev => ({ ...prev, rua: data.logradouro, bairro: data.bairro, cidade: data.localidade, estado: data.uf }));
+                setCepResolved(true);
             }
         } catch (e) { }
     };
@@ -252,10 +258,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const validateStep2 = () => {
         let newErrors: Record<string, string> = {};
-        if (!endereco.destinatario) newErrors.destinatario = 'Informe o destinatário';
         if (endereco.cep.replace(/\D/g, '').length !== 8) newErrors.cep = 'CEP inválido';
         if (!endereco.rua) newErrors.rua = 'Informe a rua';
         if (!endereco.numero) newErrors.numero = 'Informe o número';
+        if (!endereco.complemento) newErrors.complemento = 'Informe o complemento';
         if (!endereco.bairro) newErrors.bairro = 'Informe o bairro';
         if (!endereco.cidade) newErrors.cidade = 'Informe a cidade';
         if (!endereco.estado) newErrors.estado = 'Selecione o estado';
@@ -310,6 +316,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     ...dados,
                     ...endereco,
                     price: finalPrice,
+                    shippingPrice: shipping?.price || 0,
                     productId: product?.id || 'default',
                     utmSource: searchParams.get('utm_source'),
                     utmMedium: searchParams.get('utm_medium'),
@@ -352,7 +359,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 });
 
                 // Google Ads: conversion event
-                if (pixels?.googleId && pixels?.googleAdsConvLabel) {
+                if (pixels?.googleId && pixels?.googleAdsConvLabel && /^[a-zA-Z0-9_-]+$/.test(pixels.googleId) && /^[a-zA-Z0-9_-]+$/.test(pixels.googleAdsConvLabel)) {
                     trackGoogleEvent('conversion', {
                         send_to: `${pixels.googleId}/${pixels.googleAdsConvLabel}`,
                         value: finalPrice,
@@ -508,12 +515,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     return (
         <div className={`checkout-page-wrapper ${done ? 'is-done' : ''}`}>
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                :root {
-                    ${customization?.primaryColor ? `--green: ${customization.primaryColor};` : ''}
-                }
-            `}} />
+            {(() => {
+                const pc = customization?.primaryColor;
+                const isValidColor = pc && /^#([0-9a-fA-F]{3,8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$|^rgb[a]?\([\d\s,.%/]+\)$|^hsl[a]?\([\d\s,.%/]+\)$/.test(pc.trim());
+                return isValidColor ? <style dangerouslySetInnerHTML={{ __html: `:root { --green: ${pc.trim()}; }` }} /> : null;
+            })()}
             <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
             {loading && <div className="loading-overlay"><div className="loading-spinner"></div><p style={{ marginTop: '20px', fontWeight: 800 }}>Processando...</p></div>}
@@ -779,24 +785,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         </div>
                     )}
 
-                    {renderProgressBar()}
-
                     <div className="page">
                         <div className="layout">
                         <div className="form-col">
-                        <div className="prod-summary">
-                            <div className="prod-img">
-                                {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
-                            </div>
-                            <div className="prod-info">
-                                <div className="prod-name">{product?.name || "Produto"}</div>
-                                <div className="prod-qty">Quantidade: 1</div>
-                            </div>
-                            <div className="prod-price">R$ {finalPrice.toFixed(2).replace('.', ',')}</div>
-                        </div>
 
                         <div className={`screen ${step === 1 ? 'active' : ''}`}>
                             <div className="card">
+                                {renderProgressBar()}
                                 <div className="step-title">Identificação</div>
                                 <div className="step-sub">Precisamos de algumas informações básicas para continuar.</div>
 
@@ -834,47 +829,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     Pagamento processado com segurança via Mercado Pago
                                 </div>
                             </div>
-
-                        </div>
-
-                        {/* Sidebar Trust Badges - Desktop Only */}
-                        <aside className="aside">
-                            <div className="trust-section">
-                                {product?.isDigital ? (
-                                    [
-                                        { icon: '✅', title: 'Acesso Imediato', p: 'Assim que o pagamento é confirmado, o link chega no seu e-mail em minutos. Sem espera, sem frete.' },
-                                        { icon: '🔄', title: 'Garantia de 7 Dias', p: 'Se não gostar por qualquer motivo, devolvemos 100% do seu dinheiro. Sem perguntas, sem burocracia.' },
-                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros. Ambiente criptografado e certificado.' }
-                                    ].map((t, i) => (
-                                        <div key={i} className="trust-item">
-                                            <div className="t-icon">{t.icon}</div>
-                                            <div className="t-body">
-                                                <div className="t-stars">★★★★★</div>
-                                                <div className="t-name">{t.title}</div>
-                                                <div className="t-desc">{t.p}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    [
-                                        { icon: '✈️', title: 'Envio Rápido', p: 'Seu produto é enviado diretamente para o seu endereço, com rastreamento pelo WhatsApp.' },
-                                        { icon: '🔄', title: 'Trocas e Devoluções', p: 'Se não gostar ou chegar com problema, trocamos ou devolvemos em até 7 dias. Sem complicação.' },
-                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' }
-                                    ].map((t, i) => (
-                                        <div key={i} className="trust-item">
-                                            <div className="t-icon">{t.icon}</div>
-                                            <div className="t-body">
-                                                <div className="t-stars">★★★★★</div>
-                                                <div className="t-name">{t.title}</div>
-                                                <div className="t-desc">{t.p}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </aside>
-
-                        </div>
                         </div>
 
                         <div className={`screen ${step === 2 ? 'active' : ''}`}>
@@ -883,76 +837,96 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                                     Voltar
                                 </button>
+                                {renderProgressBar()}
                                 <div className="step-title">Passo 2 — Endereço de Entrega</div>
                                 <div className="step-sub">Para onde vamos enviar o seu produto?</div>
 
                                 <div className={`field ${errors.cep ? 'error' : ''}`}>
                                     <label className="field-label">CEP *</label>
                                     <div className="cep-row">
-                                        <input type="text" placeholder="00000-000" maxLength={9} value={endereco.cep} onChange={e => handleCEPChange(e.target.value)} />
+                                        <input type="text" placeholder="00000-000" maxLength={9} value={endereco.cep} onChange={e => handleCEPChange(e.target.value)} autoFocus />
                                     </div>
                                     {errors.cep && <div className="error-msg">⚠️ {errors.cep}</div>}
                                 </div>
-                                <div className={`field ${errors.rua ? 'error' : ''}`}>
-                                    <label className="field-label">Rua ou Avenida *</label>
-                                    <input type="text" placeholder="Ex: Rua das Flores" value={endereco.rua} onChange={e => handleMaskEnd('rua', e.target.value, v => v)} />
-                                    {errors.rua && <div className="error-msg">⚠️ {errors.rua}</div>}
-                                </div>
-                                <div className="two">
-                                    <div className={`field ${errors.numero ? 'error' : ''}`}>
-                                        <label className="field-label">Número *</label>
-                                        <input type="text" placeholder="Ex: 123" value={endereco.numero} onChange={e => handleMaskEnd('numero', e.target.value, v => v)} />
-                                        {errors.numero && <div className="error-msg">⚠️ {errors.numero}</div>}
-                                    </div>
-                                    <div className="field">
-                                        <label className="field-label">Complemento</label>
-                                        <input type="text" placeholder="Apto, Bloco..." value={endereco.complemento} onChange={e => handleMaskEnd('complemento', e.target.value, v => v)} />
-                                    </div>
-                                </div>
-                                <div className="two">
-                                    <div className={`field ${errors.bairro ? 'error' : ''}`}>
-                                        <label className="field-label">Bairro *</label>
-                                        <input type="text" placeholder="Nome do bairro" value={endereco.bairro} onChange={e => handleMaskEnd('bairro', e.target.value, v => v)} />
-                                        {errors.bairro && <div className="error-msg">⚠️ {errors.bairro}</div>}
-                                    </div>
-                                    <div className={`field ${errors.cidade ? 'error' : ''}`}>
-                                        <label className="field-label">Cidade *</label>
-                                        <input type="text" placeholder="Ex: São Paulo" value={endereco.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
-                                        {errors.cidade && <div className="error-msg">⚠️ {errors.cidade}</div>}
-                                    </div>
-                                </div>
-                                <div className={`field ${errors.estado ? 'error' : ''}`}>
-                                    <label className="field-label">Estado *</label>
-                                    <select value={endereco.estado} onChange={e => handleMaskEnd('estado', e.target.value, v => v)}>
-                                        <option value="">Selecione o estado</option>
-                                        {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
-                                            <option key={uf} value={uf}>{uf}</option>
-                                        ))}
-                                    </select>
-                                    {errors.estado && <div className="error-msg">⚠️ {errors.estado}</div>}
-                                </div>
 
-                                <div className="section-label">🚚 Formas de Entrega</div>
-                                {(shippingRules && shippingRules.length > 0 ? shippingRules : [
-                                    { name: 'Entrega Econômica', price: 0, delivery_time: 'Chega em até 7 dias úteis' }
-                                ]).map((opt: any, idx: number) => (
-                                    <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
-                                        <div className="frad"></div>
-                                        <div>
-                                            <div className="frete-name" style={{display:'flex', alignItems:'center'}}>{opt.name} {opt.price === 0 && <span className="tag-free">GRÁTIS</span>}</div>
-                                            <div className="frete-sub">{opt.delivery_time}</div>
+                                {cepResolved && (
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: 600, color: '#92400e' }}>
+                                            ✅ Endereço encontrado! Preencha os campos abaixo.
                                         </div>
-                                        <div className={`frete-cost ${opt.price === 0 ? 'free' : ''}`} style={{marginLeft:'auto'}}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
-                                    </div>
-                                ))}
 
-                                <button className="cta-btn" style={{ marginTop: '14px' }} onClick={validateStep2}>
-                                    Ir para Pagamento
-                                </button>
-                                <div className="cta-note">
-                                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                    Pagamento processado com segurança via Mercado Pago
-                                </div>
+                                        <div className={`field ${errors.rua ? 'error' : ''}`}>
+                                            <label className="field-label">Rua ou Avenida *</label>
+                                            <input type="text" placeholder="Ex: Rua das Flores" value={endereco.rua} onChange={e => handleMaskEnd('rua', e.target.value, v => v)} />
+                                            {errors.rua && <div className="error-msg">⚠️ {errors.rua}</div>}
+                                        </div>
+                                        <div className="two">
+                                            <div className={`field ${errors.numero ? 'error' : ''}`}>
+                                                <label className="field-label">Número *</label>
+                                                <input type="text" placeholder="Ex: 123" value={endereco.numero} onChange={e => handleMaskEnd('numero', e.target.value, v => v)}
+                                                    style={endereco.numero ? { background: '#f0fdf4', border: '2px solid #22c55e', fontWeight: 600 } : { background: '#fffbeb', border: '2px solid #fbbf24', fontWeight: 600 }}
+                                                    autoFocus />
+                                                {errors.numero && <div className="error-msg">⚠️ {errors.numero}</div>}
+                                            </div>
+                                            <div className={`field ${errors.complemento ? 'error' : ''}`}>
+                                                <label className="field-label">Complemento *</label>
+                                                <input type="text" placeholder="Apto, Bloco..." value={endereco.complemento} onChange={e => handleMaskEnd('complemento', e.target.value, v => v)}
+                                                    style={endereco.complemento ? { background: '#f0fdf4', border: '2px solid #22c55e', fontWeight: 600 } : { background: '#fffbeb', border: '2px solid #fbbf24', fontWeight: 600 }} />
+                                                {errors.complemento && <div className="error-msg">⚠️ {errors.complemento}</div>}
+                                            </div>
+                                        </div>
+                                        <div className="two">
+                                            <div className={`field ${errors.bairro ? 'error' : ''}`}>
+                                                <label className="field-label">Bairro *</label>
+                                                <input type="text" placeholder="Nome do bairro" value={endereco.bairro} onChange={e => handleMaskEnd('bairro', e.target.value, v => v)} />
+                                                {errors.bairro && <div className="error-msg">⚠️ {errors.bairro}</div>}
+                                            </div>
+                                            <div className={`field ${errors.cidade ? 'error' : ''}`}>
+                                                <label className="field-label">Cidade *</label>
+                                                <input type="text" placeholder="Ex: São Paulo" value={endereco.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
+                                                {errors.cidade && <div className="error-msg">⚠️ {errors.cidade}</div>}
+                                            </div>
+                                        </div>
+                                        <div className={`field ${errors.estado ? 'error' : ''}`}>
+                                            <label className="field-label">Estado *</label>
+                                            <select value={endereco.estado} onChange={e => handleMaskEnd('estado', e.target.value, v => v)}>
+                                                <option value="">Selecione o estado</option>
+                                                {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                                                    <option key={uf} value={uf}>{uf}</option>
+                                                ))}
+                                            </select>
+                                            {errors.estado && <div className="error-msg">⚠️ {errors.estado}</div>}
+                                        </div>
+
+                                        <div className="section-label">🚚 Formas de Entrega</div>
+                                        {(shippingRules && shippingRules.length > 0 ? shippingRules : [
+                                            { name: 'Entrega Econômica', price: 0, delivery_time: '7' }
+                                        ]).map((opt: any, idx: number) => {
+                                            const days = parseInt(String(opt.delivery_time).replace(/\D/g, '')) || 7;
+                                            const entregaDate = new Date();
+                                            entregaDate.setDate(entregaDate.getDate() + days);
+                                            const dateStr = entregaDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+                                            return (
+                                                <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
+                                                    <div className="frad"></div>
+                                                    <div>
+                                                        <div className="frete-name" style={{display:'flex', alignItems:'center'}}>{opt.name} {opt.price === 0 && <span className="tag-free">GRÁTIS</span>}</div>
+                                                        <div className="frete-sub">Chega até dia {dateStr}</div>
+                                                    </div>
+                                                    <div className={`frete-cost ${opt.price === 0 ? 'free' : ''}`} style={{marginLeft:'auto'}}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        <button className="cta-btn" style={{ marginTop: '14px' }} onClick={validateStep2}>
+                                            Ir para Pagamento
+                                        </button>
+                                        <div className="cta-note">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                            Pagamento processado com segurança via Mercado Pago
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -962,6 +936,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                                     Voltar
                                 </button>
+                                {renderProgressBar()}
                                 <div className="step-title">Passo {product?.isDigital ? '2' : '3'} — Pagamento</div>
                                 <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
 
@@ -1039,6 +1014,60 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             </div>
                         </div>
 
+                        </div>
+
+                        {/* Sidebar - Resumo + Trust Badges */}
+                        <aside className="aside">
+                            <div className="aside-summary">
+                                <div className="prod-summary">
+                                    <div className="prod-img">
+                                        {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
+                                    </div>
+                                    <div className="prod-info">
+                                        <div className="prod-name">{product?.name || "Produto"}</div>
+                                        <div className="prod-qty">Quantidade: 1</div>
+                                    </div>
+                                    <div className="prod-price">R$ {finalPrice.toFixed(2).replace('.', ',')}</div>
+                                </div>
+                            </div>
+                            <div className="trust-section">
+                                {product?.isDigital ? (
+                                    [
+                                        { icon: '✅', title: 'Acesso Imediato', p: 'Assim que o pagamento é confirmado, o link chega no seu e-mail em minutos. Sem espera, sem frete.' },
+                                        { icon: '🔄', title: 'Garantia de 7 Dias', p: 'Se não gostar por qualquer motivo, devolvemos 100% do seu dinheiro. Sem perguntas, sem burocracia.' },
+                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros. Ambiente criptografado e certificado.' },
+                                        { icon: '💬', title: 'Suporte Humanizado', p: 'Nossa equipe está pronta para te ajudar por e-mail e WhatsApp. Resposta rápida em até 1 hora.' }
+                                    ].map((t, i) => (
+                                        <div key={i} className="trust-item">
+                                            <div className="t-icon">{t.icon}</div>
+                                            <div className="t-body">
+                                                <div className="t-stars">★★★★★</div>
+                                                <div className="t-name">{t.title}</div>
+                                                <div className="t-desc">{t.p}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    [
+                                        { icon: '✈️', title: 'Envio Rápido', p: 'Seu produto é enviado diretamente para o seu endereço, com rastreamento pelo WhatsApp.' },
+                                        { icon: '🔄', title: 'Trocas e Devoluções', p: 'Se não gostar ou chegar com problema, trocamos ou devolvemos em até 7 dias. Sem complicação.' },
+                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' },
+                                        { icon: '💬', title: 'Suporte Humanizado', p: 'Nossa equipe está pronta para te ajudar por e-mail e WhatsApp. Resposta rápida em até 1 hora.' }
+                                    ].map((t, i) => (
+                                        <div key={i} className="trust-item">
+                                            <div className="t-icon">{t.icon}</div>
+                                            <div className="t-body">
+                                                <div className="t-stars">★★★★★</div>
+                                                <div className="t-name">{t.title}</div>
+                                                <div className="t-desc">{t.p}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </aside>
+
+                        </div>
                     </div>
                 </>
             )}

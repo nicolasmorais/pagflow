@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3"
+import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3"
 
 let s3: S3Client | null = null
 
@@ -77,4 +77,43 @@ export async function uploadFile(file: Buffer, fileName: string, contentType: st
         console.error('❌ [R2 Upload] Error:', error);
         return null;
     }
+}
+
+/**
+ * Verifica se um pedido tem backup no R2.
+ */
+export async function verifyOrderBackup(orderId: string) {
+    const client = getS3Client()
+    if (!client || !process.env.S3_BUCKET) {
+        return { exists: false, error: 'R2 não configurado' };
+    }
+
+    try {
+        const command = new ListObjectsV2Command({
+            Bucket: process.env.S3_BUCKET,
+            Prefix: `backups/orders/${orderId}_`,
+            MaxKeys: 1,
+        });
+        const response = await client.send(command);
+        const hasBackup = (response.Contents?.length ?? 0) > 0;
+        return {
+            exists: hasBackup,
+            key: hasBackup ? response.Contents![0].Key : null,
+            lastModified: hasBackup ? response.Contents![0].LastModified : null,
+        };
+    } catch (error) {
+        console.error('❌ [R2 Verify] Error:', error);
+        return { exists: false, error: 'Erro ao verificar' };
+    }
+}
+
+/**
+ * Força re-upload de um pedido para R2.
+ */
+export async function forceOrderBackup(order: any) {
+    const client = getS3Client()
+    if (!client || !process.env.S3_BUCKET) {
+        return { success: false, error: 'R2 não configurado' };
+    }
+    return await uploadOrderBackup(order);
 }

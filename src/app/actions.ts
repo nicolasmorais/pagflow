@@ -893,3 +893,23 @@ export async function backupAllPaidOrders() {
         return { success: false, error };
     }
 }
+
+export async function verifyOrderR2(orderId: string) {
+    await requireAdmin()
+    const { verifyOrderBackup } = await import('@/lib/r2')
+    return await verifyOrderBackup(orderId)
+}
+
+export async function forceOrderR2(orderId: string) {
+    await requireAdmin()
+    const { prisma } = await import('@/lib/prisma')
+    const { forceOrderBackup } = await import('@/lib/r2')
+
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { product: true }
+    })
+    if (!order) return { success: false, error: 'Pedido não encontrado' }
+
+    return await forceOrderBackup(order)
+}

@@ -26,15 +26,25 @@ export async function POST(req: NextRequest) {
 
         const fullName = orderData.nome || orderData.fullName || "Cliente PagFlow";
         const phone = orderData.telefone || orderData.phone || "";
-        const price = Number(Number(orderData.price).toFixed(2)) || 0;
 
-        // 0. Buscar produto para ter o nome
-        const product = orderData.productId ? await prisma.product.findUnique({
-            where: { id: orderData.productId }
-        }) : null;
+        // 0. Buscar produto e configurações para recalcular o preço no servidor
+        const [product, storeSettings] = await Promise.all([
+            orderData.productId ? prisma.product.findUnique({
+                where: { id: orderData.productId }
+            }) : Promise.resolve(null),
+            prisma.customization_settings.findFirst()
+        ]);
 
         const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
         const cpfToSave = cpfInput || "19119119100"; // Fallback CPF válido para Pix sem fricção
+
+        // ── Recalcular preço no servidor (ignora preço enviado pelo cliente) ──
+        const serverBasePrice = Number(product?.price) || 0;
+        const pixDiscountPct = Number(storeSettings?.pixDiscount || 0) / 100;
+        const serverShippingPrice = Number(orderData.shippingPrice) || 0;
+        const serverPrice = method === 'pix'
+            ? Number((serverBasePrice * (1 - pixDiscountPct) + serverShippingPrice).toFixed(2))
+            : Number((serverBasePrice + serverShippingPrice).toFixed(2));
 
         // 1. Preparar dados do pedido
         const orderDataToSave: any = {
@@ -54,11 +64,10 @@ export async function POST(req: NextRequest) {
             status: 'pendente',
             paymentStatus: 'processando',
             paymentMethod: method === 'pix' ? 'pix' : 'credito',
-            totalPrice: price,
+            totalPrice: serverPrice,
             hasBump: Array.isArray(selectedBumpIds) && selectedBumpIds.length > 0,
             selectedBumps: Array.isArray(selectedBumpIds) ? selectedBumpIds : [],
             product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined,
-            // UTM fields are not in the Order schema. To persist them, add columns to the Order model.
         };
 
         let order;
@@ -93,7 +102,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Validar valor mínimo
-        if (price <= 0) {
+        if (serverPrice <= 0) {
             return NextResponse.json({ success: false, error: "O valor do pedido deve ser maior que zero para processar o pagamento." }, { status: 400 });
         }
 
@@ -117,7 +126,7 @@ export async function POST(req: NextRequest) {
         } : undefined;
 
         let mpPayload: any = {
-            transaction_amount: price,
+            transaction_amount: serverPrice,
             description: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
             external_reference: order.id,
             statement_descriptor: "PAGFLOW*PRODUTO",
@@ -148,7 +157,7 @@ export async function POST(req: NextRequest) {
                         id: product?.id || 'default',
                         title: product?.name || 'Produto Digital',
                         quantity: 1,
-                        unit_price: price,
+                        unit_price: serverPrice,
                         category_id: 'others',
                         description: `Compra realizada no PagFlow - ID ${order.id}`
                     }
