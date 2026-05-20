@@ -1,7 +1,18 @@
 'use client'
 
-import { Filter } from 'lucide-react'
+import { Filter, Calendar, ChevronDown } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+
+const presets = [
+    { value: 'today', label: 'Hoje' },
+    { value: 'yesterday', label: 'Ontem' },
+    { value: '7dias', label: '7 dias' },
+    { value: '30dias', label: '30 dias' },
+    { value: 'mes', label: 'Este mês' },
+    { value: 'mes-anterior', label: 'Mês ant.' },
+    { value: 'vida', label: 'Tudo' },
+]
 
 export default function AnalyticsFilterForm({
     currentFilter,
@@ -18,10 +29,13 @@ export default function AnalyticsFilterForm({
 }) {
     const router = useRouter()
     const searchParams = useSearchParams()
+    const [showCustom, setShowCustom] = useState(false)
 
-    function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    function handlePresetChange(value: string) {
         const params = new URLSearchParams(searchParams.toString())
-        params.set('filter', e.target.value)
+        params.set('filter', value)
+        params.delete('from')
+        params.delete('to')
         router.push(`?${params.toString()}`)
     }
 
@@ -35,181 +49,98 @@ export default function AnalyticsFilterForm({
         router.push(`?${params.toString()}`)
     }
 
+    function handleCustomSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('filter', 'custom')
+        params.set('from', formData.get('from') as string)
+        params.set('to', formData.get('to') as string)
+        router.push(`?${params.toString()}`)
+    }
+
+    const isCustom = currentFilter === 'custom'
+
     return (
-        <form method="get" className="filter-form responsive-filter-row">
-            <div className="status-fixed-group">
-                {showStatus && (
-                    <>
-                        <div
-                            onClick={() => handleStatusClick('pago')}
-                            className="status-btn pago-btn"
+        <div className="filter-wrapper">
+            {/* Status buttons */}
+            {showStatus && (
+                <div className="status-pills">
+                    {[
+                        { key: 'pago', label: 'Pago', color: '#16a34a', bg: '#dcfce7', activeBg: '#16a34a' },
+                        { key: 'aguardando', label: 'Aguardando', color: '#d97706', bg: '#fef3c7', activeBg: '#d97706' },
+                        { key: 'recusado', label: 'Recusado', color: '#dc2626', bg: '#fee2e2', activeBg: '#dc2626' },
+                    ].map(s => (
+                        <button
+                            key={s.key}
+                            type="button"
+                            onClick={() => handleStatusClick(s.key)}
                             style={{
-                                height: '44px',
-                                padding: '0 16px',
-                                borderRadius: '12px',
-                                background: currentStatus === 'pago' ? '#22c55e' : '#f8fafc',
-                                color: currentStatus === 'pago' ? 'white' : '#166534',
-                                border: '1px solid ' + (currentStatus === 'pago' ? '#22c55e' : '#e2e8f0'),
+                                padding: '6px 14px',
+                                borderRadius: '8px',
+                                background: currentStatus === s.key ? s.activeBg : s.bg,
+                                color: currentStatus === s.key ? '#fff' : s.color,
+                                border: 'none',
                                 fontSize: '11px',
-                                fontWeight: 800,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
+                                fontWeight: 700,
                                 cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                minWidth: '70px',
-                                whiteSpace: 'nowrap'
+                                transition: 'all 0.15s',
+                                letterSpacing: '0.02em',
                             }}
                         >
-                            Pago
-                        </div>
-
-                        <div
-                            onClick={() => handleStatusClick('aguardando')}
-                            className="status-btn aguardando-btn"
-                            style={{
-                                height: '44px',
-                                padding: '0 16px',
-                                borderRadius: '12px',
-                                background: currentStatus === 'aguardando' ? '#d97706' : '#f8fafc',
-                                color: currentStatus === 'aguardando' ? 'white' : '#b45309',
-                                border: '1px solid ' + (currentStatus === 'aguardando' ? '#d97706' : '#e2e8f0'),
-                                fontSize: '11px',
-                                fontWeight: 800,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                minWidth: '85px',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            Aguardando
-                        </div>
-
-                        <div
-                            onClick={() => handleStatusClick('recusado')}
-                            className="status-btn recusado-btn"
-                            style={{
-                                height: '44px',
-                                padding: '0 16px',
-                                borderRadius: '12px',
-                                background: currentStatus === 'recusado' ? '#dc2626' : '#f8fafc',
-                                color: currentStatus === 'recusado' ? 'white' : '#991b1b',
-                                border: '1px solid ' + (currentStatus === 'recusado' ? '#dc2626' : '#e2e8f0'),
-                                fontSize: '11px',
-                                fontWeight: 800,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
-                                minWidth: '85px',
-                                whiteSpace: 'nowrap'
-                            }}
-                        >
-                            Recusado
-                        </div>
-                    </>
-                )}
-
-                <select
-                    name="filter"
-                    defaultValue={currentFilter}
-                    onChange={handleSelectChange}
-                    className="fixed-dates-select"
-                    style={{
-                        height: '44px',
-                        padding: '0 10px',
-                        borderRadius: '12px',
-                        border: '1px solid #e2e8f0',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        color: '#334155',
-                        background: '#f8fafc',
-                        outline: 'none',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                        minWidth: '130px'
-                    }}
-                >
-                    <option value="today">Hoje</option>
-                    <option value="yesterday">Ontem</option>
-                    <option value="7dias">Últimos 7 dias</option>
-                    <option value="30dias">Últimos 30 dias</option>
-                    <option value="mes">Este mês</option>
-                    <option value="mes-anterior">Mês anterior</option>
-                    <option value="vida">Todo período</option>
-                </select>
-            </div>
-
-            <div className="custom-date-container" style={{
-                display: 'flex',
-                gap: '6px',
-                alignItems: 'center',
-                height: '44px',
-                background: '#fff',
-                padding: '0 10px',
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
-                minWidth: '220px'
-            }}>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flex: 1, minWidth: 0 }}>
-                    <input
-                        type="date"
-                        name="from"
-                        defaultValue={fromDate}
-                        className="minimal-date"
-                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '13px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 600 }}
-                    />
-                    <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 600 }}>/</span>
-                    <input
-                        type="date"
-                        name="to"
-                        defaultValue={toDate}
-                        className="minimal-date"
-                        style={{ width: '100%', padding: '4px 2px', border: 'none', fontSize: '13px', background: 'transparent', color: '#475569', outline: 'none', fontFamily: 'inherit', fontWeight: 600 }}
-                    />
+                            {s.label}
+                        </button>
+                    ))}
                 </div>
+            )}
 
-                <div style={{ width: '1px', height: '16px', background: '#e2e8f0', margin: '0 4px' }} />
-
+            {/* Period presets */}
+            <div className="filter-presets">
+                {presets.map(p => (
+                    <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => handlePresetChange(p.value)}
+                        className={`filter-preset-btn ${currentFilter === p.value && !isCustom ? 'active' : ''}`}
+                    >
+                        {p.label}
+                    </button>
+                ))}
                 <button
-                    type="submit"
-                    className="filter-submit-btn"
-                    style={{
-                        padding: '8px 12px',
-                        background: '#f1f5f9',
-                        color: '#475569',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        fontFamily: 'inherit',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        transition: 'all 0.2s',
-                        flexShrink: 0
-                    }}
-                    onMouseOver={e => { e.currentTarget.style.background = '#e2e8f0'; e.currentTarget.style.color = '#0f172a' }}
-                    onMouseOut={e => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#475569' }}
+                    type="button"
+                    onClick={() => setShowCustom(!showCustom)}
+                    className={`filter-preset-btn custom-toggle ${isCustom ? 'active' : ''}`}
                 >
-                    <Filter size={14} />
-                    Filtrar
+                    <Calendar size={13} />
+                    Personalizado
+                    <ChevronDown size={12} style={{ transform: showCustom ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                 </button>
             </div>
-        </form>
+
+            {/* Custom date range */}
+            {showCustom && (
+                <form onSubmit={handleCustomSubmit} className="custom-date-row">
+                    <div className="custom-date-inputs">
+                        <input
+                            type="date"
+                            name="from"
+                            defaultValue={fromDate}
+                            className="custom-date-input"
+                        />
+                        <span className="custom-date-sep">ate</span>
+                        <input
+                            type="date"
+                            name="to"
+                            defaultValue={toDate}
+                            className="custom-date-input"
+                        />
+                    </div>
+                    <button type="submit" className="custom-date-submit">
+                        <Filter size={13} />
+                        Filtrar
+                    </button>
+                </form>
+            )}
+        </div>
     )
 }

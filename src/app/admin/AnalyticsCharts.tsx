@@ -65,44 +65,100 @@ function KpiCard({ icon: Icon, label, value, change, featured }: {
 }) {
     return (
         <div style={{
-            background: '#fff',
-            border: '1px solid #f1f5f9',
-            borderRadius: featured ? '20px' : '16px',
-            padding: featured ? '24px' : '18px',
+            background: featured
+                ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
+                : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+            border: featured ? 'none' : '1px solid rgba(241, 245, 249, 0.8)',
+            borderRadius: '20px',
+            padding: '22px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px',
-            transition: 'all 0.2s ease',
+            gap: '16px',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
             overflow: 'hidden',
+            boxShadow: featured
+                ? '0 8px 32px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)',
+        }}
+        onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-3px)'
+            e.currentTarget.style.boxShadow = featured
+                ? '0 12px 40px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255,255,255,0.08)'
+                : '0 4px 12px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1)'
+        }}
+        onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = featured
+                ? '0 8px 32px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255,255,255,0.05)'
+                : '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)'
         }}>
+            {/* Ambient glow for featured */}
+            {featured && (
+                <div style={{
+                    position: 'absolute',
+                    top: '-30px',
+                    right: '-30px',
+                    width: '120px',
+                    height: '120px',
+                    background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+                    borderRadius: '50%',
+                    pointerEvents: 'none',
+                }} />
+            )}
+
+            {/* Icon + Change */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{
-                    width: featured ? '42px' : '36px',
-                    height: featured ? '42px' : '36px',
-                    borderRadius: '10px',
-                    background: featured ? '#0f172a' : '#f8fafc',
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '14px',
+                    background: featured
+                        ? 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.15) 100%)'
+                        : 'linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 100%)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: featured ? '#fff' : '#64748b',
+                    color: featured ? '#a5b4fc' : '#6366f1',
+                    boxShadow: featured
+                        ? '0 2px 8px rgba(99,102,241,0.15)'
+                        : '0 1px 3px rgba(99,102,241,0.08)',
                 }}>
-                    <Icon size={featured ? 20 : 17} strokeWidth={2} />
+                    <Icon size={20} strokeWidth={2} />
                 </div>
                 {change && (
                     <span style={{
                         fontSize: '11px', fontWeight: 700,
-                        color: change.positive ? '#059669' : '#dc2626',
-                        background: change.positive ? '#ecfdf5' : '#fef2f2',
-                        padding: '3px 8px', borderRadius: '6px',
-                        display: 'flex', alignItems: 'center', gap: '2px',
+                        color: change.positive ? (featured ? '#34d399' : '#059669') : '#ef4444',
+                        background: change.positive
+                            ? (featured ? 'rgba(52,211,153,0.12)' : '#ecfdf5')
+                            : (featured ? 'rgba(239,68,68,0.12)' : '#fef2f2'),
+                        padding: '4px 10px', borderRadius: '8px',
+                        display: 'flex', alignItems: 'center', gap: '4px',
                     }}>
-                        {change.positive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                        {change.positive ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
                         {change.value}
                     </span>
                 )}
             </div>
+
+            {/* Label + Value */}
             <div>
-                <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: featured ? '28px' : '22px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em', lineHeight: 1.1 }}>{value}</p>
+                <p style={{
+                    margin: '0 0 6px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: featured ? 'rgba(255,255,255,0.4)' : '#94a3b8',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                }}>{label}</p>
+                <p style={{
+                    margin: 0,
+                    fontSize: featured ? '32px' : '26px',
+                    fontWeight: 800,
+                    color: featured ? '#fff' : '#0f172a',
+                    letterSpacing: '-0.04em',
+                    lineHeight: 1,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                }}>{value}</p>
             </div>
         </div>
     )
