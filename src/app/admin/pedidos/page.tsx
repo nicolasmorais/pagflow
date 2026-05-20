@@ -245,7 +245,7 @@ export default async function OrdersPage({
                                                 {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
                                             </span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.preventDefault()}>
+                                        <div style={{ display: 'flex', gap: '6px' }}>
                                             <a
                                                 href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
                                                 target="_blank" rel="noreferrer"
