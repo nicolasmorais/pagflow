@@ -1362,19 +1362,21 @@ h6 {
 
 .filter-presets {
     display: flex;
-    gap: 4px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
+    gap: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 4px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .filter-preset-btn {
-    padding: 7px 14px;
+    padding: 7px 12px;
     border-radius: 8px;
     border: none;
     background: transparent;
-    color: #64748b;
+    color: rgba(255, 255, 255, 0.4);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -1384,14 +1386,14 @@ h6 {
 }
 
 .filter-preset-btn:hover {
-    background: #e2e8f0;
-    color: #334155;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .filter-preset-btn.active {
-    background: #0f172a;
+    background: rgba(99, 102, 241, 0.2);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.1);
 }
 
 .filter-preset-btn.custom-toggle {
@@ -1416,10 +1418,12 @@ h6 {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     padding: 4px 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .custom-date-input {
@@ -1427,15 +1431,16 @@ h6 {
     outline: none;
     font-size: 13px;
     font-weight: 600;
-    color: #334155;
+    color: #e2e8f0;
     background: transparent;
     font-family: inherit;
     padding: 6px 2px;
+    color-scheme: dark;
 }
 
 .custom-date-sep {
     font-size: 11px;
-    color: #cbd5e1;
+    color: rgba(255, 255, 255, 0.25);
     font-weight: 600;
 }
 
@@ -1444,9 +1449,9 @@ h6 {
     align-items: center;
     gap: 5px;
     padding: 8px 14px;
-    background: #0f172a;
+    background: rgba(99, 102, 241, 0.2);
     color: #fff;
-    border: none;
+    border: 1px solid rgba(99, 102, 241, 0.3);
     border-radius: 10px;
     font-size: 12px;
     font-weight: 700;
@@ -1457,7 +1462,7 @@ h6 {
 }
 
 .custom-date-submit:hover {
-    background: #1e293b;
+    background: rgba(99, 102, 241, 0.3);
 }
 
 @media (max-width: 768px) {
@@ -1467,15 +1472,19 @@ h6 {
     }
 
     .filter-presets {
-        flex-wrap: wrap;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 4px;
     }
 
     .filter-preset-btn {
-        flex: 1;
-        min-width: 0;
-        text-align: center;
-        padding: 8px 8px;
+        padding: 8px 6px;
         font-size: 11px;
+        text-align: center;
+    }
+
+    .filter-preset-btn.custom-toggle {
+        grid-column: span 4;
     }
 
     .custom-date-row {
