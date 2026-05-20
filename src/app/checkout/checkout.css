@@ -74,6 +74,7 @@ body{font-family:'Manrope',sans-serif !important;background:var(--bg);color:var(
 .form-col {
     flex: 1;
     min-width: 0;
+    order: -1;
 }
 
 .aside {
@@ -91,9 +92,20 @@ body{font-family:'Manrope',sans-serif !important;background:var(--bg);color:var(
         flex-direction: column;
     }
     .aside {
+        display: contents;
         width: 100%;
         position: static;
-        order: 2;
+    }
+    .aside-summary {
+        order: -1;
+        width: 100%;
+    }
+    .trust-section {
+        order: 1;
+        width: 100%;
+    }
+    .form-col {
+        order: 0;
     }
     .page {
         max-width: 560px;

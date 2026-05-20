@@ -787,6 +787,58 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                     <div className="page">
                         <div className="layout">
+
+                        {/* Sidebar - Resumo + Trust Badges */}
+                        <aside className="aside">
+                            <div className="aside-summary">
+                                <div className="prod-summary">
+                                    <div className="prod-img">
+                                        {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
+                                    </div>
+                                    <div className="prod-info">
+                                        <div className="prod-name">{product?.name || "Produto"}</div>
+                                        <div className="prod-qty">Quantidade: 1</div>
+                                    </div>
+                                    <div className="prod-price">R$ {finalPrice.toFixed(2).replace('.', ',')}</div>
+                                </div>
+                            </div>
+                            <div className="trust-section">
+                                {product?.isDigital ? (
+                                    [
+                                        { icon: '✅', title: 'Acesso Imediato', p: 'Assim que o pagamento é confirmado, o link chega no seu e-mail em minutos. Sem espera, sem frete.' },
+                                        { icon: '🔄', title: 'Garantia de 7 Dias', p: 'Se não gostar por qualquer motivo, devolvemos 100% do seu dinheiro. Sem perguntas, sem burocracia.' },
+                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros. Ambiente criptografado e certificado.' },
+                                        { icon: '💬', title: 'Suporte Humanizado', p: 'Nossa equipe está pronta para te ajudar por e-mail e WhatsApp. Resposta rápida em até 1 hora.' }
+                                    ].map((t, i) => (
+                                        <div key={i} className="trust-item">
+                                            <div className="t-icon">{t.icon}</div>
+                                            <div className="t-body">
+                                                <div className="t-stars">★★★★★</div>
+                                                <div className="t-name">{t.title}</div>
+                                                <div className="t-desc">{t.p}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    [
+                                        { icon: '✈️', title: 'Envio Rápido', p: 'Seu produto é enviado diretamente para o seu endereço, com rastreamento pelo WhatsApp.' },
+                                        { icon: '🔄', title: 'Trocas e Devoluções', p: 'Se não gostar ou chegar com problema, trocamos ou devolvemos em até 7 dias. Sem complicação.' },
+                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' },
+                                        { icon: '💬', title: 'Suporte Humanizado', p: 'Nossa equipe está pronta para te ajudar por e-mail e WhatsApp. Resposta rápida em até 1 hora.' }
+                                    ].map((t, i) => (
+                                        <div key={i} className="trust-item">
+                                            <div className="t-icon">{t.icon}</div>
+                                            <div className="t-body">
+                                                <div className="t-stars">★★★★★</div>
+                                                <div className="t-name">{t.title}</div>
+                                                <div className="t-desc">{t.p}</div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </aside>
+
                         <div className="form-col">
 
                         <div className={`screen ${step === 1 ? 'active' : ''}`}>
@@ -818,27 +870,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
                                         {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
                                         <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
-                                    </div>
-                                )}
-
-                                {pixDiscountVal > 0 && (
-                                    <div style={{
-                                        background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-                                        border: '1.5px solid #6ee7b7',
-                                        borderRadius: '10px',
-                                        padding: '12px 14px',
-                                        marginBottom: '14px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '8px',
-                                        fontSize: '13.5px',
-                                        color: '#065f46',
-                                        fontWeight: 600,
-                                        textAlign: 'center',
-                                    }}>
-                                        <span style={{ fontSize: '18px' }}>🎉</span>
-                                        Pague com <strong>PIX</strong> e ganhe <strong style={{ color: '#059669' }}>{Math.round(pixDiscountVal * 100)}% de desconto</strong>!
                                     </div>
                                 )}
 
@@ -1036,57 +1067,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         </div>
 
                         </div>
-
-                        {/* Sidebar - Resumo + Trust Badges */}
-                        <aside className="aside">
-                            <div className="aside-summary">
-                                <div className="prod-summary">
-                                    <div className="prod-img">
-                                        {product?.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : '🧴'}
-                                    </div>
-                                    <div className="prod-info">
-                                        <div className="prod-name">{product?.name || "Produto"}</div>
-                                        <div className="prod-qty">Quantidade: 1</div>
-                                    </div>
-                                    <div className="prod-price">R$ {finalPrice.toFixed(2).replace('.', ',')}</div>
-                                </div>
-                            </div>
-                            <div className="trust-section">
-                                {product?.isDigital ? (
-                                    [
-                                        { icon: '✅', title: 'Acesso Imediato', p: 'Assim que o pagamento é confirmado, o link chega no seu e-mail em minutos. Sem espera, sem frete.' },
-                                        { icon: '🔄', title: 'Garantia de 7 Dias', p: 'Se não gostar por qualquer motivo, devolvemos 100% do seu dinheiro. Sem perguntas, sem burocracia.' },
-                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros. Ambiente criptografado e certificado.' },
-                                        { icon: '💬', title: 'Suporte Humanizado', p: 'Nossa equipe está pronta para te ajudar por e-mail e WhatsApp. Resposta rápida em até 1 hora.' }
-                                    ].map((t, i) => (
-                                        <div key={i} className="trust-item">
-                                            <div className="t-icon">{t.icon}</div>
-                                            <div className="t-body">
-                                                <div className="t-stars">★★★★★</div>
-                                                <div className="t-name">{t.title}</div>
-                                                <div className="t-desc">{t.p}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    [
-                                        { icon: '✈️', title: 'Envio Rápido', p: 'Seu produto é enviado diretamente para o seu endereço, com rastreamento pelo WhatsApp.' },
-                                        { icon: '🔄', title: 'Trocas e Devoluções', p: 'Se não gostar ou chegar com problema, trocamos ou devolvemos em até 7 dias. Sem complicação.' },
-                                        { icon: '🔒', title: 'Compra Protegida', p: 'Seus dados pessoais e de pagamento estão completamente seguros conosco.' },
-                                        { icon: '💬', title: 'Suporte Humanizado', p: 'Nossa equipe está pronta para te ajudar por e-mail e WhatsApp. Resposta rápida em até 1 hora.' }
-                                    ].map((t, i) => (
-                                        <div key={i} className="trust-item">
-                                            <div className="t-icon">{t.icon}</div>
-                                            <div className="t-body">
-                                                <div className="t-stars">★★★★★</div>
-                                                <div className="t-name">{t.title}</div>
-                                                <div className="t-desc">{t.p}</div>
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </aside>
 
                         </div>
                     </div>
