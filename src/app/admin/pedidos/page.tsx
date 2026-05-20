@@ -124,13 +124,23 @@ export default async function OrdersPage({
                 </div>
 
                 {/* Filters */}
-                <AnalyticsFilterForm
-                    currentFilter={filter}
-                    currentStatus={status}
-                    fromDate={fromDate}
-                    toDate={toDate}
-                    showStatus={true}
-                />
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                    {/* Status pills - left */}
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <StatusPill label="Todos" active={status === 'todos'} />
+                        <StatusPill label="Pago" active={status === 'pago'} color="#16a34a" bg="#dcfce7" />
+                        <StatusPill label="Aguardando" active={status === 'aguardando'} color="#d97706" bg="#fef3c7" />
+                        <StatusPill label="Recusado" active={status === 'recusado'} color="#dc2626" bg="#fee2e2" />
+                    </div>
+
+                    {/* Date filter - right */}
+                    <AnalyticsFilterForm
+                        currentFilter={filter}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        showStatus={false}
+                    />
+                </div>
             </header>
 
             {/* Orders */}
@@ -291,5 +301,33 @@ function SummaryCard({ label, value, sub, color, bg, border }: {
                 {sub}
             </p>
         </div>
+    )
+}
+
+/* ── Status Pill ── */
+function StatusPill({ label, active, color, bg }: {
+    label: string; active: boolean; color?: string; bg?: string
+}) {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+    const isActive = active
+
+    return (
+        <a
+            href={`?filter=${params.get('filter') || '7dias'}${label === 'Todos' ? '' : `&status=${label.toLowerCase()}`}`}
+            style={{
+                padding: '7px 14px',
+                borderRadius: '10px',
+                border: isActive ? 'none' : '1px solid #e2e8f0',
+                background: isActive ? (bg || '#0f172a') : '#fff',
+                color: isActive ? (color || '#fff') : '#64748b',
+                fontSize: '12px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                transition: 'all 0.15s',
+                boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
+            }}
+        >
+            {label}
+        </a>
     )
 }
