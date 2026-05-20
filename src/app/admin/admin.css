@@ -223,6 +223,30 @@ body {
     filter: brightness(0) invert(1);
 }
 
+.sidebar-logo-mobile {
+    display: none !important;
+}
+
+/* ── Dashboard Responsive Grids ────────────────────────────────────── */
+.dashboard-grid {
+    display: grid;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 1024px) {
+    .sidebar-logo-desktop {
+        display: none !important;
+    }
+    .sidebar-logo-mobile {
+        display: block !important;
+    }
+}
+
 .sidebar-close-btn {
     display: none;
     background: none;

@@ -185,7 +185,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
     return (
         <>
             {/* ── KPI Grid ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+            <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
                 <KpiCard featured icon={DollarSign} label="Faturamento" value={`R$ ${fmt(kpis.totalRevenue)}`}
                     change={pctChange(kpis.totalRevenue, prevKpis.totalRevenue)} />
                 <KpiCard icon={ShoppingBag} label="Pedidos" value={fmtInt(kpis.totalOrders)}
@@ -201,7 +201,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
             </div>
 
             {/* ── Revenue Chart + Recent Orders ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '14px' }}>
                 <SectionCard title="Receita Diária" subtitle="Evolução financeira nos últimos 30 dias">
                     <ResponsiveContainer width="100%" height={240}>
                         <AreaChart data={dailyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
@@ -252,7 +252,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
             </div>
 
             {/* ── Hourly Heatmap + Weekday Chart ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
                 <SectionCard title="Horários de Pico" subtitle="Pedidos por hora do dia">
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '4px' }}>
                         {hourlyData.map(h => (
@@ -285,7 +285,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
             </div>
 
             {/* ── Status + Payment Methods + Installments ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '14px', marginBottom: '14px' }}>
+            <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: '14px', marginBottom: '14px' }}>
                 {/* Status Breakdown */}
                 <SectionCard title="Status dos Pedidos" subtitle="Distribuição no período">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -375,7 +375,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
             </div>
 
             {/* ── Top Products + Top States ── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '14px', marginBottom: '14px' }}>
+            <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '14px', marginBottom: '14px' }}>
                 <SectionCard title="Top Produtos" subtitle="Por faturamento">
                     {topProducts.length === 0 ? (
                         <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '24px 0' }}>Sem dados</p>
@@ -432,7 +432,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
 
             {/* ── Order Bump Analysis ── */}
             <SectionCard title="Análise de Order Bumps" subtitle="Impacto no ticket médio e receita" style={{ marginBottom: '14px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
+                <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
                     <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '16px', border: '1px solid #f1f5f9' }}>
                         <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Com Bump</p>
                         <p style={{ margin: '0 0 2px', fontSize: '24px', fontWeight: 900, color: '#1e293b' }}>{bumpStats.withBump}</p>

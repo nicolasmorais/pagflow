@@ -16,7 +16,6 @@ import {
     LogOut,
     X
 } from 'lucide-react'
-import TopBar from './components/TopBar'
 import './admin.css'
 
 const menuSections = [
@@ -70,7 +69,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <div className="sidebar-header">
                     <div className="sidebar-logo">
                         <img
+                            className="sidebar-logo-desktop"
                             src="https://pub-da9fd1c19b8e45d691d67626b9a7ba6d.r2.dev/1774828533696-1774828360577-019d3c03-84c9-7750-9ed0-2cd31fab976b.png"
+                            alt="PagFlow"
+                        />
+                        <img
+                            className="sidebar-logo-mobile"
+                            src="https://pub-da9fd1c19b8e45d691d67626b9a7ba6d.r2.dev/1779247326232-1774828533696-1774828360577-019d3c03-84c9-7750-9ed0-2cd31fab976b-(1).png"
                             alt="PagFlow"
                         />
                     </div>
@@ -118,7 +123,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             <main className="main-content">
-                <TopBar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
                 <div className="main-content-inner">
                     {children}
                 </div>
@@ -131,7 +135,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }
                 @media (max-width: 1024px) {
                     .main-content-inner { padding: 16px; padding-top: 20px; }
-                    .topbar-container { padding: 12px 16px !important; }
                 }
                 @media (max-width: 480px) {
                     .main-content-inner { padding: 12px; padding-top: 16px; }
