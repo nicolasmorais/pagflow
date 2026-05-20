@@ -24,15 +24,15 @@ export default function DeleteOrderButton({ orderId }: { orderId: string }) {
                 style={{
                     width: '32px',
                     height: '32px',
-                    background: '#FEF2F2',
-                    borderRadius: '8px',
+                    background: '#fef2f2',
+                    borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#EF4444',
+                    color: '#ef4444',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.15s',
                 }}
                 title="Mover para Lixeira"
             >

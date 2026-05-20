@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
-import { Trash2, Phone, Package } from 'lucide-react'
+import { Trash2, Phone, Package, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import PaymentStatusSelect from './components/PaymentStatusSelect'
 import OrderStatusSelect from './components/OrderStatusSelect'
@@ -46,6 +46,14 @@ async function syncMercadoPagoOrders(orders: any[]) {
     return orders;
 }
 
+const statusConfig: Record<string, { label: string; bg: string; color: string }> = {
+    pago: { label: 'Pago', bg: '#dcfce7', color: '#16a34a' },
+    aguardando: { label: 'Aguardando', bg: '#fef3c7', color: '#d97706' },
+    processando: { label: 'Processando', bg: '#fef3c7', color: '#d97706' },
+    recusado: { label: 'Recusado', bg: '#fee2e2', color: '#dc2626' },
+    reembolsado: { label: 'Reembolsado', bg: '#e0e7ff', color: '#6366f1' },
+}
+
 export default async function OrdersPage({
     searchParams,
 }: {
@@ -79,29 +87,50 @@ export default async function OrdersPage({
 
     orders = await syncMercadoPagoOrders(orders);
 
+    const totalValue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0)
+    const paidCount = orders.filter(o => o.paymentStatus === 'pago').length
+
     return (
         <div style={{ width: '100%', paddingBottom: '60px' }}>
             {/* Header */}
-            <div style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+            <header style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
-                        <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Pedidos</h1>
-                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8', fontWeight: 500 }}>{orders.length} pedidos no período</p>
+                        <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Pedidos</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+                            <span style={{
+                                fontSize: '12px', fontWeight: 700, color: '#6366f1',
+                                background: '#eef2ff', padding: '4px 10px', borderRadius: '8px',
+                            }}>
+                                {orders.length} pedidos
+                            </span>
+                            <span style={{
+                                fontSize: '12px', fontWeight: 700, color: '#16a34a',
+                                background: '#f0fdf4', padding: '4px 10px', borderRadius: '8px',
+                            }}>
+                                {paidCount} pagos
+                            </span>
+                            <span style={{
+                                fontSize: '12px', fontWeight: 700, color: '#0f172a',
+                                background: '#f8fafc', padding: '4px 10px', borderRadius: '8px',
+                                border: '1px solid #e2e8f0',
+                            }}>
+                                R$ {fmt(totalValue)}
+                            </span>
+                        </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Link
-                            href="/admin/pedidos/lixeira"
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '8px 14px', background: '#f8fafc', color: '#64748b',
-                                borderRadius: '10px', textDecoration: 'none', border: '1px solid #f1f5f9',
-                                fontSize: '12px', fontWeight: 600,
-                            }}
-                        >
-                            <Trash2 size={14} />
-                            Lixeira
-                        </Link>
-                    </div>
+                    <Link
+                        href="/admin/pedidos/lixeira"
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '9px 16px', background: '#fff', color: '#64748b',
+                            borderRadius: '12px', textDecoration: 'none', border: '1px solid #e2e8f0',
+                            fontSize: '13px', fontWeight: 600, transition: 'all 0.15s',
+                        }}
+                    >
+                        <Trash2 size={14} />
+                        Lixeira
+                    </Link>
                 </div>
 
                 {/* Filters */}
@@ -112,34 +141,40 @@ export default async function OrdersPage({
                     toDate={toDate}
                     showStatus={true}
                 />
-            </div>
+            </header>
 
-            {/* Orders Table */}
+            {/* Orders */}
             {orders.length === 0 ? (
                 <div style={{
-                    background: '#fff', border: '1px solid #f1f5f9', borderRadius: '18px',
+                    background: '#fff', border: '1px solid #f1f5f9', borderRadius: '20px',
                     padding: '60px 40px', textAlign: 'center',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
                 }}>
                     <div style={{
-                        width: '64px', height: '64px', background: '#f8fafc', borderRadius: '16px',
+                        width: '64px', height: '64px', background: '#f8fafc', borderRadius: '18px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
                     }}>
                         <Package size={28} color="#cbd5e1" />
                     </div>
-                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#1e293b', margin: '0 0 8px' }}>Nenhum pedido encontrado</h3>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>Nenhum pedido encontrado</h3>
                     <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>Ajuste os filtros ou aguarde novas vendas.</p>
                 </div>
             ) : (
                 <>
                     {/* Desktop Table */}
-                    <div className="desktop-orders-table" style={{ background: '#fff', border: '1px solid #f1f5f9', borderRadius: '16px', overflow: 'hidden' }}>
+                    <div className="desktop-orders-table" style={{
+                        background: '#fff', border: '1px solid #f1f5f9',
+                        borderRadius: '20px', overflow: 'hidden',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
+                    }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                    {['CLIENTE', 'PRODUTO', 'VALOR', 'PAGAMENTO', 'STATUS', 'DATA', ''].map((h, i) => (
+                                    {['Cliente', 'Produto', 'Valor', 'Pagamento', 'Status', 'Data', ''].map((h, i) => (
                                         <th key={i} style={{
-                                            padding: '12px 16px', fontSize: '10px', fontWeight: 800, color: '#94a3b8',
-                                            textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: i === 6 ? 'right' : 'left',
+                                            padding: '14px 20px', fontSize: '11px', fontWeight: 700, color: '#94a3b8',
+                                            textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: i === 6 ? 'right' : 'left',
+                                            background: '#fafbfc',
                                         }}>{h}</th>
                                     ))}
                                 </tr>
@@ -152,43 +187,82 @@ export default async function OrdersPage({
 
                     {/* Mobile Cards */}
                     <div className="mobile-orders-grid">
-                        {orders.map((order: any) => (
-                            <div key={order.id} style={{
-                                background: '#fff', border: '1px solid #f1f5f9', borderRadius: '14px', padding: '16px', marginBottom: '10px',
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                    <div style={{ minWidth: 0, flex: 1 }}>
-                                        <Link href={`/admin/pedidos/${order.id}`} style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', textDecoration: 'none' }}>
-                                            {order.fullName}
-                                        </Link>
-                                        <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#94a3b8' }}>{order.product?.name || 'Produto'}</p>
+                        {orders.map((order: any) => {
+                            const pStatus = statusConfig[order.paymentStatus] || statusConfig.aguardando
+                            const date = new Date(order.createdAt)
+                            return (
+                                <Link
+                                    key={order.id}
+                                    href={`/admin/pedidos/${order.id}`}
+                                    style={{
+                                        display: 'block',
+                                        background: '#fff',
+                                        border: '1px solid #f1f5f9',
+                                        borderRadius: '16px',
+                                        padding: '16px',
+                                        marginBottom: '10px',
+                                        textDecoration: 'none',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                                        transition: 'all 0.15s',
+                                    }}
+                                >
+                                    {/* Top: Name + Value */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+                                            <div style={{
+                                                width: '36px', height: '36px', borderRadius: '10px',
+                                                background: '#f1f5f9', color: '#475569',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '13px', fontWeight: 800, flexShrink: 0,
+                                            }}>
+                                                {order.fullName?.charAt(0).toUpperCase() || '?'}
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {order.fullName}
+                                                </p>
+                                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
+                                                    {order.product?.name || 'Produto'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', flexShrink: 0, marginLeft: '12px' }}>
+                                            R$ {fmt(order.totalPrice || 0)}
+                                        </span>
                                     </div>
-                                    <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', flexShrink: 0 }}>R$ {fmt(order.totalPrice || 0)}</span>
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
-                                    <div>
-                                        <p style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>Pagamento</p>
-                                        <PaymentStatusSelect orderId={order.id} initialStatus={order.paymentStatus || 'processando'} />
+
+                                    {/* Bottom: Status + Date + Actions */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{
+                                                fontSize: '11px', fontWeight: 700,
+                                                background: pStatus.bg, color: pStatus.color,
+                                                padding: '4px 10px', borderRadius: '8px',
+                                            }}>
+                                                {pStatus.label}
+                                            </span>
+                                            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
+                                                {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.preventDefault()}>
+                                            <a
+                                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
+                                                target="_blank" rel="noreferrer"
+                                                style={{
+                                                    width: '30px', height: '30px', borderRadius: '8px',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    background: '#f0fdf4', color: '#16a34a', textDecoration: 'none',
+                                                }}
+                                            >
+                                                <Phone size={13} />
+                                            </a>
+                                            <DeleteOrderButton orderId={order.id} />
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p style={{ fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 4px' }}>Status</p>
-                                        <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
-                                    </div>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
-                                    <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
-                                        {new Date(order.createdAt).toLocaleDateString('pt-BR')} {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                                    </span>
-                                    <div style={{ display: 'flex', gap: '6px' }}>
-                                        <a href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer"
-                                            style={{ width: '28px', height: '28px', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', color: '#16a34a' }}>
-                                            <Phone size={12} />
-                                        </a>
-                                        <DeleteOrderButton orderId={order.id} />
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                                </Link>
+                            )
+                        })}
                     </div>
                 </>
             )}
