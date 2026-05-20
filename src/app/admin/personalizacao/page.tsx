@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone, TrendingUp } from 'lucide-react'
+import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone, TrendingUp, Store, Type, Percent, Shield, ArrowLeft, MessageCircle, Webhook, Eye } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
 
 export default function PersonalizacaoPage() {
@@ -108,8 +108,6 @@ export default function PersonalizacaoPage() {
             await updateCustomization('webhook_url', webhookUrl)
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
-
-            // Clear status after 3 seconds
             setTimeout(() => setStatus(null), 3000)
         } catch (error: any) {
             setStatus({ type: 'error', message: error.message || 'Erro ao salvar configurações' })
@@ -121,543 +119,405 @@ export default function PersonalizacaoPage() {
     if (loading) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-                <Loader2 className="animate-spin" size={32} color="#4f46e5" />
+                <Loader2 className="animate-spin" size={32} color="#6366f1" />
             </div>
         )
     }
 
     return (
-        <div style={{ maxWidth: '900px', padding: '20px 0' }}>
-            <div style={{
-                background: '#fff',
-                borderRadius: '20px',
-                padding: '32px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
-            }}>
-                <header style={{ marginBottom: '32px' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Palette size={22} color="#4f46e5" />
-                        Customização Visual
-                    </h2>
-                    <p style={{ color: '#64748b', fontSize: '14px', marginTop: '4px' }}>
-                        Personalize as cores, marca e anúncios do seu checkout.
-                    </p>
-                </header>
+        <div style={{ maxWidth: '860px', paddingBottom: '40px' }}>
+            {/* Header */}
+            <header style={{ marginBottom: '28px' }}>
+                <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>
+                    Personalização
+                </h1>
+                <p style={{ color: '#64748b', fontSize: '14px', marginTop: '6px', fontWeight: 500 }}>
+                    Configure a aparência, comportamento e integrações do checkout.
+                </p>
+            </header>
 
-                <form onSubmit={handleSave}>
-                    {/* Store Name */}
-                    <div style={{ marginBottom: '32px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <Palette size={16} />
-                            Nome da Loja (Browser Tab)
-                        </label>
+            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                {/* ── Marca ── */}
+                <Section icon={Store} title="Marca" description="Nome e logo exibidos no checkout.">
+                    <Field label="Nome da Loja" hint="Aparece na aba do navegador durante o checkout.">
                         <input
                             type="text"
                             value={checkoutStoreName}
                             onChange={(e) => setCheckoutStoreName(e.target.value)}
-                            placeholder="Ex: Minha Loja Inc."
-                            style={{
-                                width: '100%',
-                                padding: '12px 16px',
-                                borderRadius: '12px',
-                                border: '1px solid #e2e8f0',
-                                fontSize: '14px',
-                                outline: 'none',
-                                transition: 'border-color 0.2s',
-                            }}
+                            placeholder="Minha Loja"
+                            className="pi-input"
                         />
-                        <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px' }}>
-                            Este nome aparecerá na aba do navegador quando o cliente estiver no checkout.
-                        </p>
-                    </div>
-
-                    {/* Checkout Logo */}
-                    <div style={{ marginBottom: '32px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <ImageIcon size={16} />
-                            Logo do Checkout (URL)
-                        </label>
-                        <div style={{ display: 'flex', gap: '12px' }}>
-                            <input
-                                type="text"
-                                value={checkoutLogo}
-                                onChange={(e) => setCheckoutLogo(e.target.value)}
-                                placeholder="https://url-da-sua-logo.png"
-                                style={{
-                                    flex: 1,
-                                    padding: '12px 16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid #e2e8f0',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    transition: 'border-color 0.2s',
-                                }}
-                                onFocus={(e) => e.target.style.borderColor = '#4f46e5'}
-                                onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                            />
-                        </div>
+                    </Field>
+                    <Field label="Logo do Checkout" hint="URL da imagem da sua logo.">
+                        <input
+                            type="text"
+                            value={checkoutLogo}
+                            onChange={(e) => setCheckoutLogo(e.target.value)}
+                            placeholder="https://url-da-sua-logo.png"
+                            className="pi-input"
+                        />
                         {checkoutLogo && (
                             <div style={{
-                                marginTop: '12px',
-                                padding: '12px',
-                                background: '#f8fafc',
-                                borderRadius: '12px',
-                                border: '1px dashed #e2e8f0',
-                                textAlign: 'center'
+                                marginTop: '10px', padding: '16px', background: '#f8fafc',
+                                borderRadius: '12px', border: '1px dashed #e2e8f0', textAlign: 'center'
                             }}>
-                                <span style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Pré-visualização da Logo:</span>
                                 <img src={checkoutLogo} alt="Preview" style={{ maxHeight: '40px', maxWidth: '100%', objectFit: 'contain' }} />
                             </div>
                         )}
+                    </Field>
+                </Section>
+
+                {/* ── Cores ── */}
+                <Section icon={Palette} title="Cores" description="Defina as cores principais do checkout.">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+                        <ColorField label="Cor Principal" value={primaryColor} onChange={setPrimaryColor} />
+                        <ColorField label="Cor dos Botões" value={buttonColor} onChange={setButtonColor} />
+                        <ColorField label="Cor de Fundo" value={bgColor} onChange={setBgColor} />
                     </div>
+                </Section>
 
-                    {/* Alert Bar Tracking */}
-                    <div style={{ marginBottom: '32px', padding: '24px', background: '#fff7ed', borderRadius: '16px', border: '1px solid #ffedd5' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#9a3412', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Megaphone size={18} />
-                            Barra de Avisos (Topo)
-                        </label>
-                        <div style={{ marginBottom: '16px' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#c2410c', marginBottom: '6px' }}>Texto de Aviso</label>
-                            <input
-                                type="text"
-                                value={alertText}
-                                onChange={(e) => setAlertText(e.target.value)}
-                                placeholder="Ex: Parabéns! Você ganhou frete grátis..."
-                                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #fed7aa', fontSize: '14px', outline: 'none' }}
-                            />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#c2410c', marginBottom: '6px' }}>Cor do Texto da Barra</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <input
-                                        type="color"
-                                        value={alertColor}
-                                        onChange={(e) => setAlertColor(e.target.value)}
-                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={alertColor}
-                                        onChange={(e) => setAlertColor(e.target.value)}
-                                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #fed7aa', borderRadius: '10px', fontSize: '13px' }}
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#c2410c', marginBottom: '6px' }}>Cor de Fundo da Barra</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <input
-                                        type="color"
-                                        value={alertBg}
-                                        onChange={(e) => setAlertBg(e.target.value)}
-                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={alertBg}
-                                        onChange={(e) => setAlertBg(e.target.value)}
-                                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #fed7aa', borderRadius: '10px', fontSize: '13px' }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* PIX Reward Badge Customization */}
-                    <div style={{ marginBottom: '32px', padding: '24px', background: '#f0fdf4', borderRadius: '16px', border: '1px solid #bbf7d0' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#166534', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <CheckCircle2 size={18} />
-                            Destaque de Recompensa PIX (Checkout)
-                        </label>
-                        <div style={{ marginBottom: '16px' }}>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#15803d', marginBottom: '6px' }}>Texto da Recompensa</label>
-                            <input
-                                type="text"
-                                value={pixBadgeText}
-                                onChange={(e) => setPixBadgeText(e.target.value)}
-                                placeholder="Ex: 😲 35% de desconto + envio prioritário"
-                                style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #86efac', fontSize: '14px', outline: 'none' }}
-                            />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#15803d', marginBottom: '6px' }}>Cor do Texto</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <input
-                                        type="color"
-                                        value={pixBadgeColor}
-                                        onChange={(e) => setPixBadgeColor(e.target.value)}
-                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={pixBadgeColor}
-                                        onChange={(e) => setPixBadgeColor(e.target.value)}
-                                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #86efac', borderRadius: '10px', fontSize: '13px' }}
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#15803d', marginBottom: '6px' }}>Cor de Fundo</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <input
-                                        type="color"
-                                        value={pixBadgeBg}
-                                        onChange={(e) => setPixBadgeBg(e.target.value)}
-                                        style={{ width: '40px', height: '40px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={pixBadgeBg}
-                                        onChange={(e) => setPixBadgeBg(e.target.value)}
-                                        style={{ flex: 1, padding: '10px 12px', border: '1px solid #86efac', borderRadius: '10px', fontSize: '13px' }}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{ marginTop: '16px', padding: '12px', background: '#fff', borderRadius: '10px', border: '1px dashed #86efac', textAlign: 'center' }}>
-                            <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '8px' }}>Pré-visualização no Checkout:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-                                <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '14px' }}>PIX</span>
-                                <span style={{
-                                    background: pixBadgeBg,
-                                    color: pixBadgeColor,
-                                    padding: '4px 10px',
-                                    borderRadius: '20px',
-                                    fontSize: '11px',
-                                    fontWeight: 800
-                                }}>
-                                    {pixBadgeText || "Seu texto aqui"}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Colors Header */}
-                    <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#1e293b', marginBottom: '16px', marginTop: '32px' }}>Cores Principais</h3>
-
-                    {/* Colors Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '32px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                        <div>
-                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '12px', display: 'block' }}>
-                                Cor Predominante
-                            </label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <input
-                                    type="color"
-                                    value={primaryColor}
-                                    onChange={(e) => setPrimaryColor(e.target.value)}
-                                    style={{ width: '48px', height: '48px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                />
-                                <input
-                                    type="text"
-                                    value={primaryColor}
-                                    onChange={(e) => setPrimaryColor(e.target.value)}
-                                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', textTransform: 'uppercase' }}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '12px', display: 'block' }}>
-                                Cor dos Botões
-                            </label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <input
-                                    type="color"
-                                    value={buttonColor}
-                                    onChange={(e) => setButtonColor(e.target.value)}
-                                    style={{ width: '48px', height: '48px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                />
-                                <input
-                                    type="text"
-                                    value={buttonColor}
-                                    onChange={(e) => setButtonColor(e.target.value)}
-                                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', textTransform: 'uppercase' }}
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '12px', display: 'block' }}>
-                                Cor do Fundo
-                            </label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <input
-                                    type="color"
-                                    value={bgColor}
-                                    onChange={(e) => setBgColor(e.target.value)}
-                                    style={{ width: '48px', height: '48px', padding: '0', border: 'none', borderRadius: '8px', cursor: 'pointer', background: 'none' }}
-                                />
-                                <input
-                                    type="text"
-                                    value={bgColor}
-                                    onChange={(e) => setBgColor(e.target.value)}
-                                    style={{ flex: 1, padding: '10px 12px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '13px', textTransform: 'uppercase' }}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Discounts Configuration */}
-                    <div style={{ marginBottom: '32px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <TrendingUp size={18} color="#4f46e5" />
-                            Configuração de Descontos (%)
-                        </label>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Desconto no PIX (%)</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <input
-                                        type="number"
-                                        value={pixDiscount}
-                                        onChange={(e) => setPixDiscount(e.target.value)}
-                                        placeholder="Ex: 35"
-                                        style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
-                                    />
-                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#64748b' }}>%</span>
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>Desconto no Cartão (%)</label>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <input
-                                        type="number"
-                                        value={cardDiscount}
-                                        onChange={(e) => setCardDiscount(e.target.value)}
-                                        placeholder="Ex: 0"
-                                        style={{ flex: 1, padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '14px', outline: 'none' }}
-                                    />
-                                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#64748b' }}>%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* CPF Toggle */}
-                    <div style={{ marginBottom: '24px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div>
-                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block' }}>
-                                Desativar Campo de CPF
-                            </label>
-                            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                                Se ativado, o campo CPF não será solicitado nem obrigatório no checkout.
-                            </p>
-                        </div>
-                        <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px', cursor: 'pointer' }}>
-                            <input
-                                type="checkbox"
-                                checked={disableCpf}
-                                onChange={(e) => setDisableCpf(e.target.checked)}
-                                style={{ opacity: 0, width: 0, height: 0 }}
-                            />
-                            <span style={{
-                                position: 'absolute',
-                                top: 0, left: 0, right: 0, bottom: 0,
-                                backgroundColor: disableCpf ? '#4f46e5' : '#ccc',
-                                transition: '.4s',
-                                borderRadius: '34px'
-                            }}>
-                                <span style={{
-                                    position: 'absolute',
-                                    height: '18px',
-                                    width: '18px',
-                                    left: disableCpf ? '28px' : '4px',
-                                    bottom: '4px',
-                                    backgroundColor: 'white',
-                                    transition: '.4s',
-                                    borderRadius: '50%'
-                                }}></span>
-                            </span>
-                        </label>
-                    </div>
-
-                    {/* Disable Back Button Toggle */}
-                    <div style={{ marginBottom: '32px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div>
-                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block' }}>
-                                Desativar Botão Voltar (Checkout)
-                            </label>
-                            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                                Impede que o cliente volte para a etapa anterior ou use o botão voltar do navegador no checkout.
-                            </p>
-                        </div>
-                        <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px', cursor: 'pointer' }}>
-                            <input
-                                type="checkbox"
-                                checked={disableBack}
-                                onChange={(e) => setDisableBack(e.target.checked)}
-                                style={{ opacity: 0, width: 0, height: 0 }}
-                            />
-                            <span style={{
-                                position: 'absolute',
-                                top: 0, left: 0, right: 0, bottom: 0,
-                                backgroundColor: disableBack ? '#4f46e5' : '#ccc',
-                                transition: '.4s',
-                                borderRadius: '34px'
-                            }}>
-                                <span style={{
-                                    position: 'absolute',
-                                    height: '18px',
-                                    width: '18px',
-                                    left: disableBack ? '28px' : '4px',
-                                    bottom: '4px',
-                                    backgroundColor: 'white',
-                                    transition: '.4s',
-                                    borderRadius: '50%'
-                                }}></span>
-                            </span>
-                        </label>
-                    </div>
-
-                    {/* Disable WhatsApp Toggle */}
-                    <div style={{ marginBottom: '32px', padding: '20px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <div>
-                            <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', display: 'block' }}>
-                                Desativar WhatsApp Flutuante
-                            </label>
-                            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>
-                                Oculta o botão flutuante de WhatsApp no canto inferior do checkout.
-                            </p>
-                        </div>
-                        <label style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px', cursor: 'pointer' }}>
-                            <input
-                                type="checkbox"
-                                checked={disableWa}
-                                onChange={(e) => setDisableWa(e.target.checked)}
-                                style={{ opacity: 0, width: 0, height: 0 }}
-                            />
-                            <span style={{
-                                position: 'absolute',
-                                top: 0, left: 0, right: 0, bottom: 0,
-                                backgroundColor: disableWa ? '#4f46e5' : '#ccc',
-                                transition: '.4s',
-                                borderRadius: '34px'
-                            }}>
-                                <span style={{
-                                    position: 'absolute',
-                                    height: '18px',
-                                    width: '18px',
-                                    left: disableWa ? '28px' : '4px',
-                                    bottom: '4px',
-                                    backgroundColor: 'white',
-                                    transition: '.4s',
-                                    borderRadius: '50%'
-                                }}></span>
-                            </span>
-                        </label>
-                    </div>
-
-                    {/* Footer Text */}
-                    <div style={{ marginBottom: '32px' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '600', color: '#475569', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <FileText size={16} />
-                            Textos do Rodapé
-                        </label>
-                        <textarea
-                            value={checkoutFooter}
-                            onChange={(e) => setCheckoutFooter(e.target.value)}
-                            placeholder="Insira as informações de direitos autorais, CNPJ e contato que aparecerão no rodapé."
-                            style={{
-                                width: '100%',
-                                minHeight: '120px',
-                                padding: '16px',
-                                borderRadius: '12px',
-                                border: '1px solid #e2e8f0',
-                                fontSize: '14px',
-                                outline: 'none',
-                                transition: 'border-color 0.2s',
-                                resize: 'vertical',
-                                lineHeight: '1.6'
-                            }}
-                            onFocus={(e) => e.target.style.borderColor = '#4f46e5'}
-                            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                {/* ── Barra de Avisos ── */}
+                <Section icon={Megaphone} title="Barra de Avisos" description="Banner no topo do checkout para mensagens promocionais.">
+                    <Field label="Texto do Aviso">
+                        <input
+                            type="text"
+                            value={alertText}
+                            onChange={(e) => setAlertText(e.target.value)}
+                            placeholder="Frete grátis para todo o Brasil!"
+                            className="pi-input"
                         />
+                    </Field>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <ColorField label="Cor do Texto" value={alertColor} onChange={setAlertColor} />
+                        <ColorField label="Cor de Fundo" value={alertBg} onChange={setAlertBg} />
                     </div>
-
-                    {/* Webhook Integration */}
-                    <div style={{ marginBottom: '32px', padding: '24px', background: '#f8fafc', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
-                        <label style={{ fontSize: '14px', fontWeight: '700', color: '#1e293b', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <TrendingUp size={18} color="#4f46e5" />
-                            Integração Webhook (Saída)
-                        </label>
-                        <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
-                            Envie os dados de vendas para outro aplicativo (ex: Zapier, Make, n8n ou seu próprio CRM).
-                        </p>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '6px' }}>URL do Webhook</label>
-                            <input
-                                type="url"
-                                value={webhookUrl}
-                                onChange={(e) => setWebhookUrl(e.target.value)}
-                                placeholder="https://seu-endpoint.com/webhook"
-                                style={{
-                                    width: '100%',
-                                    padding: '12px 16px',
-                                    borderRadius: '12px',
-                                    border: '1px solid #e2e8f0',
-                                    fontSize: '14px',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    fontFamily: 'inherit'
-                                }}
-                            />
-                            <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '8px' }}>
-                                Disparado nos eventos: <strong>Venda Confirmada</strong>.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Feedback Status */}
-                    {status && (
+                    {alertText && (
                         <div style={{
-                            padding: '12px 16px',
-                            borderRadius: '12px',
-                            marginBottom: '20px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            fontSize: '14px',
-                            background: status.type === 'success' ? '#f0fdf4' : '#fef2f2',
-                            color: status.type === 'success' ? '#16a34a' : '#dc2626',
-                            border: `1px solid ${status.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                            marginTop: '8px', padding: '10px 16px', borderRadius: '10px',
+                            background: alertBg, color: alertColor,
+                            fontSize: '13px', fontWeight: 700, textAlign: 'center'
                         }}>
-                            {status.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-                            {status.message}
+                            {alertText}
                         </div>
                     )}
+                </Section>
 
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        style={{
-                            width: '100%',
-                            padding: '14px',
-                            background: '#4f46e5',
-                            color: '#fff',
-                            borderRadius: '12px',
-                            border: 'none',
-                            fontWeight: '600',
-                            fontSize: '16px',
-                            cursor: saving ? 'not-allowed' : 'pointer',
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            gap: '10px',
-                            transition: 'background 0.2s, transform 0.1s',
-                            boxShadow: '0 4px 10px rgba(79, 70, 229, 0.2)'
-                        }}
-                    >
-                        {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                        {saving ? 'Salvando...' : 'Salvar Alterações'}
-                    </button>
-                </form>
+                {/* ── Destaque PIX ── */}
+                <Section icon={CheckCircle2} title="Destaque PIX" description="Badge de recompensa ao lado da opção PIX no checkout.">
+                    <Field label="Texto do Destaque">
+                        <input
+                            type="text"
+                            value={pixBadgeText}
+                            onChange={(e) => setPixBadgeText(e.target.value)}
+                            placeholder="35% de desconto!"
+                            className="pi-input"
+                        />
+                    </Field>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <ColorField label="Cor do Texto" value={pixBadgeColor} onChange={setPixBadgeColor} />
+                        <ColorField label="Cor de Fundo" value={pixBadgeBg} onChange={setPixBadgeBg} />
+                    </div>
+                    {pixBadgeText && (
+                        <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                            <span style={{ fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>PIX</span>
+                            <span style={{
+                                background: pixBadgeBg, color: pixBadgeColor,
+                                padding: '4px 12px', borderRadius: '20px',
+                                fontSize: '11px', fontWeight: 800
+                            }}>
+                                {pixBadgeText}
+                            </span>
+                        </div>
+                    )}
+                </Section>
+
+                {/* ── Descontos ── */}
+                <Section icon={Percent} title="Descontos" description="Percentuais aplicados por método de pagamento.">
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <Field label="Desconto no PIX (%)">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <input
+                                    type="number"
+                                    value={pixDiscount}
+                                    onChange={(e) => setPixDiscount(e.target.value)}
+                                    placeholder="0"
+                                    className="pi-input"
+                                    style={{ flex: 1 }}
+                                />
+                                <span style={{ fontSize: '15px', fontWeight: 700, color: '#94a3b8' }}>%</span>
+                            </div>
+                        </Field>
+                        <Field label="Desconto no Cartão (%)">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <input
+                                    type="number"
+                                    value={cardDiscount}
+                                    onChange={(e) => setCardDiscount(e.target.value)}
+                                    placeholder="0"
+                                    className="pi-input"
+                                    style={{ flex: 1 }}
+                                />
+                                <span style={{ fontSize: '15px', fontWeight: 700, color: '#94a3b8' }}>%</span>
+                            </div>
+                        </Field>
+                    </div>
+                </Section>
+
+                {/* ── Comportamento ── */}
+                <Section icon={Shield} title="Comportamento" description="Controle campos e botões do checkout.">
+                    <ToggleRow
+                        label="Desativar Campo de CPF"
+                        description="O CPF não será solicitado no checkout."
+                        checked={disableCpf}
+                        onChange={setDisableCpf}
+                    />
+                    <ToggleRow
+                        label="Desativar Botão Voltar"
+                        description="Impede que o cliente volte à etapa anterior."
+                        checked={disableBack}
+                        onChange={setDisableBack}
+                    />
+                    <ToggleRow
+                        label="Desativar WhatsApp Flutuante"
+                        description="Oculta o botão de WhatsApp no checkout."
+                        checked={disableWa}
+                        onChange={setDisableWa}
+                    />
+                </Section>
+
+                {/* ── Rodapé ── */}
+                <Section icon={FileText} title="Rodapé" description="Texto exibido no rodapé do checkout.">
+                    <textarea
+                        value={checkoutFooter}
+                        onChange={(e) => setCheckoutFooter(e.target.value)}
+                        placeholder="CNPJ, direitos autorais, informações de contato..."
+                        className="pi-input"
+                        style={{ minHeight: '100px', resize: 'vertical', lineHeight: 1.6 }}
+                    />
+                </Section>
+
+                {/* ── Webhook ── */}
+                <Section icon={Webhook} title="Webhook" description="Envie dados de vendas para Zapier, Make, n8n ou CRM.">
+                    <Field label="URL do Webhook" hint="Disparado no evento: Venda Confirmada.">
+                        <input
+                            type="url"
+                            value={webhookUrl}
+                            onChange={(e) => setWebhookUrl(e.target.value)}
+                            placeholder="https://seu-endpoint.com/webhook"
+                            className="pi-input"
+                        />
+                    </Field>
+                </Section>
+
+                {/* Status */}
+                {status && (
+                    <div style={{
+                        padding: '14px 18px', borderRadius: '14px',
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        fontSize: '14px', fontWeight: 600,
+                        background: status.type === 'success' ? '#f0fdf4' : '#fef2f2',
+                        color: status.type === 'success' ? '#16a34a' : '#dc2626',
+                        border: `1px solid ${status.type === 'success' ? '#bbf7d0' : '#fecaca'}`
+                    }}>
+                        {status.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                        {status.message}
+                    </div>
+                )}
+
+                {/* Save Button */}
+                <button
+                    type="submit"
+                    disabled={saving}
+                    style={{
+                        width: '100%', padding: '15px',
+                        background: saving ? '#e2e8f0' : '#0f172a',
+                        color: saving ? '#94a3b8' : '#fff',
+                        borderRadius: '14px', border: 'none',
+                        fontWeight: 700, fontSize: '15px',
+                        cursor: saving ? 'not-allowed' : 'pointer',
+                        display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px',
+                        transition: 'all 0.2s',
+                        boxShadow: saving ? 'none' : '0 4px 16px rgba(15, 23, 42, 0.15)',
+                        letterSpacing: '-0.01em',
+                    }}
+                >
+                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                    {saving ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+            </form>
+
+            <style>{`
+                .pi-input {
+                    width: 100%;
+                    padding: 12px 14px;
+                    border-radius: 12px;
+                    border: 1.5px solid #e2e8f0;
+                    font-size: 14px;
+                    font-weight: 500;
+                    outline: none;
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                    font-family: inherit;
+                    color: #0f172a;
+                    background: #fff;
+                    box-sizing: border-box;
+                }
+                .pi-input:focus {
+                    border-color: #6366f1;
+                    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+                }
+                .pi-input::placeholder {
+                    color: #cbd5e1;
+                }
+            `}</style>
+        </div>
+    )
+}
+
+/* ── Section Component ── */
+function Section({ icon: Icon, title, description, children }: {
+    icon: any; title: string; description: string; children: React.ReactNode
+}) {
+    return (
+        <div style={{
+            background: '#fff',
+            borderRadius: '20px',
+            border: '1px solid #f1f5f9',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                <div style={{
+                    width: '38px', height: '38px', borderRadius: '12px',
+                    background: 'linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: '#6366f1',
+                }}>
+                    <Icon size={18} strokeWidth={2} />
+                </div>
+                <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                        {title}
+                    </h3>
+                    <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, fontWeight: 500 }}>
+                        {description}
+                    </p>
+                </div>
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {children}
+            </div>
+        </div>
+    )
+}
+
+/* ── Field Component ── */
+function Field({ label, hint, children }: {
+    label: string; hint?: string; children: React.ReactNode
+}) {
+    return (
+        <div>
+            <label style={{
+                display: 'block', fontSize: '13px', fontWeight: 600,
+                color: '#475569', marginBottom: '8px'
+            }}>
+                {label}
+            </label>
+            {children}
+            {hint && (
+                <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', fontWeight: 500 }}>
+                    {hint}
+                </p>
+            )}
+        </div>
+    )
+}
+
+/* ── ColorField Component ── */
+function ColorField({ label, value, onChange }: {
+    label: string; value: string; onChange: (v: string) => void
+}) {
+    return (
+        <div>
+            <label style={{
+                display: 'block', fontSize: '13px', fontWeight: 600,
+                color: '#475569', marginBottom: '8px'
+            }}>
+                {label}
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                    width: '40px', height: '40px', borderRadius: '10px',
+                    background: value, border: '2px solid #e2e8f0',
+                    cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                    flexShrink: 0,
+                }}>
+                    <input
+                        type="color"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        style={{
+                            position: 'absolute', top: '-4px', left: '-4px',
+                            width: '48px', height: '48px', border: 'none',
+                            cursor: 'pointer', opacity: 0,
+                        }}
+                    />
+                </div>
+                <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="pi-input"
+                    style={{ flex: 1, textTransform: 'uppercase', fontSize: '13px', fontWeight: 600 }}
+                />
+            </div>
+        </div>
+    )
+}
+
+/* ── ToggleRow Component ── */
+function ToggleRow({ label, description, checked, onChange }: {
+    label: string; description: string; checked: boolean; onChange: (v: boolean) => void
+}) {
+    return (
+        <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '14px 0',
+            borderBottom: '1px solid #f1f5f9',
+        }}>
+            <div style={{ flex: 1, paddingRight: '16px' }}>
+                <p style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', margin: 0 }}>
+                    {label}
+                </p>
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: '3px 0 0', fontWeight: 500 }}>
+                    {description}
+                </p>
+            </div>
+            <button
+                type="button"
+                onClick={() => onChange(!checked)}
+                style={{
+                    width: '48px', height: '26px', borderRadius: '13px',
+                    background: checked
+                        ? 'linear-gradient(135deg, #6366f1, #8b5cf6)'
+                        : '#e2e8f0',
+                    border: 'none', cursor: 'pointer',
+                    position: 'relative', transition: 'all 0.25s',
+                    flexShrink: 0,
+                    boxShadow: checked ? '0 2px 8px rgba(99,102,241,0.3)' : 'none',
+                }}
+            >
+                <span style={{
+                    position: 'absolute',
+                    top: '3px',
+                    left: checked ? '25px' : '3px',
+                    width: '20px', height: '20px',
+                    borderRadius: '50%',
+                    background: '#fff',
+                    transition: 'left 0.25s',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                }} />
+            </button>
         </div>
     )
 }
