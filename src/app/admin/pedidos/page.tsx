@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
-import { Trash2, Phone, Package, ExternalLink } from 'lucide-react'
+import { Trash2, Phone, Package, ExternalLink, Search, Filter, Calendar } from 'lucide-react'
 import Link from 'next/link'
 import PaymentStatusSelect from './components/PaymentStatusSelect'
 import OrderStatusSelect from './components/OrderStatusSelect'
@@ -97,27 +97,9 @@ export default async function OrdersPage({
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
                         <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>Pedidos</h1>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
-                            <span style={{
-                                fontSize: '12px', fontWeight: 700, color: '#6366f1',
-                                background: '#eef2ff', padding: '4px 10px', borderRadius: '8px',
-                            }}>
-                                {orders.length} pedidos
-                            </span>
-                            <span style={{
-                                fontSize: '12px', fontWeight: 700, color: '#16a34a',
-                                background: '#f0fdf4', padding: '4px 10px', borderRadius: '8px',
-                            }}>
-                                {paidCount} pagos
-                            </span>
-                            <span style={{
-                                fontSize: '12px', fontWeight: 700, color: '#0f172a',
-                                background: '#f8fafc', padding: '4px 10px', borderRadius: '8px',
-                                border: '1px solid #e2e8f0',
-                            }}>
-                                R$ {fmt(totalValue)}
-                            </span>
-                        </div>
+                        <p style={{ color: '#64748b', fontSize: '13px', marginTop: '4px', fontWeight: 500 }}>
+                            Gerencie suas vendas e acompanhe o status dos pedidos.
+                        </p>
                     </div>
                     <Link
                         href="/admin/pedidos/lixeira"
@@ -126,11 +108,19 @@ export default async function OrdersPage({
                             padding: '9px 16px', background: '#fff', color: '#64748b',
                             borderRadius: '12px', textDecoration: 'none', border: '1px solid #e2e8f0',
                             fontSize: '13px', fontWeight: 600, transition: 'all 0.15s',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                         }}
                     >
                         <Trash2 size={14} />
                         Lixeira
                     </Link>
+                </div>
+
+                {/* Summary Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                    <SummaryCard label="Total" value={`${orders.length}`} sub="pedidos" color="#6366f1" bg="#eef2ff" />
+                    <SummaryCard label="Pagos" value={`${paidCount}`} sub="pedidos" color="#16a34a" bg="#f0fdf4" />
+                    <SummaryCard label="Faturamento" value={`R$ ${fmt(totalValue)}`} sub="no período" color="#0f172a" bg="#f8fafc" border />
                 </div>
 
                 {/* Filters */}
@@ -169,12 +159,12 @@ export default async function OrdersPage({
                     }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
-                                    {['Cliente', 'Produto', 'Valor', 'Pagamento', 'Status', 'Data', ''].map((h, i) => (
+                                <tr>
+                                    {['Cliente', 'Produto', 'Valor', 'Pagamento', 'Status', 'Data', 'Ações'].map((h, i) => (
                                         <th key={i} style={{
                                             padding: '14px 20px', fontSize: '11px', fontWeight: 700, color: '#94a3b8',
                                             textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: i === 6 ? 'right' : 'left',
-                                            background: '#fafbfc',
+                                            background: '#fafbfc', borderBottom: '1px solid #f1f5f9',
                                         }}>{h}</th>
                                     ))}
                                 </tr>
@@ -191,48 +181,45 @@ export default async function OrdersPage({
                             const pStatus = statusConfig[order.paymentStatus] || statusConfig.aguardando
                             const date = new Date(order.createdAt)
                             return (
-                                <Link
+                                <div
                                     key={order.id}
-                                    href={`/admin/pedidos/${order.id}`}
                                     style={{
-                                        display: 'block',
                                         background: '#fff',
                                         border: '1px solid #f1f5f9',
                                         borderRadius: '16px',
-                                        padding: '16px',
-                                        marginBottom: '10px',
-                                        textDecoration: 'none',
-                                        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-                                        transition: 'all 0.15s',
+                                        overflow: 'hidden',
+                                        boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
                                     }}
                                 >
-                                    {/* Top: Name + Value */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
-                                            <div style={{
-                                                width: '36px', height: '36px', borderRadius: '10px',
-                                                background: '#f1f5f9', color: '#475569',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '13px', fontWeight: 800, flexShrink: 0,
-                                            }}>
-                                                {order.fullName?.charAt(0).toUpperCase() || '?'}
-                                            </div>
-                                            <div style={{ minWidth: 0 }}>
-                                                <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {order.fullName}
-                                                </p>
-                                                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
-                                                    {order.product?.name || 'Produto'}
-                                                </p>
-                                            </div>
+                                    {/* Card Header */}
+                                    <div style={{
+                                        padding: '16px',
+                                        display: 'flex', alignItems: 'center', gap: '12px',
+                                        borderBottom: '1px solid #f1f5f9',
+                                    }}>
+                                        <div style={{
+                                            width: '40px', height: '40px', borderRadius: '12px',
+                                            background: '#f1f5f9', color: '#475569',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '15px', fontWeight: 800, flexShrink: 0,
+                                        }}>
+                                            {order.fullName?.charAt(0).toUpperCase() || '?'}
                                         </div>
-                                        <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', flexShrink: 0, marginLeft: '12px' }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {order.fullName}
+                                            </p>
+                                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
+                                                {order.product?.name || 'Produto'} · {order.paymentMethod === 'pix' ? 'PIX' : 'Cartão'}
+                                            </p>
+                                        </div>
+                                        <span style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', fontFamily: "'Space Grotesk', sans-serif", flexShrink: 0 }}>
                                             R$ {fmt(order.totalPrice || 0)}
                                         </span>
                                     </div>
 
-                                    {/* Bottom: Status + Date + Actions */}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
+                                    {/* Card Body */}
+                                    <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <span style={{
                                                 fontSize: '11px', fontWeight: 700,
@@ -242,7 +229,7 @@ export default async function OrdersPage({
                                                 {pStatus.label}
                                             </span>
                                             <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
-                                                {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                                                {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                         <div style={{ display: 'flex', gap: '6px' }}>
@@ -250,22 +237,59 @@ export default async function OrdersPage({
                                                 href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
                                                 target="_blank" rel="noreferrer"
                                                 style={{
-                                                    width: '30px', height: '30px', borderRadius: '8px',
+                                                    width: '32px', height: '32px', borderRadius: '10px',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     background: '#f0fdf4', color: '#16a34a', textDecoration: 'none',
+                                                    border: '1px solid #dcfce7',
                                                 }}
                                             >
-                                                <Phone size={13} />
+                                                <Phone size={14} />
                                             </a>
+                                            <Link
+                                                href={`/admin/pedidos/${order.id}`}
+                                                style={{
+                                                    width: '32px', height: '32px', borderRadius: '10px',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    background: '#f1f5f9', color: '#64748b', textDecoration: 'none',
+                                                    border: '1px solid #e2e8f0',
+                                                }}
+                                            >
+                                                <ExternalLink size={14} />
+                                            </Link>
                                             <DeleteOrderButton orderId={order.id} />
                                         </div>
                                     </div>
-                                </Link>
+                                </div>
                             )
                         })}
                     </div>
                 </>
             )}
+        </div>
+    )
+}
+
+/* ── Summary Card ── */
+function SummaryCard({ label, value, sub, color, bg, border }: {
+    label: string; value: string; sub: string; color: string; bg: string; border?: boolean
+}) {
+    return (
+        <div style={{
+            background: '#fff',
+            border: '1px solid #f1f5f9',
+            borderRadius: '14px',
+            padding: '14px 16px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        }}>
+            <p style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', margin: '0 0 6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                {label}
+            </p>
+            <p style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.03em', fontFamily: "'Space Grotesk', sans-serif" }}>
+                {value}
+            </p>
+            <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0', fontWeight: 500 }}>
+                {sub}
+            </p>
         </div>
     )
 }

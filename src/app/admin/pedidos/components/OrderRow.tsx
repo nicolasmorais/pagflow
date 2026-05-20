@@ -63,7 +63,7 @@ export default function OrderRow({ order }: { order: any }) {
                             width: '32px', height: '32px', borderRadius: '10px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             background: '#f0fdf4', color: '#16a34a', textDecoration: 'none',
-                            transition: 'all 0.15s',
+                            border: '1px solid #dcfce7',
                         }}
                         title="WhatsApp"
                     >
@@ -75,7 +75,7 @@ export default function OrderRow({ order }: { order: any }) {
                             width: '32px', height: '32px', borderRadius: '10px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             background: '#f1f5f9', color: '#64748b', textDecoration: 'none',
-                            transition: 'all 0.15s',
+                            border: '1px solid #e2e8f0',
                         }}
                         title="Ver detalhes"
                     >
