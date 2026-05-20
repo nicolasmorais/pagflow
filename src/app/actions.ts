@@ -220,21 +220,19 @@ export async function updatePaymentStatus(orderId: string, paymentStatus: string
 }
 
 export async function sendTrackingEmail(orderId: string) {
-    await requireAdmin()
     try {
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: { product: true }
         });
 
-        if (!order || !order.email || (!(order as any).trackingCode && !(order as any).trackingUrl)) return { success: false, error: 'Dados insuficientes' };
+        if (!order || !order.email || !(order as any).trackingUrl) return { success: false, error: 'Link de rastreio não encontrado' };
+
+        const trackingUrl = (order as any).trackingUrl;
 
         const template = await prisma.emailTemplate.findFirst({
             where: { slug: 'tracking', isActive: true }
         });
-
-        let subject = `Código de Rastreio: ${order.trackingCode}`;
-        let htmlContent = "";
 
         const replacePlaceholders = (text: string) => {
             return text
@@ -245,7 +243,8 @@ export async function sendTrackingEmail(orderId: string) {
                 .replace(/{{totalPrice}}/g, `R$ ${(order.totalPrice || 0).toFixed(2)}`)
                 .replace(/{{paymentMethod}}/g, order.paymentMethod === 'pix' ? 'PIX' : 'Cartão de Crédito')
                 .replace(/{{trackingCode}}/g, order.trackingCode || '')
-                .replace(/{{trackingUrl}}/g, (order as any).trackingUrl || `https://www.linkcorreios.com.br/${order.trackingCode}`)
+                .replace(/{{trackingUrl}}/g, trackingUrl)
+                .replace(/{{trackingLink}}/g, trackingUrl)
                 .replace(/{{estimatedDate}}/g, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'))
                 .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
                 .replace(/{{rua}}/g, order.rua || '')
@@ -256,23 +255,30 @@ export async function sendTrackingEmail(orderId: string) {
                 .replace(/{{cep}}/g, order.cep || '');
         };
 
+        let subject: string;
+        let htmlContent: string;
+
         if (template) {
             subject = replacePlaceholders(template.subject);
             htmlContent = replacePlaceholders(template.content);
         } else {
-            const trackLink = (order as any).trackingUrl || `https://www.linkcorreios.com.br/${order.trackingCode}`;
+            subject = `Seu pedido foi enviado! 📦 #${order.id.slice(0, 8).toUpperCase()}`;
             htmlContent = `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                    <div style="background: #3b82f6; padding: 40px 20px; text-align: center; color: white;">
-                        <h1 style="margin: 0; font-size: 24px;">Seu pedido foi enviado!</h1>
+                <div style="font-family:'Manrope',sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+                    <div style="background:linear-gradient(135deg,#2563eb,#3b82f6);padding:36px 32px;text-align:center;">
+                        <div style="font-size:48px;margin-bottom:12px;">📦</div>
+                        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pedido Enviado!</h1>
+                        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, ${(order.fullName || '').split(' ')[0]}!</p>
                     </div>
-                    <div style="padding: 30px; text-align: center;">
-                        <p>Olá, ${(order.fullName || '').split(' ')[0]}! Temos boas notícias: seu pedido já está a caminho.</p>
-                        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin: 24px 0; border: 1px solid #f1f5f9;">
-                            <p style="font-size: 14px; color: #64748b; text-transform: uppercase; font-weight: 800; margin-bottom: 8px;">Código de Rastreio</p>
-                            <p style="font-size: 24px; font-weight: 800; color: #1e293b; margin: 0; letter-spacing: 2px;">${order.trackingCode || ''}</p>
-                        </div>
-                        <a href="${trackLink}" style="display: inline-block; background: #3b82f6; color: white; padding: 16px 32px; border-radius: 10px; text-decoration: none; font-weight: 800; font-size: 16px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);">Acompanhar Entrega</a>
+                    <div style="padding:32px;text-align:center;">
+                        <p style="font-size:15px;color:#475569;margin-bottom:28px;">Seu pedido já está a caminho. Acompanhe pela transportadora:</p>
+                        <a href="${trackingUrl}" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;padding:16px 40px;border-radius:12px;font-size:16px;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+                            🔍 Acompanhar Entrega
+                        </a>
+                        <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;word-break:break-all;">${trackingUrl}</p>
+                    </div>
+                    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
+                        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow.</p>
                     </div>
                 </div>
             `;
@@ -359,6 +365,16 @@ export async function updateOrderTracking(orderId: string, trackingCode: string,
     } catch (error) {
         console.error('Update Tracking Error:', error)
         throw new Error('Falha no banco de dados ao salvar o rastreio')
+    }
+}
+
+export async function resendTrackingEmail(orderId: string) {
+    await requireAdmin()
+    try {
+        const result = await sendTrackingEmail(orderId)
+        return result || { success: true }
+    } catch (e: any) {
+        return { success: false, error: e.message || 'Erro ao reenviar' }
     }
 }
 
@@ -912,4 +928,54 @@ export async function forceOrderR2(orderId: string) {
     if (!order) return { success: false, error: 'Pedido não encontrado' }
 
     return await forceOrderBackup(order)
+}
+
+export async function sendTestEmail(templateId: string, toEmail: string) {
+    await requireAdmin()
+    const { resend } = await import('@/lib/resend')
+
+    const template = await prisma.emailTemplate.findUnique({ where: { id: templateId } })
+    if (!template) return { success: false, error: 'Template não encontrado' }
+
+    const sampleData: Record<string, string> = {
+        orderId: 'ABC12345',
+        fullName: 'Maria Oliveira',
+        firstName: 'Maria',
+        productName: 'Produto de Teste',
+        totalPrice: 'R$ 99,90',
+        paymentMethod: 'PIX',
+        fullAddress: 'Rua das Flores, 123 - Centro, São Paulo/SP',
+        rua: 'Rua das Flores',
+        numero: '123',
+        bairro: 'Centro',
+        cidade: 'São Paulo',
+        estado: 'SP',
+        cep: '01001-000',
+        trackingCode: 'BR123456789BR',
+        trackingUrl: 'https://rastreamento.correios.com.br',
+        trackingLink: 'https://rastreamento.correios.com.br',
+        estimatedDate: new Date(Date.now() + 7 * 86400000).toLocaleDateString('pt-BR'),
+        accessLink: 'https://exemplo.com/acesso',
+    }
+
+    let subject = template.subject
+    let html = template.content
+    for (const [key, value] of Object.entries(sampleData)) {
+        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g')
+        subject = subject.replace(regex, value)
+        html = html.replace(regex, value)
+    }
+
+    try {
+        const { error } = await resend.emails.send({
+            from: 'PagFlow <noreply@elabela.store>',
+            to: [toEmail],
+            subject: `[TESTE] ${subject}`,
+            html,
+        })
+        if (error) return { success: false, error: JSON.stringify(error) }
+        return { success: true }
+    } catch (e: any) {
+        return { success: false, error: e.message || 'Erro ao enviar' }
+    }
 }

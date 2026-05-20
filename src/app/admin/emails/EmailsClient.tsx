@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createEmailTemplate, updateEmailTemplate, deleteEmailTemplate } from '@/app/actions'
+import { createEmailTemplate, updateEmailTemplate, deleteEmailTemplate, sendTestEmail } from '@/app/actions'
 import { Mail, Edit2, Trash2, Plus, Save, Eye, Hash, Info, History, ArrowLeft, Copy, CheckCircle } from 'lucide-react'
 
 export default function EmailsClient({ initialTemplates }: { initialTemplates: any[] }) {
@@ -11,6 +11,9 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
     const [loading, setLoading] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
     const [copied, setCopied] = useState<string | null>(null);
+    const [testEmail, setTestEmail] = useState('');
+    const [testSending, setTestSending] = useState(false);
+    const [testResult, setTestResult] = useState<string | null>(null);
 
     const handleSelect = (id: string) => {
         const t = templates.find(x => x.id === id);
@@ -74,62 +77,133 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
         setTimeout(() => setCopied(null), 2000);
     };
 
+    const handleSendTest = async () => {
+        if (!selectedId || !testEmail.trim()) return;
+        setTestSending(true);
+        setTestResult(null);
+        try {
+            const res = await sendTestEmail(selectedId, testEmail.trim());
+            setTestResult(res.success ? 'E-mail de teste enviado com sucesso!' : `Erro: ${res.error}`);
+        } catch {
+            setTestResult('Erro ao enviar e-mail de teste.');
+        } finally {
+            setTestSending(false);
+        }
+    };
+
     const handleCreateDefaults = async () => {
         const defaults = [
             {
                 name: 'Compra Aprovada',
                 slug: 'confirmation',
-                subject: 'Pedido Aprovado! #{{orderId}}',
+                subject: 'Pagamento Aprovado! #{{orderId}}',
                 content: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pagamento Aprovado – PagFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#0d1f17;font-family:'DM Sans',sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0d1f17;padding:40px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#059669,#10b981);padding:36px 32px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:12px;">✅</div>
-        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pagamento Aprovado!</h1>
-        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, seu pedido foi confirmado.</p>
-    </div>
+      <!-- HEADER -->
+      <tr>
+        <td style="background:#0d1f17;padding:0 0 28px;text-align:center;">
+          <span style="font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#4ade80;">PagFlow</span>
+        </td>
+      </tr>
 
-    <!-- Body -->
-    <div style="padding:32px;">
+      <!-- HERO CARD -->
+      <tr>
+        <td style="background:linear-gradient(160deg,#052e16 0%,#14532d 60%,#166534 100%);border-radius:20px 20px 0 0;padding:52px 40px 44px;text-align:center;position:relative;overflow:hidden;">
+          <div style="display:inline-block;width:72px;height:72px;background:#16a34a;border-radius:50%;line-height:72px;font-size:34px;margin-bottom:20px;box-shadow:0 0 0 12px rgba(74,222,128,0.12),0 0 0 24px rgba(74,222,128,0.05);">✓</div>
+          <h1 style="margin:0 0 10px;font-family:'DM Serif Display',serif;font-size:34px;font-weight:400;color:#f0fdf4;letter-spacing:-0.5px;">Pagamento Aprovado!</h1>
+          <p style="margin:0;font-size:15px;color:#86efac;line-height:1.5;">Olá, <strong style="color:#bbf7d0;">{{firstName}}</strong> — seu pedido está confirmado e em processamento.</p>
+        </td>
+      </tr>
 
-        <!-- Order Info -->
-        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
-            <p style="margin:0 0 4px;font-size:12px;color:#059669;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
-            <p style="margin:0;font-size:20px;font-weight:800;color:#065f46;">#{{orderId}}</p>
-        </div>
+      <!-- ORDER ID RIBBON -->
+      <tr>
+        <td style="background:#16a34a;padding:14px 40px;text-align:center;">
+          <span style="font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#dcfce7;">Pedido</span>
+          &nbsp;&nbsp;
+          <span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.04em;">#{{orderId}}</span>
+        </td>
+      </tr>
 
-        <!-- Product -->
-        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:20px;margin-bottom:20px;">
-            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Produto</p>
-            <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">{{productName}}</h2>
-            <p style="margin:6px 0 0;font-size:22px;font-weight:900;color:#059669;">R$ {{totalPrice}}</p>
-        </div>
+      <!-- MAIN BODY -->
+      <tr>
+        <td style="background:#fff;padding:40px;border-radius:0 0 20px 20px;">
 
-        <!-- Payment -->
-        <div style="margin-bottom:24px;">
-            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Pagamento</p>
-            <p style="margin:0;font-size:14px;font-weight:700;color:#0f172a;">{{paymentMethod}}</p>
-        </div>
+          <p style="margin:0 0 32px;font-size:15px;color:#334155;line-height:1.65;">
+            Olá, <strong>{{fullName}}</strong>! Recebemos e confirmamos seu pagamento com sucesso. Confira o resumo do pedido abaixo.
+          </p>
 
-        <!-- Address -->
-        <div style="background:#f8fafc;border-radius:12px;padding:18px;margin-bottom:28px;">
-            <p style="margin:0 0 10px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Endereço de Entrega</p>
-            <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">{{fullAddress}}</p>
-        </div>
+          <!-- Product block -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr>
+              <td style="border-left:3px solid #16a34a;padding:0 0 0 16px;">
+                <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#94a3b8;">Produto</p>
+                <p style="margin:0 0 6px;font-size:18px;font-weight:700;color:#0f172a;">{{productName}}</p>
+                <p style="margin:0;font-size:26px;font-weight:700;color:#16a34a;letter-spacing:-0.5px;">R$&nbsp;{{totalPrice}}</p>
+              </td>
+            </tr>
+          </table>
 
-        <p style="margin:0;text-align:center;font-size:14px;color:#64748b;">Qualquer dúvida, responda este e-mail.</p>
-    </div>
+          <!-- 2-col detail row -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
+            <tr>
+              <td width="50%" style="padding-right:12px;">
+                <div style="background:#f8fafc;border-radius:12px;padding:16px 18px;">
+                  <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#94a3b8;">Pagamento</p>
+                  <p style="margin:0;font-size:14px;font-weight:600;color:#1e293b;">{{paymentMethod}}</p>
+                </div>
+              </td>
+              <td width="50%" style="padding-left:12px;">
+                <div style="background:#f8fafc;border-radius:12px;padding:16px 18px;">
+                  <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#94a3b8;">Entrega prevista</p>
+                  <p style="margin:0;font-size:14px;font-weight:600;color:#1e293b;">{{estimatedDate}}</p>
+                </div>
+              </td>
+            </tr>
+          </table>
 
-    <!-- Footer -->
-    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
-        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
-    </div>
+          <!-- Address -->
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:20px 22px;margin-bottom:28px;">
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#15803d;">📦 Endereço de Entrega</p>
+            <p style="margin:0 0 4px;font-size:14px;color:#1e293b;line-height:1.6;">{{fullAddress}}</p>
+            <p style="margin:0;font-size:14px;color:#1e293b;font-weight:600;">{{cidade}}</p>
+          </div>
 
-</div>
+          <!-- Tracking -->
+          <div style="background:#0f172a;border-radius:14px;padding:20px 22px;margin-bottom:28px;">
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#64748b;">🚚 Rastreamento</p>
+            <p style="margin:0 0 6px;font-size:13px;color:#94a3b8;">Código: <span style="color:#4ade80;font-weight:700;letter-spacing:0.08em;">{{trackingCode}}</span></p>
+            <a href="{{trackingUrl}}" style="display:inline-block;margin-top:10px;background:#16a34a;color:#fff;font-size:13px;font-weight:700;text-decoration:none;padding:10px 22px;border-radius:8px;letter-spacing:0.03em;">Rastrear pedido →</a>
+          </div>
+
+          <p style="margin:0;text-align:center;font-size:13px;color:#94a3b8;line-height:1.6;">
+            Alguma dúvida? Basta responder este e-mail e nossa equipe te ajuda em breve.
+          </p>
+
+        </td>
+      </tr>
+
+      <!-- FOOTER -->
+      <tr>
+        <td style="padding:28px 16px 8px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:11px;color:#4b5563;letter-spacing:0.08em;text-transform:uppercase;">PagFlow</p>
+          <p style="margin:0;font-size:11px;color:#374151;">© 2026 PagFlow. Todos os direitos reservados.</p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`
             },
@@ -139,8 +213,8 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                 subject: 'Pagamento não aprovado - Pedido #{{orderId}}',
                 content: `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
 
     <!-- Header -->
@@ -194,8 +268,8 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                 subject: 'Seu PIX está aguardando pagamento - #{{orderId}}',
                 content: `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
 
     <!-- Header -->
@@ -243,70 +317,100 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
 </html>`
             },
             {
-                name: 'Código de Rastreio',
+                name: 'Rastreamento',
                 slug: 'tracking',
                 subject: 'Seu pedido foi enviado! 📦 #{{orderId}}',
                 content: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedido Enviado – PagFlow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin:0;padding:0;background:#0a0f1e;font-family:'Inter',sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0f1e;padding:40px 16px;">
+  <tr><td align="center">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-    <!-- Header -->
-    <div style="background:linear-gradient(135deg,#2563eb,#3b82f6);padding:36px 32px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:12px;">📦</div>
-        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pedido Enviado!</h1>
-        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, seu pedido está a caminho!</p>
-    </div>
+      <!-- LOGO -->
+      <tr>
+        <td style="padding:0 0 24px;text-align:center;">
+          <span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:0.2em;text-transform:uppercase;color:#3b82f6;">PagFlow</span>
+        </td>
+      </tr>
 
-    <!-- Body -->
-    <div style="padding:32px;">
+      <!-- HERO -->
+      <tr>
+        <td style="background:linear-gradient(145deg,#0f1f4a 0%,#1a3580 50%,#1d4ed8 100%);border-radius:20px 20px 0 0;padding:56px 40px 48px;text-align:center;">
+          <div style="display:inline-block;background:#1d4ed8;border-radius:50%;width:76px;height:76px;line-height:76px;font-size:36px;margin-bottom:22px;box-shadow:0 0 0 14px rgba(59,130,246,0.15),0 0 0 28px rgba(59,130,246,0.06);">🚚</div>
+          <h1 style="margin:0 0 10px;font-family:'Syne',sans-serif;font-size:36px;font-weight:800;color:#f0f9ff;letter-spacing:-0.5px;">Pedido Enviado!</h1>
+          <p style="margin:0;font-size:15px;color:#93c5fd;line-height:1.5;">Olá, <strong style="color:#bfdbfe;">{{firstName}}</strong> — seu pedido saiu e está a caminho de você.</p>
+        </td>
+      </tr>
 
-        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
-            <p style="margin:0 0 4px;font-size:12px;color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
-            <p style="margin:0;font-size:20px;font-weight:800;color:#1e40af;">#{{orderId}}</p>
-        </div>
+      <!-- ORDER RIBBON -->
+      <tr>
+        <td style="background:#1d4ed8;padding:13px 40px;text-align:center;">
+          <span style="font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#bfdbfe;">Pedido</span>
+          &nbsp;&nbsp;
+          <span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:0.05em;">#{{orderId}}</span>
+        </td>
+      </tr>
 
-        <!-- Tracking Code -->
-        <div style="background:#f8fafc;border:2px dashed #cbd5e1;border-radius:12px;padding:24px;margin-bottom:20px;text-align:center;">
-            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Código de Rastreio</p>
-            <p style="margin:0;font-size:24px;font-weight:900;color:#0f172a;letter-spacing:0.05em;">{{trackingCode}}</p>
-        </div>
+      <!-- BODY -->
+      <tr>
+        <td style="background:#fff;padding:40px;border-radius:0 0 20px 20px;">
 
-        <!-- Tracking Button -->
-        <div style="text-align:center;margin-bottom:24px;">
-            <a href="{{trackingUrl}}" target="_blank" style="display:inline-block;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;padding:14px 36px;border-radius:12px;font-size:15px;font-weight:800;text-decoration:none;box-shadow:0 4px 12px rgba(37,99,235,0.3);">
-                Rastrear Meu Pedido
-            </a>
-            <p style="margin:10px 0 0;font-size:12px;color:#94a3b8;">Clique no botão para acompanhar sua entrega</p>
-        </div>
+          <!-- Tracking hero block -->
+          <div style="background:#0a0f1e;border-radius:16px;padding:28px 24px;margin-bottom:28px;text-align:center;position:relative;overflow:hidden;">
+            <div style="position:absolute;top:-30px;left:50%;transform:translateX(-50%);width:200px;height:60px;background:rgba(59,130,246,0.25);border-radius:50%;filter:blur(20px);"></div>
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#4b5563;">Código de Rastreio</p>
+            <p style="margin:0 0 18px;font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#3b82f6;letter-spacing:0.08em;">{{trackingCode}}</p>
+            <a href="{{trackingUrl}}" style="display:inline-block;background:#1d4ed8;color:#fff;font-size:13px;font-weight:700;text-decoration:none;padding:12px 28px;border-radius:10px;letter-spacing:0.04em;">Rastrear agora →</a>
+          </div>
 
-        <div style="margin-bottom:24px;">
-            <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0f172a;">Ou rastreie manualmente:</h2>
-            <ol style="margin:0;padding-left:20px;font-size:14px;color:#475569;line-height:2;">
-                <li>Acesse o site dos <strong>Correios</strong> ou transportadora</li>
-                <li>Cole o código de rastreio acima</li>
-                <li>Acompanhe a entrega em tempo real</li>
-            </ol>
-        </div>
+          <!-- Product -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+            <tr>
+              <td style="border-left:3px solid #3b82f6;padding:0 0 0 16px;">
+                <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#94a3b8;">Produto</p>
+                <p style="margin:0;font-size:17px;font-weight:700;color:#0f172a;">{{productName}}</p>
+              </td>
+            </tr>
+          </table>
 
-        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:20px;margin-bottom:20px;">
-            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Produto</p>
-            <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">{{productName}}</h2>
-        </div>
+          <!-- How to track steps -->
+          <div style="background:#f8fafc;border-radius:14px;padding:22px 24px;margin-bottom:24px;">
+            <p style="margin:0 0 14px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#94a3b8;">Como rastrear</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr><td style="padding:6px 0;"><span style="display:inline-block;background:#1d4ed8;color:#fff;font-size:10px;font-weight:700;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;margin-right:10px;">1</span><span style="font-size:13px;color:#475569;">Acesse o site dos <strong style="color:#1e293b;">Correios</strong> ou transportadora</span></td></tr>
+              <tr><td style="padding:6px 0;"><span style="display:inline-block;background:#1d4ed8;color:#fff;font-size:10px;font-weight:700;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;margin-right:10px;">2</span><span style="font-size:13px;color:#475569;">Cole o código de rastreio acima</span></td></tr>
+              <tr><td style="padding:6px 0;"><span style="display:inline-block;background:#1d4ed8;color:#fff;font-size:10px;font-weight:700;width:20px;height:20px;line-height:20px;text-align:center;border-radius:50%;margin-right:10px;">3</span><span style="font-size:13px;color:#475569;">Acompanhe a entrega em tempo real</span></td></tr>
+            </table>
+          </div>
 
-        <!-- Address -->
-        <div style="background:#f8fafc;border-radius:12px;padding:18px;margin-bottom:28px;">
-            <p style="margin:0 0 10px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Endereço de Entrega</p>
-            <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">{{fullAddress}}</p>
-        </div>
-    </div>
+          <!-- Address -->
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:14px;padding:20px 22px;margin-bottom:28px;">
+            <p style="margin:0 0 10px;font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#2563eb;">📍 Endereço de Entrega</p>
+            <p style="margin:0;font-size:14px;color:#1e3a8a;line-height:1.65;">{{fullAddress}}</p>
+          </div>
 
-    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
-        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
-    </div>
+          <p style="margin:0;text-align:center;font-size:13px;color:#94a3b8;line-height:1.6;">Dúvidas? Responda este e-mail e nossa equipe te ajuda.</p>
+        </td>
+      </tr>
 
-</div>
+      <!-- FOOTER -->
+      <tr>
+        <td style="padding:28px 16px 8px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#374151;">PagFlow</p>
+          <p style="margin:0;font-size:11px;color:#4b5563;">© 2026 PagFlow. Todos os direitos reservados.</p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
 </body>
 </html>`
             },
@@ -316,8 +420,8 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                 subject: 'Seu pedido foi entregue! 🎉 #{{orderId}}',
                 content: `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
 
     <!-- Header -->
@@ -362,10 +466,22 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
         ];
 
         setLoading(true);
-        for (const d of defaults) {
-            await createEmailTemplate(d);
+        try {
+            for (const d of defaults) {
+                // Atualiza se já existe com o mesmo slug, senão cria
+                const existing = templates.find(t => t.slug === d.slug);
+                if (existing) {
+                    await updateEmailTemplate(existing.id, d);
+                } else {
+                    await createEmailTemplate(d);
+                }
+            }
+            window.location.reload();
+        } catch (err) {
+            console.error('Erro ao gerar templates:', err);
+            alert('Erro ao gerar templates. Verifique o console.');
+            setLoading(false);
         }
-        window.location.reload();
     };
 
     return (
@@ -448,15 +564,43 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                         {selectedId && (
-                            <button
-                                onClick={handleDelete}
-                                style={{ background: 'white', border: '1px solid #fee2e2', padding: '12px', borderRadius: '12px', color: '#ef4444', cursor: 'pointer', transition: 'all 0.2s' }}
-                                title="Excluir"
-                            >
-                                <Trash2 size={20} />
-                            </button>
+                            <>
+                                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <input
+                                        type="email"
+                                        placeholder="seu@email.com"
+                                        value={testEmail}
+                                        onChange={e => setTestEmail(e.target.value)}
+                                        style={{ padding: '10px 14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '13px', width: '180px', outline: 'none' }}
+                                    />
+                                    <button
+                                        onClick={handleSendTest}
+                                        disabled={testSending || !testEmail.trim()}
+                                        style={{ background: '#10b981', border: 'none', padding: '10px 16px', borderRadius: '10px', color: 'white', fontWeight: 700, fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', opacity: testSending || !testEmail.trim() ? 0.6 : 1 }}
+                                    >
+                                        <Mail size={14} /> {testSending ? 'Enviando...' : 'Teste'}
+                                    </button>
+                                </div>
+                                <button
+                                    onClick={handleDelete}
+                                    style={{ background: 'white', border: '1px solid #fee2e2', padding: '12px', borderRadius: '12px', color: '#ef4444', cursor: 'pointer', transition: 'all 0.2s' }}
+                                    title="Excluir"
+                                >
+                                    <Trash2 size={20} />
+                                </button>
+                            </>
+                        )}
+                        {testResult && (
+                            <div style={{
+                                fontSize: '12px', fontWeight: 700, padding: '8px 14px', borderRadius: '8px',
+                                background: testResult.includes('sucesso') ? '#f0fdf4' : '#fee2e2',
+                                color: testResult.includes('sucesso') ? '#16a34a' : '#dc2626',
+                                border: `1px solid ${testResult.includes('sucesso') ? '#bbf7d0' : '#fecaca'}`,
+                            }}>
+                                {testResult}
+                            </div>
                         )}
                         <button
                             onClick={() => setShowPreview(!showPreview)}
@@ -552,7 +696,10 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                                             { v: '{{totalPrice}}', d: 'Valor Pago' },
                                             { v: '{{paymentMethod}}', d: 'Forma de Pagamento' },
                                             { v: '{{fullAddress}}', d: 'Endereço Completo' },
-                                            { v: '{{cidade}}', d: 'Cidade/UF' }
+                                            { v: '{{cidade}}', d: 'Cidade/UF' },
+                                            { v: '{{trackingCode}}', d: 'Código de Rastreio' },
+                                            { v: '{{trackingUrl}}', d: 'Link de Rastreio' },
+                                            { v: '{{estimatedDate}}', d: 'Data Estimada' }
                                         ].map(item => (
                                             <div
                                                 key={item.v}

@@ -807,7 +807,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div className="field-hint">Vamos enviar a confirmação do pedido para este e-mail</div>
                                 </div>
                                 <div className={`field ${errors.telefone ? 'error' : ''}`}>
-                                    <label className="field-label">Seu WhatsApp *</label>
+                                    <label className="field-label">Seu Telefone *</label>
                                     <input type="text" placeholder="(11) 91234-5678" maxLength={15} value={dados.telefone} onChange={e => handleMaskDados('telefone', e.target.value, formatTel)} />
                                     {errors.telefone && <div className="error-msg">⚠️ {errors.telefone}</div>}
                                     <div className="field-hint">{product?.isDigital ? 'Para receber o acesso ao produto via WhatsApp' : 'Para avisar quando o produto sair para entrega'}</div>
@@ -818,6 +818,27 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
                                         {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
                                         <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
+                                    </div>
+                                )}
+
+                                {pixDiscountVal > 0 && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                                        border: '1.5px solid #6ee7b7',
+                                        borderRadius: '10px',
+                                        padding: '12px 14px',
+                                        marginBottom: '14px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        fontSize: '13.5px',
+                                        color: '#065f46',
+                                        fontWeight: 600,
+                                        textAlign: 'center',
+                                    }}>
+                                        <span style={{ fontSize: '18px' }}>🎉</span>
+                                        Pague com <strong>PIX</strong> e ganhe <strong style={{ color: '#059669' }}>{Math.round(pixDiscountVal * 100)}% de desconto</strong>!
                                     </div>
                                 )}
 

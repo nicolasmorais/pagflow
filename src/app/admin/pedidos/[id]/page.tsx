@@ -282,7 +282,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
 
             {/* ── Tracking & Email ── */}
-            <TrackingManagement orderId={order.id} initialCode={order.trackingCode} initialUrl={order.trackingUrl} />
+            <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
             <EmailSection orderId={order.id} email={order.email || ''} />
 
         </div>
