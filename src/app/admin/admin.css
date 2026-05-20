@@ -789,8 +789,8 @@ h6 {
 /* ── Pedido Detail Page ──────────────────────────────────────────────── */
 
 .pedido-page {
-    max-width: 860px;
-    margin: 0 auto;
+    max-width: none;
+    width: 100%;
     padding-bottom: 40px;
 }
 
@@ -816,15 +816,21 @@ h6 {
 .pedido-header-card {
     background: var(--admin-card);
     border: 1px solid var(--admin-border);
-    border-radius: 18px;
-    padding: 20px 24px;
+    border-radius: 20px;
+    padding: 22px 28px;
     margin-bottom: 16px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pedido-header-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+    transform: translateY(-2px);
 }
 
 .pedido-header-left {
@@ -865,26 +871,50 @@ h6 {
 /* Info grid */
 .pedido-info-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
     margin-bottom: 16px;
 }
 
-/* Card */
+/* Info card — matches KPI card style */
+.pedido-info-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(241, 245, 249, 0.8);
+    border-radius: 20px;
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pedido-info-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1);
+    transform: translateY(-3px);
+}
+
+/* Card — matches SectionCard style */
 .pedido-card {
-    background: var(--admin-card);
-    border: 1px solid var(--admin-border);
-    border-radius: 16px;
+    background: #fff;
+    border: 1px solid #f1f5f9;
+    border-radius: 18px;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pedido-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
 }
 
 .pedido-card-header {
-    padding: 13px 18px;
+    padding: 16px 22px;
     border-bottom: 1px solid #f1f5f9;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     background: #fafbfc;
 }
 
@@ -897,7 +927,7 @@ h6 {
 }
 
 .pedido-card-body {
-    padding: 16px 18px;
+    padding: 22px;
 }
 
 /* Stepper */
@@ -946,6 +976,12 @@ h6 {
 }
 
 /* ── Responsive ── */
+@media (max-width: 1200px) {
+    .pedido-info-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
     .pedido-info-grid {
         grid-template-columns: 1fr;
@@ -972,6 +1008,11 @@ h6 {
 
     .pedido-stepper {
         gap: 0;
+    }
+
+    /* Stack content grid on mobile */
+    .pedido-content-grid {
+        grid-template-columns: 1fr !important;
     }
 }
 

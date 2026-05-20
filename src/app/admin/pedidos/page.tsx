@@ -6,6 +6,7 @@ import PaymentStatusSelect from './components/PaymentStatusSelect'
 import OrderStatusSelect from './components/OrderStatusSelect'
 import DeleteOrderButton from './components/DeleteOrderButton'
 import OrderRow from './components/OrderRow'
+import R2VerifyAllButton from './components/R2VerifyAllButton'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 import AnalyticsFilterForm from '../AnalyticsFilterForm'
@@ -101,19 +102,22 @@ export default async function OrdersPage({
                             Gerencie suas vendas e acompanhe o status dos pedidos.
                         </p>
                     </div>
-                    <Link
-                        href="/admin/pedidos/lixeira"
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '6px',
-                            padding: '9px 16px', background: '#fff', color: '#64748b',
-                            borderRadius: '12px', textDecoration: 'none', border: '1px solid #e2e8f0',
-                            fontSize: '13px', fontWeight: 600, transition: 'all 0.15s',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                        }}
-                    >
-                        <Trash2 size={14} />
-                        Lixeira
-                    </Link>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <Link
+                            href="/admin/pedidos/lixeira"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '9px 16px', background: '#fff', color: '#64748b',
+                                borderRadius: '12px', textDecoration: 'none', border: '1px solid #e2e8f0',
+                                fontSize: '13px', fontWeight: 600, transition: 'all 0.15s',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                            }}
+                        >
+                            <Trash2 size={14} />
+                            Lixeira
+                        </Link>
+                        <R2VerifyAllButton orders={orders} />
+                    </div>
                 </div>
 
                 {/* Summary Cards */}
@@ -331,3 +335,4 @@ function StatusPill({ label, active, color, bg }: {
         </a>
     )
 }
+
