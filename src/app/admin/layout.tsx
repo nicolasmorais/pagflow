@@ -14,7 +14,6 @@ import {
     Settings,
     Bell,
     LogOut,
-    Menu,
     X
 } from 'lucide-react'
 import TopBar from './components/TopBar'
@@ -132,10 +131,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 }
                 @media (max-width: 1024px) {
                     .main-content-inner { padding: 16px; padding-top: 20px; }
-                    .sidebar:not(.mobile-open) { display: none !important; }
-                    .sidebar.mobile-open { display: flex !important; animation: slideIn 0.25s ease-out; }
-                    @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-                    .main-content { margin-left: 0 !important; width: 100% !important; }
                     .topbar-container { padding: 12px 16px !important; }
                 }
                 @media (max-width: 480px) {

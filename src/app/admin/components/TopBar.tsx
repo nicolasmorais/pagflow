@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { getTodayRevenue } from '@/app/actions'
-import { DollarSign, ShoppingCart, TrendingUp, Menu } from 'lucide-react'
+import { DollarSign, ShoppingCart, TrendingUp } from 'lucide-react'
 
 export default function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
     const [todayStr, setTodayStr] = useState('')
@@ -40,25 +40,6 @@ export default function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => vo
             gap: '16px',
         }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: 0 }}>
-                <button
-                    onClick={onToggleSidebar}
-                    className="mobile-only"
-                    style={{
-                        background: '#f1f5f9',
-                        border: 'none',
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '10px',
-                        display: 'none',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        color: '#0f172a',
-                        flexShrink: 0,
-                    }}
-                >
-                    <Menu size={18} />
-                </button>
                 <div style={{ minWidth: 0 }}>
                     <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Hoje</p>
                     <p style={{ margin: 0, fontSize: '14px', color: '#0f172a', fontWeight: 700, textTransform: 'capitalize' }}>{todayStr}</p>
