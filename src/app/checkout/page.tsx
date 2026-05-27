@@ -15,7 +15,7 @@ export async function generateMetadata({
     const [product, storeSetting] = await Promise.all([
         productId ? prisma.product.findUnique({
             where: { id: productId },
-            select: { name: true }
+            select: { name: true, storeName: true, storeLogo: true }
         }) : Promise.resolve(null),
         prisma.customization_settings.findFirst({
             where: { key: 'checkout_store_name' }
@@ -23,10 +23,11 @@ export async function generateMetadata({
     ]);
 
     const productName = product?.name || 'Checkout'
-    const storeName = storeSetting?.value || 'PagFlow Checkout'
+    const storeName = (product as any)?.storeName || storeSetting?.value || 'PagFlow'
+    const displayTitle = storeName === 'PagFlow' ? 'PagFlow' : `PagFlow ${storeName}`
 
     return {
-        title: `${storeName} - ${productName}`,
+        title: `${displayTitle} - ${productName}`,
         description: `Finalize sua compra de ${productName}`
     }
 }
@@ -89,8 +90,12 @@ export default async function CheckoutPage({
         } as any
     }
 
+    // Product's storeLogo/storeName override global customization
+    const globalLogo = settings.find((s: any) => s.key === 'checkout_logo')?.value || '';
+    const globalStoreName = settings.find((s: any) => s.key === 'checkout_store_name')?.value || 'PagFlow';
+
     const customization = {
-        logo: settings.find((s: any) => s.key === 'checkout_logo')?.value || '',
+        logo: (product as any)?.storeLogo || globalLogo,
         footerText: settings.find((s: any) => s.key === 'checkout_footer_text')?.value || '',
         primaryColor: settings.find((s: any) => s.key === 'checkout_primary_color')?.value || '#10b981',
         buttonColor: settings.find((s: any) => s.key === 'checkout_button_color')?.value || '#10b981',
@@ -104,7 +109,7 @@ export default async function CheckoutPage({
         pixDiscount: settings.find((s: any) => s.key === 'checkout_pix_discount')?.value || '0',
         cardDiscount: settings.find((s: any) => s.key === 'checkout_card_discount')?.value || '0',
         disableCpf: settings.find((s: any) => s.key === 'checkout_disable_cpf')?.value === 'true',
-        storeName: settings.find((s: any) => s.key === 'checkout_store_name')?.value || 'PagFlow',
+        storeName: (product as any)?.storeName || globalStoreName,
         disableBack: settings.find((s: any) => s.key === 'checkout_disable_back')?.value === 'true',
         disableWa: settings.find((s: any) => s.key === 'checkout_disable_wa')?.value === 'true',
         supportEmail: settings.find((s: any) => s.key === 'checkout_support_email')?.value || '',

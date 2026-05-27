@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Loader2, Package, DollarSign, Image as ImageIcon, Globe } from 'lucide-react'
+import { X, Loader2, Package, DollarSign, Image as ImageIcon, Globe, Store } from 'lucide-react'
 import { updateProduct } from '@/app/actions'
 
 const inputStyle: React.CSSProperties = {
@@ -88,6 +88,23 @@ export default function EditProductModal({ product, onClose }: { product: any; o
                             onFocus={e => { e.target.style.borderColor = '#0f172a'; e.target.style.background = '#fff' }}
                             onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
                         />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                        <div>
+                            <label style={labelStyle}><Store size={12} /> Nome da Loja</label>
+                            <input name="storeName" type="text" style={inputStyle} defaultValue={product.storeName || 'PagFlow'} placeholder="PagFlow"
+                                onFocus={e => { e.target.style.borderColor = '#0f172a'; e.target.style.background = '#fff' }}
+                                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
+                            />
+                        </div>
+                        <div>
+                            <label style={labelStyle}><ImageIcon size={12} /> Logo da Loja (URL)</label>
+                            <input name="storeLogo" type="url" style={inputStyle} defaultValue={product.storeLogo || ''} placeholder="https://..."
+                                onFocus={e => { e.target.style.borderColor = '#0f172a'; e.target.style.background = '#fff' }}
+                                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
+                            />
+                        </div>
                     </div>
 
                     {/* Digital Toggle */}

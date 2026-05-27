@@ -31,6 +31,8 @@ export async function sendConfirmationEmail(orderId: string) {
         let subject = `Pedido Confirmado! #${order.id.slice(0, 8).toUpperCase()}`;
         let htmlContent = "";
 
+        const storeName = order.product?.storeName || 'PagFlow';
+
         const replacePlaceholders = (text: string) => {
             return text
                 .replace(/{{orderId}}/g, order.id.slice(0, 8).toUpperCase())
@@ -40,6 +42,7 @@ export async function sendConfirmationEmail(orderId: string) {
                 .replace(/{{totalPrice}}/g, `R$ ${(order.totalPrice || 0).toFixed(2)}`)
                 .replace(/{{accessLink}}/g, order.product?.accessLink || '')
                 .replace(/{{paymentMethod}}/g, order.paymentMethod === 'pix' ? 'PIX' : 'Cartão de Crédito')
+                .replace(/{{storeName}}/g, storeName)
                 .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
                 .replace(/{{rua}}/g, order.rua || '')
                 .replace(/{{numero}}/g, order.numero || '')
@@ -86,7 +89,7 @@ export async function sendConfirmationEmail(orderId: string) {
                         ` : ''}
                     </div>
                     <div style="background: #f1f5f9; padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;">
-                        <p>© ${new Date().getFullYear()} PagFlow.</p>
+                        <p>© ${new Date().getFullYear()} PagFlow${storeName && storeName !== 'PagFlow' ? ` ${storeName}` : ''}.</p>
                     </div>
                 </div>
             `;
@@ -245,6 +248,7 @@ export async function sendTrackingEmail(orderId: string) {
                 .replace(/{{trackingCode}}/g, order.trackingCode || '')
                 .replace(/{{trackingUrl}}/g, trackingUrl)
                 .replace(/{{trackingLink}}/g, trackingUrl)
+                .replace(/{{storeName}}/g, order.product?.storeName || 'PagFlow')
                 .replace(/{{estimatedDate}}/g, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'))
                 .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
                 .replace(/{{rua}}/g, order.rua || '')
@@ -278,7 +282,7 @@ export async function sendTrackingEmail(orderId: string) {
                         <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;word-break:break-all;">${trackingUrl}</p>
                     </div>
                     <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
-                        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow.</p>
+                        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow${order.product?.storeName && order.product.storeName !== 'PagFlow' ? ` ${order.product.storeName}` : ''}.</p>
                     </div>
                 </div>
             `;
@@ -388,6 +392,8 @@ export async function createProduct(formData: FormData): Promise<void> {
     let imageUrl = formData.get('imageUrl') as string
     const isDigital = formData.get('isDigital') === 'true'
     const accessLink = formData.get('accessLink') as string
+    const storeName = formData.get('storeName') as string
+    const storeLogo = formData.get('storeLogo') as string
 
     if (!imageUrl || imageUrl.trim() === '') {
         imageUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop';
@@ -404,7 +410,9 @@ export async function createProduct(formData: FormData): Promise<void> {
             imageUrl: imageUrl || null,
             cost: isNaN(cost) ? 0 : cost,
             isDigital,
-            accessLink: isDigital ? (accessLink || null) : null
+            accessLink: isDigital ? (accessLink || null) : null,
+            storeName: storeName || 'PagFlow',
+            storeLogo: storeLogo || null
         }
 
         await prisma.product.create({
@@ -428,6 +436,8 @@ export async function updateProduct(formData: FormData): Promise<void> {
     let imageUrl = formData.get('imageUrl') as string
     const isDigital = formData.get('isDigital') === 'true'
     const accessLink = formData.get('accessLink') as string
+    const storeName = formData.get('storeName') as string
+    const storeLogo = formData.get('storeLogo') as string
 
     if (!id || !name || isNaN(price)) {
         throw new Error('Preencha os campos obrigatórios')
@@ -447,7 +457,9 @@ export async function updateProduct(formData: FormData): Promise<void> {
             imageUrl: imageUrl || null,
             cost: isNaN(cost) ? 0 : Number(cost),
             isDigital,
-            accessLink: isDigital ? (accessLink || null) : null
+            accessLink: isDigital ? (accessLink || null) : null,
+            storeName: storeName || 'PagFlow',
+            storeLogo: storeLogo || null
         }
 
         const existingProduct = await prisma.product.findUnique({ where: { id } })
@@ -481,7 +493,9 @@ export async function duplicateProduct(productId: string): Promise<void> {
                 imageUrl: product.imageUrl,
                 commission: product.commission,
                 isDigital: product.isDigital,
-                accessLink: product.accessLink
+                accessLink: product.accessLink,
+                storeName: product.storeName,
+                storeLogo: product.storeLogo
             }
         })
         revalidatePath('/admin/produtos')
@@ -956,6 +970,7 @@ export async function sendTestEmail(templateId: string, toEmail: string) {
         trackingLink: 'https://rastreamento.correios.com.br',
         estimatedDate: new Date(Date.now() + 7 * 86400000).toLocaleDateString('pt-BR'),
         accessLink: 'https://exemplo.com/acesso',
+        storeName: 'Minha Loja',
     }
 
     let subject = template.subject

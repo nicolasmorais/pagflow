@@ -51,6 +51,7 @@ model Product {
   updatedAt  DateTime    @updatedAt
   commission Float       @default(0)
   storeName  String?     @default("PagFlow")
+  storeLogo  String?
   cost       Float       @default(0)
   isDigital  Boolean     @default(false)
   accessLink String?

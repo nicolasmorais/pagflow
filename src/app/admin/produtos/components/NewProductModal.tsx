@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Plus, Package, DollarSign, Image as ImageIcon, Percent, Loader2 } from 'lucide-react'
+import { X, Plus, Package, DollarSign, Image as ImageIcon, Percent, Loader2, Store } from 'lucide-react'
 import { createProduct } from '@/app/actions'
 
 interface NewProductModalProps {
@@ -229,6 +229,32 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                             className="form-input"
                             placeholder="https://..."
                         />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                        <div className="form-group">
+                            <label className="form-label">
+                                <Store size={14} /> Nome da Loja
+                            </label>
+                            <input
+                                name="storeName"
+                                type="text"
+                                className="form-input"
+                                placeholder="PagFlow"
+                                defaultValue="PagFlow"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">
+                                <ImageIcon size={14} /> Logo da Loja (URL)
+                            </label>
+                            <input
+                                name="storeLogo"
+                                type="url"
+                                className="form-input"
+                                placeholder="https://..."
+                            />
+                        </div>
                     </div>
 
                     <div className="form-group" style={{

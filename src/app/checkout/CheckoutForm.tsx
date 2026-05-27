@@ -179,8 +179,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         estado: data.uf
                     }));
                     setCepResolved(true);
+                    setErrors(prev => { const n = { ...prev }; delete n.cep; return n; });
+                } else {
+                    setErrors(prev => ({ ...prev, cep: 'CEP não encontrado. Verifique e tente novamente.' }));
                 }
-            } catch (e) { }
+            } catch (e) {
+                setErrors(prev => ({ ...prev, cep: 'Erro ao buscar CEP. Tente novamente.' }));
+            }
         }
     };
 
@@ -193,8 +198,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             if (!data.erro) {
                 setEndereco(prev => ({ ...prev, rua: data.logradouro, bairro: data.bairro, cidade: data.localidade, estado: data.uf }));
                 setCepResolved(true);
+                setErrors(prev => { const n = { ...prev }; delete n.cep; return n; });
+            } else {
+                setErrors(prev => ({ ...prev, cep: 'CEP não encontrado. Verifique e tente novamente.' }));
             }
-        } catch (e) { }
+        } catch (e) {
+            setErrors(prev => ({ ...prev, cep: 'Erro ao buscar CEP. Tente novamente.' }));
+        }
     };
 
     const handleMaskEnd = (k: string, raw: string, formatter: (s: string) => string) => {
@@ -526,7 +536,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
             <div className="header">
                 <div className="logo">
-                    {customization?.logo ? <img src={customization.logo} alt="Logo" style={{ maxHeight: '42px' }} /> : (customization?.storeName || 'ELABELA')}
+                    {product?.storeLogo ? <img src={product.storeLogo} alt={product?.storeName || 'Logo'} style={{ maxHeight: '42px' }} /> : customization?.logo ? <img src={customization.logo} alt="Logo" style={{ maxHeight: '42px' }} /> : (product?.storeName || customization?.storeName || 'PagFlow')}
                 </div>
                 <div className="secure">
                     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>

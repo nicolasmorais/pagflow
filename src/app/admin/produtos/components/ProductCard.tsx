@@ -80,6 +80,15 @@ export default function ProductCard({ product }: { product: any }) {
                         </Link>
                     </div>
 
+                    {product.storeName && product.storeName !== 'PagFlow' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '6px' }}>
+                            {product.storeLogo && <img src={product.storeLogo} alt="" style={{ width: '14px', height: '14px', borderRadius: '3px', objectFit: 'cover' }} />}
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#6366f1', background: '#eef2ff', padding: '2px 6px', borderRadius: '4px' }}>
+                                {product.storeName}
+                            </span>
+                        </div>
+                    )}
+
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '10px' }}>
                         <span style={{ fontSize: '20px', fontWeight: 900, color: '#0f172a' }}>
                             R$ {product.price.toFixed(2)}
