@@ -202,3 +202,14 @@ model EmailLog {
   sentAt  DateTime @default(now())
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
+
+model FinancialRecord {
+  id          String   @id @default(cuid())
+  type        String   // "receita" | "despesa"
+  category    String   // "marketing" | "operacional" | "frete" | "taxa" | "outros"
+  description String
+  amount      Float
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

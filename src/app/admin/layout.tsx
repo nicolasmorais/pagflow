@@ -14,7 +14,8 @@ import {
     Settings,
     Bell,
     LogOut,
-    X
+    X,
+    Wallet
 } from 'lucide-react'
 import './admin.css'
 
@@ -24,6 +25,7 @@ const menuSections = [
         items: [
             { icon: BarChart3, label: 'Dashboard', href: '/admin' },
             { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
+            { icon: Wallet, label: 'Financeiro', href: '/admin/financeiro' },
         ]
     },
     {
