@@ -13,7 +13,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import OrderStatusSelect from '../pedidos/components/OrderStatusSelect'
-import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { Payment } from 'mercadopago'
+import { createMpClient } from '@/lib/mercadopago'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@ export default async function VendasPage() {
     });
 
     // Auto-sync pending payments with Mercado Pago
-    const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
+    const client = createMpClient();
     const payment = new Payment(client);
 
     const statusMap: Record<string, string> = {

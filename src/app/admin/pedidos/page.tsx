@@ -10,7 +10,8 @@ import R2VerifyAllButton from './components/R2VerifyAllButton'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 import AnalyticsFilterForm from '../AnalyticsFilterForm'
-import { MercadoPagoConfig, Payment } from 'mercadopago'
+import { Payment } from 'mercadopago'
+import { createMpClient } from '@/lib/mercadopago'
 import { getDateFilters } from '@/lib/date-utils'
 
 async function syncMercadoPagoOrders(orders: any[]) {
@@ -24,7 +25,7 @@ async function syncMercadoPagoOrders(orders: any[]) {
         'in_process': 'aguardando', 'rejected': 'recusado', 'cancelled': 'recusado', 'refunded': 'reembolsado'
     };
     try {
-        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
+        const client = createMpClient();
         const paymentClient = new Payment(client);
         for (const order of pendingOrders) {
             try {

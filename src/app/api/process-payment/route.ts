@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MercadoPagoConfig, Payment } from "mercadopago";
+import { Payment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { createMpClient } from "@/lib/mercadopago";
 
 export async function POST(req: NextRequest) {
     // ── Rate Limiting ──────────────────────────────────────────────────────
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
 
         // 2. Processar Pagamento Mercado Pago
         const { deviceId, idempotencyKey } = body;
-        const client = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN || '' });
+        const client = createMpClient();
 
         // ── Construct Base URL and Notification URL for Webhooks ────────────────
         const protocol = req.headers.get('x-forwarded-proto') || 'https';
