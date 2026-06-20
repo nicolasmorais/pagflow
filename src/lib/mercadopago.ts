@@ -5,9 +5,7 @@ export function createMpClient() {
         accessToken: process.env.MP_ACCESS_TOKEN || '',
         options: {
             timeout: 30000,
-            headers: {
-                'Accept-Encoding': 'identity',
-            },
+            compress: false,
         } as any,
     });
 }
