@@ -11,6 +11,7 @@ import {
     Target,
     Sparkles,
     Mail,
+    AlertTriangle,
     Settings,
     Bell,
     LogOut,
@@ -47,6 +48,7 @@ const menuSections = [
     {
         label: 'Sistema',
         items: [
+            { icon: AlertTriangle, label: 'Erros', href: '/admin/errors' },
             { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
             { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },
         ]

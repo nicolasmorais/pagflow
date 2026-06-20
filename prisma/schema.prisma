@@ -213,3 +213,19 @@ model FinancialRecord {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model ErrorLog {
+  id        String   @id @default(cuid())
+  level     String   @default("error") // "error" | "warning" | "critical"
+  source    String   // "client" | "server" | "webhook" | "payment"
+  message   String
+  stack     String?
+  url       String?
+  userId    String?
+  metadata  String?  // JSON stringified extra data
+  createdAt DateTime @default(now())
+
+  @@index([source])
+  @@index([level])
+  @@index([createdAt])
+}

@@ -6,6 +6,13 @@ import { createMpClient } from "@/lib/mercadopago";
 import { Payment } from "mercadopago";
 import crypto from "crypto";
 
+async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
+    try {
+        const { prisma: p } = await import("@/lib/prisma");
+        await p.errorLog.create({ data: { level, source, message: message.substring(0, 2000), stack: stack?.substring(0, 5000) || null, metadata: metadata ? JSON.stringify(metadata).substring(0, 2000) : null } });
+    } catch { }
+}
+
 function validateMpSignature(rawBody: string, req: NextRequest): boolean {
     const secret = process.env.MP_WEBHOOK_SECRET;
     if (!secret) return true;
@@ -168,6 +175,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("[Webhook MP] Error:", error);
+        logError('error', 'webhook', error instanceof Error ? error.message : 'Webhook error', error instanceof Error ? error.stack : undefined);
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
 }

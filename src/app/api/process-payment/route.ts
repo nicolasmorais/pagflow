@@ -5,6 +5,13 @@ import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createMpClient } from "@/lib/mercadopago";
 
+async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
+    try {
+        const { prisma: p } = await import("@/lib/prisma");
+        await p.errorLog.create({ data: { level, source, message: message.substring(0, 2000), stack: stack?.substring(0, 5000) || null, metadata: metadata ? JSON.stringify(metadata).substring(0, 2000) : null } });
+    } catch { }
+}
+
 export async function POST(req: NextRequest) {
     // ── Rate Limiting ──────────────────────────────────────────────────────
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -337,6 +344,8 @@ export async function POST(req: NextRequest) {
 
     } catch (error: any) {
         console.error("PAYMENT API ERROR DETAIL:", error);
+
+        logError('error', 'payment', error.message || 'Payment error', error.stack);
 
         // Tentar capturar a mensagem de erro do Mercado Pago se existir
         let apiError = error.message;

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import PushInitializer from "@/app/components/PushInitializer";
+import ErrorReporter from "@/app/components/ErrorReporter";
 
 const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
@@ -45,6 +46,7 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} antialiased font-[family-name:var(--font-space-grotesk)]`}
       >
         <PushInitializer />
+        <ErrorReporter />
         {children}
       </body>
     </html>
