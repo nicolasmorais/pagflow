@@ -95,7 +95,25 @@ export async function POST(req: NextRequest) {
         const payment = new Payment(client);
 
         try {
-            const mpResult = await payment.get({ id: paymentId });
+            let mpResult: any = null;
+            const MAX_RETRIES = 3;
+            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                    mpResult = await payment.get({ id: paymentId });
+                    break;
+                } catch (mpErr: any) {
+                    const isRetryable = mpErr?.message?.includes('Premature close') ||
+                        mpErr?.message?.includes('socket hang up') ||
+                        mpErr?.message?.includes('ECONNRESET') ||
+                        mpErr?.message?.includes('ETIMEDOUT');
+                    if (isRetryable && attempt < MAX_RETRIES) {
+                        console.warn(`[Webhook MP] Attempt ${attempt} failed (${mpErr.message}), retrying...`);
+                        await new Promise(r => setTimeout(r, attempt * 1000));
+                        continue;
+                    }
+                    throw mpErr;
+                }
+            }
 
             if (!mpResult) {
                 return NextResponse.json({ success: false, message: 'Payment not found in MP' }, { status: 404 });

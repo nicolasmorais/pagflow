@@ -210,17 +210,38 @@ export async function POST(req: NextRequest) {
             console.log("Creating Payment with payload:", JSON.stringify(mpPayload, null, 2));
         }
 
-        // Usamos 'as any' para passar os cabeçalhos customizados que não estão no Type oficial do SDK v2
-        const mpResult = await payment.create({
-            body: mpPayload,
-            requestOptions: {
-                idempotencyKey: idempotencyKey || crypto.randomUUID(),
-                // @ts-ignore - customHeaders é necessário para o Device ID aumentar a nota de qualidade
-                customHeaders: {
-                    'X-Id-Device': deviceId || ''
+        const finalIdempotencyKey = idempotencyKey || crypto.randomUUID();
+
+        let mpResult: any = null;
+        const MAX_RETRIES = 3;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            try {
+                mpResult = await payment.create({
+                    body: mpPayload,
+                    requestOptions: {
+                        idempotencyKey: finalIdempotencyKey,
+                        // @ts-ignore - customHeaders é necessário para o Device ID aumentar a nota de qualidade
+                        customHeaders: {
+                            'X-Id-Device': deviceId || ''
+                        }
+                    }
+                });
+                break;
+            } catch (mpErr: any) {
+                const isRetryable = mpErr?.message?.includes('Premature close') ||
+                    mpErr?.message?.includes('socket hang up') ||
+                    mpErr?.message?.includes('ECONNRESET') ||
+                    mpErr?.message?.includes('ETIMEDOUT') ||
+                    mpErr?.code === 'ECONNRESET' ||
+                    mpErr?.code === 'ETIMEDOUT';
+                if (isRetryable && attempt < MAX_RETRIES) {
+                    console.warn(`[MP] Attempt ${attempt} failed (${mpErr.message}), retrying in ${attempt * 1000}ms...`);
+                    await new Promise(r => setTimeout(r, attempt * 1000));
+                    continue;
                 }
+                throw mpErr;
             }
-        });
+        }
         console.log("MP Result ID:", mpResult.id);
 
         // 3. Update DB com status final

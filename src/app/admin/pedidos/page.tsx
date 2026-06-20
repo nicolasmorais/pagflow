@@ -28,7 +28,22 @@ async function syncMercadoPagoOrders(orders: any[]) {
         const paymentClient = new Payment(client);
         for (const order of pendingOrders) {
             try {
-                const mpResult = await paymentClient.get({ id: order.mpPaymentId });
+                let mpResult: any = null;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        mpResult = await paymentClient.get({ id: order.mpPaymentId });
+                        break;
+                    } catch (mpErr: any) {
+                        const isRetryable = mpErr?.message?.includes('Premature close') ||
+                            mpErr?.message?.includes('socket hang up') ||
+                            mpErr?.message?.includes('ECONNRESET');
+                        if (isRetryable && attempt < 3) {
+                            await new Promise(r => setTimeout(r, attempt * 1000));
+                            continue;
+                        }
+                        throw mpErr;
+                    }
+                }
                 const newStatus = statusMap[mpResult.status || ''] || order.paymentStatus;
                 if (newStatus !== order.paymentStatus) {
                     await prisma.order.update({

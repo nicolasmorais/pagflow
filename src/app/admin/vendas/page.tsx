@@ -66,7 +66,22 @@ export default async function VendasPage() {
     for (const order of orders) {
         if (order.mpPaymentId && (order.paymentStatus === 'processando' || order.paymentStatus === 'aguardando')) {
             try {
-                const mpResult = await payment.get({ id: order.mpPaymentId });
+                let mpResult: any = null;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        mpResult = await payment.get({ id: order.mpPaymentId });
+                        break;
+                    } catch (mpErr: any) {
+                        const isRetryable = mpErr?.message?.includes('Premature close') ||
+                            mpErr?.message?.includes('socket hang up') ||
+                            mpErr?.message?.includes('ECONNRESET');
+                        if (isRetryable && attempt < 3) {
+                            await new Promise(r => setTimeout(r, attempt * 1000));
+                            continue;
+                        }
+                        throw mpErr;
+                    }
+                }
                 const newStatus = statusMap[mpResult.status || ''] || order.paymentStatus;
                 if (newStatus !== order.paymentStatus || !order.installments) {
                     await prisma.order.update({
