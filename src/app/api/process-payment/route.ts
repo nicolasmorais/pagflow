@@ -347,6 +347,15 @@ export async function POST(req: NextRequest) {
 
         logError('error', 'payment', error.message || 'Payment error', error.stack);
 
+        try {
+            const { sendAdminPush } = await import("@/lib/push-service");
+            await sendAdminPush(
+                "❌ Erro no Pagamento",
+                `Falha ao processar pagamento: ${(error.message || 'Erro desconhecido').substring(0, 100)}`,
+                "/admin/errors"
+            );
+        } catch { }
+
         // Tentar capturar a mensagem de erro do Mercado Pago se existir
         let apiError = error.message;
         if (error.cause && Array.isArray(error.cause) && error.cause[0]?.description) {

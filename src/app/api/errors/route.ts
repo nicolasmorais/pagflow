@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { sendAdminPush } from "@/lib/push-service";
 
 export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -30,6 +31,17 @@ export async function POST(req: NextRequest) {
                 metadata: metadata ? JSON.stringify(metadata).substring(0, 2000) : null,
             },
         });
+
+        if (level === 'critical') {
+            const { limited: pushLimited } = checkRateLimit(`errorpush:${ip}`, 5, 300_000);
+            if (!pushLimited) {
+                sendAdminPush(
+                    "⚠️ Erro Crítico no App",
+                    message.substring(0, 120),
+                    "/admin/errors"
+                ).catch(() => {});
+            }
+        }
 
         return NextResponse.json({ ok: true });
     } catch (e) {

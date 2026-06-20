@@ -176,6 +176,16 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.error("[Webhook MP] Error:", error);
         logError('error', 'webhook', error instanceof Error ? error.message : 'Webhook error', error instanceof Error ? error.stack : undefined);
+
+        try {
+            const { sendAdminPush } = await import("@/lib/push-service");
+            await sendAdminPush(
+                "❌ Erro no Webhook",
+                `Webhook MP falhou: ${(error instanceof Error ? error.message : 'Erro desconhecido').substring(0, 100)}`,
+                "/admin/errors"
+            );
+        } catch { }
+
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
 }
