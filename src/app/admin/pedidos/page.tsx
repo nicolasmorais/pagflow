@@ -184,7 +184,7 @@ export default async function OrdersPage({
                     {/* Desktop Table */}
                     <div className="desktop-orders-table" style={{
                         background: '#fff', border: '1px solid #f1f5f9',
-                        borderRadius: '20px', overflow: 'hidden',
+                        borderRadius: '20px', overflow: 'visible',
                         boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
                     }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
