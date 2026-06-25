@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         ]);
 
         const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
-        const cpfToSave = cpfInput || "19119119100"; // Fallback CPF válido para Pix sem fricção
+        const cpfToSave = cpfInput || "19119119100"; // Fallback apenas para Pix
 
         // ── Recalcular preço no servidor (ignora preço enviado pelo cliente) ──
         const serverBasePrice = Number(product?.price) || 0;
@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
             binary_mode: true,
             payment_method_id: method === 'pix' ? 'pix' : undefined,
             notification_url: notificationUrl,
+            device_id: deviceId || undefined,
             payer: {
                 email: orderData.email || 'cliente@pagflow.com',
                 first_name: fullName.split(' ')[0] || "Cliente",
@@ -167,7 +168,7 @@ export async function POST(req: NextRequest) {
                         quantity: 1,
                         unit_price: serverPrice,
                         category_id: 'others',
-                        description: `Compra realizada no PagFlow - ID ${order.id}`
+                        description: product?.name || `Compra realizada no PagFlow - ID ${order.id}`
                     }
                 ],
                 payer: {
@@ -178,7 +179,9 @@ export async function POST(req: NextRequest) {
             }
         };
 
-        if (method === 'credit_card' || method === 'card') {
+        const isCard = method === 'credit_card' || method === 'card';
+
+        if (isCard) {
             // O Card Payment Brick do MP pode enviar dados diretamente ou aninhados em formData
             const brick = brickData?.formData || brickData;
             const card = cardData?.formData || cardData;
@@ -203,6 +206,7 @@ export async function POST(req: NextRequest) {
                 mpPayload.token = card.token;
                 mpPayload.installments = Number(card.installments) || 1;
                 mpPayload.payment_method_id = card.payment_method_id;
+                mpPayload.issuer_id = card.issuer_id;
 
                 if (card.payer?.identification?.number) {
                     mpPayload.payer.identification.number = card.payer.identification.number.replace(/\D/g, '');
@@ -220,6 +224,17 @@ export async function POST(req: NextRequest) {
 
         const finalIdempotencyKey = idempotencyKey || crypto.randomUUID();
 
+        // Validar CPF para cartão: verificar se o CPF final (do Brick ou do formulário) é válido
+        if (isCard) {
+            const finalCpf = mpPayload.payer?.identification?.number || '';
+            if (!finalCpf || finalCpf.length !== 11 || finalCpf === '19119119100') {
+                return NextResponse.json({
+                    success: false,
+                    error: "CPF é obrigatório para pagamento com cartão de crédito. Por favor, preencha seu CPF no formulário ou no campo de cartão."
+                }, { status: 400 });
+            }
+        }
+
         let mpResult: any = null;
         const MAX_RETRIES = 3;
         for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -228,10 +243,6 @@ export async function POST(req: NextRequest) {
                     body: mpPayload,
                     requestOptions: {
                         idempotencyKey: finalIdempotencyKey,
-                        // @ts-ignore - customHeaders é necessário para o Device ID aumentar a nota de qualidade
-                        customHeaders: {
-                            'X-Id-Device': deviceId || ''
-                        }
                     }
                 });
                 break;

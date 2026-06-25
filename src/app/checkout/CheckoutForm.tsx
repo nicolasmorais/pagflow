@@ -460,6 +460,16 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         return;
                                     }
 
+                                    // Validar CPF para cartão: Brick ou formulário devem ter CPF válido
+                                    const brickCpf = tokenSrc.payer?.identification?.number?.replace(/\D/g, '') || '';
+                                    const formCpf = dados.cpf?.replace(/\D/g, '') || '';
+                                    const finalCpf = brickCpf || formCpf;
+                                    if (!finalCpf || finalCpf.length !== 11) {
+                                        alert("CPF é obrigatório para pagamento com cartão. Por favor, preencha seu CPF.");
+                                        reject(new Error("CPF obrigatório para cartão"));
+                                        return;
+                                    }
+
                                     finalizar(formData)
                                         .then(resolve)
                                         .catch(reject);
@@ -876,7 +886,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
                                 {!customization?.disableCpf && (
                                     <div className={`field ${errors.cpf ? 'error' : ''}`}>
-                                        <label className="field-label">CPF <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(Opcional)</span></label>
+                                        <label className="field-label">CPF <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(Obrigatório para cartão)</span></label>
                                         <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
                                         {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
                                         <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
