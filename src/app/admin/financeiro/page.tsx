@@ -4,16 +4,35 @@ import { prisma } from '@/lib/prisma'
 import { formatDateStr, getBrazilNow } from '@/lib/date-utils'
 import FinanceiroClient from './FinanceiroClient'
 
-export default async function FinanceiroPage() {
+const PERIOD_DAYS: Record<string, number | null> = {
+    'today': 0,
+    '7d': 7,
+    '30d': 30,
+    '90d': 90,
+    'all': null,
+}
+
+export default async function FinanceiroPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
+    const { period: periodParam } = await searchParams
+    const period = periodParam && PERIOD_DAYS[periodParam] !== undefined ? periodParam : '30d'
+    const days = PERIOD_DAYS[period]
+
     const now = getBrazilNow()
 
-    const thirtyDaysAgo = new Date(now)
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const whereDate = days !== null ? (() => {
+        const from = new Date(now)
+        if (days === 0) {
+            from.setHours(0, 0, 0, 0)
+        } else {
+            from.setDate(from.getDate() - days)
+        }
+        return { gte: from }
+    })() : undefined
 
     const allOrders = await prisma.order.findMany({
         where: {
             deletedAt: null,
-            createdAt: { gte: thirtyDaysAgo },
+            ...(whereDate ? { createdAt: whereDate } : {}),
         },
         select: {
             id: true,
@@ -38,6 +57,7 @@ export default async function FinanceiroPage() {
     }, 0)
 
     const records = await prisma.financialRecord.findMany({
+        where: whereDate ? { date: whereDate } : undefined,
         orderBy: { date: 'desc' },
     })
 
@@ -51,8 +71,9 @@ export default async function FinanceiroPage() {
         paidOrders: paidOrders.length,
     }
 
+    const chartDays = days !== null ? Math.max(days, 1) : 30
     const dailyMap = new Map<string, { receita: number; despesa: number; lucro: number }>()
-    for (let i = 29; i >= 0; i--) {
+    for (let i = chartDays - 1; i >= 0; i--) {
         const d = new Date(now)
         d.setDate(d.getDate() - i)
         const key = formatDateStr(d)
@@ -103,6 +124,7 @@ export default async function FinanceiroPage() {
         dailyRevenue,
         categoryBreakdown,
         totalCost,
+        period,
     }
 
     const serializedRecords = records.map(r => ({

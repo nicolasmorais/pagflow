@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     AreaChart, Area, BarChart, Bar,
     PieChart, Pie, Cell,
@@ -25,6 +26,7 @@ type FinancialData = {
     dailyRevenue: { date: string; receita: number; despesa: number; lucro: number }[]
     categoryBreakdown: { name: string; value: number; color: string }[]
     totalCost: number
+    period: string
 }
 
 const EXPENSE_CATEGORIES = [
@@ -214,21 +216,16 @@ function AddExpenseModal({ open, onClose, onAdd }: {
 export default function FinanceiroClient({ initialData, records, kpis }: {
     initialData: FinancialData; records: FinancialRecord[]; kpis: any
 }) {
+    const router = useRouter()
     const [allRecords, setAllRecords] = useState(records)
     const [showAddModal, setShowAddModal] = useState(false)
-    const [filterPeriod, setFilterPeriod] = useState('all')
+    const filterPeriod = initialData.period
 
-    const filteredRecords = allRecords.filter(r => {
-        if (filterPeriod === 'all') return true
-        const d = new Date(r.date)
-        const now = new Date()
-        if (filterPeriod === '7d') return d >= new Date(now.getTime() - 7 * 86400000)
-        if (filterPeriod === '30d') return d >= new Date(now.getTime() - 30 * 86400000)
-        if (filterPeriod === '90d') return d >= new Date(now.getTime() - 90 * 86400000)
-        return true
-    })
+    const setFilterPeriod = useCallback((period: string) => {
+        router.push(`/admin/financeiro?period=${period}`, { scroll: false })
+    }, [router])
 
-    const expenseRecords = filteredRecords.filter(r => r.type === 'despesa')
+    const expenseRecords = allRecords.filter(r => r.type === 'despesa')
     const totalDespesas = expenseRecords.reduce((s, r) => s + r.amount, 0)
     const totalReceita = kpis.totalRevenue
     const totalNet = kpis.netRevenue
@@ -256,12 +253,16 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
         if (res.ok) {
             const saved = await res.json()
             setAllRecords(prev => [saved, ...prev])
+            router.refresh()
         }
     }
 
     const handleDelete = async (id: string) => {
         const res = await fetch(`/api/admin/financial?id=${id}`, { method: 'DELETE' })
-        if (res.ok) setAllRecords(prev => prev.filter(r => r.id !== id))
+        if (res.ok) {
+            setAllRecords(prev => prev.filter(r => r.id !== id))
+            router.refresh()
+        }
     }
 
     return (
@@ -320,6 +321,7 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '12px', padding: '3px', border: '1px solid #e2e8f0' }}>
                         {[
+                            { key: 'today', label: 'Hoje' },
                             { key: '7d', label: '7 dias' },
                             { key: '30d', label: '30 dias' },
                             { key: '90d', label: '90 dias' },
@@ -487,7 +489,7 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
 
             {/* Charts Row */}
             <div className="fin-charts-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                <SectionCard title="Evolução Financeira" subtitle="Receita vs Despesas nos últimos 30 dias">
+                <SectionCard title="Evolução Financeira" subtitle={`Receita vs Despesas — ${filterPeriod === 'today' ? 'Hoje' : filterPeriod === '7d' ? '7 dias' : filterPeriod === '90d' ? '90 dias' : filterPeriod === 'all' ? 'Tudo' : '30 dias'}`}>
                     <ResponsiveContainer width="100%" height={280}>
                         <AreaChart data={initialData.dailyRevenue} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                             <defs>
