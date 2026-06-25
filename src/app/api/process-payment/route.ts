@@ -242,6 +242,7 @@ export async function POST(req: NextRequest) {
                     body: mpPayload,
                     requestOptions: {
                         idempotencyKey: finalIdempotencyKey,
+                        customHeaders: deviceId ? { 'X-Id-Device': deviceId } : undefined,
                     }
                 });
                 break;
