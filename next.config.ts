@@ -15,7 +15,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https: http:",
       "font-src 'self' https://fonts.gstatic.com",
       "frame-src https://sdk.mercadopago.com https://www.mercadopago.com https://www.google.com",
-      "connect-src 'self' https://api.mercadopago.com https://www.mercadopago.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.google-analytics.com https://graph.facebook.com https://vitals.vercel-insights.com https://cdn.taboola.com",
+      "connect-src 'self' https://api.mercadopago.com https://www.mercadopago.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.google-analytics.com https://graph.facebook.com https://vitals.vercel-insights.com https://cdn.taboola.com https://viacep.com.br",
       "media-src 'self' blob:",
     ].join('; '),
   },
