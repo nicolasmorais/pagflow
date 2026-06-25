@@ -141,7 +141,6 @@ export async function POST(req: NextRequest) {
             binary_mode: true,
             payment_method_id: method === 'pix' ? 'pix' : undefined,
             notification_url: notificationUrl,
-            ...(deviceId && { device_id: deviceId }),
             payer: {
                 email: orderData.email || 'cliente@pagflow.com',
                 first_name: fullName.split(' ')[0] || "Cliente",
