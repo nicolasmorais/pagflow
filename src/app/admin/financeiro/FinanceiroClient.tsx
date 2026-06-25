@@ -21,7 +21,7 @@ type FinancialRecord = {
 
 type FinancialData = {
     receitaBruta: number; receitaLiquida: number; custoProduto: number
-    gastosMarketing: number; gastosOperacionais: number
+    gastosMarketing: number; gastosOperacionais: number; taboolaSpent: number
     lucroOperacional: number; margemLucro: number; roi: number
     dailyRevenue: { date: string; receita: number; despesa: number; lucro: number }[]
     categoryBreakdown: { name: string; value: number; color: string }[]
@@ -230,11 +230,13 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
     const totalReceita = kpis.totalRevenue
     const totalNet = kpis.netRevenue
     const custoProduto = kpis.totalCost || 0
-    const totalInvestido = custoProduto + totalDespesas
+    const taboola = initialData.taboolaSpent || 0
+    const totalInvestido = custoProduto + totalDespesas + taboola
     const lucroCalc = totalNet - totalInvestido
     const margemCalc = totalReceita > 0 ? (lucroCalc / totalReceita) * 100 : 0
     const roiNum = totalInvestido > 0 ? totalNet / totalInvestido : 0
-    const gastosMarketing = expenseRecords.filter(r => r.category === 'marketing').reduce((s, r) => s + r.amount, 0)
+    const gastosMarketingManual = expenseRecords.filter(r => r.category === 'marketing').reduce((s, r) => s + r.amount, 0)
+    const gastosMarketing = gastosMarketingManual + taboola
     const roas = gastosMarketing > 0 ? totalReceita / gastosMarketing : 0
 
     const categoryTotals = EXPENSE_CATEGORIES.map(c => ({
@@ -243,6 +245,11 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
         color: c.color,
         icon: c.icon,
     })).filter(c => c.value > 0)
+
+    // Adicionar Taboola como categoria se houver gasto
+    if (taboola > 0) {
+        categoryTotals.push({ name: 'Taboola Ads', value: taboola, color: '#4285f4', icon: '📢' })
+    }
 
     const handleAdd = async (newRecord: { type: string; category: string; description: string; amount: number; date: string }) => {
         const res = await fetch('/api/admin/financial', {

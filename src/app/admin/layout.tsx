@@ -12,6 +12,7 @@ import {
     Sparkles,
     Mail,
     AlertTriangle,
+    Megaphone,
     Settings,
     Bell,
     LogOut,
@@ -41,6 +42,7 @@ const menuSections = [
         label: 'Marketing',
         items: [
             { icon: Target, label: 'Pixels', href: '/admin/marketing' },
+            { icon: Megaphone, label: 'Taboola', href: '/admin/taboola' },
             { icon: Mail, label: 'E-mails', href: '/admin/emails' },
             { icon: Sparkles, label: 'Personalização', href: '/admin/personalizacao' },
         ]

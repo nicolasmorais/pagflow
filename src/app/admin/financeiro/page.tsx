@@ -4,6 +4,37 @@ import { prisma } from '@/lib/prisma'
 import { formatDateStr, getBrazilNow } from '@/lib/date-utils'
 import FinanceiroClient from './FinanceiroClient'
 
+const TABOOLA_CLIENT_ID = '101768521273467f9b5b87c1a86c01f2'
+const TABOOLA_CLIENT_SECRET = '43ae9bcc72054b3bb45843a20083b60b'
+const TABOOLA_ACCOUNT_ID = 'taboolaaccount-admcasocastoregmailcom'
+
+async function getTaboolaSpent(startDate: string, endDate: string): Promise<number> {
+    try {
+        const tokenRes = await fetch('https://backstage.taboola.com/backstage/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: TABOOLA_CLIENT_ID,
+                client_secret: TABOOLA_CLIENT_SECRET,
+                grant_type: 'client_credentials',
+            }),
+            cache: 'no-store',
+        })
+        if (!tokenRes.ok) return 0
+        const { access_token } = await tokenRes.json()
+
+        const reportRes = await fetch(
+            `https://backstage.taboola.com/backstage/api/1.0/${TABOOLA_ACCOUNT_ID}/reports/marketing/day?start_date=${startDate}&end_date=${endDate}`,
+            { headers: { Authorization: `Bearer ${access_token}`, Accept: 'application/json' }, cache: 'no-store' }
+        )
+        if (!reportRes.ok) return 0
+        const data = await reportRes.json()
+        return (data.results || []).reduce((s: number, r: any) => s + (r.spent || 0), 0)
+    } catch {
+        return 0
+    }
+}
+
 const PERIOD_DAYS: Record<string, number | null> = {
     'today': 0,
     '7d': 7,
@@ -63,12 +94,26 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
 
     const totalDespesas = records.filter(r => r.type === 'despesa').reduce((s, r) => s + r.amount, 0)
 
+    // Buscar gasto do Taboola no período
+    const startDate = days !== null ? (() => {
+        const from = new Date(now)
+        if (days === 0) {
+            from.setHours(0, 0, 0, 0)
+        } else {
+            from.setDate(from.getDate() - days)
+        }
+        return from.toISOString().split('T')[0]
+    })() : new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    const endDate = now.toISOString().split('T')[0]
+    const taboolaSpent = await getTaboolaSpent(startDate, endDate)
+
     const kpis = {
         totalRevenue,
         netRevenue,
         totalCost,
         totalOrders: allOrders.length,
         paidOrders: paidOrders.length,
+        taboolaSpent,
     }
 
     const chartDays = days !== null ? Math.max(days, 1) : 30
@@ -112,15 +157,18 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
         { name: 'Outros', value: expenseRecords.filter(r => r.category === 'outros').reduce((s, r) => s + r.amount, 0), color: '#64748b' },
     ].filter(c => c.value > 0)
 
+    const manualMarketing = expenseRecords.filter(r => r.category === 'marketing').reduce((s, r) => s + r.amount, 0)
+
     const initialData = {
         receitaBruta: totalRevenue,
         receitaLiquida: netRevenue,
         custoProduto: totalCost,
-        gastosMarketing: expenseRecords.filter(r => r.category === 'marketing').reduce((s, r) => s + r.amount, 0),
+        gastosMarketing: manualMarketing + taboolaSpent,
         gastosOperacionais: expenseRecords.filter(r => r.category === 'operacional').reduce((s, r) => s + r.amount, 0),
-        lucroOperacional: netRevenue - totalCost - totalDespesas,
-        margemLucro: totalRevenue > 0 ? ((netRevenue - totalCost - totalDespesas) / totalRevenue) * 100 : 0,
-        roi: (totalCost + totalDespesas) > 0 ? ((netRevenue - totalCost - totalDespesas) / (totalCost + totalDespesas)) * 100 : 0,
+        taboolaSpent,
+        lucroOperacional: netRevenue - totalCost - totalDespesas - taboolaSpent,
+        margemLucro: totalRevenue > 0 ? ((netRevenue - totalCost - totalDespesas - taboolaSpent) / totalRevenue) * 100 : 0,
+        roi: (totalCost + totalDespesas + taboolaSpent) > 0 ? ((netRevenue - totalCost - totalDespesas - taboolaSpent) / (totalCost + totalDespesas + taboolaSpent)) * 100 : 0,
         dailyRevenue,
         categoryBreakdown,
         totalCost,
