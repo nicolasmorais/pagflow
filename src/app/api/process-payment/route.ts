@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
             binary_mode: true,
             payment_method_id: method === 'pix' ? 'pix' : undefined,
             notification_url: notificationUrl,
-            device_id: deviceId || undefined,
+            ...(deviceId && { device_id: deviceId }),
             payer: {
                 email: orderData.email || 'cliente@pagflow.com',
                 first_name: fullName.split(' ')[0] || "Cliente",
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
                 mpPayload.token = brick.token;
                 mpPayload.installments = Number(brick.installments);
                 mpPayload.payment_method_id = brick.payment_method_id;
-                mpPayload.issuer_id = brick.issuer_id;
+                if (brick.issuer_id) mpPayload.issuer_id = brick.issuer_id;
 
                 // Importante: Para CARTÃO, usamos o CPF que o cliente digitou no Brick
                 // para evitar que o CPF fixo do PIX cause a negação do cartão.
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
                 mpPayload.token = card.token;
                 mpPayload.installments = Number(card.installments) || 1;
                 mpPayload.payment_method_id = card.payment_method_id;
-                mpPayload.issuer_id = card.issuer_id;
+                if (card.issuer_id) mpPayload.issuer_id = card.issuer_id;
 
                 if (card.payer?.identification?.number) {
                     mpPayload.payer.identification.number = card.payer.identification.number.replace(/\D/g, '');
