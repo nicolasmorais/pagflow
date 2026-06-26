@@ -9,6 +9,7 @@ import { notFound, redirect } from 'next/navigation'
 import { deleteOrder } from '@/app/actions'
 import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
+import CopyButton from './CopyButton'
 
 const STATUS_CONFIG: Record<string, { bg: string; color: string; dot: string; border: string; label: string }> = {
     pago: { bg: '#ecfdf5', color: '#059669', dot: '#10b981', border: '#a7f3d0', label: 'Pago' },
@@ -232,36 +233,94 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 {/* ── Right Column ── */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
-                    {/* Cliente */}
-                    <SectionCard title="Cliente" icon={User} iconColor="#3b82f6">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
-                            <div style={{
-                                width: '52px', height: '52px', borderRadius: '16px',
-                                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                boxShadow: '0 4px 12px rgba(15,23,42,0.2)',
-                                color: '#a5b4fc', fontSize: '20px', fontWeight: 800,
-                                fontFamily: "'Space Grotesk', sans-serif",
-                            }}>
-                                {order.fullName?.charAt(0).toUpperCase() || '?'}
-                            </div>
-                            <div>
-                                <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '16px', letterSpacing: '-0.01em' }}>
-                                    {order.fullName || 'Cliente sem nome'}
-                                </p>
-                                {order.cpf && (
-                                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
-                                        CPF: {order.cpf}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
+                    {/* Dados do Cliente (unificado) */}
+                    {(() => {
+                        const addr = [
+                            order.rua && `${order.rua}, ${order.numero}${order.complemento ? ` — ${order.complemento}` : ''}`,
+                            order.bairro,
+                            order.cidade && order.estado && `${order.cidade} / ${order.estado}`,
+                            order.cep && `CEP: ${order.cep}`,
+                        ].filter(Boolean).join('\n')
+                        const fullText = [
+                            order.fullName || '',
+                            order.cpf ? `CPF: ${order.cpf}` : '',
+                            order.email ? `E-mail: ${order.email}` : '',
+                            order.phone ? `Telefone: ${order.phone}` : '',
+                            '',
+                            addr,
+                            (order as any).referencia ? `Ref: ${(order as any).referencia}` : '',
+                        ].filter(Boolean).join('\n')
+                        return (
+                            <SectionCard title="Dados do Cliente" icon={User} iconColor="#3b82f6" rightBadge={<CopyButton text={fullText} />}>
+                                {/* Avatar + nome */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
+                                    <div style={{
+                                        width: '52px', height: '52px', borderRadius: '16px',
+                                        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        boxShadow: '0 4px 12px rgba(15,23,42,0.2)',
+                                        color: '#a5b4fc', fontSize: '20px', fontWeight: 800,
+                                        fontFamily: "'Space Grotesk', sans-serif",
+                                    }}>
+                                        {order.fullName?.charAt(0).toUpperCase() || '?'}
+                                    </div>
+                                    <div>
+                                        <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '16px', letterSpacing: '-0.01em' }}>
+                                            {order.fullName || 'Cliente sem nome'}
+                                        </p>
+                                        {order.cpf && (
+                                            <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
+                                                CPF: {order.cpf}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            <InfoRow icon={Mail} text={order.email || 'Sem e-mail'} />
-                            <InfoRow icon={Phone} text={order.phone || 'Sem telefone'} />
-                        </div>
-                    </SectionCard>
+                                {/* Contato */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
+                                    <InfoRow icon={Mail} text={order.email || 'Sem e-mail'} />
+                                    <InfoRow icon={Phone} text={order.phone || 'Sem telefone'} />
+                                </div>
+
+                                {/* Separador */}
+                                <div style={{ borderTop: '1px solid #f1f5f9', margin: '0 -4px 18px' }} />
+
+                                {/* Endereço de Entrega */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                                    <div style={{
+                                        width: '26px', height: '26px', borderRadius: '8px',
+                                        background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        border: '1px solid #fed7aa',
+                                    }}>
+                                        <MapPin size={13} color="#f97316" strokeWidth={2} />
+                                    </div>
+                                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                        Endereço de Entrega
+                                    </span>
+                                </div>
+
+                                <p style={{ margin: '0 0 12px', fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>
+                                    {order.recipient || order.fullName}
+                                </p>
+                                <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
+                                    <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.8, fontWeight: 500 }}>
+                                        {order.rua}, {order.numero}
+                                        {order.complemento && ` — ${order.complemento}`}<br />
+                                        {order.bairro}<br />
+                                        {order.cidade} / {order.estado}<br />
+                                        <span style={{ fontWeight: 700, color: '#0f172a' }}>CEP: </span>{order.cep}
+                                    </p>
+                                </div>
+                                {(order as any).referencia && (
+                                    <div style={{ marginTop: '10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '10px 14px' }}>
+                                        <p style={{ margin: 0, fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
+                                            <span style={{ fontWeight: 800 }}>Ref:</span> {(order as any).referencia}
+                                        </p>
+                                    </div>
+                                )}
+                            </SectionCard>
+                        )
+                    })()}
 
                     {/* Pagamento */}
                     <SectionCard title="Pagamento" icon={CreditCard} iconColor="#10b981">
@@ -319,28 +378,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         )}
                     </SectionCard>
 
-                    {/* Endereço de Entrega */}
-                    <SectionCard title="Endereço de Entrega" icon={MapPin} iconColor="#f97316">
-                        <p style={{ margin: '0 0 14px', fontWeight: 800, color: '#0f172a', fontSize: '15px', letterSpacing: '-0.01em' }}>
-                            {order.recipient || order.fullName}
-                        </p>
-                        <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '16px 18px', border: '1px solid #e2e8f0' }}>
-                            <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.8, fontWeight: 500 }}>
-                                {order.rua}, {order.numero}
-                                {order.complemento && ` — ${order.complemento}`}<br />
-                                {order.bairro}<br />
-                                {order.cidade} / {order.estado}<br />
-                                <span style={{ fontWeight: 700, color: '#0f172a' }}>CEP: </span>{order.cep}
-                            </p>
-                        </div>
-                        {(order as any).referencia && (
-                            <div style={{ marginTop: '10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '12px 16px' }}>
-                                <p style={{ margin: 0, fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
-                                    <span style={{ fontWeight: 800 }}>Ref:</span> {(order as any).referencia}
-                                </p>
-                            </div>
-                        )}
-                    </SectionCard>
                 </div>
             </div>
         </div>
@@ -411,7 +448,7 @@ function KpiStat({ icon: Icon, label, value, sub, featured }: {
 
 /* ── SectionCard — same pattern as dashboard SectionCard ── */
 function SectionCard({ title, icon: Icon, iconColor, rightBadge, children }: {
-    title: string; icon: any; iconColor: string; rightBadge?: string; children: React.ReactNode
+    title: string; icon: any; iconColor: string; rightBadge?: React.ReactNode; children: React.ReactNode
 }) {
     return (
         <div style={{
@@ -431,12 +468,14 @@ function SectionCard({ title, icon: Icon, iconColor, rightBadge, children }: {
                     {title}
                 </h3>
                 {rightBadge && (
-                    <span style={{
-                        background: '#f1f5f9', padding: '4px 10px', borderRadius: '8px',
-                        fontSize: '11px', fontWeight: 800, color: '#64748b',
-                    }}>
-                        {rightBadge}
-                    </span>
+                    typeof rightBadge === 'string' ? (
+                        <span style={{
+                            background: '#f1f5f9', padding: '4px 10px', borderRadius: '8px',
+                            fontSize: '11px', fontWeight: 800, color: '#64748b',
+                        }}>
+                            {rightBadge}
+                        </span>
+                    ) : rightBadge
                 )}
             </div>
             {children}
