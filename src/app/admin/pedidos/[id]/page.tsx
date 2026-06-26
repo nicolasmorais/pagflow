@@ -2,14 +2,14 @@ import { prisma } from '@/lib/prisma'
 import {
     ChevronLeft, Trash2, Package, Phone, Mail,
     MapPin, CreditCard, User, CheckCircle2, Clock, Truck, ReceiptText,
-    DollarSign, Hash, ArrowUpRight
+    DollarSign, Hash, ArrowUpRight, FileText
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { deleteOrder } from '@/app/actions'
 import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
-import CopyButton from './CopyButton'
+import InlineCopyBtn from './InlineCopyBtn'
 
 const STATUS_CONFIG: Record<string, { bg: string; color: string; dot: string; border: string; label: string }> = {
     pago: { bg: '#ecfdf5', color: '#059669', dot: '#10b981', border: '#a7f3d0', label: 'Pago' },
@@ -234,93 +234,81 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
                     {/* Dados do Cliente (unificado) */}
-                    {(() => {
-                        const addr = [
-                            order.rua && `${order.rua}, ${order.numero}${order.complemento ? ` — ${order.complemento}` : ''}`,
-                            order.bairro,
-                            order.cidade && order.estado && `${order.cidade} / ${order.estado}`,
-                            order.cep && `CEP: ${order.cep}`,
-                        ].filter(Boolean).join('\n')
-                        const fullText = [
-                            order.fullName || '',
-                            order.cpf ? `CPF: ${order.cpf}` : '',
-                            order.email ? `E-mail: ${order.email}` : '',
-                            order.phone ? `Telefone: ${order.phone}` : '',
-                            '',
-                            addr,
-                            (order as any).referencia ? `Ref: ${(order as any).referencia}` : '',
-                        ].filter(Boolean).join('\n')
-                        return (
-                            <SectionCard title="Dados do Cliente" icon={User} iconColor="#3b82f6" rightBadge={<CopyButton text={fullText} />}>
-                                {/* Avatar + nome */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
-                                    <div style={{
-                                        width: '52px', height: '52px', borderRadius: '16px',
-                                        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        boxShadow: '0 4px 12px rgba(15,23,42,0.2)',
-                                        color: '#a5b4fc', fontSize: '20px', fontWeight: 800,
-                                        fontFamily: "'Space Grotesk', sans-serif",
-                                    }}>
-                                        {order.fullName?.charAt(0).toUpperCase() || '?'}
-                                    </div>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '16px', letterSpacing: '-0.01em' }}>
-                                            {order.fullName || 'Cliente sem nome'}
-                                        </p>
-                                        {order.cpf && (
-                                            <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
-                                                CPF: {order.cpf}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Contato */}
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
-                                    <InfoRow icon={Mail} text={order.email || 'Sem e-mail'} />
-                                    <InfoRow icon={Phone} text={order.phone || 'Sem telefone'} />
-                                </div>
-
-                                {/* Separador */}
-                                <div style={{ borderTop: '1px solid #f1f5f9', margin: '0 -4px 18px' }} />
-
-                                {/* Endereço de Entrega */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                                    <div style={{
-                                        width: '26px', height: '26px', borderRadius: '8px',
-                                        background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        border: '1px solid #fed7aa',
-                                    }}>
-                                        <MapPin size={13} color="#f97316" strokeWidth={2} />
-                                    </div>
-                                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                        Endereço de Entrega
-                                    </span>
-                                </div>
-
-                                <p style={{ margin: '0 0 12px', fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>
-                                    {order.recipient || order.fullName}
+                    <SectionCard title="Dados do Cliente" icon={User} iconColor="#3b82f6">
+                        {/* Avatar + nome */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
+                            <div style={{
+                                width: '52px', height: '52px', borderRadius: '16px',
+                                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 4px 12px rgba(15,23,42,0.2)',
+                                color: '#a5b4fc', fontSize: '20px', fontWeight: 800,
+                                fontFamily: "'Space Grotesk', sans-serif",
+                            }}>
+                                {order.fullName?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '16px', letterSpacing: '-0.01em' }}>
+                                    {order.fullName || 'Cliente sem nome'}
                                 </p>
-                                <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '14px 16px', border: '1px solid #e2e8f0' }}>
-                                    <p style={{ margin: 0, color: '#475569', fontSize: '13px', lineHeight: 1.8, fontWeight: 500 }}>
-                                        {order.rua}, {order.numero}
-                                        {order.complemento && ` — ${order.complemento}`}<br />
-                                        {order.bairro}<br />
-                                        {order.cidade} / {order.estado}<br />
-                                        <span style={{ fontWeight: 700, color: '#0f172a' }}>CEP: </span>{order.cep}
-                                    </p>
-                                </div>
-                                {(order as any).referencia && (
-                                    <div style={{ marginTop: '10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '10px 14px' }}>
-                                        <p style={{ margin: 0, fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
-                                            <span style={{ fontWeight: 800 }}>Ref:</span> {(order as any).referencia}
-                                        </p>
-                                    </div>
-                                )}
-                            </SectionCard>
-                        )
-                    })()}
+                            </div>
+                            {order.fullName && <InlineCopyBtn text={order.fullName} />}
+                        </div>
+
+                        {/* CPF */}
+                        <CopyableRow icon={FileText} label="CPF" value={order.cpf || '—'} />
+
+                        {/* E-mail */}
+                        <CopyableRow icon={Mail} label="E-mail" value={order.email || 'Sem e-mail'} />
+
+                        {/* Telefone */}
+                        <CopyableRow icon={Phone} label="Telefone" value={order.phone || 'Sem telefone'} />
+
+                        {/* Separador */}
+                        <div style={{ borderTop: '1px solid #f1f5f9', margin: '6px -4px 18px' }} />
+
+                        {/* Endereço de Entrega */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                            <div style={{
+                                width: '26px', height: '26px', borderRadius: '8px',
+                                background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                border: '1px solid #fed7aa',
+                            }}>
+                                <MapPin size={13} color="#f97316" strokeWidth={2} />
+                            </div>
+                            <span style={{ fontSize: '12px', fontWeight: 800, color: '#0f172a', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                Endereço de Entrega
+                            </span>
+                        </div>
+
+                        <p style={{ margin: '0 0 12px', fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>
+                            {order.recipient || order.fullName}
+                        </p>
+
+                        {/* Rua + Número + Complemento */}
+                        <CopyableRow icon={MapPin} label="Rua" value={
+                            `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ` — ${order.complemento}` : ''}`
+                        } />
+
+                        {/* Bairro */}
+                        <CopyableRow icon={MapPin} label="Bairro" value={order.bairro || '—'} />
+
+                        {/* Cidade / Estado */}
+                        <CopyableRow icon={MapPin} label="Cidade" value={
+                            order.cidade && order.estado ? `${order.cidade} / ${order.estado}` : '—'
+                        } />
+
+                        {/* CEP */}
+                        <CopyableRow icon={Hash} label="CEP" value={order.cep || '—'} />
+
+                        {(order as any).referencia && (
+                            <div style={{ marginTop: '10px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '12px', padding: '10px 14px' }}>
+                                <p style={{ margin: 0, fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
+                                    <span style={{ fontWeight: 800 }}>Ref:</span> {(order as any).referencia}
+                                </p>
+                            </div>
+                        )}
+                    </SectionCard>
 
                     {/* Pagamento */}
                     <SectionCard title="Pagamento" icon={CreditCard} iconColor="#10b981">
@@ -483,16 +471,20 @@ function SectionCard({ title, icon: Icon, iconColor, rightBadge, children }: {
     )
 }
 
-/* ── InfoRow ── */
-function InfoRow({ icon: Icon, text }: { icon: any; text: string }) {
+/* ── CopyableRow — label + valor + botão de copiar ── */
+function CopyableRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
     return (
         <div style={{
-            display: 'flex', alignItems: 'center', gap: '12px',
-            padding: '12px 14px', background: '#f8fafc', borderRadius: '12px',
-            border: '1px solid #e2e8f0',
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '10px 12px', background: '#f8fafc', borderRadius: '12px',
+            border: '1px solid #e2e8f0', marginBottom: '8px',
         }}>
-            <Icon size={15} color="#94a3b8" strokeWidth={2} />
-            <span style={{ color: '#475569', fontSize: '13px', fontWeight: 600, wordBreak: 'break-all' }}>{text}</span>
+            <Icon size={14} color="#94a3b8" strokeWidth={2} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
+                <p style={{ margin: '2px 0 0', color: '#475569', fontSize: '13px', fontWeight: 600, wordBreak: 'break-all' }}>{value}</p>
+            </div>
+            <InlineCopyBtn text={value} />
         </div>
     )
 }
