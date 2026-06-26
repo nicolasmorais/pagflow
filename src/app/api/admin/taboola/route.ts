@@ -59,100 +59,93 @@ function getDateRange(period: string): { start: string; end: string } {
     return { start: start.toISOString().split('T')[0], end }
 }
 
+async function taboolaFetch(url: string, token: string): Promise<any> {
+    const res = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json',
+        },
+    })
+    if (!res.ok) {
+        const text = await res.text()
+        throw new Error(`Taboola API ${res.status}: ${text.substring(0, 300)}`)
+    }
+    return res.json()
+}
+
 export async function GET(req: NextRequest) {
     try {
         const period = req.nextUrl.searchParams.get('period') || '30d'
         const { start, end } = getDateRange(period)
         const token = await getToken()
 
-        // Fetch daily report
-        const reportUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/reports/marketing/day?start_date=${start}&end_date=${end}`
-        const reportRes = await fetch(reportUrl, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        })
+        // 1. Daily summary: /reports/campaign-summary/dimensions/day
+        const summaryUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/reports/campaign-summary/dimensions/day?start_date=${start}&end_date=${end}`
+        const summaryData = await taboolaFetch(summaryUrl, token)
+        const summaryResults = summaryData.results || []
 
-        if (!reportRes.ok) {
-            const text = await reportRes.text()
-            return NextResponse.json(
-                { error: `Taboola report failed: ${reportRes.status}`, details: text },
-                { status: reportRes.status }
-            )
+        // 2. Campaign breakdown: /reports/top-campaign-content
+        let campaignItems: any[] = []
+        try {
+            const campaignUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/reports/top-campaign-content?start_date=${start}&end_date=${end}`
+            const crData = await taboolaFetch(campaignUrl, token)
+            campaignItems = crData.results || []
+        } catch {
+            // No campaign data
         }
 
-        const reportData = await reportRes.json()
-        const results = reportData.results || []
-
-        // Fetch campaigns list
-        const campaignsUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/campaigns`
-        const campaignsRes = await fetch(campaignsUrl, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        })
-
+        // 3. Campaign list for status info
         let campaigns: any[] = []
-        if (campaignsRes.ok) {
-            const campaignsData = await campaignsRes.json()
+        try {
+            const campaignsUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/campaigns?status=ALL`
+            const campaignsData = await taboolaFetch(campaignsUrl, token)
             campaigns = campaignsData.results || []
+        } catch {
+            // Ignore
         }
 
-        // Fetch campaign-level report
-        const campaignReportUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/reports/campaign/day?start_date=${start}&end_date=${end}`
-        const campaignReportRes = await fetch(campaignReportUrl, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                Accept: 'application/json',
-            },
-        })
-
-        let campaignReport: any[] = []
-        if (campaignReportRes.ok) {
-            const crData = await campaignReportRes.json()
-            campaignReport = crData.results || []
-        }
-
-        // Aggregate daily data
-        const totalSpent = results.reduce((s: number, r: any) => s + (r.spent || 0), 0)
-        const totalImpressions = results.reduce((s: number, r: any) => s + (r.impressions || 0), 0)
-        const totalClicks = results.reduce((s: number, r: any) => s + (r.clicks || 0), 0)
-        const totalConversions = results.reduce((s: number, r: any) => s + (r.conversions || 0), 0)
+        // Aggregate daily totals
+        const totalSpent = summaryResults.reduce((s: number, r: any) => s + (r.spent || 0), 0)
+        const totalImpressions = summaryResults.reduce((s: number, r: any) => s + (r.impressions || 0), 0)
+        const totalClicks = summaryResults.reduce((s: number, r: any) => s + (r.clicks || 0), 0)
+        const totalConversions = summaryResults.reduce((s: number, r: any) => s + (r.cpa_actions_num || 0), 0)
         const cpc = totalClicks > 0 ? totalSpent / totalClicks : 0
         const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
         const cpa = totalConversions > 0 ? totalSpent / totalConversions : 0
 
         // Daily chart data
-        const daily = results.map((r: any) => ({
-            date: r.date,
+        const daily = summaryResults.map((r: any) => ({
+            date: r.date?.split(' ')[0] || r.date,
             spent: r.spent || 0,
             impressions: r.impressions || 0,
             clicks: r.clicks || 0,
-            conversions: r.conversions || 0,
-            cpc: (r.clicks || 0) > 0 ? (r.spent || 0) / r.clicks : 0,
-            ctr: (r.impressions || 0) > 0 ? ((r.clicks || 0) / r.impressions) * 100 : 0,
+            conversions: r.cpa_actions_num || 0,
+            cpc: r.cpc || 0,
+            ctr: r.ctr || 0,
         }))
 
-        // Aggregate campaign data (group by campaign across days)
+        // Aggregate campaign items by campaign_id
         const campaignMap = new Map<string, { name: string; spent: number; impressions: number; clicks: number; conversions: number; status: string }>()
-        for (const cr of campaignReport) {
-            const id = String(cr.campaign || cr.campaign_id || 'unknown')
+        for (const item of campaignItems) {
+            const id = String(item.campaign || 'unknown')
             const existing = campaignMap.get(id)
+            const impressions = item.impressions || 0
+            const clicks = item.clicks || 0
+            const conversions = item.actions || 0
+            const spent = item.cpc ? item.cpc * clicks : 0
             if (existing) {
-                existing.spent += cr.spent || 0
-                existing.impressions += cr.impressions || 0
-                existing.clicks += cr.clicks || 0
-                existing.conversions += cr.conversions || 0
+                existing.spent += spent
+                existing.impressions += impressions
+                existing.clicks += clicks
+                existing.conversions += conversions
             } else {
                 const camp = campaigns.find((c: any) => String(c.id) === id)
                 campaignMap.set(id, {
-                    name: camp?.name || cr.campaign_name || `Campanha ${id}`,
-                    spent: cr.spent || 0,
-                    impressions: cr.impressions || 0,
-                    clicks: cr.clicks || 0,
-                    conversions: cr.conversions || 0,
+                    name: camp?.name || item.campaign_name || `Campanha ${id}`,
+                    spent,
+                    impressions,
+                    clicks,
+                    conversions,
                     status: camp?.status || 'UNKNOWN',
                 })
             }

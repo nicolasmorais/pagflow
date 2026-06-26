@@ -24,7 +24,7 @@ async function getTaboolaSpent(startDate: string, endDate: string): Promise<numb
         const { access_token } = await tokenRes.json()
 
         const reportRes = await fetch(
-            `https://backstage.taboola.com/backstage/api/1.0/${TABOOLA_ACCOUNT_ID}/reports/marketing/day?start_date=${startDate}&end_date=${endDate}`,
+            `https://backstage.taboola.com/backstage/api/1.0/${TABOOLA_ACCOUNT_ID}/reports/campaign-summary/dimensions/day?start_date=${startDate}&end_date=${endDate}`,
             { headers: { Authorization: `Bearer ${access_token}`, Accept: 'application/json' }, cache: 'no-store' }
         )
         if (!reportRes.ok) return 0
