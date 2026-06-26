@@ -286,9 +286,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         </p>
 
                         {/* Rua + Número + Complemento */}
-                        <CopyableRow icon={MapPin} label="Rua" value={
-                            `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ` — ${order.complemento}` : ''}`
-                        } />
+                        <CopyableRow icon={MapPin} label="Rua" value={order.rua || '—'} />
+                        <CopyableRow icon={Hash} label="Número" value={order.numero || '—'} />
+                        <CopyableRow icon={MapPin} label="Complemento" value={order.complemento || '—'} />
 
                         {/* Bairro */}
                         <CopyableRow icon={MapPin} label="Bairro" value={order.bairro || '—'} />
