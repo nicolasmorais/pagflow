@@ -599,7 +599,7 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
                         { label: '(-) Taxa MP', value: totalReceita - totalNet, color: '#ec4899', bg: '#fdf2f8', icon: '💳' },
                         { label: 'Receita Líquida', value: totalNet, color: '#6366f1', bg: '#eef2ff', icon: '🏦' },
                         { label: '(-) Custo Produto', value: expenseRecords.filter(r => r.category === 'custo_produto').reduce((s, r) => s + r.amount, 0) || custoProduto, color: '#dc2626', bg: '#fef2f2', icon: '📦' },
-                        { label: '(-) Marketing', value: expenseRecords.filter(r => r.category === 'marketing').reduce((s, r) => s + r.amount, 0), color: '#f97316', bg: '#fff7ed', icon: '📢' },
+                        { label: '(-) Marketing', value: gastosMarketing, color: '#f97316', bg: '#fff7ed', icon: '📢' },
                         { label: '(-) Operacional', value: expenseRecords.filter(r => r.category === 'operacional').reduce((s, r) => s + r.amount, 0), color: '#6366f1', bg: '#eef2ff', icon: '⚙️' },
                         { label: '(-) Frete', value: expenseRecords.filter(r => r.category === 'frete').reduce((s, r) => s + r.amount, 0), color: '#0ea5e9', bg: '#f0f9ff', icon: '🚚' },
                         { label: '(-) Taxas', value: expenseRecords.filter(r => r.category === 'taxa').reduce((s, r) => s + r.amount, 0), color: '#ec4899', bg: '#fdf2f8', icon: '📋' },
