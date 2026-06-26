@@ -8,7 +8,7 @@ const TABOOLA_CLIENT_ID = '101768521273467f9b5b87c1a86c01f2'
 const TABOOLA_CLIENT_SECRET = '43ae9bcc72054b3bb45843a20083b60b'
 const TABOOLA_ACCOUNT_ID = 'taboolaaccount-admcasocastoregmailcom'
 
-async function getTaboolaSpent(startDate: string, endDate: string): Promise<number> {
+async function getTaboolaDaily(startDate: string, endDate: string): Promise<{ total: number; byDate: Map<string, number> }> {
     try {
         const tokenRes = await fetch('https://backstage.taboola.com/backstage/oauth/token', {
             method: 'POST',
@@ -20,18 +20,26 @@ async function getTaboolaSpent(startDate: string, endDate: string): Promise<numb
             }),
             cache: 'no-store',
         })
-        if (!tokenRes.ok) return 0
+        if (!tokenRes.ok) return { total: 0, byDate: new Map() }
         const { access_token } = await tokenRes.json()
 
         const reportRes = await fetch(
             `https://backstage.taboola.com/backstage/api/1.0/${TABOOLA_ACCOUNT_ID}/reports/campaign-summary/dimensions/day?start_date=${startDate}&end_date=${endDate}`,
             { headers: { Authorization: `Bearer ${access_token}`, Accept: 'application/json' }, cache: 'no-store' }
         )
-        if (!reportRes.ok) return 0
+        if (!reportRes.ok) return { total: 0, byDate: new Map() }
         const data = await reportRes.json()
-        return (data.results || []).reduce((s: number, r: any) => s + (r.spent || 0), 0)
+        const byDate = new Map<string, number>()
+        let total = 0
+        for (const r of (data.results || [])) {
+            const spent = r.spent || 0
+            total += spent
+            const dateKey = (r.date || '').split(' ')[0]
+            if (dateKey) byDate.set(dateKey, (byDate.get(dateKey) || 0) + spent)
+        }
+        return { total, byDate }
     } catch {
-        return 0
+        return { total: 0, byDate: new Map() }
     }
 }
 
@@ -94,7 +102,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
 
     const totalDespesas = records.filter(r => r.type === 'despesa').reduce((s, r) => s + r.amount, 0)
 
-    // Buscar gasto do Taboola no período
+    // Buscar gasto do Taboola no período (mesma lógica de data do whereDate)
     const startDate = days !== null ? (() => {
         const from = new Date(now)
         if (days === 0) {
@@ -102,10 +110,10 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
         } else {
             from.setDate(from.getDate() - days)
         }
-        return from.toISOString().split('T')[0]
-    })() : new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-    const endDate = now.toISOString().split('T')[0]
-    const taboolaSpent = await getTaboolaSpent(startDate, endDate)
+        return formatDateStr(from)
+    })() : formatDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
+    const endDate = formatDateStr(now)
+    const { total: taboolaSpent, byDate: taboolaByDate } = await getTaboolaDaily(startDate, endDate)
 
     const kpis = {
         totalRevenue,
@@ -138,6 +146,14 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
         if (!dailyMap.has(key)) continue
         const ex = dailyMap.get(key)!
         dailyMap.set(key, { ...ex, despesa: ex.despesa + rec.amount })
+    }
+
+    // Somar gasto Taboola diário ao despesa de cada dia
+    for (const [dateKey, spent] of taboolaByDate.entries()) {
+        if (dailyMap.has(dateKey)) {
+            const ex = dailyMap.get(dateKey)!
+            dailyMap.set(dateKey, { ...ex, despesa: ex.despesa + spent })
+        }
     }
 
     for (const [key, val] of dailyMap.entries()) {

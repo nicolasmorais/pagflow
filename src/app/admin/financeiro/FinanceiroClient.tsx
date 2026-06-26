@@ -572,7 +572,7 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
                                 {categoryTotals.map((c) => {
-                                    const pct = totalDespesas > 0 ? ((c.value / totalDespesas) * 100).toFixed(0) : 0
+                                    const pct = (totalDespesas + taboola) > 0 ? ((c.value / (totalDespesas + taboola)) * 100).toFixed(0) : 0
                                     return (
                                         <div key={c.name} style={{
                                             display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
