@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getBrazilNow, formatDateStr } from '@/lib/date-utils'
 
 const TABOOLA_CLIENT_ID = '101768521273467f9b5b87c1a86c01f2'
 const TABOOLA_CLIENT_SECRET = '43ae9bcc72054b3bb45843a20083b60b'
@@ -36,8 +37,8 @@ async function getToken(): Promise<string> {
 }
 
 function getDateRange(period: string): { start: string; end: string } {
-    const now = new Date()
-    const end = now.toISOString().split('T')[0]
+    const now = getBrazilNow()
+    const end = formatDateStr(now)
     const start = new Date(now)
 
     switch (period) {
@@ -56,7 +57,7 @@ function getDateRange(period: string): { start: string; end: string } {
             start.setDate(start.getDate() - 30)
     }
 
-    return { start: start.toISOString().split('T')[0], end }
+    return { start: formatDateStr(start), end }
 }
 
 async function taboolaFetch(url: string, token: string): Promise<any> {
