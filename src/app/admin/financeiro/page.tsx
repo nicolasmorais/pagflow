@@ -51,22 +51,45 @@ const PERIOD_DAYS: Record<string, number | null> = {
     'all': null,
 }
 
+const isMonthPeriod = (p: string) => p === 'this_month' || p === 'last_month'
+
+function getMonthRange(period: string, now: Date): { from: Date; to: Date } {
+    if (period === 'this_month') {
+        const from = new Date(now.getFullYear(), now.getMonth(), 1)
+        from.setHours(0, 0, 0, 0)
+        const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
+        return { from, to }
+    }
+    // last_month
+    const from = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    from.setHours(0, 0, 0, 0)
+    const to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
+    return { from, to }
+}
+
 export default async function FinanceiroPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
     const { period: periodParam } = await searchParams
-    const period = periodParam && PERIOD_DAYS[periodParam] !== undefined ? periodParam : '30d'
-    const days = PERIOD_DAYS[period]
+    const period = periodParam && (PERIOD_DAYS[periodParam] !== undefined || isMonthPeriod(periodParam)) ? periodParam : '30d'
+    const days = PERIOD_DAYS[period] ?? null
 
     const now = getBrazilNow()
 
-    const whereDate = days !== null ? (() => {
-        const from = new Date(now)
-        if (days === 0) {
-            from.setHours(0, 0, 0, 0)
-        } else {
-            from.setDate(from.getDate() - days)
+    const whereDate = (() => {
+        if (isMonthPeriod(period)) {
+            const { from, to } = getMonthRange(period, now)
+            return { gte: from, lte: to }
         }
-        return { gte: from }
-    })() : undefined
+        if (days !== null) {
+            const from = new Date(now)
+            if (days === 0) {
+                from.setHours(0, 0, 0, 0)
+            } else {
+                from.setDate(from.getDate() - days)
+            }
+            return { gte: from }
+        }
+        return undefined
+    })()
 
     const allOrders = await prisma.order.findMany({
         where: {
@@ -103,16 +126,24 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
     const totalDespesas = records.filter(r => r.type === 'despesa').reduce((s, r) => s + r.amount, 0)
 
     // Buscar gasto do Taboola no período (mesma lógica de data do whereDate)
-    const startDate = days !== null ? (() => {
-        const from = new Date(now)
-        if (days === 0) {
-            from.setHours(0, 0, 0, 0)
-        } else {
-            from.setDate(from.getDate() - days)
+    const startDate = (() => {
+        if (isMonthPeriod(period)) {
+            return formatDateStr(getMonthRange(period, now).from)
         }
-        return formatDateStr(from)
-    })() : formatDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
-    const endDate = formatDateStr(now)
+        if (days !== null) {
+            const from = new Date(now)
+            if (days === 0) {
+                from.setHours(0, 0, 0, 0)
+            } else {
+                from.setDate(from.getDate() - days)
+            }
+            return formatDateStr(from)
+        }
+        return formatDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
+    })()
+    const endDate = isMonthPeriod(period)
+        ? formatDateStr(getMonthRange(period, now).to)
+        : formatDateStr(now)
     const { total: taboolaSpent, byDate: taboolaByDate } = await getTaboolaDaily(startDate, endDate)
 
     const kpis = {
@@ -124,11 +155,31 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
         taboolaSpent,
     }
 
-    const chartDays = days !== null ? Math.max(days, 1) : 30
+    const chartDays = (() => {
+        if (isMonthPeriod(period)) {
+            const { from, to } = getMonthRange(period, now)
+            return Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        }
+        return days !== null ? Math.max(days, 1) : 30
+    })()
+    const chartStart = (() => {
+        if (isMonthPeriod(period)) {
+            return getMonthRange(period, now).from
+        }
+        const from = new Date(now)
+        if (days === 0) {
+            from.setHours(0, 0, 0, 0)
+        } else if (days !== null) {
+            from.setDate(from.getDate() - (days - 1))
+        } else {
+            from.setDate(from.getDate() - 29)
+        }
+        return from
+    })()
     const dailyMap = new Map<string, { receita: number; despesa: number; lucro: number }>()
-    for (let i = chartDays - 1; i >= 0; i--) {
-        const d = new Date(now)
-        d.setDate(d.getDate() - i)
+    for (let i = 0; i < chartDays; i++) {
+        const d = new Date(chartStart)
+        d.setDate(d.getDate() + i)
         const key = formatDateStr(d)
         dailyMap.set(key, { receita: 0, despesa: 0, lucro: 0 })
     }

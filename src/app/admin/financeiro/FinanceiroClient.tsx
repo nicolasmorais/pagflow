@@ -331,6 +331,8 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
                             { key: 'today', label: 'Hoje' },
                             { key: '7d', label: '7 dias' },
                             { key: '30d', label: '30 dias' },
+                            { key: 'this_month', label: 'Este Mês' },
+                            { key: 'last_month', label: 'Mês Passado' },
                             { key: '90d', label: '90 dias' },
                             { key: 'all', label: 'Tudo' },
                         ].map(p => (
@@ -496,7 +498,7 @@ export default function FinanceiroClient({ initialData, records, kpis }: {
 
             {/* Charts Row */}
             <div className="fin-charts-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '14px' }}>
-                <SectionCard title="Evolução Financeira" subtitle={`Receita vs Despesas — ${filterPeriod === 'today' ? 'Hoje' : filterPeriod === '7d' ? '7 dias' : filterPeriod === '90d' ? '90 dias' : filterPeriod === 'all' ? 'Tudo' : '30 dias'}`}>
+                <SectionCard title="Evolução Financeira" subtitle={`Receita vs Despesas — ${filterPeriod === 'today' ? 'Hoje' : filterPeriod === '7d' ? '7 dias' : filterPeriod === '90d' ? '90 dias' : filterPeriod === 'this_month' ? 'Este Mês' : filterPeriod === 'last_month' ? 'Mês Passado' : filterPeriod === 'all' ? 'Tudo' : '30 dias'}`}>
                     <ResponsiveContainer width="100%" height={280}>
                         <AreaChart data={initialData.dailyRevenue} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
                             <defs>
