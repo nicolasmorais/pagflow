@@ -36,11 +36,13 @@ export async function POST(req: NextRequest) {
         const phone = orderData.telefone || orderData.phone || "";
 
         // 0. Buscar produto e configurações para recalcular o preço no servidor
-        const [product, storeSettings] = await Promise.all([
+        const [product, pixDiscountSetting] = await Promise.all([
             orderData.productId ? prisma.product.findUnique({
                 where: { id: orderData.productId }
             }) : Promise.resolve(null),
-            prisma.customization_settings.findFirst()
+            prisma.customization_settings.findUnique({
+                where: { key: 'checkout_pix_discount' }
+            })
         ]);
 
         const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
 
         // ── Recalcular preço no servidor (ignora preço enviado pelo cliente) ──
         const serverBasePrice = Number(product?.price) || 0;
-        const pixDiscountPct = Number(storeSettings?.pixDiscount || 0) / 100;
+        const pixDiscountPct = Number(pixDiscountSetting?.value || 0) / 100;
         const serverShippingPrice = Number(orderData.shippingPrice) || 0;
         const serverPrice = method === 'pix'
             ? Number((serverBasePrice * (1 - pixDiscountPct) + serverShippingPrice).toFixed(2))
