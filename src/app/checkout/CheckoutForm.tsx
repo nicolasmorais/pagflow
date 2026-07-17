@@ -357,7 +357,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
             if (result.success) {
                 // Taboola: Track EVERY attempt (approved, declined, pending Pix)
-                trackTaboolaEvent('make_purchase', { value: finalPrice, currency: 'BRL' });
+                trackTaboolaEvent('make_purchase', { revenue: finalPrice, currency: 'BRL' });
 
                 // Google Analytics: purchase event
                 trackGoogleEvent('purchase', {
