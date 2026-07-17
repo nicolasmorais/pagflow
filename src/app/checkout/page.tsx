@@ -41,7 +41,7 @@ export default async function CheckoutPage({
     const productId = params.p
 
     // Parallelize all database queries for much faster SSR load time
-    const [dbProduct, settings, orderBumps, shippingRules] = await Promise.all([
+    const [dbProduct, settings, orderBumps, shippingRules, productPixels] = await Promise.all([
         productId ? prisma.product.findUnique({
             where: { id: productId }
         }) : Promise.resolve(null),
@@ -75,7 +75,13 @@ export default async function CheckoutPage({
         prisma.shipping_rules.findMany({
             where: { is_active: true },
             orderBy: { price: 'asc' }
-        })
+        }),
+
+        // Carregar pixels específicos do produto (via productId que referencia Product)
+        productId ? prisma.product_pixels.findMany({
+            where: { productId: productId },
+            include: { marketing_pixels: true }
+        }) : Promise.resolve([])
     ]);
 
     let product = dbProduct;
@@ -116,12 +122,26 @@ export default async function CheckoutPage({
         supportPhone: settings.find((s: any) => s.key === 'checkout_support_phone')?.value || ''
     }
 
-    const pixels = {
+    // Pixels globais (fallback)
+    const globalPixels = {
         taboolaId: settings.find((s: any) => s.key === 'marketing_taboola_id')?.value || '',
         facebookId: settings.find((s: any) => s.key === 'marketing_facebook_id')?.value || '',
         googleId: settings.find((s: any) => s.key === 'marketing_google_id')?.value || '',
         googleAnalyticsId: settings.find((s: any) => s.key === 'marketing_ga_id')?.value || '',
         googleAdsConvLabel: settings.find((s: any) => s.key === 'marketing_google_conv_label')?.value || ''
+    }
+
+    // Pixels por produto (específicos)
+    const perProductPixels = (productPixels as any[]).map((pp: any) => ({
+        type: pp.marketing_pixels.type,
+        pixelId: pp.marketing_pixels.pixel_id,
+        name: pp.marketing_pixels.name
+    }))
+
+    // Merge: produto-specific pixels + global pixels as fallback
+    const pixels = {
+        ...globalPixels,
+        perProduct: perProductPixels
     }
 
     // Map order bumps to simple objects

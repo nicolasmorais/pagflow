@@ -43,9 +43,21 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     }, []);
 
     const trackTaboolaEvent = (eventName: string, data: any = {}) => {
-        if (!pixels?.taboolaId || typeof window === 'undefined') return;
+        if (typeof window === 'undefined') return;
         const _tfa = (window as any)._tfa || [];
-        _tfa.push({ notify: 'event', name: eventName, id: pixels.taboolaId, ...data });
+
+        // Global Taboola pixel
+        if (pixels?.taboolaId) {
+            _tfa.push({ notify: 'event', name: eventName, id: pixels.taboolaId, ...data });
+        }
+
+        // Per-product Taboola pixels
+        if (pixels?.perProduct) {
+            const taboolaPixels = pixels.perProduct.filter((p: any) => p.type === 'taboola')
+            for (const pixel of taboolaPixels) {
+                _tfa.push({ notify: 'event', name: eventName, id: pixel.pixelId, ...data });
+            }
+        }
     };
 
     // ── Google Analytics / Google Ads gtag helper ──
@@ -66,7 +78,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         // Validar IDs de pixel (apenas alfanumérico e hífen)
         const isValidPixelId = (id: string) => /^[a-zA-Z0-9_-]+$/.test(id);
 
-        // Taboola Base Script
+        // Taboola Base Script - Global
         if (pixels?.taboolaId && isValidPixelId(pixels.taboolaId) && !document.getElementById('taboola-pixel')) {
             const _tfa = (window as any)._tfa || [];
             (window as any)._tfa = _tfa;
@@ -75,8 +87,26 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             s.async = true;
             s.src = `https://cdn.taboola.com/libtr/${pixels.taboolaId}/tfa.js`;
             document.head.appendChild(s);
-            trackTaboolaEvent('start_checkout');
         }
+
+        // Taboola Base Script - Per-Product Pixels
+        if (pixels?.perProduct) {
+            const _tfa = (window as any)._tfa || [];
+            (window as any)._tfa = _tfa;
+            const taboolaPixels = pixels.perProduct.filter((p: any) => p.type === 'taboola')
+            for (const pixel of taboolaPixels) {
+                if (isValidPixelId(pixel.pixelId) && !document.getElementById(`taboola-pixel-${pixel.pixelId}`)) {
+                    const s = document.createElement('script');
+                    s.id = `taboola-pixel-${pixel.pixelId}`;
+                    s.async = true;
+                    s.src = `https://cdn.taboola.com/libtr/${pixel.pixelId}/tfa.js`;
+                    document.head.appendChild(s);
+                }
+            }
+        }
+
+        // Track start_checkout for all Taboola pixels
+        trackTaboolaEvent('start_checkout');
 
         // ── Google Analytics (GA4) + Google Ads gtag.js ──
         if (!document.getElementById('gtag-script')) {
