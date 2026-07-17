@@ -12,7 +12,7 @@ async function requireAdmin() {
 export async function GET() {
     await requireAdmin()
     try {
-        const products = await prisma.products.findMany({
+        const products = await prisma.product.findMany({
             select: { id: true, name: true },
             orderBy: { name: 'asc' }
         })
