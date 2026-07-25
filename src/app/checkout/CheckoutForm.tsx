@@ -24,6 +24,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
+    const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
 
     useEffect(() => {
         // TEST MODE: Force success screen for preview
@@ -70,8 +71,15 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
     const basePrice = product?.price || 9;
-    
-    const effectivePrice = (step === 3 && paymentMethod === 'pix') ? (basePrice * (1 - pixDiscountVal) + shipping.price) : (basePrice + shipping.price);
+
+    const bumpsTotal = (availableBumps || [])
+        .filter((b: any) => selectedBumps.includes(b.id))
+        .reduce((sum: number, b: any) => sum + (b.price || 0), 0);
+
+    const subtotalBeforeDiscount = basePrice + bumpsTotal;
+    const effectivePrice = (step === 3 && paymentMethod === 'pix')
+        ? (subtotalBeforeDiscount * (1 - pixDiscountVal) + shipping.price)
+        : (subtotalBeforeDiscount + shipping.price);
     const finalPrice = effectivePrice;
 
     useEffect(() => {
@@ -264,8 +272,62 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         let newErrors: Record<string, string> = {};
         if (!dados.nome) newErrors.nome = 'Informe seu nome completo';
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!dados.email || !emailRegex.test(dados.email)) newErrors.email = 'E-mail inválido';
+        // Validação robusta de e-mail
+        const email = (dados.email || '').trim().toLowerCase();
+        if (!email) {
+            newErrors.email = 'Informe seu e-mail';
+        } else {
+            // Lista de provedores e TLDs válidos
+            const validDomains = [
+                'gmail.com', 'outlook.com', 'outlook.com.br', 'hotmail.com', 'hotmail.com.br',
+                'yahoo.com', 'yahoo.com.br', 'icloud.com', 'me.com', 'mac.com', 'live.com',
+                'live.com.br', 'uol.com.br', 'bol.com.br', 'terra.com.br', 'globo.com',
+                'ig.com.br', 'r7.com', 'zipmail.com.br', 'msn.com', 'protonmail.com',
+                'proton.me', 'zoho.com', 'mail.com', 'yandex.com', 'fastmail.com',
+                'aol.com', 'mailbox.org', 'tutanota.com', 'pm.me'
+            ];
+            const validTLDs = [
+                'com', 'com.br', 'net', 'net.br', 'org', 'org.br', 'edu', 'edu.br',
+                'gov', 'gov.br', 'mil', 'br', 'io', 'co', 'app', 'dev', 'tech',
+                'store', 'online', 'site', 'info', 'biz', 'me', 'tv', 'cc',
+                'us', 'uk', 'pt', 'es', 'fr', 'de', 'it', 'jp', 'au', 'ca'
+            ];
+
+            // Formato básico: algo@algo.algo
+            const basicRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+            if (!basicRegex.test(email)) {
+                newErrors.email = 'Formato de e-mail inválido';
+            } else {
+                const [localPart, domain] = email.split('@');
+                // Verificar parte local
+                if (!localPart || localPart.length < 2) {
+                    newErrors.email = 'E-mail incompleto';
+                }
+                // Verificar domínio: deve ter pelo menos um ponto e TLD válido
+                else if (!domain || !domain.includes('.')) {
+                    newErrors.email = 'Domínio de e-mail inválido';
+                }
+                else {
+                    // Extrair TLD (tudo após o último ponto)
+                    const lastDot = domain.lastIndexOf('.');
+                    const tld = domain.substring(lastDot + 1);
+                    const fullTld = domain.includes('.') ? domain.split('.').slice(1).join('.') : '';
+
+                    // Verificar se o TLD é válido (2+ chars ou na lista)
+                    if (tld.length < 2) {
+                        newErrors.email = 'Domínio de e-mail inválido — verifique o final';
+                    }
+                    // Verificar se é um domínio conhecido OU tem TLD válido
+                    else if (!validDomains.includes(domain) && !validTLDs.includes(fullTld) && !validTLDs.includes(tld)) {
+                        newErrors.email = 'Domínio não reconhecido — use Gmail, Outlook, Yahoo ou outro provedor válido';
+                    }
+                    // Verificar se o domínio não começa ou termina com hífen
+                    else if (domain.startsWith('-') || domain.endsWith('-') || domain.startsWith('.')) {
+                        newErrors.email = 'Formato de e-mail inválido';
+                    }
+                }
+            }
+        }
 
         const cleanTel = dados.telefone.replace(/\D/g, '');
         if (cleanTel.length < 10) newErrors.telefone = 'WhatsApp inválido';
@@ -358,6 +420,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     price: finalPrice,
                     shippingPrice: shipping?.price || 0,
                     productId: product?.id || 'default',
+                    selectedBumpIds: selectedBumps,
                     utmSource: searchParams.get('utm_source'),
                     utmMedium: searchParams.get('utm_medium'),
                     utmCampaign: searchParams.get('utm_campaign'),
@@ -849,7 +912,28 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="prod-name">{product?.name || "Produto"}</div>
                                         <div className="prod-qty">Quantidade: 1</div>
                                     </div>
-                                    <div className="prod-price">R$ {finalPrice.toFixed(2).replace('.', ',')}</div>
+                                    <div className="prod-price">R$ {basePrice.toFixed(2).replace('.', ',')}</div>
+                                </div>
+                                {selectedBumps.length > 0 && availableBumps && availableBumps
+                                    .filter((b: any) => selectedBumps.includes(b.id))
+                                    .map((bump: any) => (
+                                        <div key={bump.id} className="prod-summary" style={{ marginTop: '-2px' }}>
+                                            <div className="prod-img" style={{ fontSize: '18px' }}>🎁</div>
+                                            <div className="prod-info">
+                                                <div className="prod-name">{bump.name}</div>
+                                                <div className="prod-qty">Order Bump</div>
+                                            </div>
+                                            <div className="prod-price">R$ {bump.price.toFixed(2).replace('.', ',')}</div>
+                                        </div>
+                                    ))
+                                }
+                                <div style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '12px 16px', borderTop: '1px solid #e5e7eb', marginTop: '4px',
+                                    fontSize: '15px', fontWeight: 800,
+                                }}>
+                                    <span>Total</span>
+                                    <span style={{ color: '#059669' }}>R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
                                 </div>
                             </div>
                             <div className="trust-section">
@@ -1061,7 +1145,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div>
                                             <strong>Atenção:</strong> Pagando por PIX sai por{' '}
                                             <strong style={{ color: '#059669' }}>
-                                                R$ {(basePrice * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
+                                                R$ {(subtotalBeforeDiscount * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
                                             </strong>
                                             {product?.isDigital ? (
                                                 <> + acesso <strong>IMEDIATO</strong> <span style={{ opacity: 0.85 }}>(no seu e-mail)</span> ⚡</>
@@ -1070,6 +1154,77 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             )}
                                         </div>
                                     </div>
+                                )}
+
+                                {availableBumps && availableBumps.filter((b: any) => b.isActive !== false).length > 0 && (
+                                    <>
+                                        <div className="section-label" style={{ marginTop: '0', marginBottom: '10px' }}>
+                                            🔥 Ofertas Especiais
+                                        </div>
+                                        {availableBumps.filter((b: any) => b.isActive !== false).map((bump: any) => {
+                                            const isSelected = selectedBumps.includes(bump.id);
+                                            return (
+                                                <div
+                                                    key={bump.id}
+                                                    onClick={() => {
+                                                        setSelectedBumps(prev =>
+                                                            isSelected
+                                                                ? prev.filter(id => id !== bump.id)
+                                                                : [...prev, bump.id]
+                                                        );
+                                                    }}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: '12px',
+                                                        padding: '14px 15px', border: `2px solid ${isSelected ? '#10b981' : '#e5e7eb'}`,
+                                                        borderRadius: '10px', cursor: 'pointer', marginBottom: '10px',
+                                                        background: isSelected ? '#ecfdf5' : '#fff',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                >
+                                                    {bump.imageUrl && (
+                                                        <img
+                                                            src={bump.imageUrl}
+                                                            alt={bump.name}
+                                                            style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                                                        />
+                                                    )}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{bump.name}</div>
+                                                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{bump.description}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#059669' }}>
+                                                            +R$ {bump.price.toFixed(2).replace('.', ',')}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{
+                                                        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
+                                                        border: `2px solid ${isSelected ? '#10b981' : '#d1d5db'}`,
+                                                        background: isSelected ? '#10b981' : '#fff',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        transition: 'all 0.15s',
+                                                    }}>
+                                                        {isSelected && (
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                                                                <polyline points="20 6 9 17 4 12"/>
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {selectedBumps.length > 0 && (
+                                            <div style={{
+                                                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px',
+                                                padding: '10px 14px', marginBottom: '10px',
+                                                fontSize: '13px', fontWeight: 600, color: '#166534',
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                            }}>
+                                                ✅ {selectedBumps.length} oferta{selectedBumps.length > 1 ? 's' : ''} adicionada{selectedBumps.length > 1 ? 's' : ''} — Total: <strong>R$ {finalPrice.toFixed(2).replace('.', ',')}</strong>
+                                            </div>
+                                        )}
+                                        <div style={{ height: '4px' }} />
+                                    </>
                                 )}
 
                                 <div className={`pay-opt ${paymentMethod === 'pix' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix')}>

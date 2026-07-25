@@ -45,16 +45,45 @@ export async function POST(req: NextRequest) {
             })
         ]);
 
+        // ── Validar e-mail no servidor ──
+        const emailRaw = (orderData.email || '').trim().toLowerCase();
+        if (!emailRaw) {
+            return NextResponse.json({ success: false, error: 'E-mail é obrigatório.' }, { status: 400 });
+        }
+        const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+        if (!emailRegex.test(emailRaw)) {
+            return NextResponse.json({ success: false, error: 'Formato de e-mail inválido.' }, { status: 400 });
+        }
+        const emailDomain = emailRaw.split('@')[1];
+        if (!emailDomain || !emailDomain.includes('.')) {
+            return NextResponse.json({ success: false, error: 'Domínio de e-mail inválido.' }, { status: 400 });
+        }
+        const emailTld = emailDomain.split('.').pop() || '';
+        if (emailTld.length < 2) {
+            return NextResponse.json({ success: false, error: 'Domínio de e-mail inválido — verifique o endereço.' }, { status: 400 });
+        }
+        orderData.email = emailRaw;
+
         const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
         const cpfToSave = cpfInput || "19119119100"; // Fallback apenas para Pix
+
+        // ── Buscar preços dos order bumps selecionados ──
+        let bumpsTotal = 0;
+        if (Array.isArray(selectedBumpIds) && selectedBumpIds.length > 0) {
+            const bumps = await prisma.orderBump.findMany({
+                where: { id: { in: selectedBumpIds }, isActive: true }
+            });
+            bumpsTotal = bumps.reduce((sum, b) => sum + (b.price || 0), 0);
+        }
 
         // ── Recalcular preço no servidor (ignora preço enviado pelo cliente) ──
         const serverBasePrice = Number(product?.price) || 0;
         const pixDiscountPct = Number(pixDiscountSetting?.value || 0) / 100;
         const serverShippingPrice = Number(orderData.shippingPrice) || 0;
+        const subtotalBeforeDiscount = serverBasePrice + bumpsTotal;
         const serverPrice = method === 'pix'
-            ? Number((serverBasePrice * (1 - pixDiscountPct) + serverShippingPrice).toFixed(2))
-            : Number((serverBasePrice + serverShippingPrice).toFixed(2));
+            ? Number((subtotalBeforeDiscount * (1 - pixDiscountPct) + serverShippingPrice).toFixed(2))
+            : Number((subtotalBeforeDiscount + serverShippingPrice).toFixed(2));
 
         // 1. Preparar dados do pedido
         const orderDataToSave: any = {
@@ -137,7 +166,7 @@ export async function POST(req: NextRequest) {
 
         let mpPayload: any = {
             transaction_amount: serverPrice,
-            description: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
+            description: `Pedido ${order.id} - ${product?.name || 'Produto'}${bumpsTotal > 0 ? ` + ${selectedBumpIds.length} oferta(s)` : ''}`,
             external_reference: order.id,
             statement_descriptor: "PAGFLOW*PRODUTO",
             binary_mode: true,
