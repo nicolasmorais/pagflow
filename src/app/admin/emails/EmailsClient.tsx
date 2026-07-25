@@ -265,7 +265,7 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
             {
                 name: 'PIX Pendente',
                 slug: 'pix_pending',
-                subject: 'Seu PIX está aguardando pagamento - #{{orderId}}',
+                subject: 'Seu PIX está pronto! Pague {{totalPrice}} — Pedido #{{orderId}}',
                 content: `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
@@ -273,43 +273,58 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
 <div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
 
     <!-- Header -->
-    <div style="background:linear-gradient(135deg,#d97706,#f59e0b);padding:36px 32px;text-align:center;">
-        <div style="font-size:48px;margin-bottom:12px;">⏳</div>
-        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">PIX Aguardando Pagamento</h1>
+    <div style="background:linear-gradient(135deg,#00B69B,#00D68F);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⚡</div>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">PIX Gerado com Sucesso!</h1>
         <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}, finalize seu pagamento via PIX.</p>
     </div>
 
     <!-- Body -->
     <div style="padding:32px;">
 
+        <!-- Valor -->
+        <div style="background:#f0fdf4;border:1.5px solid #6ee7b7;border-radius:12px;padding:16px;margin-bottom:24px;text-align:center;">
+            <p style="margin:0;font-size:13px;color:#065f46;">Valor a pagar</p>
+            <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#059669;">{{totalPrice}}</p>
+        </div>
+
+        <!-- Pedido -->
         <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;">
             <p style="margin:0 0 4px;font-size:12px;color:#d97706;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">Pedido</p>
             <p style="margin:0;font-size:20px;font-weight:800;color:#92400e;">#{{orderId}}</p>
         </div>
 
+        <!-- QR Code -->
+        <div style="text-align:center;margin-bottom:24px;">
+            <p style="font-size:14px;color:#475569;margin-bottom:16px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
+            <div style="background:#fff;padding:16px;border-radius:12px;border:2px solid #e2e8f0;display:inline-block;margin-bottom:20px;">
+                {{pixQrCode}}
+            </div>
+        </div>
+
+        <!-- Código Copia e Cola -->
         <div style="margin-bottom:24px;">
-            <h2 style="margin:0 0 12px;font-size:16px;font-weight:800;color:#0f172a;">Como pagar com PIX:</h2>
-            <ol style="margin:0;padding-left:20px;font-size:14px;color:#475569;line-height:2;">
-                <li>Abra o aplicativo do seu banco</li>
-                <li>Escolha a opção <strong>PIX</strong></li>
-                <li>Escaneie o QR Code ou cole o código copia e cola</li>
-                <li>Confirme o pagamento</li>
-            </ol>
+            <p style="font-size:13px;color:#64748b;margin:0 0 8px;text-align:center;">Ou copie o código PIX abaixo:</p>
+            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;word-break:break-all;font-family:monospace;font-size:12px;color:#334155;line-height:1.6;text-align:left;">
+                {{pixCopyCode}}
+            </div>
         </div>
 
-        <div style="border-bottom:1px solid #f1f5f9;padding-bottom:20px;margin-bottom:20px;">
-            <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;">Produto</p>
-            <h2 style="margin:0;font-size:18px;font-weight:800;color:#0f172a;">{{productName}}</h2>
-            <p style="margin:6px 0 0;font-size:22px;font-weight:900;color:#d97706;">R$ {{totalPrice}}</p>
-        </div>
-
-        <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:24px;text-align:center;">
+        <!-- Aviso de expiração -->
+        <div style="background:#fef3c7;border:1.5px solid #fcd34d;border-radius:12px;padding:16px;margin-bottom:24px;text-align:center;">
             <p style="margin:0;font-size:13px;color:#92400e;font-weight:700;">⏰ O PIX expira em 30 minutos. Pague agora para garantir seu pedido!</p>
+        </div>
+
+        <!-- Produto -->
+        <div style="border-top:1px solid #f1f5f9;padding-top:20px;text-align:center;">
+            <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;font-weight:700;text-transform:uppercase;">Produto</p>
+            <p style="margin:0;font-size:16px;font-weight:800;color:#0f172a;">{{productName}}</p>
         </div>
     </div>
 
     <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
-        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow. Todos os direitos reservados.</p>
+        <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">Após o pagamento, a confirmação será enviada automaticamente.</p>
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} {{storeName}}.</p>
     </div>
 
 </div>
@@ -699,7 +714,10 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                                             { v: '{{cidade}}', d: 'Cidade/UF' },
                                             { v: '{{trackingCode}}', d: 'Código de Rastreio' },
                                             { v: '{{trackingUrl}}', d: 'Link de Rastreio' },
-                                            { v: '{{estimatedDate}}', d: 'Data Estimada' }
+                                            { v: '{{estimatedDate}}', d: 'Data Estimada' },
+                                            { v: '{{storeName}}', d: 'Nome da Loja' },
+                                            { v: '{{pixQrCode}}', d: 'QR Code PIX (imagem)' },
+                                            { v: '{{pixCopyCode}}', d: 'Código PIX Copia e Cola' }
                                         ].map(item => (
                                             <div
                                                 key={item.v}
@@ -733,6 +751,10 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                                         <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
                                             <strong style={{ color: '#0075ff' }}>tracking</strong><br />
                                             Enviado ao salvar um código de rastreio no pedido.
+                                        </p>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
+                                            <strong style={{ color: '#0075ff' }}>pix_pending</strong><br />
+                                            Enviado automaticamente ao gerar cobrança PIX. Use {'{{pixQrCode}}'} e {'{{pixCopyCode}}'}.
                                         </p>
                                     </div>
                                 </div>

@@ -783,53 +783,74 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
         const priceFormatted = `R$ ${(order.totalPrice || 0).toFixed(2).replace('.', ',')}`;
         const orderIdShort = order.id.slice(0, 8).toUpperCase();
 
-        const subject = `Seu PIX está pronto! Pague ${priceFormatted} — Pedido #${orderIdShort}`;
+        // Buscar template do banco de dados
+        const template = await prisma.emailTemplate.findFirst({
+            where: { slug: 'pix_pending', isActive: true }
+        });
 
-        const htmlContent = `
-            <div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
-                <div style="background:linear-gradient(135deg,#00B69B,#00D68F);padding:36px 32px;text-align:center;">
-                    <div style="font-size:48px;margin-bottom:12px;">⚡</div>
-                    <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">PIX Gerado com Sucesso!</h1>
-                    <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, ${firstName}! Seu pagamento PIX está pronto para ser pago.</p>
-                </div>
+        let subject = `Seu PIX está pronto! Pague ${priceFormatted} — Pedido #${orderIdShort}`;
+        let htmlContent = '';
 
-                <div style="padding:32px;text-align:center;">
-                    <div style="background:#f0fdf4;border:1.5px solid #6ee7b7;border-radius:12px;padding:16px;margin-bottom:24px;">
-                        <p style="margin:0;font-size:13px;color:#065f46;">Valor a pagar</p>
-                        <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#059669;">${priceFormatted}</p>
+        const replacePlaceholders = (text: string) => {
+            return text
+                .replace(/{{orderId}}/g, orderIdShort)
+                .replace(/{{fullName}}/g, order.fullName || '')
+                .replace(/{{firstName}}/g, firstName)
+                .replace(/{{productName}}/g, order.product?.name || 'Produto')
+                .replace(/{{totalPrice}}/g, priceFormatted)
+                .replace(/{{paymentMethod}}/g, 'PIX')
+                .replace(/{{storeName}}/g, storeName)
+                .replace(/{{pixQrCode}}/g, `<img src="data:image/jpeg;base64,${qrCodeBase64}" alt="QR Code PIX" style="width:200px;height:200px;display:block;" />`)
+                .replace(/{{pixCopyCode}}/g, qrCode)
+                .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
+                .replace(/{{rua}}/g, order.rua || '')
+                .replace(/{{numero}}/g, order.numero || '')
+                .replace(/{{bairro}}/g, order.bairro || '')
+                .replace(/{{cidade}}/g, order.cidade || '')
+                .replace(/{{estado}}/g, order.estado || '')
+                .replace(/{{cep}}/g, order.cep || '');
+        };
+
+        if (template) {
+            subject = replacePlaceholders(template.subject);
+            htmlContent = replacePlaceholders(template.content);
+        } else {
+            // Fallback hardcoded
+            htmlContent = `
+                <div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+                    <div style="background:linear-gradient(135deg,#00B69B,#00D68F);padding:36px 32px;text-align:center;">
+                        <div style="font-size:48px;margin-bottom:12px;">⚡</div>
+                        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">PIX Gerado com Sucesso!</h1>
+                        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, ${firstName}! Seu pagamento PIX está pronto para ser pago.</p>
                     </div>
-
-                    <p style="font-size:14px;color:#475569;margin-bottom:16px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
-
-                    <div style="background:#fff;padding:16px;border-radius:12px;border:2px solid #e2e8f0;display:inline-block;margin-bottom:20px;">
-                        <img src="data:image/jpeg;base64,${qrCodeBase64}" alt="QR Code PIX" style="width:200px;height:200px;display:block;" />
-                    </div>
-
-                    <div style="margin-bottom:24px;">
-                        <p style="font-size:13px;color:#64748b;margin:0 0 8px;">Ou copie o código PIX abaixo:</p>
-                        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;word-break:break-all;font-family:monospace;font-size:12px;color:#334155;line-height:1.6;text-align:left;">
-                            ${qrCode}
+                    <div style="padding:32px;text-align:center;">
+                        <div style="background:#f0fdf4;border:1.5px solid #6ee7b7;border-radius:12px;padding:16px;margin-bottom:24px;">
+                            <p style="margin:0;font-size:13px;color:#065f46;">Valor a pagar</p>
+                            <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#059669;">${priceFormatted}</p>
+                        </div>
+                        <p style="font-size:14px;color:#475569;margin-bottom:16px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
+                        <div style="background:#fff;padding:16px;border-radius:12px;border:2px solid #e2e8f0;display:inline-block;margin-bottom:20px;">
+                            <img src="data:image/jpeg;base64,${qrCodeBase64}" alt="QR Code PIX" style="width:200px;height:200px;display:block;" />
+                        </div>
+                        <div style="margin-bottom:24px;">
+                            <p style="font-size:13px;color:#64748b;margin:0 0 8px;">Ou copie o código PIX abaixo:</p>
+                            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;word-break:break-all;font-family:monospace;font-size:12px;color:#334155;line-height:1.6;text-align:left;">${qrCode}</div>
+                        </div>
+                        <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:12px;padding:16px;margin-bottom:24px;">
+                            <p style="margin:0;font-size:13px;color:#92400e;"><strong>⏰ Atenção:</strong> Este PIX expira em <strong>30 minutos</strong>. Pague agora para garantir seu pedido!</p>
+                        </div>
+                        <div style="border-top:1px solid #f1f5f9;padding-top:20px;">
+                            <p style="font-size:13px;color:#64748b;margin:0;"><strong>Pedido:</strong> #${orderIdShort}</p>
+                            <p style="font-size:13px;color:#64748b;margin:4px 0 0;"><strong>Produto:</strong> ${order.product?.name || 'Produto'}</p>
                         </div>
                     </div>
-
-                    <div style="background:#fffbeb;border:1.5px solid #fcd34d;border-radius:12px;padding:16px;margin-bottom:24px;">
-                        <p style="margin:0;font-size:13px;color:#92400e;">
-                            <strong>⏰ Atenção:</strong> Este PIX expira em <strong>30 minutos</strong>. Pague agora para garantir seu pedido!
-                        </p>
-                    </div>
-
-                    <div style="border-top:1px solid #f1f5f9;padding-top:20px;">
-                        <p style="font-size:13px;color:#64748b;margin:0;"><strong>Pedido:</strong> #${orderIdShort}</p>
-                        <p style="font-size:13px;color:#64748b;margin:4px 0 0;"><strong>Produto:</strong> ${order.product?.name || 'Produto'}</p>
+                    <div style="background:#f1f5f9;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+                        <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">Após o pagamento, a confirmação será enviada automaticamente.</p>
+                        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} ${storeName}.</p>
                     </div>
                 </div>
-
-                <div style="background:#f1f5f9;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
-                    <p style="margin:0 0 8px;font-size:12px;color:#94a3b8;">Após o pagamento, a confirmação será enviada automaticamente.</p>
-                    <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} ${storeName !== 'PagFlow' ? storeName : 'PagFlow'}.</p>
-                </div>
-            </div>
-        `;
+            `;
+        }
 
         const { error } = await resend.emails.send({
             from: 'PagFlow <noreply@elabela.store>',
