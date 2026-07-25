@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Payment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
-import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
+import { sendConfirmationEmail, sendAdminNotification, sendPixEmail } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createMpClient } from "@/lib/mercadopago";
 
@@ -372,6 +372,15 @@ export async function POST(req: NextRequest) {
         if (method === 'pix' && mpResult.point_of_interaction?.transaction_data) {
             qrCode = mpResult.point_of_interaction.transaction_data.qr_code || null;
             qrCodeBase64 = mpResult.point_of_interaction.transaction_data.qr_code_base64 || null;
+
+            // Enviar e-mail com QR Code PIX
+            if (qrCode && qrCodeBase64 && finalStatus === 'aguardando') {
+                try {
+                    await sendPixEmail(order.id, qrCode, qrCodeBase64);
+                } catch (pixEmailErr) {
+                    console.error("Failed to send PIX email:", pixEmailErr);
+                }
+            }
         }
 
         return NextResponse.json({
