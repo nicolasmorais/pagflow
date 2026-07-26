@@ -482,16 +482,24 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
 
         setLoading(true);
         try {
+            let created = 0;
+            let skipped = 0;
             for (const d of defaults) {
-                // Atualiza se já existe com o mesmo slug, senão cria
+                // Só cria se não existir — não sobrescreve customizações do admin
                 const existing = templates.find(t => t.slug === d.slug);
                 if (existing) {
-                    await updateEmailTemplate(existing.id, d);
+                    skipped++;
                 } else {
                     await createEmailTemplate(d);
+                    created++;
                 }
             }
-            window.location.reload();
+            if (created > 0) {
+                window.location.reload();
+            } else {
+                alert(`Todos os ${skipped} templates padrão já existem. Nenhum foi sobrescrito.`);
+                setLoading(false);
+            }
         } catch (err) {
             console.error('Erro ao gerar templates:', err);
             alert('Erro ao gerar templates. Verifique o console.');
