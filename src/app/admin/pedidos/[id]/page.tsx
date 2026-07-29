@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import {
     ChevronLeft, Trash2, Package, Phone, Mail,
     MapPin, CreditCard, User, CheckCircle2, Clock, Truck, ReceiptText,
-    DollarSign, Hash, ArrowUpRight, FileText
+    DollarSign, Hash, ArrowUpRight, FileText, Gift, Globe, TruckIcon
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -28,6 +28,28 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     const { id } = await params
     const order = await prisma.order.findUnique({ where: { id }, include: { product: true } })
     if (!order) notFound()
+
+    // Buscar detalhes dos order bumps selecionados
+    const bumpIds = Array.isArray(order.selectedBumps) ? order.selectedBumps as string[] : []
+    const orderBumps = bumpIds.length > 0
+        ? await prisma.orderBump.findMany({ where: { id: { in: bumpIds } } })
+        : []
+    const bumpsTotal = orderBumps.reduce((sum, b) => sum + (b.price || 0), 0)
+
+    // Parse UTM data
+    const utmFields = [
+        { key: 'utmSource', label: 'Source' },
+        { key: 'utmMedium', label: 'Medium' },
+        { key: 'utmCampaign', label: 'Campaign' },
+        { key: 'utmTerm', label: 'Term' },
+        { key: 'utmContent', label: 'Content' },
+        { key: 'utmPlacement', label: 'Placement' },
+        { key: 'utmId', label: 'ID' },
+        { key: 'utmCreativeName', label: 'Creative' },
+    ] as const
+    const utmData = utmFields
+        .map(f => ({ label: f.label, value: (order as any)[f.key] }))
+        .filter(u => u.value)
 
     const ps = order.paymentStatus || 'processando'
     const sc = getStatus(ps)
@@ -132,7 +154,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <KpiStat icon={DollarSign} label="Valor Total" value={`R$ ${fmt(order.totalPrice || 0)}`} featured />
                 <KpiStat icon={CreditCard} label="Pagamento" value={order.paymentMethod === 'pix' ? 'PIX' : order.cardBrand ? order.cardBrand.toUpperCase() : 'Cartão'} sub={order.installments ? `${order.installments}x de R$ ${fmt(order.installmentAmount || 0)}` : undefined} />
                 <KpiStat icon={User} label="Cliente" value={order.fullName || 'Sem nome'} sub={order.email || undefined} />
-                <KpiStat icon={Package} label="Produto" value={order.product?.name || 'Produto removido'} sub={`Qtd: 1`} />
+                <KpiStat icon={Package} label="Produto" value={order.product?.name || 'Produto removido'} sub={orderBumps.length > 0 ? `1 produto + ${orderBumps.length} bump${orderBumps.length > 1 ? 's' : ''}` : 'Qtd: 1'} />
             </div>
 
             {/* ── Content Grid ── */}
@@ -196,7 +218,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </SectionCard>
 
                     {/* Produto */}
-                    <SectionCard title="Produto" icon={Package} iconColor="#a855f7" rightBadge="1 item">
+                    <SectionCard title="Produto" icon={Package} iconColor="#a855f7" rightBadge={`${1 + orderBumps.length} item${orderBumps.length > 0 ? 's' : ''}`}>
                         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                             {order.product?.imageUrl && (
                                 <div style={{
@@ -218,9 +240,65 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 </p>
                             </div>
                             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                <p style={{ margin: 0, fontWeight: 900, color: '#0f172a', fontSize: '28px', letterSpacing: '-0.04em', fontFamily: "'Space Grotesk', sans-serif" }}>
-                                    R$ {fmt(order.totalPrice || 0)}
+                                <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '18px', fontFamily: "'Space Grotesk', sans-serif" }}>
+                                    R$ {fmt(order.product?.price || 0)}
                                 </p>
+                            </div>
+                        </div>
+
+                        {/* Order Bumps */}
+                        {orderBumps.length > 0 && (
+                            <div style={{ marginTop: '16px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                                {orderBumps.map((bump) => (
+                                    <div key={bump.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                                        {bump.imageUrl ? (
+                                            <div style={{
+                                                width: '52px', height: '52px', borderRadius: '12px',
+                                                border: '1px solid #e2e8f0', overflow: 'hidden', flexShrink: 0, background: '#f8fafc',
+                                            }}>
+                                                <img src={bump.imageUrl} alt={bump.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            </div>
+                                        ) : (
+                                            <div style={{
+                                                width: '52px', height: '52px', borderRadius: '12px',
+                                                background: '#fdf4ff', border: '1px solid #e9d5ff',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                            }}>
+                                                <Gift size={20} color="#a855f7" />
+                                            </div>
+                                        )}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontWeight: 700, color: '#0f172a', fontSize: '14px' }}>{bump.name}</p>
+                                            <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#a855f7', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Order Bump</p>
+                                        </div>
+                                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                            <p style={{ margin: 0, fontWeight: 800, color: '#0f172a', fontSize: '15px', fontFamily: "'Space Grotesk', sans-serif" }}>
+                                                R$ {fmt(bump.price || 0)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Resumo: Frete + Total */}
+                        <div style={{ marginTop: '16px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                            {order.shippingPrice > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <TruckIcon size={14} color="#94a3b8" />
+                                        Frete
+                                    </span>
+                                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>
+                                        R$ {fmt(order.shippingPrice)}
+                                    </span>
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>Total</span>
+                                <span style={{ fontSize: '28px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.04em', fontFamily: "'Space Grotesk', sans-serif" }}>
+                                    R$ {fmt(order.totalPrice || 0)}
+                                </span>
                             </div>
                         </div>
                     </SectionCard>
@@ -365,6 +443,17 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             </div>
                         )}
                     </SectionCard>
+
+                    {/* UTM Data */}
+                    {utmData.length > 0 && (
+                        <SectionCard title="UTM / Rastreamento" icon={Globe} iconColor="#f59e0b">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {utmData.map((utm) => (
+                                    <CopyableRow key={utm.label} icon={Globe} label={utm.label} value={utm.value} />
+                                ))}
+                            </div>
+                        </SectionCard>
+                    )}
 
                 </div>
             </div>

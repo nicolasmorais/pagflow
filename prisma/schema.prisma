@@ -37,6 +37,15 @@ model Order {
   installmentAmount Float?
   cardBrand         String?
   netReceived       Float?
+  shippingPrice     Float      @default(0)
+  utmSource         String?
+  utmMedium         String?
+  utmCampaign       String?
+  utmTerm           String?
+  utmContent        String?
+  utmPlacement      String?
+  utmId             String?
+  utmCreativeName   String?
   deletedAt         DateTime?
   emailLogs         EmailLog[]
   product           Product?   @relation(fields: [productId], references: [id])

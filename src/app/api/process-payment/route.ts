@@ -104,8 +104,17 @@ export async function POST(req: NextRequest) {
             paymentStatus: 'processando',
             paymentMethod: method === 'pix' ? 'pix' : 'credito',
             totalPrice: serverPrice,
+            shippingPrice: Number(orderData.shippingPrice) || 0,
             hasBump: Array.isArray(selectedBumpIds) && selectedBumpIds.length > 0,
             selectedBumps: Array.isArray(selectedBumpIds) ? selectedBumpIds : [],
+            utmSource: orderData.utmSource || null,
+            utmMedium: orderData.utmMedium || null,
+            utmCampaign: orderData.utmCampaign || null,
+            utmTerm: orderData.utmTerm || null,
+            utmContent: orderData.utmContent || null,
+            utmPlacement: orderData.utmPlacement || null,
+            utmId: orderData.utmId || null,
+            utmCreativeName: orderData.utmCreativeName || null,
             product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined,
         };
 
