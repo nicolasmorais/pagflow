@@ -343,19 +343,21 @@ export async function getEmailLogs(orderId: string) {
     }
 }
 
-export async function updateOrderTracking(orderId: string, trackingCode: string, trackingUrl?: string) {
+export async function updateOrderTracking(orderId: string, trackingCode?: string, trackingUrl?: string) {
     await requireAdmin()
     try {
+        // Só atualiza os campos que foram passados (evita sobrescrever trackingUrl com null)
+        const updateData: any = {};
+        if (trackingCode !== undefined) updateData.trackingCode = trackingCode;
+        if (trackingUrl !== undefined) updateData.trackingUrl = trackingUrl || null;
+
         await prisma.order.update({
             where: { id: orderId },
-            data: {
-                trackingCode,
-                trackingUrl: trackingUrl || null
-            }
+            data: updateData
         })
 
-        // Enviar e-mail de rastreio (não bloqueia o salvamento)
-        if ((trackingCode && trackingCode.trim() !== '') || (trackingUrl && trackingUrl.trim() !== '')) {
+        // Só envia e-mail de rastreio quando tem URL de rastreio
+        if (trackingUrl && trackingUrl.trim() !== '') {
             try {
                 await sendTrackingEmail(orderId);
             } catch (emailErr) {

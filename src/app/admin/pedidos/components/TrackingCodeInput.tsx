@@ -17,7 +17,8 @@ export default function TrackingCodeInput({ orderId, initialTrackingCode }: Trac
     const handleSave = async () => {
         setIsSaving(true)
         try {
-            await updateOrderTracking(orderId, trackingCode)
+            // Não envia e-mail — só salva o código. O e-mail é enviado pelo TrackingManagement com URL.
+            await updateOrderTracking(orderId, trackingCode, undefined)
             setIsEditing(false)
         } catch (error) {
             console.error('Failed to update tracking code:', error)
