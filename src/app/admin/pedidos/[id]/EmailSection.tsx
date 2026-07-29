@@ -140,7 +140,7 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-                                            {log.type === 'confirmation' ? 'Confirmação' : 'Rastreio'}
+                                            {log.type === 'confirmation' ? 'Confirmação' : log.type === 'pix_pending' ? 'PIX Pendente' : log.type === 'tracking' ? 'Rastreio' : log.type}
                                         </span>
                                         <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
                                             {new Date(log.sentAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
