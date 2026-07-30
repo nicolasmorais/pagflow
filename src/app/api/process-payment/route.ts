@@ -373,6 +373,12 @@ export async function POST(req: NextRequest) {
             } catch (notifyError) {
                 console.error("Failed to send admin notification for pix_pending:", notifyError);
             }
+        } else if (finalStatus === 'recusado') {
+            try {
+                await sendAdminNotification('card_declined', order);
+            } catch (notifyError) {
+                console.error("Failed to send admin notification for card_declined:", notifyError);
+            }
         }
 
         let qrCode: string | null = null;

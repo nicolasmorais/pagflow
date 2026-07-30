@@ -887,7 +887,7 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
     }
 }
 
-export async function sendAdminNotification(type: 'sale' | 'pix_pending', order: any) {
+export async function sendAdminNotification(type: 'sale' | 'pix_pending' | 'card_declined', order: any) {
     try {
         const email = await getCustomization('notify_admin_email');
 
@@ -902,6 +902,9 @@ export async function sendAdminNotification(type: 'sale' | 'pix_pending', order:
         } else if (type === 'pix_pending') {
             pushTitle = `⏳ PIX Gerado (Pendente)`;
             pushBody = `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
+        } else if (type === 'card_declined') {
+            pushTitle = `❌ Cartão Recusado`;
+            pushBody = `${order.fullName || 'Cliente'} — R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
         }
 
         // Tenta enviar o Web Push independentemente da configuração de e-mail
@@ -932,6 +935,19 @@ export async function sendAdminNotification(type: 'sale' | 'pix_pending', order:
                 <p><strong>Cliente:</strong> ${order.fullName}</p>
                 <p><strong>Valor:</strong> R$ ${order.totalPrice?.toFixed(2) || '0.00'}</p>
                 <p>Acesse o painel para processar a venda.</p>
+            `;
+        }
+
+        if (type === 'card_declined') {
+            subject = `❌ Cartão Recusado: ${order.fullName || 'Cliente'} — R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
+            htmlContent = `
+                <h2>Pagamento com cartão recusado</h2>
+                <p><strong>Pedido:</strong> ${order.id}</p>
+                <p><strong>Cliente:</strong> ${order.fullName || 'N/A'}</p>
+                <p><strong>E-mail:</strong> ${order.email || 'N/A'}</p>
+                <p><strong>Valor:</strong> R$ ${order.totalPrice?.toFixed(2) || '0.00'}</p>
+                <p><strong>Método:</strong> Cartão de crédito</p>
+                <p>O pagamento foi recusado pela operadora. Acesse o painel para mais detalhes.</p>
             `;
         }
 
