@@ -65,6 +65,7 @@ export default async function CheckoutPage({
 
         prisma.orderBump.findMany({
             where: {
+                isActive: true,
                 OR: [
                     { productId: null },
                     { productId: productId || '' }
