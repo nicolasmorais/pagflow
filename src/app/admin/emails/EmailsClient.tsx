@@ -430,6 +430,84 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
 </html>`
             },
             {
+                name: 'PIX Lembrete (2h)',
+                slug: 'pix_followup_1',
+                subject: '{{firstName}}, seu PIX de {{totalPrice}} ainda está esperando — Pedido #{{orderId}}',
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+    <div style="background:linear-gradient(135deg,#f59e0b,#f97316);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⏳</div>
+        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">Seu PIX ainda está esperando!</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}! Não esqueça de pagar seu PIX para garantir seu pedido.</p>
+    </div>
+    <div style="padding:32px;text-align:center;">
+        <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:24px;">
+            <p style="margin:0;font-size:13px;color:#92400e;">Valor pendente</p>
+            <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#d97706;">{{totalPrice}}</p>
+        </div>
+        <p style="font-size:14px;color:#475569;margin-bottom:16px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
+        <div style="background:#fff;padding:16px;border-radius:12px;border:2px solid #e2e8f0;display:inline-block;margin-bottom:20px;">
+            {{pixQrCode}}
+        </div>
+        <div style="margin-bottom:24px;">
+            <p style="font-size:13px;color:#64748b;margin:0 0 8px;">Ou copie o código PIX:</p>
+            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;word-break:break-all;font-family:monospace;font-size:12px;color:#334155;line-height:1.6;text-align:left;">{{pixCopyCode}}</div>
+        </div>
+        <div style="border-top:1px solid #f1f5f9;padding-top:20px;">
+            <p style="font-size:13px;color:#64748b;margin:0;"><strong>Pedido:</strong> #{{orderId}}</p>
+            <p style="font-size:13px;color:#64748b;margin:4px 0 0;"><strong>Produto:</strong> {{productName}}</p>
+        </div>
+    </div>
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} {{storeName}}.</p>
+    </div>
+</div>
+</body>
+</html>`
+            },
+            {
+                name: 'PIX Urgente (8h)',
+                slug: 'pix_followup_2',
+                subject: '⏰ {{firstName}}, última chance! Seu PIX de {{totalPrice}} expira em breve — #{{orderId}}',
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+    <div style="background:linear-gradient(135deg,#dc2626,#ef4444);padding:36px 32px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🚨</div>
+        <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">Última chance para pagar!</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">{{firstName}}, seu pedido será cancelado automaticamente se não for pago em breve.</p>
+    </div>
+    <div style="padding:32px;text-align:center;">
+        <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:16px;margin-bottom:24px;">
+            <p style="margin:0;font-size:13px;color:#991b1b;">Valor pendente</p>
+            <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#dc2626;">{{totalPrice}}</p>
+        </div>
+        <p style="font-size:14px;color:#475569;margin-bottom:16px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
+        <div style="background:#fff;padding:16px;border-radius:12px;border:2px solid #e2e8f0;display:inline-block;margin-bottom:20px;">
+            {{pixQrCode}}
+        </div>
+        <div style="margin-bottom:24px;">
+            <p style="font-size:13px;color:#64748b;margin:0 0 8px;">Ou copie o código PIX:</p>
+            <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;word-break:break-all;font-family:monospace;font-size:12px;color:#334155;line-height:1.6;text-align:left;">{{pixCopyCode}}</div>
+        </div>
+        <div style="border-top:1px solid #f1f5f9;padding-top:20px;">
+            <p style="font-size:13px;color:#64748b;margin:0;"><strong>Pedido:</strong> #{{orderId}}</p>
+            <p style="font-size:13px;color:#64748b;margin:4px 0 0;"><strong>Produto:</strong> {{productName}}</p>
+        </div>
+    </div>
+    <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} {{storeName}}.</p>
+    </div>
+</div>
+</body>
+</html>`
+            },
+            {
                 name: 'Pedido Entregue',
                 slug: 'delivered',
                 subject: 'Seu pedido foi entregue! 🎉 #{{orderId}}',
@@ -724,6 +802,7 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                                             { v: '{{trackingUrl}}', d: 'Link de Rastreio' },
                                             { v: '{{estimatedDate}}', d: 'Data Estimada' },
                                             { v: '{{storeName}}', d: 'Nome da Loja' },
+                                            { v: '{{storeLogo}}', d: 'Logo da Loja (imagem)' },
                                             { v: '{{pixQrCode}}', d: 'QR Code PIX (imagem)' },
                                             { v: '{{pixCopyCode}}', d: 'Código PIX Copia e Cola' }
                                         ].map(item => (
@@ -763,6 +842,18 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
                                         <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
                                             <strong style={{ color: '#0075ff' }}>pix_pending</strong><br />
                                             Enviado automaticamente ao gerar cobrança PIX. Use {'{{pixQrCode}}'} e {'{{pixCopyCode}}'}.
+                                        </p>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
+                                            <strong style={{ color: '#f59e0b' }}>pix_followup_1</strong><br />
+                                            Lembrete automático 2h após PIX pendente.
+                                        </p>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
+                                            <strong style={{ color: '#dc2626' }}>pix_followup_2</strong><br />
+                                            Urgência automática 8h após PIX pendente.
+                                        </p>
+                                        <p style={{ fontSize: '0.85rem', color: '#64748b', lineHeight: '1.4', margin: 0 }}>
+                                            <strong style={{ color: '#0075ff' }}>delivered</strong><br />
+                                            Enviado ao marcar pedido como entregue.
                                         </p>
                                     </div>
                                 </div>
