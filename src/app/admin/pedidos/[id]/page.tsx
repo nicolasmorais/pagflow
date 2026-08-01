@@ -10,6 +10,7 @@ import { deleteOrder } from '@/app/actions'
 import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
 import InlineCopyBtn from './InlineCopyBtn'
+import ResendPixButton from './ResendPixButton'
 
 const STATUS_CONFIG: Record<string, { bg: string; color: string; dot: string; border: string; label: string }> = {
     pago: { bg: '#ecfdf5', color: '#059669', dot: '#10b981', border: '#a7f3d0', label: 'Pago' },
@@ -440,6 +441,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
                                     ID: {order.mpPaymentId}
                                 </span>
+                            </div>
+                        )}
+
+                        {order.paymentMethod === 'pix' && (order.paymentStatus === 'aguardando' || order.paymentStatus === 'processando') && (
+                            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
+                                <ResendPixButton orderId={order.id} />
                             </div>
                         )}
                     </SectionCard>

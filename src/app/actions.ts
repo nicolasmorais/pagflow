@@ -772,6 +772,8 @@ export async function deleteEmailTemplate(id: string) {
 }
 
 import { sendAdminPush } from "@/lib/push-service";
+import { createMpClient } from "@/lib/mercadopago";
+import { Payment } from "mercadopago";
 
 export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64: string) {
     try {
@@ -886,6 +888,30 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
         return { success: true };
     } catch (err) {
         console.error('PIX EMAIL ACTION ERROR:', err);
+        return { success: false, error: String(err) };
+    }
+}
+
+export async function resendPixEmail(orderId: string) {
+    try {
+        const order = await prisma.order.findUnique({ where: { id: orderId } });
+        if (!order) return { success: false, error: 'Pedido não encontrado' };
+        if (!order.mpPaymentId) return { success: false, error: 'Pedido sem pagamento PIX vinculado' };
+
+        const client = createMpClient();
+        const payment = new Payment(client);
+        const mpResult = await payment.get({ id: order.mpPaymentId });
+
+        const qrCode = mpResult.point_of_interaction?.transaction_data?.qr_code || null;
+        const qrCodeBase64 = mpResult.point_of_interaction?.transaction_data?.qr_code_base64 || null;
+
+        if (!qrCode || !qrCodeBase64) {
+            return { success: false, error: 'QR Code não encontrado no pagamento' };
+        }
+
+        return await sendPixEmail(orderId, qrCode, qrCodeBase64);
+    } catch (err) {
+        console.error('RESEND PIX EMAIL ERROR:', err);
         return { success: false, error: String(err) };
     }
 }
