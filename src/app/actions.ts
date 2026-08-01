@@ -892,6 +892,155 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
     }
 }
 
+export async function sendPixFollowupEmail(orderId: string, qrCode: string, qrCodeBase64: string, level: 1 | 2) {
+    try {
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { product: true }
+        });
+
+        if (!order || !order.email) return { success: false, error: 'Pedido ou e-mail não encontrado' };
+
+        const storeName = order.product?.storeName || 'PagFlow';
+        const firstName = (order.fullName || '').split(' ')[0];
+        const priceFormatted = `R$ ${(order.totalPrice || 0).toFixed(2).replace('.', ',')}`;
+        const orderIdShort = order.id.slice(0, 8).toUpperCase();
+        const templateSlug = level === 1 ? 'pix_followup_1' : 'pix_followup_2';
+        const emailType = level === 1 ? 'pix_followup_1' : 'pix_followup_2';
+
+        // Buscar template do banco
+        const template = await prisma.emailTemplate.findFirst({
+            where: { slug: templateSlug, isActive: true }
+        });
+
+        let subject: string;
+        let htmlContent: string;
+
+        const replacePlaceholders = (text: string) => {
+            return text
+                .replace(/{{orderId}}/g, orderIdShort)
+                .replace(/{{fullName}}/g, order.fullName || '')
+                .replace(/{{firstName}}/g, firstName)
+                .replace(/{{productName}}/g, order.product?.name || 'Produto')
+                .replace(/{{totalPrice}}/g, priceFormatted)
+                .replace(/{{paymentMethod}}/g, 'PIX')
+                .replace(/{{storeName}}/g, storeName)
+                .replace(/{{storeLogo}}/g, order.product?.storeLogo || '')
+                .replace(/{{pixQrCode}}/g, `<img src="data:image/jpeg;base64,${qrCodeBase64}" alt="QR Code PIX" style="width:200px;height:200px;display:block;" />`)
+                .replace(/{{pixCopyCode}}/g, qrCode)
+                .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
+                .replace(/{{rua}}/g, order.rua || '')
+                .replace(/{{numero}}/g, order.numero || '')
+                .replace(/{{bairro}}/g, order.bairro || '')
+                .replace(/{{cidade}}/g, order.cidade || '')
+                .replace(/{{estado}}/g, order.estado || '')
+                .replace(/{{cep}}/g, order.cep || '');
+        };
+
+        if (template) {
+            subject = replacePlaceholders(template.subject);
+            htmlContent = replacePlaceholders(template.content);
+        } else {
+            // Fallback
+            if (level === 1) {
+                subject = `${firstName}, seu PIX de ${priceFormatted} ainda está esperando — Pedido #${orderIdShort}`;
+                htmlContent = `
+                    <div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+                        <div style="background:linear-gradient(135deg,#f59e0b,#f97316);padding:36px 32px;text-align:center;">
+                            ${order.product?.storeLogo ? `<img src="${order.product.storeLogo}" alt="${storeName}" style="max-height:50px;margin-bottom:12px;border-radius:8px;" />` : '<div style="font-size:48px;margin-bottom:12px;">⏳</div>'}
+                            <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">Seu PIX ainda está esperando!</h1>
+                            <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, ${firstName}! Não esqueça de pagar seu PIX para garantir seu pedido.</p>
+                        </div>
+                        <div style="padding:32px;text-align:center;">
+                            <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:16px;margin-bottom:24px;">
+                                <p style="margin:0;font-size:13px;color:#92400e;">Valor pendente</p>
+                                <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#d97706;">${priceFormatted}</p>
+                            </div>
+                            <p style="font-size:14px;color:#475569;margin-bottom:16px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
+                            <div style="background:#fff;padding:16px;border-radius:12px;border:2px solid #e2e8f0;display:inline-block;margin-bottom:20px;">
+                                <img src="data:image/jpeg;base64,${qrCodeBase64}" alt="QR Code PIX" style="width:200px;height:200px;display:block;" />
+                            </div>
+                            <div style="margin-bottom:24px;">
+                                <p style="font-size:13px;color:#64748b;margin:0 0 8px;">Ou copie o código PIX:</p>
+                                <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;word-break:break-all;font-family:monospace;font-size:12px;color:#334155;line-height:1.6;text-align:left;">${qrCode}</div>
+                            </div>
+                            <div style="border-top:1px solid #f1f5f9;padding-top:20px;">
+                                <p style="font-size:13px;color:#64748b;margin:0;"><strong>Pedido:</strong> #${orderIdShort}</p>
+                                <p style="font-size:13px;color:#64748b;margin:4px 0 0;"><strong>Produto:</strong> ${order.product?.name || 'Produto'}</p>
+                            </div>
+                        </div>
+                        <div style="background:#f1f5f9;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+                            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} ${storeName}.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                subject = `⏰ ${firstName}, última chance! Seu PIX de ${priceFormatted} expira em breve — #${orderIdShort}`;
+                htmlContent = `
+                    <div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+                        <div style="background:linear-gradient(135deg,#dc2626,#ef4444);padding:36px 32px;text-align:center;">
+                            ${order.product?.storeLogo ? `<img src="${order.product.storeLogo}" alt="${storeName}" style="max-height:50px;margin-bottom:12px;border-radius:8px;" />` : '<div style="font-size:48px;margin-bottom:12px;">🚨</div>'}
+                            <h1 style="margin:0;color:#fff;font-size:24px;font-weight:800;">Última chance para pagar!</h1>
+                            <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">${firstName}, seu pedido será cancelado automaticamente se não for pago em breve.</p>
+                        </div>
+                        <div style="padding:32px;text-align:center;">
+                            <div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:16px;margin-bottom:24px;">
+                                <p style="margin:0;font-size:13px;color:#991b1b;">Valor pendente</p>
+                                <p style="margin:4px 0 0;font-size:28px;font-weight:800;color:#dc2626;">${priceFormatted}</p>
+                            </div>
+                            <p style="font-size:14px;color:#475569;margin-bottom:16px;">Escaneie o QR Code abaixo com o app do seu banco:</p>
+                            <div style="background:#fff;padding:16px;border-radius:12px;border:2px solid #e2e8f0;display:inline-block;margin-bottom:20px;">
+                                <img src="data:image/jpeg;base64,${qrCodeBase64}" alt="QR Code PIX" style="width:200px;height:200px;display:block;" />
+                            </div>
+                            <div style="margin-bottom:24px;">
+                                <p style="font-size:13px;color:#64748b;margin:0 0 8px;">Ou copie o código PIX:</p>
+                                <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;word-break:break-all;font-family:monospace;font-size:12px;color:#334155;line-height:1.6;text-align:left;">${qrCode}</div>
+                            </div>
+                            <div style="border-top:1px solid #f1f5f9;padding-top:20px;">
+                                <p style="font-size:13px;color:#64748b;margin:0;"><strong>Pedido:</strong> #${orderIdShort}</p>
+                                <p style="font-size:13px;color:#64748b;margin:4px 0 0;"><strong>Produto:</strong> ${order.product?.name || 'Produto'}</p>
+                            </div>
+                        </div>
+                        <div style="background:#f1f5f9;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+                            <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} ${storeName}.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        const { error } = await resend.emails.send({
+            from: 'PagFlow <noreply@elabela.store>',
+            to: [order.email],
+            subject,
+            html: htmlContent
+        });
+
+        try {
+            await prisma.emailLog.create({
+                data: {
+                    orderId: order.id,
+                    type: emailType,
+                    status: error ? 'error' : 'sent',
+                    error: error ? JSON.stringify(error) : null
+                }
+            });
+        } catch (logErr) {
+            console.error('FAILED TO RECORD FOLLOWUP LOG:', logErr);
+        }
+
+        if (error) {
+            console.error('RESEND FOLLOWUP EMAIL ERROR:', JSON.stringify(error, null, 2));
+            return { success: false, error: error.message || 'Falha ao enviar e-mail' };
+        }
+
+        return { success: true };
+    } catch (err) {
+        console.error('FOLLOWUP EMAIL ERROR:', err);
+        return { success: false, error: String(err) };
+    }
+}
+
 export async function resendPixEmail(orderId: string) {
     try {
         const order = await prisma.order.findUnique({ where: { id: orderId } });
