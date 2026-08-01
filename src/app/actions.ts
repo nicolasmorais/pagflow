@@ -43,6 +43,7 @@ export async function sendConfirmationEmail(orderId: string) {
                 .replace(/{{accessLink}}/g, order.product?.accessLink || '')
                 .replace(/{{paymentMethod}}/g, order.paymentMethod === 'pix' ? 'PIX' : 'Cartão de Crédito')
                 .replace(/{{storeName}}/g, storeName)
+                .replace(/{{storeLogo}}/g, order.product?.storeLogo || '')
                 .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
                 .replace(/{{rua}}/g, order.rua || '')
                 .replace(/{{numero}}/g, order.numero || '')
@@ -60,6 +61,7 @@ export async function sendConfirmationEmail(orderId: string) {
             htmlContent = `
                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
                     <div style="background: #10b981; padding: 40px 20px; text-align: center; color: white;">
+                        ${order.product?.storeLogo ? `<img src="${order.product.storeLogo}" alt="${storeName}" style="max-height: 50px; margin-bottom: 12px; border-radius: 8px;" />` : ''}
                         <h1 style="margin: 0; font-size: 28px;">Pedido Confirmado!</h1>
                         <p style="opacity: 0.9; margin-top: 10px;">Olá, ${(order.fullName || '').split(' ')[0]}. Sua compra foi processada com sucesso!</p>
                     </div>
@@ -802,6 +804,7 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
                 .replace(/{{totalPrice}}/g, priceFormatted)
                 .replace(/{{paymentMethod}}/g, 'PIX')
                 .replace(/{{storeName}}/g, storeName)
+                .replace(/{{storeLogo}}/g, order.product?.storeLogo || '')
                 .replace(/{{pixQrCode}}/g, `<img src="data:image/jpeg;base64,${qrCodeBase64}" alt="QR Code PIX" style="width:200px;height:200px;display:block;" />`)
                 .replace(/{{pixCopyCode}}/g, qrCode)
                 .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
@@ -821,7 +824,7 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
             htmlContent = `
                 <div style="font-family:'Manrope',Arial,sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
                     <div style="background:linear-gradient(135deg,#00B69B,#00D68F);padding:36px 32px;text-align:center;">
-                        <div style="font-size:48px;margin-bottom:12px;">⚡</div>
+                        ${order.product?.storeLogo ? `<img src="${order.product.storeLogo}" alt="${storeName}" style="max-height:50px;margin-bottom:12px;border-radius:8px;" />` : '<div style="font-size:48px;margin-bottom:12px;">⚡</div>'}
                         <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">PIX Gerado com Sucesso!</h1>
                         <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, ${firstName}! Seu pagamento PIX está pronto para ser pago.</p>
                     </div>
