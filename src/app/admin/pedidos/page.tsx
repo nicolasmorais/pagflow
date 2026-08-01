@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
-import { Trash2, Phone, Package, ExternalLink, Search, Filter, Calendar } from 'lucide-react'
+import { Trash2, Phone, Package, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 import PaymentStatusSelect from './components/PaymentStatusSelect'
 import OrderStatusSelect from './components/OrderStatusSelect'
@@ -9,7 +9,7 @@ import OrderRow from './components/OrderRow'
 import R2VerifyAllButton from './components/R2VerifyAllButton'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-import AnalyticsFilterForm from '../AnalyticsFilterForm'
+import OrdersFilterBar from './components/OrdersFilterBar'
 import { Payment } from 'mercadopago'
 import { createMpClient } from '@/lib/mercadopago'
 import { getDateFilters } from '@/lib/date-utils'
@@ -74,11 +74,14 @@ const statusConfig: Record<string, { label: string; bg: string; color: string }>
 export default async function OrdersPage({
     searchParams,
 }: {
-    searchParams: Promise<{ from?: string; to?: string; filter?: string; status?: string }>
+    searchParams: Promise<{ from?: string; to?: string; filter?: string; status?: string; method?: string; orderStatus?: string; q?: string }>
 }) {
     const params = await searchParams
     const filter = params.filter || '7dias'
     const status = params.status || 'todos'
+    const method = params.method || 'todos'
+    const orderStatus = params.orderStatus || 'todos'
+    const search = params.q || ''
     const { fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(filter, params.from, params.to)
 
     let orders: any[] = [];
@@ -88,8 +91,26 @@ export default async function OrdersPage({
             : status === 'recusado' ? 'recusado'
             : { in: ['pago', 'aguardando', 'processando', 'recusado', 'reembolsado'] };
 
+        const methodFilter = method === 'pix' ? 'pix' : method === 'credito' ? 'credito' : undefined;
+        const orderStatusFilter = orderStatus !== 'todos' ? orderStatus : undefined;
+
+        const where: any = {
+            deletedAt: null,
+            createdAt: { gte: fromDateUTC, lte: toDateUTC },
+            paymentStatus: statusFilter,
+        };
+        if (methodFilter) where.paymentMethod = methodFilter;
+        if (orderStatusFilter) where.status = orderStatusFilter;
+        if (search) {
+            where.OR = [
+                { fullName: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search } },
+            ];
+        }
+
         orders = await prisma.order.findMany({
-            where: { deletedAt: null, createdAt: { gte: fromDateUTC, lte: toDateUTC }, paymentStatus: statusFilter },
+            where,
             orderBy: { createdAt: 'desc' },
             include: { product: true }
         });
@@ -144,23 +165,15 @@ export default async function OrdersPage({
                 </div>
 
                 {/* Filters */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-                    {/* Status pills - left */}
-                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        <StatusPill label="Todos" active={status === 'todos'} />
-                        <StatusPill label="Pago" active={status === 'pago'} color="#16a34a" bg="#dcfce7" />
-                        <StatusPill label="Aguardando" active={status === 'aguardando'} color="#d97706" bg="#fef3c7" />
-                        <StatusPill label="Recusado" active={status === 'recusado'} color="#dc2626" bg="#fee2e2" />
-                    </div>
-
-                    {/* Date filter - right */}
-                    <AnalyticsFilterForm
-                        currentFilter={filter}
-                        fromDate={fromDate}
-                        toDate={toDate}
-                        showStatus={false}
-                    />
-                </div>
+                <OrdersFilterBar
+                    currentFilter={filter}
+                    currentPaymentStatus={status}
+                    currentPaymentMethod={method}
+                    currentOrderStatus={orderStatus}
+                    currentSearch={search}
+                    fromDate={fromDate}
+                    toDate={toDate}
+                />
             </header>
 
             {/* Orders */}
@@ -321,34 +334,6 @@ function SummaryCard({ label, value, sub, color, bg, border }: {
                 {sub}
             </p>
         </div>
-    )
-}
-
-/* ── Status Pill ── */
-function StatusPill({ label, active, color, bg }: {
-    label: string; active: boolean; color?: string; bg?: string
-}) {
-    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
-    const isActive = active
-
-    return (
-        <a
-            href={`?filter=${params.get('filter') || '7dias'}${label === 'Todos' ? '' : `&status=${label.toLowerCase()}`}`}
-            style={{
-                padding: '7px 14px',
-                borderRadius: '10px',
-                border: isActive ? 'none' : '1px solid #e2e8f0',
-                background: isActive ? (bg || '#0f172a') : '#fff',
-                color: isActive ? (color || '#fff') : '#64748b',
-                fontSize: '12px',
-                fontWeight: 700,
-                textDecoration: 'none',
-                transition: 'all 0.15s',
-                boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.02)',
-            }}
-        >
-            {label}
-        </a>
     )
 }
 
