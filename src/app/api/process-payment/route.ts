@@ -388,14 +388,14 @@ export async function POST(req: NextRequest) {
             qrCode = mpResult.point_of_interaction.transaction_data.qr_code || null;
             qrCodeBase64 = mpResult.point_of_interaction.transaction_data.qr_code_base64 || null;
 
-            // Enviar e-mail com QR Code PIX
-            if (qrCode && qrCodeBase64 && finalStatus === 'aguardando') {
-                try {
-                    await sendPixEmail(order.id, qrCode, qrCodeBase64);
-                } catch (pixEmailErr) {
-                    console.error("Failed to send PIX email:", pixEmailErr);
-                }
-            }
+            // Enviar e-mail com QR Code PIX — DESATIVADO
+            // if (qrCode && qrCodeBase64 && finalStatus === 'aguardando') {
+            //     try {
+            //         await sendPixEmail(order.id, qrCode, qrCodeBase64);
+            //     } catch (pixEmailErr) {
+            //         console.error("Failed to send PIX email:", pixEmailErr);
+            //     }
+            // }
         }
 
         return NextResponse.json({
