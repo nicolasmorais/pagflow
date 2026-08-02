@@ -1,6 +1,8 @@
 services:
   hermes-mcp:
-    build: .
+    build:
+      context: ..
+      dockerfile: hermes-agent-mcp/Dockerfile
     container_name: hermes-mcp
     restart: unless-stopped
     ports:
@@ -8,7 +10,7 @@ services:
     env_file:
       - .env
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/api/health"]
       interval: 30s
       timeout: 5s
       retries: 3
