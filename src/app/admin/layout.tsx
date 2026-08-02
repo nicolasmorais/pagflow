@@ -17,7 +17,8 @@ import {
     Bell,
     LogOut,
     X,
-    Wallet
+    Wallet,
+    Bot
 } from 'lucide-react'
 import './admin.css'
 
@@ -50,6 +51,7 @@ const menuSections = [
     {
         label: 'Sistema',
         items: [
+            { icon: Bot, label: 'MCP Agent', href: '/admin/mcp' },
             { icon: AlertTriangle, label: 'Erros', href: '/admin/errors' },
             { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
             { icon: Bell, label: 'Notificações', href: '/admin/notificacoes' },
