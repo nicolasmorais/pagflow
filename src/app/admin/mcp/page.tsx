@@ -40,26 +40,21 @@ export default function McpPage() {
     const [copiedDev, setCopiedDev] = useState(false)
     const [expandedTool, setExpandedTool] = useState<string | null>(null)
 
-    const prodJson = JSON.stringify({
+    const mcpUrl = 'https://mcp.elabela.store/mcp'
+
+    const streamableJson = JSON.stringify({
         mcpServers: {
             'hermes-pagflow': {
-                command: 'node',
-                args: ['C:/Users/Administrator/Documents/apps novos - antigravity/pagflow/hermes-agent-mcp/dist/index.js'],
-                env: {
-                    DATABASE_URL: 'postgresql://user:password@localhost:5432/pagflow'
-                }
+                type: 'url',
+                url: mcpUrl,
             }
         }
     }, null, 2)
 
-    const devJson = JSON.stringify({
+    const cursorJson = JSON.stringify({
         mcpServers: {
             'hermes-pagflow': {
-                command: 'npx',
-                args: ['tsx', 'C:/Users/Administrator/Documents/apps novos - antigravity/pagflow/hermes-agent-mcp/src/index.ts'],
-                env: {
-                    DATABASE_URL: 'postgresql://user:password@localhost:5432/pagflow'
-                }
+                url: mcpUrl,
             }
         }
     }, null, 2)
@@ -104,7 +99,7 @@ export default function McpPage() {
                             Hermes Agent MCP
                         </h1>
                         <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0, fontWeight: 500 }}>
-                            Servidor MCP para consultas de dados via IA — 14 tools disponíveis
+                            Servidor MCP para consultas de dados via IA — 14 tools — HTTP remoto
                         </p>
                     </div>
                 </div>
@@ -134,7 +129,7 @@ export default function McpPage() {
                         <Terminal size={18} color="#a78bfa" />
                     </div>
                     <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Nome do Servidor</p>
-                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>
+                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif", wordBreak: 'break-all' }}>
                         hermes-pagflow
                     </p>
                 </div>
@@ -160,7 +155,7 @@ export default function McpPage() {
                         <Database size={18} color="#22c55e" />
                     </div>
                     <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Transporte</p>
-                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>stdio</p>
+                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>HTTP/SSE</p>
                 </div>
 
                 <div className="mcp-card" style={{
@@ -178,7 +173,7 @@ export default function McpPage() {
 
             {/* Connection Config */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '24px' }}>
-                {/* Production */}
+                {/* Streamable HTTP (Claude Code / Windsurf) */}
                 <div className="mcp-card" style={{
                     background: 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)',
                     border: '1px solid rgba(241, 245, 249, 0.8)',
@@ -187,11 +182,11 @@ export default function McpPage() {
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Produção (build)</h3>
-                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Claude Code / Cursor / Windsurf</p>
+                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Claude Code / Windsurf</h3>
+                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Streamable HTTP</p>
                         </div>
                         <button
-                            onClick={() => handleCopy(prodJson, setCopiedJson)}
+                            onClick={() => handleCopy(streamableJson, setCopiedJson)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '6px',
                                 padding: '8px 14px', borderRadius: '10px', border: 'none',
@@ -212,11 +207,11 @@ export default function McpPage() {
                         overflow: 'auto', margin: 0,
                         fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                     }}>
-                        <code>{prodJson}</code>
+                        <code>{streamableJson}</code>
                     </pre>
                 </div>
 
-                {/* Development */}
+                {/* Cursor */}
                 <div className="mcp-card" style={{
                     background: 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)',
                     border: '1px solid rgba(241, 245, 249, 0.8)',
@@ -225,11 +220,11 @@ export default function McpPage() {
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                         <div>
-                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Desenvolvimento (tsx)</h3>
-                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Sem necessidade de build</p>
+                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Cursor</h3>
+                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>SSE endpoint</p>
                         </div>
                         <button
-                            onClick={() => handleCopy(devJson, setCopiedDev)}
+                            onClick={() => handleCopy(cursorJson, setCopiedDev)}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: '6px',
                                 padding: '8px 14px', borderRadius: '10px', border: 'none',
@@ -250,9 +245,34 @@ export default function McpPage() {
                         overflow: 'auto', margin: 0,
                         fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
                     }}>
-                        <code>{devJson}</code>
+                        <code>{cursorJson}</code>
                     </pre>
                 </div>
+            </div>
+
+            {/* MCP URL */}
+            <div className="mcp-card" style={{
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                borderRadius: '20px', padding: '24px', marginBottom: '24px',
+                boxShadow: '0 8px 32px rgba(15, 23, 42, 0.3)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
+            }}>
+                <div>
+                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Endpoint MCP</p>
+                    <p style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#fff', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '-0.01em' }}>{mcpUrl}</p>
+                </div>
+                <button
+                    onClick={() => handleCopy(mcpUrl, () => {})}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '10px 18px', borderRadius: '12px', border: 'none',
+                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                        color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                    }}
+                >
+                    <Copy size={14} /> Copiar URL
+                </button>
             </div>
 
             {/* Tools List */}
