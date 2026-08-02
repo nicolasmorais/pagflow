@@ -4,60 +4,33 @@ import { useState } from 'react'
 import {
     Bot, Copy, Check, Terminal, Database, Zap, Search,
     BarChart3, ShoppingCart, Package, TrendingUp, Users,
-    Mail, DollarSign, GitBranch, Activity
+    Mail, DollarSign, GitBranch, Activity, Shield, Globe
 } from 'lucide-react'
 
-const tools = [
-    { name: 'get_sales_summary', desc: 'Resumo agregado de vendas (receita, ticket médio, por método)', icon: BarChart3, color: '#6366f1' },
-    { name: 'get_orders', desc: 'Lista pedidos com filtros (data, status, produto, email)', icon: ShoppingCart, color: '#3b82f6' },
-    { name: 'get_order_detail', desc: 'Detalhes completos de um pedido específico', icon: ShoppingCart, color: '#0ea5e9' },
-    { name: 'search_orders', desc: 'Busca por nome, email, CPF, payment ID ou tracking', icon: Search, color: '#8b5cf6' },
-    { name: 'get_products', desc: 'Lista produtos com preços, custos e contagem de vendas', icon: Package, color: '#f59e0b' },
-    { name: 'get_top_products', desc: 'Ranking dos produtos mais vendidos', icon: TrendingUp, color: '#10b981' },
-    { name: 'get_sales_by_period', desc: 'Vendas agrupadas por dia/semana/mês (para gráficos)', icon: Activity, color: '#ec4899' },
-    { name: 'get_utm_performance', desc: 'Performance de campanhas UTM', icon: GitBranch, color: '#14b8a6' },
-    { name: 'get_financial_records', desc: 'Registros financeiros (receitas e despesas)', icon: DollarSign, color: '#f97316' },
-    { name: 'get_dashboard_kpis', desc: 'KPIs do dashboard com comparação de período', icon: BarChart3, color: '#6366f1' },
-    { name: 'get_customers', desc: 'Clientes únicos com total de pedidos e gasto', icon: Users, color: '#a855f7' },
-    { name: 'get_conversion_funnel', desc: 'Funil de conversão (pendente → pago → enviado)', icon: Zap, color: '#22c55e' },
-    { name: 'get_sales_table', desc: 'Dados da tabela sales legada', icon: Database, color: '#64748b' },
-    { name: 'get_email_logs', desc: 'Logs de e-mails enviados', icon: Mail, color: '#06b6d4' },
-]
-
-const exampleQuestions = [
-    'Quantas vendas tivemos hoje?',
-    'Qual o ticket médio dos últimos 30 dias?',
-    'Quais são os produtos mais vendidos?',
-    'Mostre o funil de conversão da semana',
-    'Busque pedidos do email joao@email.com',
-    'Como estão as campanhas UTM do mês?',
-    'Qual o lucro líquido considerando receitas e despesas?',
-    'Quais clientes são recorrentes?',
+const endpoints = [
+    { method: 'GET', path: '/api/health', desc: 'Health check do servidor', icon: Activity, color: '#22c55e' },
+    { method: 'GET', path: '/api/sales-summary', desc: 'Resumo agregado de vendas', icon: BarChart3, color: '#6366f1' },
+    { method: 'GET', path: '/api/orders', desc: 'Lista pedidos com filtros', icon: ShoppingCart, color: '#3b82f6' },
+    { method: 'GET', path: '/api/orders/:id', desc: 'Detalhes de um pedido', icon: ShoppingCart, color: '#0ea5e9' },
+    { method: 'GET', path: '/api/orders/search', desc: 'Busca por nome, email, CPF', icon: Search, color: '#8b5cf6' },
+    { method: 'GET', path: '/api/products', desc: 'Lista produtos com vendas', icon: Package, color: '#f59e0b' },
+    { method: 'GET', path: '/api/top-products', desc: 'Ranking de produtos', icon: TrendingUp, color: '#10b981' },
+    { method: 'GET', path: '/api/sales-by-period', desc: 'Vendas por dia/semana/mês', icon: Activity, color: '#ec4899' },
+    { method: 'GET', path: '/api/utm-performance', desc: 'Performance de campanhas UTM', icon: GitBranch, color: '#14b8a6' },
+    { method: 'GET', path: '/api/financial', desc: 'Receitas e despesas', icon: DollarSign, color: '#f97316' },
+    { method: 'GET', path: '/api/dashboard-kpis', desc: 'KPIs com comparação', icon: BarChart3, color: '#6366f1' },
+    { method: 'GET', path: '/api/customers', desc: 'Clientes únicos', icon: Users, color: '#a855f7' },
+    { method: 'GET', path: '/api/conversion-funnel', desc: 'Funil de conversão', icon: Zap, color: '#22c55e' },
+    { method: 'GET', path: '/api/email-logs', desc: 'Logs de e-mails', icon: Mail, color: '#06b6d4' },
 ]
 
 export default function McpPage() {
-    const [copiedJson, setCopiedJson] = useState(false)
-    const [copiedDev, setCopiedDev] = useState(false)
-    const [expandedTool, setExpandedTool] = useState<string | null>(null)
+    const [copiedUrl, setCopiedUrl] = useState(false)
+    const [copiedKey, setCopiedKey] = useState(false)
+    const [copiedExample, setCopiedExample] = useState<string | null>(null)
 
-    const mcpUrl = 'https://mcp.elabela.store/mcp'
-
-    const streamableJson = JSON.stringify({
-        mcpServers: {
-            'hermes-pagflow': {
-                type: 'url',
-                url: mcpUrl,
-            }
-        }
-    }, null, 2)
-
-    const cursorJson = JSON.stringify({
-        mcpServers: {
-            'hermes-pagflow': {
-                url: mcpUrl,
-            }
-        }
-    }, null, 2)
+    const baseUrl = 'https://mcp.elabela.store'
+    const apiKey = 'hermes-pagflow-key'
 
     const handleCopy = (text: string, setter: (v: boolean) => void) => {
         navigator.clipboard.writeText(text)
@@ -65,13 +38,23 @@ export default function McpPage() {
         setTimeout(() => setter(false), 2000)
     }
 
+    const handleCopyExample = (text: string, id: string) => {
+        navigator.clipboard.writeText(text)
+        setCopiedExample(id)
+        setTimeout(() => setCopiedExample(null), 2000)
+    }
+
+    const examples = [
+        { id: 'summary', label: 'Resumo de vendas', cmd: `curl -H "x-api-key: ${apiKey}" ${baseUrl}/api/sales-summary?from=2026-01-01` },
+        { id: 'orders', label: 'Listar pedidos', cmd: `curl -H "x-api-key: ${apiKey}" ${baseUrl}/api/orders?limit=10` },
+        { id: 'search', label: 'Buscar pedido', cmd: `curl -H "x-api-key: ${apiKey}" "${baseUrl}/api/orders/search?q=joao@email.com"` },
+        { id: 'kpis', label: 'Dashboard KPIs', cmd: `curl -H "x-api-key: ${apiKey}" ${baseUrl}/api/dashboard-kpis?from=2026-07-01&to=2026-07-31` },
+    ]
+
     return (
         <div style={{ paddingBottom: '40px' }}>
             <style jsx global>{`
-                @keyframes fadeUp {
-                    from { opacity: 0; transform: translateY(16px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
+                @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
                 @keyframes mcpPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
                 .mcp-card { animation: fadeUp 0.4s ease-out both; }
                 .mcp-card:nth-child(1) { animation-delay: 0s; }
@@ -81,10 +64,7 @@ export default function McpPage() {
             `}</style>
 
             {/* Header */}
-            <header style={{
-                marginBottom: '28px', display: 'flex', alignItems: 'flex-start',
-                justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
-            }}>
+            <header style={{ marginBottom: '28px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
                     <div style={{
                         width: '42px', height: '42px', borderRadius: '14px',
@@ -96,10 +76,10 @@ export default function McpPage() {
                     </div>
                     <div>
                         <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 900, color: '#0f172a', margin: 0, letterSpacing: '-0.03em' }}>
-                            Hermes Agent MCP
+                            Hermes API
                         </h1>
                         <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0, fontWeight: 500 }}>
-                            Servidor MCP para consultas de dados via IA — 14 tools — HTTP remoto
+                            REST API para consultas de dados — autenticada por API Key
                         </p>
                     </div>
                 </div>
@@ -113,7 +93,7 @@ export default function McpPage() {
                         background: '#22c55e', boxShadow: '0 0 8px rgba(34,197,94,0.5)',
                         animation: 'mcpPulse 2s ease-in-out infinite',
                     }} />
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669' }}>Ativo e funcionando</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#059669' }}>Ativo</span>
                 </div>
             </header>
 
@@ -126,12 +106,10 @@ export default function McpPage() {
                 }}>
                     <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(139,92,246,0.2) 0%, transparent 70%)', borderRadius: '50%' }} />
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(109,40,217,0.15))', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px' }}>
-                        <Terminal size={18} color="#a78bfa" />
+                        <Globe size={18} color="#a78bfa" />
                     </div>
-                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Nome do Servidor</p>
-                    <p style={{ margin: 0, fontSize: '14px', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif", wordBreak: 'break-all' }}>
-                        hermes-pagflow
-                    </p>
+                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Base URL</p>
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 900, color: '#fff', fontFamily: "'Space Grotesk', sans-serif", wordBreak: 'break-all' }}>{baseUrl}</p>
                 </div>
 
                 <div className="mcp-card" style={{
@@ -142,7 +120,7 @@ export default function McpPage() {
                     <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #eff6ff, #dbeafe)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', boxShadow: '0 2px 8px rgba(59,130,246,0.1)' }}>
                         <Zap size={18} color="#3b82f6" />
                     </div>
-                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tools Disponíveis</p>
+                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Endpoints</p>
                     <p style={{ margin: 0, fontSize: '22px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em', fontFamily: "'Space Grotesk', sans-serif" }}>14</p>
                 </div>
 
@@ -151,11 +129,11 @@ export default function McpPage() {
                     border: '1px solid rgba(241,245,249,0.8)', borderRadius: '20px', padding: '22px',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
                 }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', boxShadow: '0 2px 8px rgba(34,197,94,0.1)' }}>
-                        <Database size={18} color="#22c55e" />
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #faf5ff, #f3e8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', boxShadow: '0 2px 8px rgba(168,85,247,0.1)' }}>
+                        <Shield size={18} color="#a855f7" />
                     </div>
-                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Transporte</p>
-                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>HTTP/SSE</p>
+                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Autenticação</p>
+                    <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>API Key</p>
                 </div>
 
                 <div className="mcp-card" style={{
@@ -163,200 +141,124 @@ export default function McpPage() {
                     border: '1px solid rgba(241,245,249,0.8)', borderRadius: '20px', padding: '22px',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
                 }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #faf5ff, #f3e8ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', boxShadow: '0 2px 8px rgba(168,85,247,0.1)' }}>
-                        <Activity size={18} color="#a855f7" />
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #ecfdf5, #dcfce7)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '14px', boxShadow: '0 2px 8px rgba(34,197,94,0.1)' }}>
+                        <Database size={18} color="#22c55e" />
                     </div>
                     <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Tipo</p>
                     <p style={{ margin: 0, fontSize: '18px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em', fontFamily: "'Space Grotesk', sans-serif" }}>Read-only</p>
                 </div>
             </div>
 
-            {/* Connection Config */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '24px' }}>
-                {/* Streamable HTTP (Claude Code / Windsurf) */}
-                <div className="mcp-card" style={{
-                    background: 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)',
-                    border: '1px solid rgba(241, 245, 249, 0.8)',
-                    borderRadius: '20px', padding: '24px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.01), 0 4px 16px rgba(0,0,0,0.03)',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                        <div>
-                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Claude Code / Windsurf</h3>
-                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Streamable HTTP</p>
-                        </div>
-                        <button
-                            onClick={() => handleCopy(streamableJson, setCopiedJson)}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '8px 14px', borderRadius: '10px', border: 'none',
-                                background: copiedJson ? '#ecfdf5' : '#f1f5f9',
-                                color: copiedJson ? '#059669' : '#64748b',
-                                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            {copiedJson ? <Check size={14} /> : <Copy size={14} />}
-                            {copiedJson ? 'Copiado!' : 'Copiar'}
-                        </button>
-                    </div>
-                    <pre style={{
-                        background: '#0f172a', color: '#e2e8f0',
-                        padding: '16px', borderRadius: '14px',
-                        fontSize: '11px', lineHeight: '1.6',
-                        overflow: 'auto', margin: 0,
-                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                    }}>
-                        <code>{streamableJson}</code>
-                    </pre>
-                </div>
-
-                {/* Cursor */}
-                <div className="mcp-card" style={{
-                    background: 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)',
-                    border: '1px solid rgba(241, 245, 249, 0.8)',
-                    borderRadius: '20px', padding: '24px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.01), 0 4px 16px rgba(0,0,0,0.03)',
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                        <div>
-                            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Cursor</h3>
-                            <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>SSE endpoint</p>
-                        </div>
-                        <button
-                            onClick={() => handleCopy(cursorJson, setCopiedDev)}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '8px 14px', borderRadius: '10px', border: 'none',
-                                background: copiedDev ? '#ecfdf5' : '#f1f5f9',
-                                color: copiedDev ? '#059669' : '#64748b',
-                                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                transition: 'all 0.2s',
-                            }}
-                        >
-                            {copiedDev ? <Check size={14} /> : <Copy size={14} />}
-                            {copiedDev ? 'Copiado!' : 'Copiar'}
-                        </button>
-                    </div>
-                    <pre style={{
-                        background: '#0f172a', color: '#e2e8f0',
-                        padding: '16px', borderRadius: '14px',
-                        fontSize: '11px', lineHeight: '1.6',
-                        overflow: 'auto', margin: 0,
-                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                    }}>
-                        <code>{cursorJson}</code>
-                    </pre>
-                </div>
-            </div>
-
-            {/* MCP URL */}
+            {/* API Key */}
             <div className="mcp-card" style={{
                 background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
                 borderRadius: '20px', padding: '24px', marginBottom: '24px',
                 boxShadow: '0 8px 32px rgba(15, 23, 42, 0.3)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px',
             }}>
-                <div>
-                    <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Endpoint MCP</p>
-                    <p style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#fff', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '-0.01em' }}>{mcpUrl}</p>
-                </div>
-                <button
-                    onClick={() => handleCopy(mcpUrl, () => {})}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        padding: '10px 18px', borderRadius: '12px', border: 'none',
-                        background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                        color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
-                    }}
-                >
-                    <Copy size={14} /> Copiar URL
-                </button>
-            </div>
-
-            {/* Tools List */}
-            <div style={{
-                background: 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)',
-                border: '1px solid rgba(241, 245, 249, 0.8)',
-                borderRadius: '20px', padding: '24px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.01), 0 4px 16px rgba(0,0,0,0.03)',
-                marginBottom: '24px',
-            }}>
-                <div style={{ marginBottom: '20px' }}>
-                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Tools Disponíveis</h3>
-                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>14 endpoints de consulta read-only</p>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '8px' }}>
-                    {tools.map((tool) => {
-                        const isExpanded = expandedTool === tool.name
-                        const Icon = tool.icon
-                        return (
-                            <div
-                                key={tool.name}
-                                onClick={() => setExpandedTool(isExpanded ? null : tool.name)}
-                                style={{
-                                    display: 'flex', alignItems: 'flex-start', gap: '12px',
-                                    padding: '14px', borderRadius: '14px',
-                                    background: isExpanded ? '#f8fafc' : 'transparent',
-                                    border: `1px solid ${isExpanded ? '#e2e8f0' : 'transparent'}`,
-                                    cursor: 'pointer', transition: 'all 0.15s',
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!isExpanded) e.currentTarget.style.background = '#f8fafc'
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!isExpanded) e.currentTarget.style.background = 'transparent'
-                                }}
-                            >
-                                <div style={{
-                                    width: '36px', height: '36px', borderRadius: '10px',
-                                    background: `${tool.color}15`, display: 'flex',
-                                    alignItems: 'center', justifyContent: 'center',
-                                    flexShrink: 0,
-                                }}>
-                                    <Icon size={16} color={tool.color} />
-                                </div>
-                                <div style={{ minWidth: 0 }}>
-                                    <p style={{
-                                        margin: 0, fontSize: '13px', fontWeight: 700,
-                                        color: '#0f172a', fontFamily: "'JetBrains Mono', monospace",
-                                        fontSize: '12px',
-                                    }}>
-                                        {tool.name}
-                                    </p>
-                                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500, lineHeight: '1.4' }}>
-                                        {tool.desc}
-                                    </p>
-                                </div>
-                            </div>
-                        )
-                    })}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                        <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>API Key</p>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: 900, color: '#fff', fontFamily: "'JetBrains Mono', monospace" }}>{apiKey}</p>
+                        <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Envie no header <code style={{ background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px' }}>x-api-key</code></p>
+                    </div>
+                    <button
+                        onClick={() => handleCopy(apiKey, setCopiedKey)}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '10px 18px', borderRadius: '12px', border: 'none',
+                            background: copiedKey ? 'rgba(34,197,94,0.2)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                            color: copiedKey ? '#22c55e' : '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                            boxShadow: copiedKey ? 'none' : '0 4px 12px rgba(99,102,241,0.3)',
+                        }}
+                    >
+                        {copiedKey ? <Check size={14} /> : <Copy size={14} />}
+                        {copiedKey ? 'Copiado!' : 'Copiar'}
+                    </button>
                 </div>
             </div>
 
-            {/* Example Questions */}
+            {/* Examples */}
             <div style={{
                 background: 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)',
                 border: '1px solid rgba(241, 245, 249, 0.8)',
-                borderRadius: '20px', padding: '24px',
+                borderRadius: '20px', padding: '24px', marginBottom: '24px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.01), 0 4px 16px rgba(0,0,0,0.03)',
             }}>
                 <div style={{ marginBottom: '16px' }}>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Exemplos de Uso</h3>
-                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Perguntas que você pode fazer ao agente</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Copie e cole no terminal</p>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {exampleQuestions.map((q, i) => (
-                        <div key={i} style={{
-                            padding: '10px 16px', borderRadius: '12px',
-                            background: '#f8fafc', border: '1px solid #f1f5f9',
-                            fontSize: '13px', color: '#475569', fontWeight: 500,
-                            transition: 'all 0.15s',
-                        }}>
-                            "{q}"
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {examples.map((ex) => (
+                        <div key={ex.id} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', minWidth: '120px' }}>{ex.label}</span>
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#0f172a', borderRadius: '10px', padding: '10px 14px', gap: '10px' }}>
+                                <code style={{ flex: 1, color: '#e2e8f0', fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", overflow: 'auto', whiteSpace: 'nowrap' }}>{ex.cmd}</code>
+                                <button
+                                    onClick={() => handleCopyExample(ex.cmd, ex.id)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                        padding: '4px 10px', borderRadius: '6px', border: 'none',
+                                        background: copiedExample === ex.id ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.1)',
+                                        color: copiedExample === ex.id ? '#22c55e' : '#94a3b8',
+                                        fontSize: '11px', fontWeight: 600, cursor: 'pointer', flexShrink: 0,
+                                    }}
+                                >
+                                    {copiedExample === ex.id ? <Check size={12} /> : <Copy size={12} />}
+                                </button>
+                            </div>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            {/* Endpoints List */}
+            <div style={{
+                background: 'linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)',
+                border: '1px solid rgba(241, 245, 249, 0.8)',
+                borderRadius: '20px', padding: '24px',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.01), 0 4px 16px rgba(0,0,0,0.03)',
+            }}>
+                <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>Endpoints Disponíveis</h3>
+                    <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>Todos GET — read-only, autenticados por API Key</p>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '8px' }}>
+                    {endpoints.map((ep) => {
+                        const Icon = ep.icon
+                        return (
+                            <div key={ep.path} style={{
+                                display: 'flex', alignItems: 'center', gap: '12px',
+                                padding: '14px', borderRadius: '14px',
+                                transition: 'all 0.15s',
+                            }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <div style={{
+                                    width: '36px', height: '36px', borderRadius: '10px',
+                                    background: `${ep.color}15`, display: 'flex',
+                                    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                }}>
+                                    <Icon size={16} color={ep.color} />
+                                </div>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{
+                                            fontSize: '10px', fontWeight: 800, color: '#22c55e',
+                                            background: '#f0fdf4', padding: '2px 6px', borderRadius: '4px',
+                                            letterSpacing: '0.05em',
+                                        }}>GET</span>
+                                        <span style={{
+                                            fontSize: '12px', fontWeight: 700, color: '#0f172a',
+                                            fontFamily: "'JetBrains Mono', monospace",
+                                        }}>{ep.path}</span>
+                                    </div>
+                                    <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>{ep.desc}</p>
+                                </div>
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
         </div>
