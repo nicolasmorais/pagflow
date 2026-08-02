@@ -20,6 +20,12 @@ function auth(req: express.Request, res: express.Response, next: express.NextFun
   next()
 }
 
+// ─── Health (sem auth) ───────────────────────────────────────────────────────
+
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', name: 'hermes-pagflow', version: '2.0.0' })
+})
+
 app.use('/api', auth)
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -33,12 +39,6 @@ function dateFilter(from?: string, to?: string) {
   }
   return where
 }
-
-// ─── GET /api/health ─────────────────────────────────────────────────────────
-
-app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok', name: 'hermes-pagflow', version: '2.0.0' })
-})
 
 // ─── GET /api/sales-summary ──────────────────────────────────────────────────
 
