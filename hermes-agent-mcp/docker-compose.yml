@@ -14,3 +14,16 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+    networks:
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.heres-mcp.rule=Host(`mcp.elabela.store`)"
+      - "traefik.http.routers.heres-mcp.entrypoints=websecure"
+      - "traefik.http.routers.heres-mcp.tls=true"
+      - "traefik.http.routers.heres-mcp.tls.certresolver=letsencrypt"
+      - "traefik.http.services.heres-mcp.loadbalancer.server.port=3100"
+
+networks:
+  dokploy-network:
+    external: true
