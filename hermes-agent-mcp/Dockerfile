@@ -4,6 +4,7 @@ WORKDIR /app
 COPY hermes-agent-mcp/package.json hermes-agent-mcp/package-lock.json ./
 RUN npm ci
 COPY prisma/schema.prisma ./prisma/schema.prisma
+ENV DATABASE_URL="postgresql://localhost:5432/placeholder"
 RUN npx prisma@6 generate --schema=./prisma/schema.prisma
 COPY hermes-agent-mcp/tsconfig.json ./
 COPY hermes-agent-mcp/src/ ./src/
