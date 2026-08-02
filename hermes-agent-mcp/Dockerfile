@@ -4,7 +4,7 @@ WORKDIR /app
 COPY hermes-agent-mcp/package.json hermes-agent-mcp/package-lock.json ./
 RUN npm ci
 COPY prisma/schema.prisma ./prisma/schema.prisma
-RUN npx prisma generate --schema=./prisma/schema.prisma
+RUN npx prisma@6 generate --schema=./prisma/schema.prisma
 COPY hermes-agent-mcp/tsconfig.json ./
 COPY hermes-agent-mcp/src/ ./src/
 RUN npm run build
