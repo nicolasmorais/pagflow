@@ -799,16 +799,16 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             <div className="success-page-content">
                                 {/* URGENCY: ultimas unidades */}
                                 <div style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    background: 'linear-gradient(135deg, #ff6b35, #ff4444)',
-                                    color: '#fff', fontSize: '12px', fontWeight: 700,
-                                    padding: '6px 14px', borderRadius: '20px',
-                                    marginBottom: '12px', letterSpacing: '0.5px',
-                                    animation: 'pulse-badge 2s ease-in-out infinite',
-                                    boxShadow: '0 2px 12px rgba(255,68,68,0.4)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    background: '#FEF3E8',
+                                    border: '1px solid #E07020',
+                                    color: '#E07020', fontSize: '12px', fontWeight: 700,
+                                    padding: '8px 16px', borderRadius: '8px',
+                                    marginBottom: '16px', letterSpacing: '0.04em',
+                                    textTransform: 'uppercase',
                                 }}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                    ULTIMAS UNIDADES
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E07020" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                    Ultimas unidades disponiveis
                                 </div>
 
                                 {/* STATUS */}
@@ -824,40 +824,81 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                                 {/* COUNTDOWN TIMER */}
                                 <div style={{
-                                    background: timeLeft <= 120
-                                        ? 'linear-gradient(135deg, #3a0a0a, #2a0505)'
-                                        : 'linear-gradient(135deg, #1a1a2e, #16213e)',
-                                    border: timeLeft <= 120 ? '1px solid #ff4444' : '1px solid #e6a700',
-                                    borderRadius: '12px', padding: '14px 16px', margin: '14px 0',
-                                    textAlign: 'center', position: 'relative', overflow: 'hidden',
+                                    background: '#fff',
+                                    border: '1px solid #E5E7EB',
+                                    borderRadius: '12px',
+                                    padding: '18px 20px',
+                                    margin: '0 0 12px',
+                                    textAlign: 'center',
+                                    position: 'relative',
+                                    overflow: 'hidden',
                                 }}>
                                     <div style={{
-                                        position: 'absolute', top: 0, left: 0, height: '100%',
-                                        background: timeLeft <= 120
-                                            ? 'linear-gradient(90deg, rgba(255,68,68,0.15), transparent)'
-                                            : 'linear-gradient(90deg, rgba(230,167,0,0.1), transparent)',
+                                        fontSize: '11px',
+                                        fontWeight: 800,
+                                        color: '#6B7280',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.06em',
+                                        marginBottom: '10px',
+                                    }}>
+                                        {timeLeft <= 120 ? 'Tempo quase esgotando' : 'Oferta expira em'}
+                                    </div>
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '6px',
+                                        marginBottom: '10px',
+                                    }}>
+                                        {(() => {
+                                            const mins = Math.floor(timeLeft / 60);
+                                            const secs = timeLeft % 60;
+                                            const isUrgent = timeLeft <= 120;
+                                            const digitStyle = {
+                                                background: isUrgent ? '#FDECEA' : '#F5F5F5',
+                                                color: isUrgent ? '#B83030' : '#111',
+                                                borderRadius: '8px',
+                                                padding: '8px 10px',
+                                                fontSize: '28px',
+                                                fontWeight: 800,
+                                                fontFamily: "'Manrope', sans-serif",
+                                                lineHeight: 1,
+                                                minWidth: '44px',
+                                                textAlign: 'center',
+                                                animation: timeLeft <= 60 ? 'blink 1s step-end infinite' : 'none',
+                                            };
+                                            const sepStyle = {
+                                                fontSize: '24px',
+                                                fontWeight: 800,
+                                                color: isUrgent ? '#B83030' : '#111',
+                                                lineHeight: 1,
+                                            };
+                                            return (
+                                                <>
+                                                    <span style={digitStyle}>{String(mins).padStart(2, '0')}</span>
+                                                    <span style={sepStyle}>:</span>
+                                                    <span style={digitStyle}>{String(secs).padStart(2, '0')}</span>
+                                                </>
+                                            );
+                                        })()}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '12px',
+                                        fontWeight: 500,
+                                        color: '#6B7280',
+                                    }}>
+                                        Após esse tempo, sua reserva será liberada
+                                    </div>
+                                    {/* Progress bar */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        bottom: 0, left: 0,
+                                        height: '3px',
                                         width: `${(timeLeft / 600) * 100}%`,
+                                        background: timeLeft <= 120 ? '#B83030' : '#1D9A52',
                                         transition: 'width 1s linear',
+                                        borderRadius: '0 0 12px 12px',
                                     }} />
-                                    <div style={{
-                                        fontSize: '11px', color: timeLeft <= 120 ? '#ff6b6b' : '#e6a700',
-                                        fontWeight: 600, marginBottom: '4px', letterSpacing: '0.5px', position: 'relative',
-                                    }}>
-                                        {timeLeft <= 120 ? '⚠️ TEMPO QUASE ESGOTANDO!' : '⏳ SEU PEDIDO EXPIRA EM'}
-                                    </div>
-                                    <div style={{
-                                        fontSize: '28px', fontWeight: 800, fontFamily: 'monospace',
-                                        color: timeLeft <= 120 ? '#ff4444' : '#fff',
-                                        letterSpacing: '2px', position: 'relative',
-                                        animation: timeLeft <= 60 ? 'blink 1s step-end infinite' : 'none',
-                                    }}>
-                                        {formatTime(timeLeft)}
-                                    </div>
-                                    <div style={{
-                                        fontSize: '10px', color: '#999', marginTop: '4px', position: 'relative',
-                                    }}>
-                                        Após esse tempo, sua reserva será liberada para outro cliente
-                                    </div>
                                 </div>
 
                                 {/* MAIN CARD */}
