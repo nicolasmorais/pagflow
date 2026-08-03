@@ -1483,7 +1483,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             lineHeight: 1.5,
                                             textAlign: 'center',
                                         }}>
-                                            Ao clicar em GERAR PIX, voce confirma a compra e se compromete a pagar. Gere apenas se for realizar o pagamento — pedidos nao pagos podem ser cobrados judicialmente.
+                                            Ao clicar em GERAR PIX, voce confirma a compra e se compromete a pagar. Gere apenas se for realizar o pagamento.
                                         </div>
                                         <div className="cta-note" style={{marginTop:'12px'}}>
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
