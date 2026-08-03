@@ -637,6 +637,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 const isValidColor = pc && /^#([0-9a-fA-F]{3,8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$|^rgb[a]?\([\d\s,.%/]+\)$|^hsl[a]?\([\d\s,.%/]+\)$/.test(pc.trim());
                 return isValidColor ? <style dangerouslySetInnerHTML={{ __html: `:root { --green: ${pc.trim()}; }` }} /> : null;
             })()}
+            <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes pulse-badge { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+                @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+            ` }} />
             <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
 
             {loading && <div className="loading-overlay"><div className="loading-spinner"></div><p style={{ marginTop: '20px', fontWeight: 800 }}>Processando...</p></div>}
@@ -793,6 +797,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     {paymentMethod === 'pix' ? (
                         <div className="pix-page-wrapper">
                             <div className="success-page-content">
+                                {/* URGENCY: ultimas unidades */}
+                                <div style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    background: 'linear-gradient(135deg, #ff6b35, #ff4444)',
+                                    color: '#fff', fontSize: '12px', fontWeight: 700,
+                                    padding: '6px 14px', borderRadius: '20px',
+                                    marginBottom: '12px', letterSpacing: '0.5px',
+                                    animation: 'pulse-badge 2s ease-in-out infinite',
+                                    boxShadow: '0 2px 12px rgba(255,68,68,0.4)',
+                                }}>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                    ULTIMAS UNIDADES
+                                </div>
+
                                 {/* STATUS */}
                                 <div className="status-top">
                                     <div className="check-circle">
@@ -802,6 +820,44 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                     <div className="status-title">Pedido reservado!<br />Falta só o pagamento.</div>
                                     <div className="status-sub" style={{ marginTop: '6px' }}>Escaneie o QR Code ou copie o código abaixo</div>
+                                </div>
+
+                                {/* COUNTDOWN TIMER */}
+                                <div style={{
+                                    background: timeLeft <= 120
+                                        ? 'linear-gradient(135deg, #3a0a0a, #2a0505)'
+                                        : 'linear-gradient(135deg, #1a1a2e, #16213e)',
+                                    border: timeLeft <= 120 ? '1px solid #ff4444' : '1px solid #e6a700',
+                                    borderRadius: '12px', padding: '14px 16px', margin: '14px 0',
+                                    textAlign: 'center', position: 'relative', overflow: 'hidden',
+                                }}>
+                                    <div style={{
+                                        position: 'absolute', top: 0, left: 0, height: '100%',
+                                        background: timeLeft <= 120
+                                            ? 'linear-gradient(90deg, rgba(255,68,68,0.15), transparent)'
+                                            : 'linear-gradient(90deg, rgba(230,167,0,0.1), transparent)',
+                                        width: `${(timeLeft / 600) * 100}%`,
+                                        transition: 'width 1s linear',
+                                    }} />
+                                    <div style={{
+                                        fontSize: '11px', color: timeLeft <= 120 ? '#ff6b6b' : '#e6a700',
+                                        fontWeight: 600, marginBottom: '4px', letterSpacing: '0.5px', position: 'relative',
+                                    }}>
+                                        {timeLeft <= 120 ? '⚠️ TEMPO QUASE ESGOTANDO!' : '⏳ SEU PEDIDO EXPIRA EM'}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '28px', fontWeight: 800, fontFamily: 'monospace',
+                                        color: timeLeft <= 120 ? '#ff4444' : '#fff',
+                                        letterSpacing: '2px', position: 'relative',
+                                        animation: timeLeft <= 60 ? 'blink 1s step-end infinite' : 'none',
+                                    }}>
+                                        {formatTime(timeLeft)}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '10px', color: '#999', marginTop: '4px', position: 'relative',
+                                    }}>
+                                        Após esse tempo, sua reserva será liberada para outro cliente
+                                    </div>
                                 </div>
 
                                 {/* MAIN CARD */}
