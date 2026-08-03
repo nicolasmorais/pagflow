@@ -1471,6 +1471,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <button className="cta-btn" onClick={() => finalizar()} disabled={loading} style={{ marginTop: '16px' }}>
                                             {loading ? 'Processando...' : 'GERAR PIX'}
                                         </button>
+                                        <div style={{
+                                            marginTop: '12px',
+                                            padding: '10px 12px',
+                                            background: '#FEF3E8',
+                                            border: '1px solid #E07020',
+                                            borderRadius: '8px',
+                                            fontSize: '11px',
+                                            fontWeight: 600,
+                                            color: '#E07020',
+                                            lineHeight: 1.5,
+                                            textAlign: 'center',
+                                        }}>
+                                            Ao clicar em GERAR PIX, voce confirma a compra e se compromete a pagar. Gere apenas se for realizar o pagamento — pedidos nao pagos podem ser cobrados judicialmente.
+                                        </div>
                                         <div className="cta-note" style={{marginTop:'12px'}}>
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
                                             Pagamento processado com segurança via Mercado Pago
