@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Plus, X, Trash2, Package, Tag, Loader2, Zap, DollarSign, ShoppingBag } from 'lucide-react'
-import { createOrderBump, deleteOrderBump, toggleOrderBump } from '@/app/actions'
+import { Plus, X, Trash2, Package, Tag, Loader2, Zap, DollarSign, ShoppingBag, Pencil } from 'lucide-react'
+import { createOrderBump, deleteOrderBump, toggleOrderBump, updateOrderBump } from '@/app/actions'
 
 export default function OrdemClient({ products, bumps }: { products: any[], bumps: any[] }) {
     const [showModal, setShowModal] = useState(false)
+    const [editBump, setEditBump] = useState<any>(null)
     const [saving, setSaving] = useState(false)
     const [toggling, setToggling] = useState<string | null>(null)
 
@@ -15,6 +16,25 @@ export default function OrdemClient({ products, bumps }: { products: any[], bump
         try {
             await createOrderBump(new FormData(e.currentTarget))
             setShowModal(false)
+            window.location.reload()
+        } catch (err: any) { alert(err.message) }
+        finally { setSaving(false) }
+    }
+
+    async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault()
+        if (!editBump) return
+        setSaving(true)
+        try {
+            const fd = new FormData(e.currentTarget)
+            await updateOrderBump(editBump.id, {
+                name: fd.get('name') as string,
+                price: Number(fd.get('price')),
+                description: fd.get('description') as string,
+                imageUrl: fd.get('imageUrl') as string,
+                productId: (fd.get('productId') as string) === 'global' ? null : (fd.get('productId') as string),
+            })
+            setEditBump(null)
             window.location.reload()
         } catch (err: any) { alert(err.message) }
         finally { setSaving(false) }
@@ -30,6 +50,72 @@ export default function OrdemClient({ products, bumps }: { products: any[], bump
         if (!confirm('Excluir este order bump?')) return
         try { await deleteOrderBump(id); window.location.reload() } catch (err: any) { alert(err.message) }
     }
+
+    const modalForm = (onSubmit: (e: React.FormEvent<HTMLFormElement>) => void, isEdit: boolean, bump?: any) => (
+        <div style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+        }} onClick={() => isEdit ? setEditBump(null) : setShowModal(false)}>
+            <div style={{
+                background: '#fff', borderRadius: '18px', width: '100%', maxWidth: '440px',
+                boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
+            }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid #f1f5f9' }}>
+                    <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>{isEdit ? 'Editar Order Bump' : 'Novo Order Bump'}</h2>
+                    <button onClick={() => isEdit ? setEditBump(null) : setShowModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '30px', height: '30px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer' }}>
+                        <X size={16} />
+                    </button>
+                </div>
+
+                <form onSubmit={onSubmit} style={{ padding: '20px' }}>
+                    <div style={{ marginBottom: '14px' }}>
+                        <label style={lbl}><Zap size={12} /> Nome da Oferta</label>
+                        <input name="name" type="text" style={inp} placeholder="Ex: Leve +1 com 50% OFF" defaultValue={bump?.name || ''} required />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                        <div>
+                            <label style={lbl}><DollarSign size={12} /> Preço (R$)</label>
+                            <input name="price" type="number" step="0.01" style={inp} placeholder="0.00" defaultValue={bump?.price || ''} required />
+                        </div>
+                        <div>
+                            <label style={lbl}><ShoppingBag size={12} /> Produto</label>
+                            <select name="productId" style={inp} defaultValue={bump?.productId || 'global'}>
+                                <option value="global">Todos (Global)</option>
+                                {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style={{ marginBottom: '14px' }}>
+                        <label style={lbl}>Descrição</label>
+                        <input name="description" type="text" style={inp} placeholder="Frase de impacto" defaultValue={bump?.description || ''} required />
+                    </div>
+
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={lbl}>Imagem (URL)</label>
+                        <input name="imageUrl" type="url" style={inp} placeholder="https://..." defaultValue={bump?.imageUrl || ''} />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button type="button" onClick={() => isEdit ? setEditBump(null) : setShowModal(false)} style={{
+                            flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid #e2e8f0',
+                            background: '#fff', color: '#475569', fontWeight: 700, fontSize: '13px', cursor: 'pointer',
+                        }}>Cancelar</button>
+                        <button type="submit" disabled={saving} style={{
+                            flex: 1.5, padding: '11px', borderRadius: '10px', border: 'none',
+                            background: '#0f172a', color: '#fff', fontWeight: 700, fontSize: '13px',
+                            cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                        }}>
+                            {saving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : isEdit ? <Pencil size={16} /> : <Plus size={16} />}
+                            {saving ? 'Salvando...' : isEdit ? 'Salvar' : 'Criar Bump'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
 
     return (
         <div style={{ width: '100%', paddingBottom: '60px' }}>
@@ -151,6 +237,19 @@ export default function OrdemClient({ products, bumps }: { products: any[], bump
 
                                     <span style={{ flex: 1 }} />
 
+                                    {/* Edit */}
+                                    <button onClick={() => setEditBump(bump)} style={{
+                                        width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #e2e8f0',
+                                        background: '#fff', color: '#475569', cursor: 'pointer', display: 'flex',
+                                        alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
+                                    }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc' }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}
+                                    >
+                                        <Pencil size={14} />
+                                    </button>
+
+                                    {/* Delete */}
                                     <button onClick={() => handleDelete(bump.id)} style={{
                                         width: '32px', height: '32px', borderRadius: '8px', border: '1px solid #fee2e2',
                                         background: '#fff', color: '#ef4444', cursor: 'pointer', display: 'flex',
@@ -168,73 +267,11 @@ export default function OrdemClient({ products, bumps }: { products: any[], bump
                 </div>
             )}
 
-            {/* Modal */}
-            {showModal && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 1000,
-                    background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(6px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
-                }} onClick={() => setShowModal(false)}>
-                    <div style={{
-                        background: '#fff', borderRadius: '18px', width: '100%', maxWidth: '440px',
-                        boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
-                    }} onClick={e => e.stopPropagation()}>
-                        {/* Header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px', borderBottom: '1px solid #f1f5f9' }}>
-                            <h2 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>Novo Order Bump</h2>
-                            <button onClick={() => setShowModal(false)} style={{ background: '#f1f5f9', border: 'none', width: '30px', height: '30px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', cursor: 'pointer' }}>
-                                <X size={16} />
-                            </button>
-                        </div>
+            {/* Create Modal */}
+            {showModal && modalForm(handleCreate, false)}
 
-                        <form onSubmit={handleCreate} style={{ padding: '20px' }}>
-                            <div style={{ marginBottom: '14px' }}>
-                                <label style={lbl}><Zap size={12} /> Nome da Oferta</label>
-                                <input name="name" type="text" style={inp} placeholder="Ex: Leve +1 com 50% OFF" required />
-                            </div>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
-                                <div>
-                                    <label style={lbl}><DollarSign size={12} /> Preço (R$)</label>
-                                    <input name="price" type="number" step="0.01" style={inp} placeholder="0.00" required />
-                                </div>
-                                <div>
-                                    <label style={lbl}><ShoppingBag size={12} /> Produto</label>
-                                    <select name="productId" style={inp}>
-                                        <option value="global">Todos (Global)</option>
-                                        {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div style={{ marginBottom: '14px' }}>
-                                <label style={lbl}>Descrição</label>
-                                <input name="description" type="text" style={inp} placeholder="Frase de impacto" required />
-                            </div>
-
-                            <div style={{ marginBottom: '20px' }}>
-                                <label style={lbl}>Imagem (URL)</label>
-                                <input name="imageUrl" type="url" style={inp} placeholder="https://..." />
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                                <button type="button" onClick={() => setShowModal(false)} style={{
-                                    flex: 1, padding: '11px', borderRadius: '10px', border: '1px solid #e2e8f0',
-                                    background: '#fff', color: '#475569', fontWeight: 700, fontSize: '13px', cursor: 'pointer',
-                                }}>Cancelar</button>
-                                <button type="submit" disabled={saving} style={{
-                                    flex: 1.5, padding: '11px', borderRadius: '10px', border: 'none',
-                                    background: '#0f172a', color: '#fff', fontWeight: 700, fontSize: '13px',
-                                    cursor: saving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                }}>
-                                    {saving ? <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> : <Plus size={16} />}
-                                    {saving ? 'Criando...' : 'Criar Bump'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
+            {/* Edit Modal */}
+            {editBump && modalForm(handleUpdate, true, editBump)}
 
             <style jsx>{`
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }

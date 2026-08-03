@@ -708,6 +708,21 @@ export async function deleteOrderBump(id: string) {
     revalidatePath('/admin/ordem')
 }
 
+export async function updateOrderBump(id: string, data: { name: string; price: number; description: string; imageUrl: string; productId: string | null }) {
+    await requireAdmin()
+    await prisma.orderBump.update({
+        where: { id },
+        data: {
+            name: data.name,
+            price: data.price,
+            description: data.description,
+            imageUrl: data.imageUrl,
+            productId: data.productId,
+        }
+    })
+    revalidatePath('/admin/ordem')
+}
+
 export async function toggleOrderBump(id: string, isActive: boolean) {
     await requireAdmin()
     await prisma.orderBump.update({

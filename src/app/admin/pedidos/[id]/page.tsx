@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import {
     ChevronLeft, Trash2, Package, Phone, Mail,
     MapPin, CreditCard, User, CheckCircle2, Clock, Truck, ReceiptText,
-    DollarSign, Hash, ArrowUpRight, FileText, Gift, Globe, TruckIcon
+    DollarSign, Hash, ArrowUpRight, FileText, Gift, Globe, TruckIcon, Zap
 } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -450,6 +450,51 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             </div>
                         )}
                     </SectionCard>
+
+                    {/* Order Bumps */}
+                    {orderBumps.length > 0 && (
+                        <SectionCard title="Order Bumps" icon={Zap} iconColor="#f59e0b">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {orderBumps.map((bump) => (
+                                    <div key={bump.id} style={{
+                                        display: 'flex', alignItems: 'center', gap: '12px',
+                                        background: '#f8fafc', borderRadius: '10px', padding: '10px 14px',
+                                        border: '1px solid #f1f5f9',
+                                    }}>
+                                        {bump.imageUrl ? (
+                                            <img src={bump.imageUrl} alt="" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+                                        ) : (
+                                            <div style={{
+                                                width: '40px', height: '40px', borderRadius: '8px',
+                                                background: '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                border: '1px solid #fde68a', flexShrink: 0,
+                                            }}>
+                                                <Zap size={18} color="#f59e0b" />
+                                            </div>
+                                        )}
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {bump.name}
+                                            </p>
+                                            <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
+                                                {bump.description}
+                                            </p>
+                                        </div>
+                                        <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', flexShrink: 0 }}>
+                                            R$ {fmt(bump.price)}
+                                        </span>
+                                    </div>
+                                ))}
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    paddingTop: '8px', marginTop: '4px', borderTop: '1px solid #f1f5f9',
+                                }}>
+                                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Total Bumps</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 800, color: '#f59e0b' }}>+ R$ {fmt(bumpsTotal)}</span>
+                                </div>
+                            </div>
+                        </SectionCard>
+                    )}
 
                     {/* UTM Data */}
                     {utmData.length > 0 && (
