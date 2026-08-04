@@ -115,6 +115,7 @@ export async function POST(req: NextRequest) {
             utmPlacement: orderData.utmPlacement || null,
             utmId: orderData.utmId || null,
             utmCreativeName: orderData.utmCreativeName || null,
+            productCost: product?.cost || 0,
             product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined,
         };
 

@@ -282,8 +282,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             </div>
                         )}
 
-                        {/* Resumo: Frete + Total */}
+                        {/* Resumo: Custo + Frete + Total */}
                         <div style={{ marginTop: '16px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
+                            {(order.productCost ?? 0) > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <DollarSign size={14} color="#94a3b8" />
+                                        Custo do Produto
+                                    </span>
+                                    <span style={{ fontSize: '14px', fontWeight: 700, color: '#dc2626' }}>
+                                        R$ {fmt(order.productCost ?? 0)}
+                                    </span>
+                                </div>
+                            )}
                             {order.shippingPrice > 0 && (
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                     <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -424,7 +435,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         </div>
 
                         {order.paymentStatus === 'pago' && order.netReceived && (
-                            <div style={{ marginTop: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
                                 <span style={{
                                     fontSize: '12px', color: '#059669', fontWeight: 700,
                                     background: '#ecfdf5', padding: '6px 12px', borderRadius: '8px',
@@ -432,6 +443,24 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 }}>
                                     Líquido: R$ {fmt(order.netReceived)}
                                 </span>
+                                {(order.productCost ?? 0) > 0 && (
+                                    <span style={{
+                                        fontSize: '12px', color: '#dc2626', fontWeight: 700,
+                                        background: '#fef2f2', padding: '6px 12px', borderRadius: '8px',
+                                        border: '1px solid #fecaca',
+                                    }}>
+                                        Custo: R$ {fmt(order.productCost ?? 0)}
+                                    </span>
+                                )}
+                                {(order.productCost ?? 0) > 0 && order.netReceived && (
+                                    <span style={{
+                                        fontSize: '12px', color: (order.netReceived - (order.productCost ?? 0)) >= 0 ? '#059669' : '#dc2626', fontWeight: 700,
+                                        background: (order.netReceived - (order.productCost ?? 0)) >= 0 ? '#ecfdf5' : '#fef2f2', padding: '6px 12px', borderRadius: '8px',
+                                        border: `1px solid ${(order.netReceived - (order.productCost ?? 0)) >= 0 ? '#a7f3d0' : '#fecaca'}`,
+                                    }}>
+                                        Lucro: R$ {fmt(order.netReceived - (order.productCost ?? 0))}
+                                    </span>
+                                )}
                             </div>
                         )}
 

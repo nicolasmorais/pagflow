@@ -55,6 +55,8 @@ export function createServer() {
           status: true,
           hasBump: true,
           createdAt: true,
+          productCost: true,
+          netReceived: true,
         },
       })
 
@@ -65,6 +67,9 @@ export function createServer() {
 
       const totalRevenue = paid.reduce((s, o) => s + o.totalPrice, 0)
       const avgTicket = paid.length > 0 ? totalRevenue / paid.length : 0
+      const totalCost = paid.reduce((s, o) => s + (o.productCost || 0), 0)
+      const totalNet = paid.reduce((s, o) => s + (o.netReceived || 0), 0)
+      const totalProfit = totalNet - totalCost
 
       const byMethod: Record<string, { count: number; revenue: number }> = {}
       for (const o of paid) {
@@ -87,6 +92,9 @@ export function createServer() {
             pendentes: pending.length,
             cancelados: cancelled.length,
             receita_total: +totalRevenue.toFixed(2),
+            custo_total: +totalCost.toFixed(2),
+            liquido_total: +totalNet.toFixed(2),
+            lucro_total: +totalProfit.toFixed(2),
             ticket_medio: +avgTicket.toFixed(2),
             taxa_bump: `${bumpRate}%`,
             por_metodo: byMethod,
@@ -125,10 +133,16 @@ export function createServer() {
       const [orders, total] = await Promise.all([
         prisma.order.findMany({
           where,
-          include: { product: { select: { name: true, price: true } } },
           orderBy: { createdAt: 'desc' },
           take: limit,
           skip: offset,
+          select: {
+            id: true, fullName: true, email: true, phone: true, cpf: true,
+            productId: true, totalPrice: true, productCost: true, netReceived: true,
+            status: true, paymentStatus: true, paymentMethod: true, installments: true,
+            trackingCode: true, utmSource: true, utmMedium: true, utmCampaign: true,
+            createdAt: true, product: { select: { name: true, price: true } },
+          },
         }),
         prisma.order.count({ where }),
       ])
@@ -145,6 +159,8 @@ export function createServer() {
               cliente: { nome: o.fullName, email: o.email, telefone: o.phone, cpf: o.cpf },
               produto: o.product?.name || 'N/A',
               valor: o.totalPrice,
+              custo_produto: o.productCost,
+              lucro: o.paymentStatus === 'pago' && o.netReceived ? +(o.netReceived - (o.productCost || 0)).toFixed(2) : null,
               status: o.status,
               pagamento: { status: o.paymentStatus, metodo: o.paymentMethod, parcelas: o.installments },
               rastreio: o.trackingCode || null,
@@ -210,6 +226,8 @@ export function createServer() {
             pedido: {
               status: order.status,
               valor_total: order.totalPrice,
+              custo_produto: order.productCost,
+              lucro: order.netReceived ? +(order.netReceived - (order.productCost || 0)).toFixed(2) : null,
               frete: order.shippingPrice,
               bump: order.hasBump,
               bumps_selecionados: order.selectedBumps,
@@ -531,12 +549,16 @@ export function createServer() {
           paymentStatus: true,
           paymentMethod: true,
           createdAt: true,
+          productCost: true,
+          netReceived: true,
         },
       })
 
       const paid = allOrders.filter(o => o.paymentStatus === 'pago')
       const totalRevenue = paid.reduce((s, o) => s + o.totalPrice, 0)
       const avgTicket = paid.length > 0 ? totalRevenue / paid.length : 0
+      const totalCost = paid.reduce((s, o) => s + (o.productCost || 0), 0)
+      const totalNet = paid.reduce((s, o) => s + (o.netReceived || 0), 0)
 
       // Per anterior (mesmo tamanho de período)
       let prevWhere: any = {}
@@ -582,6 +604,9 @@ export function createServer() {
             periodo: { de: from || 'inicio', ate: to || 'agora' },
             kpis: {
               receita_total: +totalRevenue.toFixed(2),
+              custo_total: +totalCost.toFixed(2),
+              liquido_total: +totalNet.toFixed(2),
+              lucro_total: +(totalNet - totalCost).toFixed(2),
               ticket_medio: +avgTicket.toFixed(2),
               total_pedidos: allOrders.length,
               pedidos_pagos: paid.length,

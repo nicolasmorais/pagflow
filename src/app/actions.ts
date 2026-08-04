@@ -155,6 +155,13 @@ export async function createOrder(formData: FormData) {
     }
 
     try {
+        // Buscar custo do produto se houver productId
+        let productCost = 0
+        if (productId) {
+            const prod = await prisma.product.findUnique({ where: { id: productId }, select: { cost: true } })
+            productCost = prod?.cost || 0
+        }
+
         await prisma.order.create({
             data: {
                 productId: productId || null,
@@ -170,6 +177,7 @@ export async function createOrder(formData: FormData) {
                 cidade,
                 estado,
                 referencia,
+                productCost,
                 status: 'pendente'
             },
         })
