@@ -31,7 +31,7 @@ export async function sendConfirmationEmail(orderId: string) {
         let subject = `Pedido Confirmado! #${order.id.slice(0, 8).toUpperCase()}`;
         let htmlContent = "";
 
-        const storeName = order.product?.storeName || 'PagFlow';
+        const storeName = order.product?.storeName || 'Elabela Store';
 
         const replacePlaceholders = (text: string) => {
             return text
@@ -91,14 +91,14 @@ export async function sendConfirmationEmail(orderId: string) {
                         ` : ''}
                     </div>
                     <div style="background: #f1f5f9; padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;">
-                        <p>© ${new Date().getFullYear()} PagFlow${storeName && storeName !== 'PagFlow' ? ` ${storeName}` : ''}.</p>
+                        <p>© ${new Date().getFullYear()} PagFlow${storeName && storeName !== 'Elabela Store' ? ` ${storeName}` : ''}.</p>
                     </div>
                 </div>
             `;
         }
 
         const { data, error } = await resend.emails.send({
-            from: 'PagFlow <noreply@elabela.store>',
+            from: `${storeName} <noreply@elabela.store>`,
             to: [order.email],
             subject: subject,
             html: htmlContent
@@ -258,7 +258,7 @@ export async function sendTrackingEmail(orderId: string) {
                 .replace(/{{trackingCode}}/g, order.trackingCode || '')
                 .replace(/{{trackingUrl}}/g, trackingUrl)
                 .replace(/{{trackingLink}}/g, trackingUrl)
-                .replace(/{{storeName}}/g, order.product?.storeName || 'PagFlow')
+                .replace(/{{storeName}}/g, order.product?.storeName || 'Elabela Store')
                 .replace(/{{estimatedDate}}/g, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'))
                 .replace(/{{fullAddress}}/g, `${order.rua || ''}, ${order.numero || ''}${order.complemento ? ' - ' + order.complemento : ''}, ${order.bairro || ''}, ${order.cidade || ''}/${order.estado || ''}`)
                 .replace(/{{rua}}/g, order.rua || '')
@@ -292,7 +292,7 @@ export async function sendTrackingEmail(orderId: string) {
                         <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;word-break:break-all;">${trackingUrl}</p>
                     </div>
                     <div style="background:#f8fafc;padding:20px;text-align:center;border-top:1px solid #f1f5f9;">
-                        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow${order.product?.storeName && order.product.storeName !== 'PagFlow' ? ` ${order.product.storeName}` : ''}.</p>
+                        <p style="margin:0;font-size:12px;color:#94a3b8;">© ${new Date().getFullYear()} PagFlow${order.product?.storeName && order.product.storeName !== 'Elabela Store' ? ` ${order.product.storeName}` : ''}.</p>
                     </div>
                 </div>
             `;
@@ -423,7 +423,7 @@ export async function createProduct(formData: FormData): Promise<void> {
             cost: isNaN(cost) ? 0 : cost,
             isDigital,
             accessLink: isDigital ? (accessLink || null) : null,
-            storeName: storeName || 'PagFlow',
+            storeName: storeName || 'Elabela Store',
             storeLogo: storeLogo || null
         }
 
@@ -470,7 +470,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
             cost: isNaN(cost) ? 0 : Number(cost),
             isDigital,
             accessLink: isDigital ? (accessLink || null) : null,
-            storeName: storeName || 'PagFlow',
+            storeName: storeName || 'Elabela Store',
             storeLogo: storeLogo || null
         }
 
@@ -807,7 +807,7 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
 
         if (!order || !order.email) return { success: false, error: 'Pedido ou e-mail não encontrado' };
 
-        const storeName = order.product?.storeName || 'PagFlow';
+        const storeName = order.product?.storeName || 'Elabela Store';
         const firstName = (order.fullName || '').split(' ')[0];
         const priceFormatted = `R$ ${(order.totalPrice || 0).toFixed(2).replace('.', ',')}`;
         const orderIdShort = order.id.slice(0, 8).toUpperCase();
@@ -883,7 +883,7 @@ export async function sendPixEmail(orderId: string, qrCode: string, qrCodeBase64
         }
 
         const { error } = await resend.emails.send({
-            from: 'PagFlow <noreply@elabela.store>',
+            from: `${storeName} <noreply@elabela.store>`,
             to: [order.email],
             subject,
             html: htmlContent
@@ -924,7 +924,7 @@ export async function sendPixFollowupEmail(orderId: string, qrCode: string, qrCo
 
         if (!order || !order.email) return { success: false, error: 'Pedido ou e-mail não encontrado' };
 
-        const storeName = order.product?.storeName || 'PagFlow';
+        const storeName = order.product?.storeName || 'Elabela Store';
         const firstName = (order.fullName || '').split(' ')[0];
         const priceFormatted = `R$ ${(order.totalPrice || 0).toFixed(2).replace('.', ',')}`;
         const orderIdShort = order.id.slice(0, 8).toUpperCase();
@@ -1033,7 +1033,7 @@ export async function sendPixFollowupEmail(orderId: string, qrCode: string, qrCo
         }
 
         const { error } = await resend.emails.send({
-            from: 'PagFlow <noreply@elabela.store>',
+            from: `${storeName} <noreply@elabela.store>`,
             to: [order.email],
             subject,
             html: htmlContent
@@ -1282,6 +1282,7 @@ export async function forceOrderR2(orderId: string) {
 export async function sendTestEmail(templateId: string, toEmail: string) {
     await requireAdmin()
     const { resend } = await import('@/lib/resend')
+    const storeName = 'Elabela Store'
 
     const template = await prisma.emailTemplate.findUnique({ where: { id: templateId } })
     if (!template) return { success: false, error: 'Template não encontrado' }
@@ -1318,7 +1319,7 @@ export async function sendTestEmail(templateId: string, toEmail: string) {
 
     try {
         const { error } = await resend.emails.send({
-            from: 'PagFlow <noreply@elabela.store>',
+            from: `${storeName} <noreply@elabela.store>`,
             to: [toEmail],
             subject: `[TESTE] ${subject}`,
             html,
