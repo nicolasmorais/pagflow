@@ -306,6 +306,77 @@ export function createServer() {
   )
 
   // ═══════════════════════════════════════════════════════════════════════════════
+  //  TOOL: update_product_cost
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  server.tool(
+    'update_product_cost',
+    'Atualiza o custo de um produto. Também faz backfill do productCost em pedidos existentes desse produto.',
+    {
+      productId: z.string().describe('ID do produto'),
+      cost: z.number().min(0).describe('Novo custo do produto (valor >= 0)'),
+    },
+    async ({ productId, cost }) => {
+      const product = await prisma.product.findUnique({ where: { id: productId } })
+      if (!product) {
+        return { content: [{ type: 'text' as const, text: JSON.stringify({ erro: 'Produto não encontrado' }) }] }
+      }
+
+      const updated = await prisma.product.update({
+        where: { id: productId },
+        data: { cost },
+      })
+
+      // Backfill: atualizar productCost em pedidos existentes deste produto
+      const backfill = await prisma.order.updateMany({
+        where: { productId },
+        data: { productCost: cost },
+      })
+
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            sucesso: true,
+            produto: updated.name,
+            custo_anterior: product.cost,
+            custo_novo: updated.cost,
+            pedidos_atualizados: backfill.count,
+          }, null, 2),
+        }],
+      }
+    }
+  )
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  //  TOOL: backfill_all_product_costs
+  // ═══════════════════════════════════════════════════════════════════════════════
+
+  server.tool(
+    'backfill_all_product_costs',
+    'Faz backfill do productCost em TODOS os pedidos existentes, copiando o custo atual do produto. Útil após cadastrar custos.',
+    {},
+    async () => {
+      const result = await prisma.$executeRaw`
+        UPDATE "Order" o
+        SET "productCost" = p.cost
+        FROM "Product" p
+        WHERE o."productId" = p.id
+          AND p.cost > 0
+      `
+      return {
+        content: [{
+          type: 'text' as const,
+          text: JSON.stringify({
+            sucesso: true,
+            pedidos_atualizados: result,
+          }, null, 2),
+        }],
+      }
+    }
+  )
+
+  // ═══════════════════════════════════════════════════════════════════════════════
   //  TOOL: get_top_products
   // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -335,9 +406,10 @@ export function createServer() {
       }
 
       const products = await prisma.product.findMany({
-        select: { id: true, name: true, price: true },
+        select: { id: true, name: true, price: true, cost: true },
       })
       const nameMap = Object.fromEntries(products.map(p => [p.id, p.name]))
+      const costMap = Object.fromEntries(products.map(p => [p.id, p.cost]))
 
       const ranking = Object.entries(grouped)
         .map(([pid, data]) => ({
@@ -345,6 +417,9 @@ export function createServer() {
           produto_id: pid,
           vendas: data.count,
           receita: +data.revenue.toFixed(2),
+          custo_unitario: costMap[pid] || 0,
+          custo_total: +((costMap[pid] || 0) * data.count).toFixed(2),
+          lucro_estimado: +((data.revenue - (costMap[pid] || 0) * data.count)).toFixed(2),
           ticket_medio: +(data.revenue / data.count).toFixed(2),
         }))
         .sort((a, b) => b.receita - a.receita)
