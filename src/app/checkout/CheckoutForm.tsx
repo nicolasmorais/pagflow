@@ -514,10 +514,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     setPixExpired(false);
                     setDone(true);
                 } else if (paymentMethod === 'pix') {
-                    // PIX sem QR code — mostrar erro em vez de tela morta
-                    alert("Não foi possível gerar o QR Code PIX. Por favor, tente novamente.");
-                    setLoading(false);
-                    return;
+                    // PIX sem QR code — vai pra tela de processando com retry
+                    setDone(true);
                 } else {
                     setDone(true);
                 }
@@ -908,6 +906,76 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             }}
                                         >
                                             {pixLoading ? 'Gerando...' : 'Gerar novo PIX'}
+                                        </button>
+                                    </div>
+                                ) : !pixData ? (
+                                    /* PIX PROCESSANDO — sem QR code ainda */
+                                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+                                        <div style={{
+                                            width: '64px', height: '64px', borderRadius: '50%',
+                                            background: '#E8F5E9', margin: '0 auto 16px',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1D9A52" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                                            </svg>
+                                        </div>
+                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#111', marginBottom: '8px' }}>
+                                            Processando pagamento...
+                                        </div>
+                                        <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                                            Estamos gerando seu PIX. Se não aparecer em instantes, clique abaixo para tentar novamente.
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                setPixLoading(true);
+                                                try {
+                                                    const res = await fetch('/api/process-payment', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            method: 'pix',
+                                                            orderId: currentOrderId,
+                                                            orderData: {
+                                                                ...dados,
+                                                                ...endereco,
+                                                                price: finalPrice,
+                                                                shippingPrice: shipping?.price || 0,
+                                                                productId: product?.id || 'default',
+                                                                selectedBumpIds: selectedBumps,
+                                                            },
+                                                        })
+                                                    });
+                                                    const result = await res.json();
+                                                    if (result.success && result.qrCodeBase64) {
+                                                        setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
+                                                        setTimeLeft(10 * 60);
+                                                        setCurrentOrderId(result.orderId || currentOrderId);
+                                                    } else {
+                                                        alert(result.error || "Erro ao gerar PIX. Tente novamente.");
+                                                    }
+                                                } catch {
+                                                    alert("Erro de conexão. Tente novamente.");
+                                                } finally {
+                                                    setPixLoading(false);
+                                                }
+                                            }}
+                                            disabled={pixLoading}
+                                            style={{
+                                                background: '#1D9A52',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                padding: '16px 32px',
+                                                fontSize: '16px',
+                                                fontWeight: 700,
+                                                cursor: pixLoading ? 'wait' : 'pointer',
+                                                opacity: pixLoading ? 0.7 : 1,
+                                                width: '100%',
+                                                maxWidth: '320px',
+                                            }}
+                                        >
+                                            {pixLoading ? 'Gerando...' : 'Tentar gerar PIX novamente'}
                                         </button>
                                     </div>
                                 ) : (

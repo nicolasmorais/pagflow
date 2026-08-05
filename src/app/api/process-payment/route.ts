@@ -384,13 +384,22 @@ export async function POST(req: NextRequest) {
 
         let qrCode: string | null = null;
         let qrCodeBase64: string | null = null;
+        let pixStatusForResponse = finalStatus;
 
         if (method === 'pix' && mpResult.point_of_interaction?.transaction_data) {
             qrCode = mpResult.point_of_interaction.transaction_data.qr_code || null;
             qrCodeBase64 = mpResult.point_of_interaction.transaction_data.qr_code_base64 || null;
 
-            // Enviar e-mail com QR Code PIX
-            if (qrCode && qrCodeBase64 && finalStatus === 'aguardando') {
+            // PIX sem QR code → marcar como "processando" (problema na geração)
+            if (!qrCode || !qrCodeBase64) {
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: { paymentStatus: 'processando' }
+                });
+                pixStatusForResponse = 'processando';
+                console.warn(`[PIX] Order ${order.id}: PIX created but QR code missing. Marked as processando.`);
+            } else if (finalStatus === 'aguardando') {
+                // Enviar e-mail com QR Code PIX
                 try {
                     await sendPixEmail(order.id, qrCode, qrCodeBase64);
                 } catch (pixEmailErr) {
@@ -402,7 +411,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             orderId: order.id,
-            paymentStatus: finalStatus,
+            paymentStatus: pixStatusForResponse,
             qrCode,
             qrCodeBase64,
             statusDetail: mpResult.status_detail,
