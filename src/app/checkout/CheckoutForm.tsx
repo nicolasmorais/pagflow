@@ -9,6 +9,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [loading, setLoading] = useState(false);
     const [timeLeft, setTimeLeft] = useState(14 * 60 + 52);
     const [done, setDone] = useState(false);
+    const [pixExpired, setPixExpired] = useState(false);
+    const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+    const [pixLoading, setPixLoading] = useState(false);
     const [declined, setDeclined] = useState(false);
     const [declinedOrderId, setDeclinedOrderId] = useState('');
     const [isMpLoaded, setIsMpLoaded] = useState(false);
@@ -191,7 +194,32 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         return () => clearInterval(timer);
     }, []);
 
-    // Auto-save progress and tracking removed per user request (Deep Cleanup)
+    // ── PIX: Polling de status + Expiração do timer ──
+    useEffect(() => {
+        if (!done || paymentMethod !== 'pix' || !currentOrderId || pixExpired) return;
+
+        const pollInterval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/order-status/${currentOrderId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.paymentStatus === 'pago') {
+                        clearInterval(pollInterval);
+                        window.location.reload(); // Recarrega para mostrar confirmação
+                    }
+                }
+            } catch { }
+        }, 5000); // Poll a cada 5 segundos
+
+        return () => clearInterval(pollInterval);
+    }, [done, paymentMethod, currentOrderId, pixExpired]);
+
+    // ── PIX: Timer expirou → marcar como expirado ──
+    useEffect(() => {
+        if (done && paymentMethod === 'pix' && timeLeft <= 0 && !pixExpired) {
+            setPixExpired(true);
+        }
+    }, [done, paymentMethod, timeLeft, pixExpired]);
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -415,7 +443,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 method: currentMethod,
                 cardData: tokenData,
                 brickData: brickData, // Envia para o backend processar via BrickData
-                orderId: null,
+                orderId: currentOrderId || null,
                 orderData: {
                     ...dados,
                     ...endereco,
@@ -479,11 +507,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     setLoading(false);
                     return;
                 }
+                setCurrentOrderId(result.orderId || null);
                 if (result.qrCodeBase64) {
                     setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
                     setTimeLeft(10 * 60);
+                    setPixExpired(false);
+                    setDone(true);
+                } else if (paymentMethod === 'pix') {
+                    // PIX sem QR code — mostrar erro em vez de tela morta
+                    alert("Não foi possível gerar o QR Code PIX. Por favor, tente novamente.");
+                    setLoading(false);
+                    return;
+                } else {
+                    setDone(true);
                 }
-                setDone(true);
             } else {
                 alert("Erro: " + (result.error || "Tente novamente"));
                 throw new Error(result.error || "Erro de validação do pagamento");
@@ -797,6 +834,84 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     {paymentMethod === 'pix' ? (
                         <div className="pix-page-wrapper">
                             <div className="success-page-content">
+                                {/* PIX EXPIRADO */}
+                                {pixExpired ? (
+                                    <div style={{
+                                        textAlign: 'center',
+                                        padding: '40px 20px',
+                                    }}>
+                                        <div style={{
+                                            width: '64px', height: '64px', borderRadius: '50%',
+                                            background: '#FDECEA', margin: '0 auto 16px',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        }}>
+                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#B83030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                            </svg>
+                                        </div>
+                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#111', marginBottom: '8px' }}>
+                                            PIX expirado
+                                        </div>
+                                        <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                                            O tempo para pagamento acabou. Gere um novo PIX para continuar.
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                setPixLoading(true);
+                                                setPixExpired(false);
+                                                try {
+                                                    const res = await fetch('/api/process-payment', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            method: 'pix',
+                                                            orderId: currentOrderId,
+                                                            orderData: {
+                                                                ...dados,
+                                                                ...endereco,
+                                                                price: finalPrice,
+                                                                shippingPrice: shipping?.price || 0,
+                                                                productId: product?.id || 'default',
+                                                                selectedBumpIds: selectedBumps,
+                                                            },
+                                                        })
+                                                    });
+                                                    const result = await res.json();
+                                                    if (result.success && result.qrCodeBase64) {
+                                                        setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
+                                                        setTimeLeft(10 * 60);
+                                                        setCurrentOrderId(result.orderId || currentOrderId);
+                                                    } else {
+                                                        alert(result.error || "Erro ao gerar novo PIX. Tente novamente.");
+                                                        setPixExpired(true);
+                                                    }
+                                                } catch {
+                                                    alert("Erro de conexão. Tente novamente.");
+                                                    setPixExpired(true);
+                                                } finally {
+                                                    setPixLoading(false);
+                                                }
+                                            }}
+                                            disabled={pixLoading}
+                                            style={{
+                                                background: '#1D9A52',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '12px',
+                                                padding: '16px 32px',
+                                                fontSize: '16px',
+                                                fontWeight: 700,
+                                                cursor: pixLoading ? 'wait' : 'pointer',
+                                                opacity: pixLoading ? 0.7 : 1,
+                                                width: '100%',
+                                                maxWidth: '320px',
+                                            }}
+                                        >
+                                            {pixLoading ? 'Gerando...' : 'Gerar novo PIX'}
+                                        </button>
+                                    </div>
+                                ) : (
+                                <>
                                 {/* URGENCY: ultimas unidades */}
                                 <div style={{
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
@@ -987,6 +1102,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         Precisa de ajuda? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`} style={{ color: '#111', fontWeight: 700, textDecoration: 'none' }}>Entre em contato por e-mail</a>
                                     </p>
                                 </div>
+                                </>
+                                )}
                             </div>
 
                             {/* TOAST */}

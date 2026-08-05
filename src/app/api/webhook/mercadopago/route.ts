@@ -38,7 +38,10 @@ function validateMpSignature(rawBody: string, req: NextRequest): boolean {
         return false;
     }
 
-    const manifest = `id:${req.headers.get("x-id") ?? ""};request-id:${xRequestId};ts:${ts};`;
+    // MP sends the payment ID in the URL query params (data.id), not in x-id header
+    const url = new URL(req.url);
+    const idFromUrl = url.searchParams.get("data.id") || url.searchParams.get("id") || "";
+    const manifest = `id:${idFromUrl};request-id:${xRequestId};ts:${ts};`;
     const expectedHash = crypto
         .createHmac("sha256", secret)
         .update(manifest)
