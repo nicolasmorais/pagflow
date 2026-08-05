@@ -40,11 +40,14 @@ app.get('/api/sales-summary', async (req, res) => {
             where.productId = productId;
         const orders = await prisma.order.findMany({
             where,
-            select: { totalPrice: true, paymentStatus: true, paymentMethod: true, hasBump: true },
+            select: { totalPrice: true, paymentStatus: true, paymentMethod: true, hasBump: true, productCost: true, netReceived: true },
         });
         const paid = orders.filter(o => o.paymentStatus === 'pago');
         const totalRevenue = paid.reduce((s, o) => s + o.totalPrice, 0);
         const avgTicket = paid.length > 0 ? totalRevenue / paid.length : 0;
+        const totalCost = paid.reduce((s, o) => s + (o.productCost || 0), 0);
+        const totalNet = paid.reduce((s, o) => s + (o.netReceived || 0), 0);
+        const totalProfit = totalNet - totalCost;
         const byMethod = {};
         for (const o of paid) {
             const m = o.paymentMethod || 'desconhecido';
@@ -60,6 +63,9 @@ app.get('/api/sales-summary', async (req, res) => {
             pendentes: orders.filter(o => o.paymentStatus === 'pendente').length,
             cancelados: orders.filter(o => o.paymentStatus === 'cancelado').length,
             receita_total: +totalRevenue.toFixed(2),
+            custo_total: +totalCost.toFixed(2),
+            liquido_total: +totalNet.toFixed(2),
+            lucro_total: +totalProfit.toFixed(2),
             ticket_medio: +avgTicket.toFixed(2),
             taxa_bump: `${paid.length > 0 ? (paid.filter(o => o.hasBump).length / paid.length * 100).toFixed(1) : 0}%`,
             por_metodo: byMethod,
@@ -102,6 +108,8 @@ app.get('/api/orders', async (req, res) => {
                 cliente: { nome: o.fullName, email: o.email, telefone: o.phone, cpf: o.cpf },
                 produto: o.product?.name || 'N/A',
                 valor: o.totalPrice,
+                custo_produto: o.productCost,
+                lucro: o.paymentStatus === 'pago' && o.netReceived ? +(o.netReceived - (o.productCost || 0)).toFixed(2) : null,
                 status: o.status,
                 pagamento: { status: o.paymentStatus, metodo: o.paymentMethod, parcelas: o.installments },
                 rastreio: o.trackingCode || null,
@@ -128,7 +136,7 @@ app.get('/api/orders/:id', async (req, res) => {
             cliente: { nome: order.fullName, email: order.email, telefone: order.phone, cpf: order.cpf },
             endereco: { cep: order.cep, rua: order.rua, numero: order.numero, complemento: order.complemento, bairro: order.bairro, cidade: order.cidade, estado: order.estado },
             produto: order.product ? { id: order.product.id, nome: order.product.name, preco: order.product.price, loja: order.product.storeName } : null,
-            pedido: { status: order.status, valor_total: order.totalPrice, frete: order.shippingPrice, bump: order.hasBump },
+            pedido: { status: order.status, valor_total: order.totalPrice, custo_produto: order.productCost, lucro: order.netReceived ? +(order.netReceived - (order.productCost || 0)).toFixed(2) : null, frete: order.shippingPrice, bump: order.hasBump },
             pagamento: { status: order.paymentStatus, metodo: order.paymentMethod, parcelas: order.installments, bandeira: order.cardBrand, liquido: order.netReceived, mp_payment_id: order.mpPaymentId },
             rastreio: { codigo: order.trackingCode, url: order.trackingUrl },
             utm: { source: order.utmSource, medium: order.utmMedium, campaign: order.utmCampaign },
@@ -206,12 +214,16 @@ app.get('/api/top-products', async (req, res) => {
             grouped[pid].count++;
             grouped[pid].revenue += o.totalPrice;
         }
-        const products = await prisma.product.findMany({ select: { id: true, name: true } });
+        const products = await prisma.product.findMany({ select: { id: true, name: true, cost: true } });
         const nameMap = Object.fromEntries(products.map(p => [p.id, p.name]));
+        const costMap = Object.fromEntries(products.map(p => [p.id, p.cost]));
         const ranking = Object.entries(grouped)
             .map(([pid, data]) => ({
             produto: nameMap[pid] || pid, produto_id: pid,
             vendas: data.count, receita: +data.revenue.toFixed(2),
+            custo_unitario: costMap[pid] || 0,
+            custo_total: +((costMap[pid] || 0) * data.count).toFixed(2),
+            lucro_estimado: +((data.revenue - (costMap[pid] || 0) * data.count)).toFixed(2),
             ticket_medio: +(data.revenue / data.count).toFixed(2),
         }))
             .sort((a, b) => b.receita - a.receita)
@@ -326,10 +338,12 @@ app.get('/api/dashboard-kpis', async (req, res) => {
         const { from, to } = req.query;
         const where = dateFilter(from, to);
         const allOrders = await prisma.order.findMany({
-            where, select: { totalPrice: true, paymentStatus: true, paymentMethod: true, createdAt: true },
+            where, select: { totalPrice: true, paymentStatus: true, paymentMethod: true, createdAt: true, productCost: true, netReceived: true },
         });
         const paid = allOrders.filter(o => o.paymentStatus === 'pago');
         const totalRevenue = paid.reduce((s, o) => s + o.totalPrice, 0);
+        const totalCost = paid.reduce((s, o) => s + (o.productCost || 0), 0);
+        const totalNet = paid.reduce((s, o) => s + (o.netReceived || 0), 0);
         let prevRevenue = 0;
         if (from && to) {
             const fromD = new Date(from), toD = new Date(to + 'T23:59:59');
@@ -351,6 +365,9 @@ app.get('/api/dashboard-kpis', async (req, res) => {
             periodo: { de: from || 'inicio', ate: to || 'agora' },
             kpis: {
                 receita_total: +totalRevenue.toFixed(2),
+                custo_total: +totalCost.toFixed(2),
+                liquido_total: +totalNet.toFixed(2),
+                lucro_total: +(totalNet - totalCost).toFixed(2),
                 ticket_medio: +(paid.length > 0 ? totalRevenue / paid.length : 0).toFixed(2),
                 total_pedidos: allOrders.length,
                 pedidos_pagos: paid.length,
