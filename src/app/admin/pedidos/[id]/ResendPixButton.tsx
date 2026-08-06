@@ -35,11 +35,11 @@ export default function ResendPixButton({ orderId }: { orderId: string }) {
         return (
             <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '9px 18px', borderRadius: '10px',
-                background: '#ecfdf5', border: '1px solid #d1fae5',
-                color: '#059669', fontSize: '12px', fontWeight: 600,
+                padding: '9px 16px', borderRadius: '9px',
+                background: '#E3F4EA', border: '1px solid #C3E8D4',
+                color: '#1E7A52', fontSize: '12px', fontWeight: 600,
             }}>
-                <CheckCircle size={14} strokeWidth={1.8} />
+                <CheckCircle size={14} strokeWidth={2} />
                 PIX reenviado!
             </span>
         )
@@ -52,23 +52,20 @@ export default function ResendPixButton({ orderId }: { orderId: string }) {
                 onClick={handleResend}
                 disabled={loading}
                 style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    padding: '9px 18px', borderRadius: '10px',
-                    background: '#059669', border: 'none',
-                    color: '#fff', fontSize: '12px', fontWeight: 600,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+                    background: '#14151F', color: '#fff', border: 'none', borderRadius: '9px',
+                    padding: '11px 18px', fontSize: '13.5px', fontWeight: 600,
                     cursor: loading ? 'not-allowed' : 'pointer',
                     opacity: loading ? 0.7 : 1,
-                    transition: 'all 0.2s ease',
-                    boxShadow: loading ? 'none' : '0 1px 3px rgba(0,0,0,0.04), 0 2px 8px rgba(5,150,105,0.15)',
+                    transition: 'all 0.15s',
+                    fontFamily: 'inherit',
                 }}
             >
-                {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} strokeWidth={1.8} /> : <Mail size={14} strokeWidth={1.8} />}
+                {loading ? <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} strokeWidth={2} /> : <Mail size={14} strokeWidth={2} />}
                 {loading ? 'Enviando...' : 'Reenviar PIX'}
             </button>
             {result === 'error' && (
-                <span style={{ fontSize: '12px', color: '#dc2626', fontWeight: 500 }}>
-                    {errorMsg}
-                </span>
+                <span style={{ fontSize: '12px', color: '#B23B32', fontWeight: 500 }}>{errorMsg}</span>
             )}
         </div>
     )

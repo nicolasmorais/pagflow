@@ -13,13 +13,13 @@ import InlineCopyBtn from './InlineCopyBtn'
 import ResendPixButton from './ResendPixButton'
 
 const STATUS_CONFIG: Record<string, { bg: string; color: string; dot: string; border: string; label: string }> = {
-    pago: { bg: '#ecfdf5', color: '#059669', dot: '#10b981', border: '#a7f3d0', label: 'Pago' },
-    recusado: { bg: '#fef2f2', color: '#dc2626', dot: '#ef4444', border: '#fecaca', label: 'Recusado' },
-    reembolsado: { bg: '#eff6ff', color: '#2563eb', dot: '#3b82f6', border: '#bfdbfe', label: 'Reembolsado' },
-    aguardando: { bg: '#fffbeb', color: '#d97706', dot: '#f59e0b', border: '#fde68a', label: 'Aguardando' },
-    processando: { bg: '#fffbeb', color: '#d97706', dot: '#f59e0b', border: '#fde68a', label: 'Aguardando' },
-    atendido: { bg: '#ecfdf5', color: '#059669', dot: '#10b981', border: '#a7f3d0', label: 'Atendido' },
-    cancelado: { bg: '#fef2f2', color: '#dc2626', dot: '#ef4444', border: '#fecaca', label: 'Cancelado' },
+    pago: { bg: '#E3F4EA', color: '#1E7A52', dot: '#1E7A52', border: '#C3E8D4', label: 'Pago' },
+    recusado: { bg: '#FBEAE8', color: '#B23B32', dot: '#B23B32', border: '#F5CDC9', label: 'Recusado' },
+    reembolsado: { bg: '#E7F1F8', color: '#2C5C86', dot: '#2C5C86', border: '#C5DDEF', label: 'Reembolsado' },
+    aguardando: { bg: '#FEF3C7', color: '#92400E', dot: '#92400E', border: '#FDE68A', label: 'Aguardando' },
+    processando: { bg: '#FEF3C7', color: '#92400E', dot: '#92400E', border: '#FDE68A', label: 'Aguardando' },
+    atendido: { bg: '#E3F4EA', color: '#1E7A52', dot: '#1E7A52', border: '#C3E8D4', label: 'Atendido' },
+    cancelado: { bg: '#FBEAE8', color: '#B23B32', dot: '#B23B32', border: '#F5CDC9', label: 'Cancelado' },
 }
 const getStatus = (s: string) => STATUS_CONFIG[s?.toLowerCase()] ?? STATUS_CONFIG.processando
 
@@ -53,361 +53,268 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     const ps = order.paymentStatus || 'processando'
     const sc = getStatus(ps)
     const hasSent = !!(order.trackingCode || order.trackingUrl)
-    const step2Color = sc.dot
-    const step3Done = hasSent
-
     const profit = order.netReceived && (order.productCost ?? 0) > 0
-        ? order.netReceived - (order.productCost ?? 0)
-        : null
+        ? order.netReceived - (order.productCost ?? 0) : null
 
     return (
         <div style={{ paddingBottom: '80px' }}>
 
-            {/* ── Back link ── */}
+            {/* ── Breadcrumb ── */}
             <Link href="/admin/pedidos" style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                color: '#8b95a5', fontSize: '13px', fontWeight: 600, textDecoration: 'none',
-                padding: '8px 14px', borderRadius: '10px', marginBottom: '24px',
-                transition: 'all 0.2s ease',
+                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                fontSize: '13px', fontWeight: 600, color: '#6E7180', textDecoration: 'none',
+                margin: '22px 0 20px', transition: 'color 0.15s',
             }}>
-                <ChevronLeft size={15} strokeWidth={2} />
+                <ChevronLeft size={13} strokeWidth={2.3} />
                 Voltar para pedidos
             </Link>
 
-            {/* ── Header Card ── */}
-            <div style={{
-                background: 'linear-gradient(145deg, #0f172a 0%, #1e293b 100%)',
-                borderRadius: '24px', padding: '28px 32px',
-                marginBottom: '24px', position: 'relative', overflow: 'hidden',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03), 0 8px 32px rgba(15, 23, 42, 0.18)',
-            }}>
-                <div style={{
-                    position: 'absolute', top: '-60px', right: '-40px',
-                    width: '200px', height: '200px',
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
-                    borderRadius: '50%', pointerEvents: 'none',
-                }} />
-                <div style={{
-                    position: 'absolute', bottom: '-40px', left: '25%',
-                    width: '160px', height: '160px',
-                    background: 'radial-gradient(circle, rgba(139,92,246,0.06) 0%, transparent 70%)',
-                    borderRadius: '50%', pointerEvents: 'none',
-                }} />
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', position: 'relative', zIndex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <div style={{
-                            width: '52px', height: '52px', borderRadius: '16px',
-                            background: 'linear-gradient(135deg, rgba(99,102,241,0.18) 0%, rgba(139,92,246,0.12) 100%)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid rgba(99,102,241,0.08)',
-                        }}>
-                            <ReceiptText size={22} color="#a5b4fc" strokeWidth={1.8} />
-                        </div>
-                        <div>
-                            <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.04em' }}>
-                                Pedido{' '}
-                                <span style={{
-                                    fontFamily: "'Space Grotesk', monospace", fontWeight: 600, color: '#a5b4fc', fontSize: '0.8em',
-                                    background: 'rgba(99,102,241,0.12)', padding: '4px 12px', borderRadius: '8px',
-                                    border: '1px solid rgba(99,102,241,0.06)',
-                                }}>
-                                    #{order.id.slice(0, 8).toUpperCase()}
-                                </span>
-                            </h1>
-                            <p style={{ margin: '6px 0 0', fontSize: '13px', color: 'rgba(255,255,255,0.35)', fontWeight: 500 }}>
-                                {new Date(order.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                                {' · '}
-                                {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                        </div>
+            {/* ── Page Header ── */}
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', paddingBottom: '22px' }}>
+                <div>
+                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: '#9CA0AE', marginBottom: '6px', textTransform: 'uppercase' }}>
+                        Pedido
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        <h1 style={{ fontSize: 'clamp(26px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.01em', margin: 0, fontFamily: "'IBM Plex Mono', monospace", fontVariantNumeric: 'tabular-nums' }}>
+                            #{order.id.slice(0, 8).toUpperCase()}
+                        </h1>
                         <span style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '7px',
-                            background: sc.bg, color: sc.color, border: `1.5px solid ${sc.border}`,
-                            padding: '8px 16px', borderRadius: '10px',
-                            fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '999px',
+                            background: sc.bg, color: sc.color,
                         }}>
-                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: sc.dot, boxShadow: `0 0 8px ${sc.dot}50` }} />
-                            {sc.label}
-                        </span>
-                        <form action={async () => {
-                            'use server'
-                            await deleteOrder(id)
-                            redirect('/admin/pedidos')
-                        }}>
-                            <button type="submit" style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '8px 16px', borderRadius: '10px',
-                                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
-                                color: '#fca5a5', fontSize: '12px', fontWeight: 600,
-                                cursor: 'pointer', transition: 'all 0.2s ease',
-                            }}>
-                                <Trash2 size={13} strokeWidth={2} />
-                                Excluir
-                            </button>
-                        </form>
-                    </div>
-                </div>
-
-                {/* ── Status Stepper inside header ── */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0', marginTop: '28px', position: 'relative', zIndex: 1 }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{
-                            width: '40px', height: '40px', borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                        }}>
-                            <CheckCircle2 size={18} color="#fff" strokeWidth={2} />
-                        </div>
-                        <span style={{ fontSize: '10px', fontWeight: 600, color: 'rgba(255,255,255,0.5)', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Criado</span>
-                    </div>
-
-                    <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.15)', borderRadius: '1px', margin: '0 8px' }} />
-
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{
-                            width: '40px', height: '40px', borderRadius: '50%',
-                            background: order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'
-                                ? 'rgba(16,185,129,0.25)' : order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'
-                                    ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.1)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: `1px solid ${order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'
-                                ? 'rgba(16,185,129,0.3)' : order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'
-                                    ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                        }}>
-                            {order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'
-                                ? <span style={{ fontSize: '16px', color: '#fca5a5', fontWeight: 900 }}>✕</span>
-                                : order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'
-                                    ? <CheckCircle2 size={18} color="#6ee7b7" strokeWidth={2} />
-                                    : <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', fontWeight: 900 }}>···</span>
-                            }
-                        </div>
-                        <span style={{
-                            fontSize: '10px', fontWeight: 600, marginTop: '8px', textTransform: 'uppercase', letterSpacing: '0.06em',
-                            color: order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'
-                                ? '#6ee7b7' : order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'
-                                    ? '#fca5a5' : 'rgba(255,255,255,0.5)',
-                        }}>
+                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'currentColor' }} />
                             {sc.label}
                         </span>
                     </div>
-
-                    <div style={{ flex: 1, height: '2px', background: step3Done ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.1)', borderRadius: '1px', margin: '0 8px' }} />
-
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <div style={{
-                            width: '40px', height: '40px', borderRadius: '50%',
-                            background: step3Done ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.05)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: step3Done ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.06)',
-                        }}>
-                            <Truck size={18} color={step3Done ? '#fff' : 'rgba(255,255,255,0.3)'} strokeWidth={1.8} />
-                        </div>
-                        <span style={{ fontSize: '10px', fontWeight: 600, color: step3Done ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Enviado</span>
+                    <div style={{ fontSize: '13px', color: '#6E7180', marginTop: '7px' }}>
+                        {new Date(order.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                        {' · '}
+                        {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
+                <form action={async () => {
+                    'use server'
+                    await deleteOrder(id)
+                    redirect('/admin/pedidos')
+                }}>
+                    <button type="submit" style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '7px',
+                        background: 'transparent', border: '1px solid #E5E7EF', color: '#6E7180',
+                        fontSize: '13px', fontWeight: 600, padding: '9px 15px', borderRadius: '9px',
+                        cursor: 'pointer', transition: 'border-color 0.15s, color 0.15s, background 0.15s',
+                        fontFamily: 'inherit',
+                    }}>
+                        <Trash2 size={14} strokeWidth={2} />
+                        Excluir pedido
+                    </button>
+                </form>
             </div>
 
-            {/* ── KPI Row ── */}
-            <div className="pedido-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
-                <KpiCard icon={DollarSign} label="Valor Total" value={`R$ ${fmt(order.totalPrice || 0)}`} accent />
-                <KpiCard icon={CreditCard} label="Pagamento"
+            <hr style={{ border: 'none', borderTop: '1px solid #E5E7EF', margin: '0 0 30px' }} />
+
+            {/* ── Stepper ── */}
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '32px' }}>
+                <Step done label="Criado" />
+                <div style={{ flex: 1, height: '1px', background: '#14151F', margin: '0 14px', minWidth: '24px' }} />
+                <Step
+                    done={order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'}
+                    current={order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'}
+                    failed={order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'}
+                    label={sc.label}
+                />
+                <div style={{ flex: 1, height: '1px', background: hasSent ? '#14151F' : '#E5E7EF', margin: '0 14px', minWidth: '24px' }} />
+                <Step done={hasSent} label="Enviado" />
+            </div>
+
+            {/* ── Stat Grid ── */}
+            <div className="pedido-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '28px' }}>
+                <StatCard label="Valor Total" value={`R$ ${fmt(order.totalPrice || 0)}`} hero />
+                <StatCard label="Pagamento"
                     value={order.paymentMethod === 'pix' ? 'PIX' : order.cardBrand ? order.cardBrand.toUpperCase() : 'Cartão'}
-                    sub={order.installments ? `${order.installments}x de R$ ${fmt(order.installmentAmount || 0)}` : undefined} />
-                <KpiCard icon={User} label="Cliente" value={order.fullName || 'Sem nome'} sub={order.email || undefined} />
-                <KpiCard icon={Package} label="Produto" value={order.product?.name || 'Produto removido'}
+                    sub={order.installments ? (order.installments + 'x de R$ ' + fmt(order.installmentAmount || 0)) : undefined} />
+                <StatCard label="Cliente" value={order.fullName || 'Sem nome'} text sub={order.email || undefined} />
+                <StatCard label="Produto" value={order.product?.name || 'Produto removido'} text
                     sub={orderBumps.length > 0 ? `+${orderBumps.length} bump${orderBumps.length > 1 ? 's' : ''}` : 'Qtd: 1'} />
             </div>
 
-            {/* ── Cards Grid ── */}
-            <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            {/* ── Content Grid ── */}
+            <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '20px', alignItems: 'start' }}>
 
-                {/* ═══════════════════ COLUNA ESQUERDA ═══════════════════ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* ═══════════════ LEFT ═══════════════ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
-                    {/* ── Card: Produto ── */}
-                    <Card title="Produto" icon={Package} iconColor="#8b5cf6" badge={`${1 + orderBumps.length} item${orderBumps.length > 0 ? 's' : ''}`}>
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                            {order.product?.imageUrl && (
-                                <div style={{
-                                    width: '72px', height: '72px', borderRadius: '14px',
-                                    border: '1px solid #f1f5f9', overflow: 'hidden', flexShrink: 0, background: '#f8fafc',
-                                }}>
+                    {/* ── Produto ── */}
+                    <div style={cardStyle}>
+                        <CardHead icon={Package} title="Produto" tag={`${1 + orderBumps.length} item${orderBumps.length > 0 ? 's' : ''}`} />
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '16px', borderBottom: '1px solid #E5E7EF', marginBottom: '14px' }}>
+                            {order.product?.imageUrl ? (
+                                <div style={{ width: '48px', height: '48px', borderRadius: '10px', flexShrink: 0, border: '1px solid #E5E7EF', overflow: 'hidden', background: '#F5F6F9' }}>
                                     <img src={order.product.imageUrl} alt={order.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
+                            ) : (
+                                <div style={{ width: '48px', height: '48px', borderRadius: '10px', flexShrink: 0, background: '#F5F6F9', border: '1px solid #E5E7EF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Package size={20} color="#6E7180" strokeWidth={2} />
+                                </div>
                             )}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ margin: 0, fontWeight: 700, color: '#0f172a', fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.01em' }}>
-                                    {order.product?.name || 'Produto removido'}
-                                </p>
-                                <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>
-                                    SKU: {order.id.slice(0, 8).toUpperCase()} · Qtd: 1
-                                </p>
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: '14.5px', fontWeight: 700 }}>{order.product?.name || 'Produto removido'}</div>
+                                <div style={{ fontSize: '12px', color: '#6E7180', marginTop: '2px', fontFamily: "'IBM Plex Mono', monospace" }}>SKU: {order.id.slice(0, 8).toUpperCase()} · Qtd: 1</div>
                             </div>
-                            <p style={{ margin: 0, fontWeight: 700, color: '#0f172a', fontSize: '16px', flexShrink: 0 }}>
-                                R$ {fmt(order.product?.price || 0)}
-                            </p>
+                            <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(order.product?.price || 0)}</div>
                         </div>
 
-                        {/* Order Bumps inline */}
-                        {orderBumps.length > 0 && (
-                            <div style={{ marginTop: '16px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
-                                {orderBumps.map((bump) => (
-                                    <div key={bump.id} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-                                        {bump.imageUrl ? (
-                                            <div style={{ width: '44px', height: '44px', borderRadius: '10px', border: '1px solid #f1f5f9', overflow: 'hidden', flexShrink: 0, background: '#f8fafc' }}>
-                                                <img src={bump.imageUrl} alt={bump.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                            </div>
-                                        ) : (
-                                            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: '#faf5ff', border: '1px solid #ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                <Gift size={16} color="#8b5cf6" strokeWidth={2} />
-                                            </div>
-                                        )}
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <p style={{ margin: 0, fontWeight: 600, color: '#0f172a', fontSize: '13px' }}>{bump.name}</p>
-                                            <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#8b5cf6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Order Bump</p>
-                                        </div>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#0f172a', fontSize: '13px', flexShrink: 0 }}>
-                                            R$ {fmt(bump.price || 0)}
-                                        </p>
+                        {/* Order Bumps */}
+                        {orderBumps.map((bump) => (
+                            <div key={bump.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '12px', marginBottom: '12px', borderBottom: '1px solid #E5E7EF' }}>
+                                {bump.imageUrl ? (
+                                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0, border: '1px solid #E5E7EF', overflow: 'hidden', background: '#F5F6F9' }}>
+                                        <img src={bump.imageUrl} alt={bump.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     </div>
-                                ))}
+                                ) : (
+                                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0, background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Zap size={16} color="#92400E" strokeWidth={2} />
+                                    </div>
+                                )}
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontSize: '13.5px', fontWeight: 700 }}>{bump.name}</div>
+                                    <div style={{ fontSize: '10px', color: '#9CA0AE', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '2px' }}>Order Bump</div>
+                                </div>
+                                <div style={{ fontSize: '13.5px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(bump.price || 0)}</div>
                             </div>
+                        ))}
+
+                        {/* Ledger */}
+                        {(order.productCost ?? 0) > 0 && (
+                            <LedgerRow label="Custo do produto" value={`– R$ ${fmt(order.productCost ?? 0)}`} negative />
                         )}
-
-                        {/* Resumo financeiro */}
-                        <div style={{ marginTop: '16px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
-                            {(order.productCost ?? 0) > 0 && (
-                                <FinRow label="Custo do Produto" value={`R$ ${fmt(order.productCost ?? 0)}`} color="#dc2626" icon={DollarSign} />
-                            )}
-                            {order.shippingPrice > 0 && (
-                                <FinRow label="Frete" value={`R$ ${fmt(order.shippingPrice)}`} icon={TruckIcon} />
-                            )}
-                            {bumpsTotal > 0 && (
-                                <FinRow label="Order Bumps" value={`+ R$ ${fmt(bumpsTotal)}`} color="#8b5cf6" icon={Zap} />
-                            )}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', marginTop: '4px', borderTop: '1px solid #f1f5f9' }}>
-                                <span style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>Total</span>
-                                <span style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.04em' }}>
-                                    R$ {fmt(order.totalPrice || 0)}
-                                </span>
-                            </div>
+                        {order.shippingPrice > 0 && (
+                            <LedgerRow label="Frete" value={`R$ ${fmt(order.shippingPrice)}`} />
+                        )}
+                        {bumpsTotal > 0 && (
+                            <LedgerRow label="Order Bumps" value={`+ R$ ${fmt(bumpsTotal)}`} />
+                        )}
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: '12px', marginTop: '6px', borderTop: '1px solid #E5E7EF' }}>
+                            <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#6E7180' }}>Total do pedido</span>
+                            <span style={{ fontFamily: "'Fraunces', serif", fontSize: '22px', fontWeight: 600 }}>R$ {fmt(order.totalPrice || 0)}</span>
                         </div>
-                    </Card>
+                    </div>
 
-                    {/* ── Card: Rastreamento ── */}
+                    {/* ── Tracking ── */}
                     <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
 
-                    {/* ── Card: E-mail ── */}
+                    {/* ── E-mail ── */}
                     <EmailSection orderId={order.id} email={order.email || ''} />
                 </div>
 
-                {/* ═══════════════════ COLUNA DIREITA ═══════════════════ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* ═══════════════ RIGHT ═══════════════ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
-                    {/* ── Card: Dados do Cliente ── */}
-                    <Card title="Dados do Cliente" icon={User} iconColor="#3b82f6">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' }}>
+                    {/* ── Dados do Cliente ── */}
+                    <div style={cardStyle}>
+                        <CardHead icon={User} title="Dados do cliente" />
+
+                        {/* Avatar */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
                             <div style={{
-                                width: '48px', height: '48px', borderRadius: '14px',
-                                background: 'linear-gradient(145deg, #0f172a 0%, #1e293b 100%)',
+                                width: '40px', height: '40px', borderRadius: '10px',
+                                background: '#F8F0DB', color: '#A9832C',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: '#a5b4fc', fontSize: '18px', fontWeight: 700,
+                                fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: '16px', flexShrink: 0,
                             }}>
                                 {order.fullName?.charAt(0).toUpperCase() || '?'}
                             </div>
-                            <div style={{ flex: 1 }}>
-                                <p style={{ margin: 0, fontWeight: 700, color: '#0f172a', fontSize: '15px', letterSpacing: '-0.01em' }}>
-                                    {order.fullName || 'Cliente sem nome'}
-                                </p>
-                            </div>
-                            {order.fullName && <InlineCopyBtn text={order.fullName} />}
+                            <div style={{ fontSize: '15px', fontWeight: 700 }}>{order.fullName || 'Cliente sem nome'}</div>
                         </div>
 
-                        <DataRow icon={FileText} label="CPF" value={order.cpf || '—'} />
-                        <DataRow icon={Mail} label="E-mail" value={order.email || 'Sem e-mail'} />
-                        <DataRow icon={Phone} label="Telefone" value={order.phone || 'Sem telefone'} />
-                    </Card>
+                        <FieldRow icon={Hash} label="CPF" value={order.cpf || '—'} mono copyText={order.cpf || ''} />
+                        <FieldRow icon={Mail} label="E-mail" value={order.email || 'Sem e-mail'} copyText={order.email || ''} />
+                        <FieldRow icon={Phone} label="Telefone" value={order.phone || 'Sem telefone'} mono copyText={order.phone || ''} />
 
-                    {/* ── Card: Endereço de Entrega ── */}
-                    <Card title="Endereço de Entrega" icon={MapPin} iconColor="#f97316">
-                        <p style={{ margin: '0 0 14px', fontWeight: 600, color: '#0f172a', fontSize: '14px' }}>
-                            {order.recipient || order.fullName}
-                        </p>
-                        <DataRow icon={MapPin} label="Rua" value={order.rua || '—'} />
-                        <DataRow icon={Hash} label="Número" value={order.numero || '—'} />
-                        <DataRow icon={MapPin} label="Complemento" value={order.complemento || '—'} />
-                        <DataRow icon={MapPin} label="Bairro" value={order.bairro || '—'} />
-                        <DataRow icon={MapPin} label="Cidade" value={order.cidade && order.estado ? `${order.cidade} / ${order.estado}` : '—'} />
-                        <DataRow icon={Hash} label="CEP" value={order.cep || '—'} />
+                        {/* Endereço */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#9CA0AE', margin: '18px 0 6px' }}>
+                            <MapPin size={13} color="#9CA0AE" strokeWidth={2} />
+                            Endereço de entrega
+                        </div>
+
+                        <FieldRow label="Destinatário" value={order.recipient || order.fullName || '—'} />
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '24px' }}>
+                            <FieldRow label="Rua" value={order.rua || '—'} copyText={order.rua || ''} />
+                            <FieldRow label="Número" value={order.numero || '—'} mono copyText={order.numero || ''} />
+                            <FieldRow label="Complemento" value={order.complemento || '—'} copyText={order.complemento || ''} />
+                            <FieldRow label="Bairro" value={order.bairro || '—'} copyText={order.bairro || ''} />
+                            <FieldRow label="Cidade" value={order.cidade && order.estado ? `${order.cidade} / ${order.estado}` : '—'} copyText={order.cidade && order.estado ? `${order.cidade} / ${order.estado}` : ''} />
+                            <FieldRow label="CEP" value={order.cep || '—'} mono copyText={order.cep || ''} />
+                        </div>
+
                         {(order as any).referencia && (
-                            <div style={{ marginTop: '12px', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '10px', padding: '12px 14px' }}>
-                                <p style={{ margin: 0, fontSize: '12px', color: '#92400e', fontWeight: 500 }}>
+                            <div style={{ marginTop: '12px', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '9px', padding: '10px 14px' }}>
+                                <span style={{ fontSize: '12px', color: '#92400E', fontWeight: 500 }}>
                                     <span style={{ fontWeight: 700 }}>Ref:</span> {(order as any).referencia}
-                                </p>
+                                </span>
                             </div>
                         )}
-                    </Card>
+                    </div>
 
-                    {/* ── Card: Pagamento ── */}
-                    <Card title="Pagamento" icon={CreditCard} iconColor="#10b981">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+                    {/* ── Pagamento ── */}
+                    <div style={cardStyle}>
+                        <CardHead icon={CreditCard} title="Pagamento" />
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
                             {order.paymentMethod === 'pix' ? (
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '5px 14px', borderRadius: '8px', border: '1px solid #d1fae5' }}>PIX</span>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#E7F1F8', color: '#2C5C86', fontSize: '11.5px', fontWeight: 700, padding: '5px 11px', borderRadius: '7px', letterSpacing: '0.02em' }}>PIX</span>
                             ) : (
-                                <span style={{ fontSize: '11px', fontWeight: 700, color: '#3b82f6', background: '#eff6ff', padding: '5px 14px', borderRadius: '8px', border: '1px solid #dbeafe' }}>
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#E7F1F8', color: '#2C5C86', fontSize: '11.5px', fontWeight: 700, padding: '5px 11px', borderRadius: '7px', letterSpacing: '0.02em' }}>
                                     {order.cardBrand ? order.cardBrand.toUpperCase() : 'CARTÃO'}
                                 </span>
                             )}
                             {order.installments && (
-                                <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
-                                    {order.installments}x de R$ {fmt(order.installmentAmount || 0)}
-                                </span>
+                                <span style={{ fontSize: '12.5px', color: '#6E7180' }}>{order.installments}x de R$ {fmt(order.installmentAmount || 0)}</span>
                             )}
                         </div>
 
-                        <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '18px', border: '1px solid #f1f5f9' }}>
-                            <p style={{ margin: '0 0 4px', color: '#94a3b8', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total Pago</p>
-                            <p style={{ margin: 0, fontSize: '32px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.04em', lineHeight: 1 }}>
-                                R$ {fmt(order.totalPrice || 0)}
-                            </p>
-                        </div>
-
                         {order.paymentStatus === 'pago' && order.netReceived && (
-                            <div style={{ marginTop: '14px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                                <MiniBadge label="Líquido" value={`R$ ${fmt(order.netReceived)}`} color="#059669" bg="#ecfdf5" border="#d1fae5" />
+                            <>
+                                <LedgerRow label="Valor líquido recebido" value={`R$ ${fmt(order.netReceived)}`} />
                                 {(order.productCost ?? 0) > 0 && (
-                                    <MiniBadge label="Custo" value={`R$ ${fmt(order.productCost ?? 0)}`} color="#dc2626" bg="#fef2f2" border="#fecaca" />
+                                    <LedgerRow label="Custo do produto" value={`– R$ ${fmt(order.productCost ?? 0)}`} negative />
                                 )}
                                 {profit !== null && (
-                                    <MiniBadge label="Lucro" value={`R$ ${fmt(profit)}`} color={profit >= 0 ? '#059669' : '#dc2626'} bg={profit >= 0 ? '#ecfdf5' : '#fef2f2'} border={profit >= 0 ? '#d1fae5' : '#fecaca'} />
+                                    <LedgerRow label="Lucro" value={`R$ ${fmt(profit)}`} positive />
                                 )}
-                            </div>
+                            </>
                         )}
 
+                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: '12px', marginTop: '6px', borderTop: '1px solid #E5E7EF' }}>
+                            <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#6E7180' }}>Total do pedido</span>
+                            <span style={{ fontFamily: "'Fraunces', serif", fontSize: '22px', fontWeight: 600 }}>R$ {fmt(order.totalPrice || 0)}</span>
+                        </div>
+
                         {order.mpPaymentId && (
-                            <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <Hash size={11} color="#94a3b8" strokeWidth={2} />
-                                <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>ID: {order.mpPaymentId}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9CA0AE', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #E5E7EF' }}>
+                                <Hash size={12.5} color="#9CA0AE" strokeWidth={2} />
+                                ID da transação · <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{order.mpPaymentId}</span>
                             </div>
                         )}
 
                         {order.paymentMethod === 'pix' && (order.paymentStatus === 'aguardando' || order.paymentStatus === 'processando') && (
-                            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
+                            <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #E5E7EF' }}>
                                 <ResendPixButton orderId={order.id} />
                             </div>
                         )}
-                    </Card>
+                    </div>
 
-                    {/* ── Card: UTM ── */}
+                    {/* ── UTM ── */}
                     {utmData.length > 0 && (
-                        <Card title="UTM / Rastreamento" icon={Globe} iconColor="#f59e0b">
+                        <div style={cardStyle}>
+                            <CardHead icon={Globe} title="UTM / Rastreamento" />
                             {utmData.map((utm) => (
-                                <DataRow key={utm.label} icon={Globe} label={utm.label} value={utm.value} />
+                                <FieldRow key={utm.label} icon={Globe} label={utm.label} value={utm.value} mono copyText={utm.value} />
                             ))}
-                        </Card>
+                        </div>
                     )}
                 </div>
             </div>
@@ -415,108 +322,88 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     )
 }
 
-/* ═══════════════════ COMPONENTES ═══════════════════ */
+/* ═══════════════ COMPONENTS ═══════════════ */
 
-function KpiCard({ icon: Icon, label, value, sub, accent }: {
-    icon: any; label: string; value: string; sub?: string; accent?: boolean
-}) {
+const cardStyle: React.CSSProperties = {
+    background: '#FFFFFF', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '24px',
+}
+
+function Step({ done, current, failed, label }: { done?: boolean; current?: boolean; failed?: boolean; label: string }) {
+    const dotStyle: React.CSSProperties = {
+        width: '11px', height: '11px', borderRadius: '50%', flexShrink: 0,
+        border: done || current ? 'none' : '2px solid #E5E7EF',
+        background: failed ? '#B23B32' : current ? '#1E7A52' : done ? '#14151F' : '#fff',
+        boxShadow: current ? '0 0 0 4px #E3F4EA' : 'none',
+    }
+    const labelColor = failed ? '#B23B32' : current ? '#1E7A52' : done ? '#14151F' : '#9CA0AE'
     return (
-        <div style={{
-            background: accent ? '#0f172a' : '#fff',
-            border: accent ? 'none' : '1px solid #f1f5f9',
-            borderRadius: '16px', padding: '18px 20px',
-            display: 'flex', flexDirection: 'column', gap: '12px',
-            position: 'relative', overflow: 'hidden',
-            boxShadow: accent ? '0 4px 20px rgba(15,23,42,0.12)' : '0 1px 3px rgba(0,0,0,0.02)',
-        }}>
-            {accent && (
-                <div style={{
-                    position: 'absolute', top: '-30px', right: '-20px', width: '100px', height: '100px',
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)',
-                    borderRadius: '50%', pointerEvents: 'none',
-                }} />
-            )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', flexShrink: 0 }}>
+            <div style={dotStyle} />
+            <span style={{ fontSize: '12.5px', fontWeight: 600, color: labelColor, whiteSpace: 'nowrap' }}>{label}</span>
+        </div>
+    )
+}
+
+function StatCard({ label, value, sub, hero, text }: { label: string; value: string; sub?: string; hero?: boolean; text?: boolean }) {
+    return (
+        <div style={{ background: '#fff', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '19px 20px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#9CA0AE' }}>{label}</div>
+            </div>
             <div style={{
-                width: '36px', height: '36px', borderRadius: '10px',
-                background: accent ? 'rgba(99,102,241,0.15)' : '#f8fafc',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: accent ? '1px solid rgba(99,102,241,0.1)' : '1px solid #e2e8f0',
+                fontSize: hero ? '26px' : text ? '15.5px' : '22px',
+                fontWeight: 600, lineHeight: 1.15,
+                fontFamily: hero ? "'Fraunces', serif" : text ? "'Inter', sans-serif" : 'inherit',
+                color: hero ? '#A9832C' : '#14151F',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: hero ? 'nowrap' : text ? 'normal' : 'nowrap',
             }}>
-                <Icon size={16} strokeWidth={2} color={accent ? '#a5b4fc' : '#6366f1'} />
+                {value}
             </div>
-            <div>
-                <p style={{ margin: '0 0 4px', fontSize: '10px', fontWeight: 600, color: accent ? 'rgba(255,255,255,0.35)' : '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: accent ? '22px' : '18px', fontWeight: 700, color: accent ? '#fff' : '#0f172a', letterSpacing: '-0.03em', lineHeight: 1.1 }}>{value}</p>
-                {sub && <p style={{ margin: '4px 0 0', fontSize: '11px', color: accent ? 'rgba(255,255,255,0.3)' : '#94a3b8', fontWeight: 500 }}>{sub}</p>}
-            </div>
+            {sub && <div style={{ fontSize: '12.5px', color: '#6E7180', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub}</div>}
         </div>
     )
 }
 
-function Card({ title, icon: Icon, iconColor, badge, children }: {
-    title: string; icon: any; iconColor: string; badge?: string; children: React.ReactNode
-}) {
+function CardHead({ icon: Icon, title, tag }: { icon: any; title: string; tag?: string }) {
     return (
-        <div style={{
-            background: '#fff', border: '1px solid #f1f5f9',
-            borderRadius: '18px', padding: '22px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
-        }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
-                <div style={{
-                    width: '32px', height: '32px', borderRadius: '9px',
-                    background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: '1px solid #e2e8f0',
-                }}>
-                    <Icon size={15} color={iconColor} strokeWidth={2} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#14151F0D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon size={15} color="#14151F" strokeWidth={1.9} />
                 </div>
-                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#0f172a', letterSpacing: '-0.01em', flex: 1 }}>{title}</h3>
-                {badge && (
-                    <span style={{ background: '#f1f5f9', padding: '3px 10px', borderRadius: '7px', fontSize: '11px', fontWeight: 700, color: '#64748b' }}>{badge}</span>
-                )}
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em' }}>{title}</div>
             </div>
-            {children}
+            {tag && <span style={{ fontSize: '11px', fontWeight: 600, color: '#6E7180', background: '#F5F6F9', padding: '4px 10px', borderRadius: '999px' }}>{tag}</span>}
         </div>
     )
 }
 
-function DataRow({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+function FieldRow({ icon: Icon, label, value, mono, copyText }: { icon?: any; label: string; value: string; mono?: boolean; copyText?: string }) {
     return (
-        <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '10px 12px', background: '#f8fafc', borderRadius: '10px',
-            border: '1px solid #f1f5f9', marginBottom: '6px',
-        }}>
-            <Icon size={13} color="#94a3b8" strokeWidth={2} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</span>
-                <p style={{ margin: '1px 0 0', color: '#374151', fontSize: '13px', fontWeight: 500, wordBreak: 'break-all' }}>{value}</p>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', padding: '11px 0', borderBottom: '1px solid #E5E7EF' }}>
+            <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9CA0AE', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    {Icon && <Icon size={11} color="#9CA0AE" strokeWidth={2} />}
+                    {label}
+                </div>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: '#14151F', wordBreak: 'break-word', fontFamily: mono ? "'IBM Plex Mono', monospace" : 'inherit', fontVariantNumeric: mono ? 'tabular-nums' : undefined }}>
+                    {value}
+                </div>
             </div>
-            <InlineCopyBtn text={value} />
+            {copyText && <InlineCopyBtn text={copyText} />}
         </div>
     )
 }
 
-function FinRow({ label, value, color, icon: Icon }: { label: string; value: string; color?: string; icon: any }) {
+function LedgerRow({ label, value, negative, positive }: { label: string; value: string; negative?: boolean; positive?: boolean }) {
     return (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Icon size={13} color="#94a3b8" strokeWidth={2} />
-                {label}
-            </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: color || '#0f172a' }}>{value}</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '13.5px', padding: '7px 0' }}>
+            <span style={{ color: '#6E7180' }}>{label}</span>
+            <span style={{
+                fontFamily: "'IBM Plex Mono', monospace", fontVariantNumeric: 'tabular-nums',
+                color: negative ? '#B23B32' : positive ? '#1E7A52' : '#14151F',
+                fontWeight: positive ? 700 : 400,
+            }}>{value}</span>
         </div>
-    )
-}
-
-function MiniBadge({ label, value, color, bg, border }: { label: string; value: string; color: string; bg: string; border: string }) {
-    return (
-        <span style={{
-            fontSize: '11px', color, fontWeight: 600,
-            background: bg, padding: '5px 12px', borderRadius: '8px',
-            border: `1px solid ${border}`,
-        }}>
-            {label}: {value}
-        </span>
     )
 }

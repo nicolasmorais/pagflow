@@ -11,7 +11,7 @@ export default function InlineCopyBtn({ text }: { text: string }) {
         try {
             await navigator.clipboard.writeText(text)
             setCopied(true)
-            setTimeout(() => setCopied(false), 2000)
+            setTimeout(() => setCopied(false), 1200)
         } catch { }
     }
 
@@ -20,17 +20,16 @@ export default function InlineCopyBtn({ text }: { text: string }) {
             onClick={handleCopy}
             title="Copiar"
             style={{
+                width: '26px', height: '26px', borderRadius: '7px',
+                border: '1px solid transparent', background: copied ? '#E3F4EA' : 'transparent',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
-                background: copied ? '#ecfdf5' : '#f8fafc',
-                border: `1px solid ${copied ? '#d1fae5' : '#f1f5f9'}`,
-                cursor: 'pointer', transition: 'all 0.2s ease',
-                opacity: 1,
+                flexShrink: 0, cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+                color: copied ? '#1E7A52' : '#9CA0AE',
             }}
         >
             {copied
-                ? <Check size={13} color="#059669" strokeWidth={2} />
-                : <Copy size={13} color="#94a3b8" strokeWidth={1.8} />
+                ? <Check size={12.5} strokeWidth={2.6} />
+                : <Copy size={12.5} strokeWidth={2} />
             }
         </button>
     )
