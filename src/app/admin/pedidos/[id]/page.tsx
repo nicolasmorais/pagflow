@@ -131,69 +131,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             {/* ── Content Grid ── */}
             <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', alignItems: 'start' }}>
 
-                {/* ═══════════════ COL 1: Tracking + Email ═══════════════ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
-                    <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
-                    <EmailSection orderId={order.id} email={order.email || ''} />
-                </div>
-
-                {/* ═══════════════ COL 2: Cliente + Endereco ═══════════════ */}
+                {/* ═══════════════ COL 1: Informacoes do Pedido ═══════════════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
-                    {/* ── Dados do Cliente ── */}
+                    {/* ── Informações do Pedido ── */}
                     <div style={cardStyle}>
-                        <CardHead icon={User} title="Dados do cliente" />
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-                            <div style={{
-                                width: '40px', height: '40px', borderRadius: '10px',
-                                background: '#F8F0DB', color: '#A9832C',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: '16px', flexShrink: 0,
-                            }}>
-                                {order.fullName?.charAt(0).toUpperCase() || '?'}
-                            </div>
-                            <div style={{ fontSize: '15px', fontWeight: 700 }}>{order.fullName || 'Cliente sem nome'}</div>
-                        </div>
-
-                        <FieldRow icon={Hash} label="CPF" value={order.cpf || '—'} mono copyText={order.cpf || ''} />
-                        <FieldRow icon={Mail} label="E-mail" value={order.email || 'Sem e-mail'} copyText={order.email || ''} />
-                        <FieldRow icon={Phone} label="Telefone" value={order.phone || 'Sem telefone'} mono copyText={order.phone || ''} />
-                    </div>
-
-                    {/* ── Endereço de Entrega ── */}
-                    <div style={cardStyle}>
-                        <CardHead icon={MapPin} title="Endereço de entrega" />
-
-                        <FieldRow label="Destinatário" value={order.recipient || order.fullName || '—'} />
-
-                        <FieldRow label="Rua" value={order.rua || '—'} copyText={order.rua || ''} />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px' }}>
-                            <FieldRow label="Número" value={order.numero || '—'} mono copyText={order.numero || ''} />
-                            <FieldRow label="Complemento" value={order.complemento || '—'} copyText={order.complemento || ''} />
-                        </div>
-                        <FieldRow label="Bairro" value={order.bairro || '—'} copyText={order.bairro || ''} />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px' }}>
-                            <FieldRow label="Cidade" value={order.cidade && order.estado ? (order.cidade + ' / ' + order.estado) : '—'} copyText={order.cidade && order.estado ? (order.cidade + ' / ' + order.estado) : ''} />
-                            <FieldRow label="CEP" value={order.cep || '—'} mono copyText={order.cep || ''} />
-                        </div>
-
-                        {(order as any).referencia && (
-                            <div style={{ marginTop: '12px', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '9px', padding: '10px 14px' }}>
-                                <span style={{ fontSize: '12px', color: '#92400E', fontWeight: 500 }}>
-                                    <span style={{ fontWeight: 700 }}>Ref:</span> {(order as any).referencia}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* ═══════════════ COL 3: Pagamento (com produto) + UTM ═══════════════ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
-
-                    {/* ── Pagamento ── */}
-                    <div style={cardStyle}>
-                        <CardHead icon={CreditCard} title="Pagamento" />
+                        <CardHead icon={ReceiptText} title="Informações do pedido" />
 
                         {/* Produto inline */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '16px', borderBottom: '1px solid #E5E7EF', marginBottom: '14px' }}>
@@ -286,8 +229,64 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             </div>
                         )}
                     </div>
+                </div>
 
-                    {/* ── UTM ── */}
+                {/* ═══════════════ COL 2: Cliente + Endereco ═══════════════ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+
+                    {/* ── Dados do Cliente ── */}
+                    <div style={cardStyle}>
+                        <CardHead icon={User} title="Dados do cliente" />
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
+                            <div style={{
+                                width: '40px', height: '40px', borderRadius: '10px',
+                                background: '#F8F0DB', color: '#A9832C',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontFamily: "'Fraunces', serif", fontWeight: 600, fontSize: '16px', flexShrink: 0,
+                            }}>
+                                {order.fullName?.charAt(0).toUpperCase() || '?'}
+                            </div>
+                            <div style={{ fontSize: '15px', fontWeight: 700 }}>{order.fullName || 'Cliente sem nome'}</div>
+                        </div>
+
+                        <FieldRow icon={Hash} label="CPF" value={order.cpf || '—'} mono copyText={order.cpf || ''} />
+                        <FieldRow icon={Mail} label="E-mail" value={order.email || 'Sem e-mail'} copyText={order.email || ''} />
+                        <FieldRow icon={Phone} label="Telefone" value={order.phone || 'Sem telefone'} mono copyText={order.phone || ''} />
+                    </div>
+
+                    {/* ── Endereço de Entrega ── */}
+                    <div style={cardStyle}>
+                        <CardHead icon={MapPin} title="Endereço de entrega" />
+
+                        <FieldRow label="Destinatário" value={order.recipient || order.fullName || '—'} />
+
+                        <FieldRow label="Rua" value={order.rua || '—'} copyText={order.rua || ''} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px' }}>
+                            <FieldRow label="Número" value={order.numero || '—'} mono copyText={order.numero || ''} />
+                            <FieldRow label="Complemento" value={order.complemento || '—'} copyText={order.complemento || ''} />
+                        </div>
+                        <FieldRow label="Bairro" value={order.bairro || '—'} copyText={order.bairro || ''} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px' }}>
+                            <FieldRow label="Cidade" value={order.cidade && order.estado ? (order.cidade + ' / ' + order.estado) : '—'} copyText={order.cidade && order.estado ? (order.cidade + ' / ' + order.estado) : ''} />
+                            <FieldRow label="CEP" value={order.cep || '—'} mono copyText={order.cep || ''} />
+                        </div>
+
+                        {(order as any).referencia && (
+                            <div style={{ marginTop: '12px', background: '#FEF3C7', border: '1px solid #FDE68A', borderRadius: '9px', padding: '10px 14px' }}>
+                                <span style={{ fontSize: '12px', color: '#92400E', fontWeight: 500 }}>
+                                    <span style={{ fontWeight: 700 }}>Ref:</span> {(order as any).referencia}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* ═══════════════ COL 3: Tracking + Email + UTM ═══════════════ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+                    <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
+                    <EmailSection orderId={order.id} email={order.email || ''} />
+
                     {utmData.length > 0 && (
                         <div style={cardStyle}>
                             <CardHead icon={Globe} title="UTM / Rastreamento" />
