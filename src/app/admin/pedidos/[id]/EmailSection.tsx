@@ -43,10 +43,10 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
         <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#14151F0D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#F5F6F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid #E5E7EF' }}>
                         <Mail size={15} color="#14151F" strokeWidth={1.9} />
                     </div>
-                    <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em' }}>E-mail de confirmação</div>
+                    <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em', color: '#14151F' }}>E-mail de confirmação</div>
                 </div>
                 {status === 'success' && (
                     <span style={{ fontSize: '11px', color: '#1E7A52', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px', background: '#E3F4EA', padding: '4px 10px', borderRadius: '999px' }}>

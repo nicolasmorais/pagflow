@@ -50,10 +50,10 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
             <div style={cardStyle}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#14151F0D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#F5F6F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid #E5E7EF' }}>
                             <Truck size={15} color="#14151F" strokeWidth={1.9} />
                         </div>
-                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em' }}>Rastreamento</div>
+                        <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em', color: '#14151F' }}>Rastreamento</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {success && (
@@ -104,10 +104,10 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
         <div style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                    <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#14151F0D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#F5F6F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid #E5E7EF' }}>
                         <Truck size={15} color="#14151F" strokeWidth={1.9} />
                     </div>
-                    <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em' }}>Enviar link de rastreio</div>
+                    <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em', color: '#14151F' }}>Enviar link de rastreio</div>
                 </div>
                 {initialUrl && (
                     <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: '#9CA0AE', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>

@@ -140,9 +140,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
 
             {/* ── Content Grid ── */}
-            <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '20px', alignItems: 'start' }}>
+            <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', alignItems: 'start' }}>
 
-                {/* ═══════════════ LEFT ═══════════════ */}
+                {/* ═══════════════ COL 1: Produto + Tracking ═══════════════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
                     {/* ── Produto ── */}
@@ -188,13 +188,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
                         {/* Ledger */}
                         {(order.productCost ?? 0) > 0 && (
-                            <LedgerRow label="Custo do produto" value={`– R$ ${fmt(order.productCost ?? 0)}`} negative />
+                            <LedgerRow label="Custo do produto" value={'– R$ ' + fmt(order.productCost ?? 0)} negative />
                         )}
                         {order.shippingPrice > 0 && (
-                            <LedgerRow label="Frete" value={`R$ ${fmt(order.shippingPrice)}`} />
+                            <LedgerRow label="Frete" value={'R$ ' + fmt(order.shippingPrice)} />
                         )}
                         {bumpsTotal > 0 && (
-                            <LedgerRow label="Order Bumps" value={`+ R$ ${fmt(bumpsTotal)}`} />
+                            <LedgerRow label="Order Bumps" value={'+ R$ ' + fmt(bumpsTotal)} />
                         )}
                         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: '12px', marginTop: '6px', borderTop: '1px solid #E5E7EF' }}>
                             <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#6E7180' }}>Total do pedido</span>
@@ -209,14 +209,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <EmailSection orderId={order.id} email={order.email || ''} />
                 </div>
 
-                {/* ═══════════════ RIGHT ═══════════════ */}
+                {/* ═══════════════ COL 2: Cliente + Endereco ═══════════════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
                     {/* ── Dados do Cliente ── */}
                     <div style={cardStyle}>
                         <CardHead icon={User} title="Dados do cliente" />
 
-                        {/* Avatar */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
                             <div style={{
                                 width: '40px', height: '40px', borderRadius: '10px',
@@ -232,21 +231,22 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         <FieldRow icon={Hash} label="CPF" value={order.cpf || '—'} mono copyText={order.cpf || ''} />
                         <FieldRow icon={Mail} label="E-mail" value={order.email || 'Sem e-mail'} copyText={order.email || ''} />
                         <FieldRow icon={Phone} label="Telefone" value={order.phone || 'Sem telefone'} mono copyText={order.phone || ''} />
+                    </div>
 
-                        {/* Endereço */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#9CA0AE', margin: '18px 0 6px' }}>
-                            <MapPin size={13} color="#9CA0AE" strokeWidth={2} />
-                            Endereço de entrega
-                        </div>
+                    {/* ── Endereço de Entrega ── */}
+                    <div style={cardStyle}>
+                        <CardHead icon={MapPin} title="Endereço de entrega" />
 
                         <FieldRow label="Destinatário" value={order.recipient || order.fullName || '—'} />
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '24px' }}>
-                            <FieldRow label="Rua" value={order.rua || '—'} copyText={order.rua || ''} />
+                        <FieldRow label="Rua" value={order.rua || '—'} copyText={order.rua || ''} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px' }}>
                             <FieldRow label="Número" value={order.numero || '—'} mono copyText={order.numero || ''} />
                             <FieldRow label="Complemento" value={order.complemento || '—'} copyText={order.complemento || ''} />
-                            <FieldRow label="Bairro" value={order.bairro || '—'} copyText={order.bairro || ''} />
-                            <FieldRow label="Cidade" value={order.cidade && order.estado ? `${order.cidade} / ${order.estado}` : '—'} copyText={order.cidade && order.estado ? `${order.cidade} / ${order.estado}` : ''} />
+                        </div>
+                        <FieldRow label="Bairro" value={order.bairro || '—'} copyText={order.bairro || ''} />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px' }}>
+                            <FieldRow label="Cidade" value={order.cidade && order.estado ? (order.cidade + ' / ' + order.estado) : '—'} copyText={order.cidade && order.estado ? (order.cidade + ' / ' + order.estado) : ''} />
                             <FieldRow label="CEP" value={order.cep || '—'} mono copyText={order.cep || ''} />
                         </div>
 
@@ -258,6 +258,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             </div>
                         )}
                     </div>
+                </div>
+
+                {/* ═══════════════ COL 3: Pagamento + UTM ═══════════════ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
                     {/* ── Pagamento ── */}
                     <div style={cardStyle}>
@@ -278,12 +282,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
                         {order.paymentStatus === 'pago' && order.netReceived && (
                             <>
-                                <LedgerRow label="Valor líquido recebido" value={`R$ ${fmt(order.netReceived)}`} />
+                                <LedgerRow label="Valor líquido recebido" value={'R$ ' + fmt(order.netReceived)} />
                                 {(order.productCost ?? 0) > 0 && (
-                                    <LedgerRow label="Custo do produto" value={`– R$ ${fmt(order.productCost ?? 0)}`} negative />
+                                    <LedgerRow label="Custo do produto" value={'– R$ ' + fmt(order.productCost ?? 0)} negative />
                                 )}
                                 {profit !== null && (
-                                    <LedgerRow label="Lucro" value={`R$ ${fmt(profit)}`} positive />
+                                    <LedgerRow label="Lucro" value={'R$ ' + fmt(profit)} positive />
                                 )}
                             </>
                         )}
@@ -368,10 +372,10 @@ function CardHead({ icon: Icon, title, tag }: { icon: any; title: string; tag?: 
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#14151F0D', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#F5F6F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid #E5E7EF' }}>
                     <Icon size={15} color="#14151F" strokeWidth={1.9} />
                 </div>
-                <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em' }}>{title}</div>
+                <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em', color: '#14151F' }}>{title}</div>
             </div>
             {tag && <span style={{ fontSize: '11px', fontWeight: 600, color: '#6E7180', background: '#F5F6F9', padding: '4px 10px', borderRadius: '999px' }}>{tag}</span>}
         </div>
