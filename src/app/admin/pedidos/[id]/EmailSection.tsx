@@ -69,7 +69,7 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
             {/* Destinatário */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', padding: '11px 0', borderBottom: '1px solid #E5E7EF' }}>
                 <div>
-                    <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9CA0AE', marginBottom: '4px' }}>Destinatário</div>
+                    <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '4px' }}>Destinatário</div>
                     <div style={{ fontSize: '14px', fontWeight: 600, color: '#14151F', wordBreak: 'break-all' }}>{email}</div>
                 </div>
             </div>
@@ -91,18 +91,18 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
                     {loading ? 'Enviando...' : 'Reenviar e-mail de confirmação'}
                 </button>
             </div>
-            <div style={{ fontSize: '12px', color: '#9CA0AE', marginTop: '10px', lineHeight: 1.55 }}>
+            <div style={{ fontSize: '12px', color: '#6E7180', marginTop: '10px', lineHeight: 1.55 }}>
                 E-mails de confirmação são enviados automaticamente para compras aprovadas.
             </div>
 
             {/* Historico */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#9CA0AE', margin: '18px 0 6px' }}>
-                <Clock size={13} color="#9CA0AE" strokeWidth={2} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6E7180', margin: '18px 0 6px' }}>
+                <Clock size={13} color="#6E7180" strokeWidth={2} />
                 Histórico de envios
             </div>
 
             {logs.length === 0 ? (
-                <p style={{ fontSize: '12px', color: '#9CA0AE', fontStyle: 'italic', margin: 0, fontWeight: 500 }}>Nenhum e-mail enviado ainda.</p>
+                <p style={{ fontSize: '12px', color: '#6E7180', fontStyle: 'italic', margin: 0, fontWeight: 500 }}>Nenhum e-mail enviado ainda.</p>
             ) : (
                 logs.map((log) => (
                     <div key={log.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 0', borderBottom: '1px solid #E5E7EF' }}>
@@ -113,7 +113,7 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
                             }
                             {log.type === 'confirmation' ? 'Confirmação' : log.type === 'pix_pending' ? 'PIX Pendente' : log.type === 'pix_followup_1' ? 'PIX Lembrete 2h' : log.type === 'pix_followup_2' ? 'PIX Urgente 8h' : log.type === 'rejected' ? 'Recusado' : log.type === 'delivered' ? 'Entregue' : log.type === 'tracking' ? 'Rastreio' : log.type}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#9CA0AE', fontFamily: "'IBM Plex Mono', monospace", fontVariantNumeric: 'tabular-nums' }}>
+                        <div style={{ fontSize: '12px', color: '#6E7180', fontFamily: "'IBM Plex Mono', monospace", fontVariantNumeric: 'tabular-nums' }}>
                             {new Date(log.sentAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </div>
                     </div>

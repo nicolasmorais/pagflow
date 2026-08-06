@@ -72,7 +72,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             {/* ── Page Header ── */}
             <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', paddingBottom: '22px' }}>
                 <div>
-                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: '#9CA0AE', marginBottom: '6px', textTransform: 'uppercase' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em', color: '#6E7180', marginBottom: '6px', textTransform: 'uppercase' }}>
                         Pedido
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -180,7 +180,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 )}
                                 <div style={{ minWidth: 0, flex: 1 }}>
                                     <div style={{ fontSize: '13.5px', fontWeight: 700 }}>{bump.name}</div>
-                                    <div style={{ fontSize: '10px', color: '#9CA0AE', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '2px' }}>Order Bump</div>
+                                    <div style={{ fontSize: '10px', color: '#6E7180', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '2px' }}>Order Bump</div>
                                 </div>
                                 <div style={{ fontSize: '13.5px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(bump.price || 0)}</div>
                             </div>
@@ -298,8 +298,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         </div>
 
                         {order.mpPaymentId && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#9CA0AE', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #E5E7EF' }}>
-                                <Hash size={12.5} color="#9CA0AE" strokeWidth={2} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#6E7180', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #E5E7EF' }}>
+                                <Hash size={12.5} color="#6E7180" strokeWidth={2} />
                                 ID da transação · <span style={{ fontFamily: "'IBM Plex Mono', monospace" }}>{order.mpPaymentId}</span>
                             </div>
                         )}
@@ -339,7 +339,7 @@ function Step({ done, current, failed, label }: { done?: boolean; current?: bool
         background: failed ? '#B23B32' : current ? '#1E7A52' : done ? '#14151F' : '#fff',
         boxShadow: current ? '0 0 0 4px #E3F4EA' : 'none',
     }
-    const labelColor = failed ? '#B23B32' : current ? '#1E7A52' : done ? '#14151F' : '#9CA0AE'
+    const labelColor = failed ? '#B23B32' : current ? '#1E7A52' : done ? '#14151F' : '#6E7180'
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '9px', flexShrink: 0 }}>
             <div style={dotStyle} />
@@ -352,7 +352,7 @@ function StatCard({ label, value, sub, hero, text }: { label: string; value: str
     return (
         <div style={{ background: '#fff', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '19px 20px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#9CA0AE' }}>{label}</div>
+                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6E7180' }}>{label}</div>
             </div>
             <div style={{
                 fontSize: hero ? '26px' : text ? '15.5px' : '22px',
@@ -386,8 +386,8 @@ function FieldRow({ icon: Icon, label, value, mono, copyText }: { icon?: any; la
     return (
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', padding: '11px 0', borderBottom: '1px solid #E5E7EF' }}>
             <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9CA0AE', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    {Icon && <Icon size={11} color="#9CA0AE" strokeWidth={2} />}
+                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                    {Icon && <Icon size={11} color="#6E7180" strokeWidth={2} />}
                     {label}
                 </div>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: '#14151F', wordBreak: 'break-word', fontFamily: mono ? "'IBM Plex Mono', monospace" : 'inherit', fontVariantNumeric: mono ? 'tabular-nums' : undefined }}>

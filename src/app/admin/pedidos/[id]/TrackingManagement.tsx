@@ -67,7 +67,7 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
                     </div>
                 </div>
 
-                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#9CA0AE', marginBottom: '8px' }}>Link de rastreio</div>
+                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '8px' }}>Link de rastreio</div>
                 <a href={initialUrl} target="_blank" rel="noopener noreferrer" style={{
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
                     color: '#2C5C86', fontWeight: 600, textDecoration: 'none', fontSize: '13px',
@@ -110,14 +110,14 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
                     <div style={{ fontFamily: "'Fraunces', serif", fontSize: '17.5px', fontWeight: 600, letterSpacing: '-0.005em', color: '#14151F' }}>Enviar link de rastreio</div>
                 </div>
                 {initialUrl && (
-                    <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: '#9CA0AE', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
+                    <button onClick={() => setIsEditing(false)} style={{ background: 'none', border: 'none', color: '#6E7180', fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancelar</button>
                 )}
             </div>
 
-            <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#9CA0AE', marginBottom: '8px' }}>Cole o link de rastreio</div>
+            <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '8px' }}>Cole o link de rastreio</div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: '180px', border: '1px solid #E5E7EF', borderRadius: '9px', padding: '11px 13px', fontSize: '13.5px', background: '#F5F6F9', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <LinkIcon size={14} color="#9CA0AE" strokeWidth={2} style={{ flexShrink: 0 }} />
+                    <LinkIcon size={14} color="#6E7180" strokeWidth={2} style={{ flexShrink: 0 }} />
                     <input
                         value={url}
                         onChange={e => setUrl(e.target.value)}
@@ -130,7 +130,7 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
                     disabled={loading || !url.trim()}
                     style={{
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-                        background: loading || !url.trim() ? '#9CA0AE' : '#14151F', color: '#fff', border: 'none', borderRadius: '9px',
+                        background: loading || !url.trim() ? '#6E7180' : '#14151F', color: '#fff', border: 'none', borderRadius: '9px',
                         padding: '11px 18px', fontSize: '13.5px', fontWeight: 600, whiteSpace: 'nowrap',
                         cursor: loading || !url.trim() ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                     }}
@@ -138,7 +138,7 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
                     {loading ? 'Salvando...' : success ? <><CheckCircle2 size={14} strokeWidth={2} /> Enviado!</> : <><Save size={14} strokeWidth={2} /> Salvar e enviar</>}
                 </button>
             </div>
-            <div style={{ fontSize: '12px', color: '#9CA0AE', marginTop: '10px', lineHeight: 1.55 }}>
+            <div style={{ fontSize: '12px', color: '#6E7180', marginTop: '10px', lineHeight: 1.55 }}>
                 O cliente receberá um e-mail com o botão para rastrear o pedido.
             </div>
         </div>
