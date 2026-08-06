@@ -987,6 +987,10 @@ h6 {
         grid-template-columns: 1fr;
     }
 
+    .pedido-kpi-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
     .pedido-header-card {
         padding: 16px;
     }
@@ -1017,6 +1021,10 @@ h6 {
 }
 
 @media (max-width: 480px) {
+    .pedido-kpi-grid {
+        grid-template-columns: 1fr !important;
+    }
+
     .pedido-card-body {
         padding: 14px;
     }
