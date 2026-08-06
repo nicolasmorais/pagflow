@@ -21,16 +21,16 @@ export default function InlineCopyBtn({ text }: { text: string }) {
             title="Copiar"
             style={{
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                width: '30px', height: '30px', borderRadius: '8px', flexShrink: 0,
-                background: copied ? '#ecfdf5' : '#f1f5f9',
-                border: `1px solid ${copied ? '#a7f3d0' : '#e2e8f0'}`,
-                cursor: 'pointer', transition: 'all 0.2s',
+                width: '32px', height: '32px', borderRadius: '8px', flexShrink: 0,
+                background: copied ? '#ecfdf5' : '#f8fafc',
+                border: `1px solid ${copied ? '#d1fae5' : '#f1f5f9'}`,
+                cursor: 'pointer', transition: 'all 0.2s ease',
                 opacity: 1,
             }}
         >
             {copied
-                ? <Check size={13} color="#059669" strokeWidth={2.5} />
-                : <Copy size={13} color="#64748b" strokeWidth={2} />
+                ? <Check size={13} color="#059669" strokeWidth={2} />
+                : <Copy size={13} color="#94a3b8" strokeWidth={1.8} />
             }
         </button>
     )
