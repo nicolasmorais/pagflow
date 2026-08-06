@@ -128,84 +128,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 <Step done={hasSent} label="Enviado" />
             </div>
 
-            {/* ── Stat Grid ── */}
-            <div className="pedido-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px', marginBottom: '28px' }}>
-                <StatCard label="Valor Total" value={`R$ ${fmt(order.totalPrice || 0)}`} hero />
-                <StatCard label="Pagamento"
-                    value={order.paymentMethod === 'pix' ? 'PIX' : order.cardBrand ? order.cardBrand.toUpperCase() : 'Cartão'}
-                    sub={order.installments ? (order.installments + 'x de R$ ' + fmt(order.installmentAmount || 0)) : undefined} />
-                <StatCard label="Cliente" value={order.fullName || 'Sem nome'} text sub={order.email || undefined} />
-                <StatCard label="Produto" value={order.product?.name || 'Produto removido'} text
-                    sub={orderBumps.length > 0 ? `+${orderBumps.length} bump${orderBumps.length > 1 ? 's' : ''}` : 'Qtd: 1'} />
-            </div>
-
             {/* ── Content Grid ── */}
             <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', alignItems: 'start' }}>
 
-                {/* ═══════════════ COL 1: Produto + Tracking ═══════════════ */}
+                {/* ═══════════════ COL 1: Tracking + Email ═══════════════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
-
-                    {/* ── Produto ── */}
-                    <div style={cardStyle}>
-                        <CardHead icon={Package} title="Produto" tag={`${1 + orderBumps.length} item${orderBumps.length > 0 ? 's' : ''}`} />
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '16px', borderBottom: '1px solid #E5E7EF', marginBottom: '14px' }}>
-                            {order.product?.imageUrl ? (
-                                <div style={{ width: '48px', height: '48px', borderRadius: '10px', flexShrink: 0, border: '1px solid #E5E7EF', overflow: 'hidden', background: '#F5F6F9' }}>
-                                    <img src={order.product.imageUrl} alt={order.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </div>
-                            ) : (
-                                <div style={{ width: '48px', height: '48px', borderRadius: '10px', flexShrink: 0, background: '#F5F6F9', border: '1px solid #E5E7EF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Package size={20} color="#6E7180" strokeWidth={2} />
-                                </div>
-                            )}
-                            <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ fontSize: '14.5px', fontWeight: 700 }}>{order.product?.name || 'Produto removido'}</div>
-                                <div style={{ fontSize: '12px', color: '#6E7180', marginTop: '2px', fontFamily: "'IBM Plex Mono', monospace" }}>SKU: {order.id.slice(0, 8).toUpperCase()} · Qtd: 1</div>
-                            </div>
-                            <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(order.product?.price || 0)}</div>
-                        </div>
-
-                        {/* Order Bumps */}
-                        {orderBumps.map((bump) => (
-                            <div key={bump.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '12px', marginBottom: '12px', borderBottom: '1px solid #E5E7EF' }}>
-                                {bump.imageUrl ? (
-                                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0, border: '1px solid #E5E7EF', overflow: 'hidden', background: '#F5F6F9' }}>
-                                        <img src={bump.imageUrl} alt={bump.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    </div>
-                                ) : (
-                                    <div style={{ width: '44px', height: '44px', borderRadius: '10px', flexShrink: 0, background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Zap size={16} color="#92400E" strokeWidth={2} />
-                                    </div>
-                                )}
-                                <div style={{ minWidth: 0, flex: 1 }}>
-                                    <div style={{ fontSize: '13.5px', fontWeight: 700 }}>{bump.name}</div>
-                                    <div style={{ fontSize: '10px', color: '#6E7180', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '2px' }}>Order Bump</div>
-                                </div>
-                                <div style={{ fontSize: '13.5px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(bump.price || 0)}</div>
-                            </div>
-                        ))}
-
-                        {/* Ledger */}
-                        {(order.productCost ?? 0) > 0 && (
-                            <LedgerRow label="Custo do produto" value={'– R$ ' + fmt(order.productCost ?? 0)} negative />
-                        )}
-                        {order.shippingPrice > 0 && (
-                            <LedgerRow label="Frete" value={'R$ ' + fmt(order.shippingPrice)} />
-                        )}
-                        {bumpsTotal > 0 && (
-                            <LedgerRow label="Order Bumps" value={'+ R$ ' + fmt(bumpsTotal)} />
-                        )}
-                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: '12px', marginTop: '6px', borderTop: '1px solid #E5E7EF' }}>
-                            <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#6E7180' }}>Total do pedido</span>
-                            <span style={{ fontFamily: "'Fraunces', serif", fontSize: '22px', fontWeight: 600 }}>R$ {fmt(order.totalPrice || 0)}</span>
-                        </div>
-                    </div>
-
-                    {/* ── Tracking ── */}
                     <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
-
-                    {/* ── E-mail ── */}
                     <EmailSection orderId={order.id} email={order.email || ''} />
                 </div>
 
@@ -260,14 +188,53 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </div>
                 </div>
 
-                {/* ═══════════════ COL 3: Pagamento + UTM ═══════════════ */}
+                {/* ═══════════════ COL 3: Pagamento (com produto) + UTM ═══════════════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
                     {/* ── Pagamento ── */}
                     <div style={cardStyle}>
                         <CardHead icon={CreditCard} title="Pagamento" />
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+                        {/* Produto inline */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '16px', borderBottom: '1px solid #E5E7EF', marginBottom: '14px' }}>
+                            {order.product?.imageUrl ? (
+                                <div style={{ width: '48px', height: '48px', borderRadius: '10px', flexShrink: 0, border: '1px solid #E5E7EF', overflow: 'hidden', background: '#F5F6F9' }}>
+                                    <img src={order.product.imageUrl} alt={order.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                            ) : (
+                                <div style={{ width: '48px', height: '48px', borderRadius: '10px', flexShrink: 0, background: '#F5F6F9', border: '1px solid #E5E7EF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Package size={20} color="#6E7180" strokeWidth={2} />
+                                </div>
+                            )}
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                                <div style={{ fontSize: '14.5px', fontWeight: 700 }}>{order.product?.name || 'Produto removido'}</div>
+                                <div style={{ fontSize: '12px', color: '#6E7180', marginTop: '2px', fontFamily: "'IBM Plex Mono', monospace" }}>SKU: {order.id.slice(0, 8).toUpperCase()} · Qtd: 1</div>
+                            </div>
+                            <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(order.product?.price || 0)}</div>
+                        </div>
+
+                        {/* Order Bumps inline */}
+                        {orderBumps.map((bump) => (
+                            <div key={bump.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '12px', marginBottom: '12px', borderBottom: '1px solid #E5E7EF' }}>
+                                {bump.imageUrl ? (
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0, border: '1px solid #E5E7EF', overflow: 'hidden', background: '#F5F6F9' }}>
+                                        <img src={bump.imageUrl} alt={bump.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </div>
+                                ) : (
+                                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', flexShrink: 0, background: '#FEF3C7', border: '1px solid #FDE68A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Zap size={14} color="#92400E" strokeWidth={2} />
+                                    </div>
+                                )}
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                    <div style={{ fontSize: '13px', fontWeight: 700 }}>{bump.name}</div>
+                                    <div style={{ fontSize: '10px', color: '#6E7180', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '2px' }}>Order Bump</div>
+                                </div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(bump.price || 0)}</div>
+                            </div>
+                        ))}
+
+                        {/* Metodo + Parcelas */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
                             {order.paymentMethod === 'pix' ? (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#E7F1F8', color: '#2C5C86', fontSize: '11.5px', fontWeight: 700, padding: '5px 11px', borderRadius: '7px', letterSpacing: '0.02em' }}>PIX</span>
                             ) : (
@@ -280,13 +247,21 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             )}
                         </div>
 
+                        {/* Ledger financeiro */}
+                        {(order.productCost ?? 0) > 0 && (
+                            <LedgerRow label="Custo do produto" value={'– R$ ' + fmt(order.productCost ?? 0)} negative />
+                        )}
+                        {order.shippingPrice > 0 && (
+                            <LedgerRow label="Frete" value={'R$ ' + fmt(order.shippingPrice)} />
+                        )}
+                        {bumpsTotal > 0 && (
+                            <LedgerRow label="Order Bumps" value={'+ R$ ' + fmt(bumpsTotal)} />
+                        )}
+
                         {order.paymentStatus === 'pago' && order.netReceived && (
                             <>
                                 <LedgerRow label="Taxa do Mercado Pago" value={'– R$ ' + fmt((order.totalPrice || 0) - order.netReceived)} negative />
                                 <LedgerRow label="Valor líquido recebido" value={'R$ ' + fmt(order.netReceived)} />
-                                {(order.productCost ?? 0) > 0 && (
-                                    <LedgerRow label="Custo do produto" value={'– R$ ' + fmt(order.productCost ?? 0)} negative />
-                                )}
                                 {profit !== null && (
                                     <LedgerRow label="Lucro" value={'R$ ' + fmt(profit)} positive />
                                 )}
