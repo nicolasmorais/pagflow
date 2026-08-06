@@ -282,6 +282,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
                         {order.paymentStatus === 'pago' && order.netReceived && (
                             <>
+                                <LedgerRow label="Taxa do Mercado Pago" value={'– R$ ' + fmt((order.totalPrice || 0) - order.netReceived)} negative />
                                 <LedgerRow label="Valor líquido recebido" value={'R$ ' + fmt(order.netReceived)} />
                                 {(order.productCost ?? 0) > 0 && (
                                     <LedgerRow label="Custo do produto" value={'– R$ ' + fmt(order.productCost ?? 0)} negative />
