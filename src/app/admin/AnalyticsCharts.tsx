@@ -203,6 +203,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
             <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '24px' }}>
                 <KpiCard featured icon={DollarSign} label="Faturamento" value={`R$ ${fmt(kpis.totalRevenue)}`}
                     change={pctChange(kpis.totalRevenue, prevKpis.totalRevenue)} />
+                <KpiCard icon={TrendingUp} label="Lucro" value={`R$ ${fmt(kpis.profit)}`} />
                 <KpiCard icon={ShoppingBag} label="Pedidos" value={fmtInt(kpis.totalOrders)}
                     change={pctChange(kpis.totalOrders, prevKpis.totalOrders)} />
                 <KpiCard icon={CheckCircle2} label="Pagos" value={fmtInt(kpis.paidOrders)}
@@ -212,7 +213,6 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                 <KpiCard icon={Ticket} label="Ticket Médio" value={`R$ ${fmt(kpis.avgTicket)}`}
                     change={pctChange(kpis.avgTicket, prevKpis.avgTicket)} />
                 <KpiCard icon={XCircle} label="Recusados" value={fmtInt(kpis.rejectedOrders)} />
-                <KpiCard icon={Zap} label="Bump Rate" value={`${kpis.bumpRate.toFixed(1)}%`} />
             </div>
 
             {/* ── Revenue Chart + Recent Orders ── */}

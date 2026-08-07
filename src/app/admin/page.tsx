@@ -40,6 +40,7 @@ export default async function AdminPage({
             estado: true,
             createdAt: true,
             productId: true,
+            productCost: true,
         }
     })
 
@@ -58,6 +59,9 @@ export default async function AdminPage({
         ? (paidOrders.length / allOrders.length) * 100
         : 0
     const avgTicket = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0
+    const totalCost = paidOrders.reduce((s, o) => s + (o.productCost || 0), 0)
+    const profit = netRevenue - totalCost
+
     const bumpOrders = allOrders.filter(o => o.hasBump)
     const bumpRate = allOrders.length > 0
         ? (bumpOrders.length / allOrders.length) * 100
@@ -233,6 +237,7 @@ export default async function AdminPage({
             rejectedOrders: rejectedOrders.length,
             conversionRate,
             avgTicket,
+            profit,
             bumpRate,
         },
         dailyData,

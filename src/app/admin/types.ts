@@ -24,7 +24,7 @@ export type AnalyticsKpis = {
     totalRevenue: number; netRevenue: number
     totalOrders: number; paidOrders: number
     pendingOrders: number; rejectedOrders: number
-    conversionRate: number; avgTicket: number; bumpRate: number
+    conversionRate: number; avgTicket: number; profit: number; bumpRate: number
 }
 
 export type AnalyticsData = {
