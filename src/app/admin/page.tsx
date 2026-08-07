@@ -263,10 +263,10 @@ export default async function AdminPage({
             }}>
                 <div className="page-title-section" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <div className="page-title-text">
-                        <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 900, color: '#1e293b', margin: 0, letterSpacing: '-0.03em' }}>
+                        <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 700, color: '#14151F', margin: 0, letterSpacing: '-0.01em', fontFamily: "'Fraunces', serif" }}>
                             Centro de Análise
                         </h1>
-                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b', fontWeight: 500 }}>
+                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#6E7180', fontWeight: 500 }}>
                             Receita, conversão, métodos e origem do tráfego.
                         </p>
                     </div>

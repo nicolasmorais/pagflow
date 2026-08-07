@@ -35,8 +35,8 @@ function pctChange(current: number, prev: number): { value: string; positive: bo
 const RevenueTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null
     return (
-        <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '10px 14px', boxShadow: '0 12px 32px rgba(0,0,0,0.35)' }}>
-            <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
+        <div style={{ background: '#14151F', border: '1px solid #E5E7EF', borderRadius: '12px', padding: '10px 14px', boxShadow: '0 12px 32px rgba(0,0,0,0.35)' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#6E7180', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</p>
             {payload.map((entry: any) => (
                 <p key={entry.name} style={{ margin: '2px 0', fontSize: '12px', fontWeight: 800, color: entry.color }}>
                     {entry.name === 'revenue' ? `R$ ${fmt(entry.value)}` : `${entry.value} pedidos`}
@@ -49,9 +49,9 @@ const RevenueTooltip = ({ active, payload, label }: any) => {
 const BarTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null
     return (
-        <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-            <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#64748b', fontWeight: 700 }}>{label}</p>
-            <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: payload[0].fill || '#6366f1' }}>
+        <div style={{ background: '#14151F', border: '1px solid #E5E7EF', borderRadius: '10px', padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
+            <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#6E7180', fontWeight: 700 }}>{label}</p>
+            <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: payload[0].fill || '#2C5C86' }}>
                 {payload[0].name === 'revenue' ? `R$ ${fmt(payload[0].value)}` : payload[0].value}
             </p>
         </div>
@@ -65,72 +65,45 @@ function KpiCard({ icon: Icon, label, value, change, featured }: {
 }) {
     return (
         <div style={{
-            background: featured
-                ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)'
-                : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
-            border: featured ? 'none' : '1px solid rgba(241, 245, 249, 0.8)',
-            borderRadius: '20px',
-            padding: '22px',
+            background: featured ? '#14151F' : '#FFFFFF',
+            border: featured ? 'none' : '1px solid #E5E7EF',
+            borderRadius: '14px',
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '14px',
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
             position: 'relative',
             overflow: 'hidden',
             boxShadow: featured
-                ? '0 8px 32px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255,255,255,0.05)'
-                : '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)',
-        }}
-        onMouseEnter={e => {
-            e.currentTarget.style.transform = 'translateY(-3px)'
-            e.currentTarget.style.boxShadow = featured
-                ? '0 12px 40px rgba(15, 23, 42, 0.35), inset 0 1px 0 rgba(255,255,255,0.08)'
-                : '0 4px 12px rgba(0,0,0,0.04), 0 12px 28px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,1)'
-        }}
-        onMouseLeave={e => {
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = featured
-                ? '0 8px 32px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255,255,255,0.05)'
-                : '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,0.8)'
+                ? '0 4px 20px rgba(20,21,31,0.15)'
+                : '0 1px 3px rgba(0,0,0,0.02)',
         }}>
-            {/* Ambient glow for featured */}
             {featured && (
                 <div style={{
-                    position: 'absolute',
-                    top: '-30px',
-                    right: '-30px',
-                    width: '120px',
-                    height: '120px',
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
-                    borderRadius: '50%',
-                    pointerEvents: 'none',
+                    position: 'absolute', top: '-30px', right: '-30px',
+                    width: '120px', height: '120px',
+                    background: 'radial-gradient(circle, rgba(44,92,134,0.12) 0%, transparent 70%)',
+                    borderRadius: '50%', pointerEvents: 'none',
                 }} />
             )}
 
-            {/* Icon + Change */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '14px',
-                    background: featured
-                        ? 'linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.15) 100%)'
-                        : 'linear-gradient(135deg, #f0f4ff 0%, #e8ecf8 100%)',
+                    width: '40px', height: '40px', borderRadius: '10px',
+                    background: featured ? 'rgba(44,92,134,0.2)' : '#F5F6F9',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: featured ? '#a5b4fc' : '#6366f1',
-                    boxShadow: featured
-                        ? '0 2px 8px rgba(99,102,241,0.15)'
-                        : '0 1px 3px rgba(99,102,241,0.08)',
+                    border: featured ? '1px solid rgba(44,92,134,0.15)' : '1px solid #E5E7EF',
                 }}>
-                    <Icon size={20} strokeWidth={2} />
+                    <Icon size={18} strokeWidth={2} color={featured ? '#7BB8E0' : '#2C5C86'} />
                 </div>
                 {change && (
                     <span style={{
                         fontSize: '11px', fontWeight: 700,
-                        color: change.positive ? (featured ? '#34d399' : '#059669') : '#ef4444',
+                        color: change.positive ? (featured ? '#34d399' : '#1E7A52') : '#B23B32',
                         background: change.positive
-                            ? (featured ? 'rgba(52,211,153,0.12)' : '#ecfdf5')
-                            : (featured ? 'rgba(239,68,68,0.12)' : '#fef2f2'),
+                            ? (featured ? 'rgba(52,211,153,0.12)' : '#E3F4EA')
+                            : (featured ? 'rgba(178,59,50,0.12)' : '#FBEAE8'),
                         padding: '4px 10px', borderRadius: '8px',
                         display: 'flex', alignItems: 'center', gap: '4px',
                     }}>
@@ -140,24 +113,17 @@ function KpiCard({ icon: Icon, label, value, change, featured }: {
                 )}
             </div>
 
-            {/* Label + Value */}
             <div>
                 <p style={{
-                    margin: '0 0 6px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: featured ? 'rgba(255,255,255,0.4)' : '#94a3b8',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.08em',
+                    margin: '0 0 6px', fontSize: '10.5px', fontWeight: 700,
+                    color: featured ? 'rgba(255,255,255,0.4)' : '#6E7180',
+                    textTransform: 'uppercase', letterSpacing: '0.08em',
                 }}>{label}</p>
                 <p style={{
-                    margin: 0,
-                    fontSize: featured ? '32px' : '26px',
-                    fontWeight: 800,
-                    color: featured ? '#fff' : '#0f172a',
-                    letterSpacing: '-0.04em',
-                    lineHeight: 1,
-                    fontFamily: "'Space Grotesk', sans-serif",
+                    margin: 0, fontSize: featured ? '28px' : '24px', fontWeight: 700,
+                    color: featured ? '#fff' : '#14151F',
+                    letterSpacing: '-0.04em', lineHeight: 1,
+                    fontFamily: "'Fraunces', serif",
                 }}>{value}</p>
             </div>
         </div>
@@ -168,10 +134,10 @@ function SectionCard({ title, subtitle, children, style }: {
     title: string; subtitle?: string; children: React.ReactNode; style?: React.CSSProperties
 }) {
     return (
-        <div style={{ background: '#fff', border: '1px solid #f1f5f9', borderRadius: '18px', padding: '22px', ...style }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '22px', ...style }}>
             <div style={{ marginBottom: '20px' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.01em' }}>{title}</h3>
-                {subtitle && <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#94a3b8', fontWeight: 500 }}>{subtitle}</p>}
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#14151F', fontFamily: "'Fraunces', serif", letterSpacing: '-0.005em' }}>{title}</h3>
+                {subtitle && <p style={{ margin: '4px 0 0', fontSize: '12px', color: '#6E7180', fontWeight: 500 }}>{subtitle}</p>}
             </div>
             {children}
         </div>
@@ -181,23 +147,17 @@ function SectionCard({ title, subtitle, children, style }: {
 // ── Heatmap Cell ──────────────────────────────────────────────────────────────
 function HeatmapCell({ value, max }: { value: number; max: number }) {
     const intensity = max > 0 ? value / max : 0
-    const bg = intensity === 0 ? '#f8fafc'
-        : intensity < 0.25 ? '#e0e7ff'
-        : intensity < 0.5 ? '#a5b4fc'
-        : intensity < 0.75 ? '#6366f1'
-        : '#4338ca'
+    const bg = intensity === 0 ? '#F5F6F9'
+        : intensity < 0.25 ? '#E7F1F8'
+        : intensity < 0.5 ? '#7BB8E0'
+        : intensity < 0.75 ? '#2C5C86'
+        : '#1a3a5c'
     return (
         <div style={{
-            background: bg,
-            borderRadius: '4px',
-            height: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '9px',
-            fontWeight: 700,
-            color: intensity > 0.5 ? '#fff' : '#64748b',
-            transition: 'all 0.15s',
+            background: bg, borderRadius: '4px', height: '24px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '9px', fontWeight: 700,
+            color: intensity > 0.5 ? '#fff' : '#6E7180',
         }}>
             {value > 0 ? value : ''}
         </div>
@@ -207,11 +167,11 @@ function HeatmapCell({ value, max }: { value: number; max: number }) {
 // ── Status Badge ──────────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
     const styles: Record<string, { bg: string; color: string; label: string }> = {
-        pago: { bg: '#dcfce7', color: '#16a34a', label: 'Pago' },
-        aguardando: { bg: '#fef3c7', color: '#d97706', label: 'Aguardando' },
-        processando: { bg: '#fef3c7', color: '#d97706', label: 'Processando' },
-        recusado: { bg: '#fee2e2', color: '#dc2626', label: 'Recusado' },
-        pendente: { bg: '#f1f5f9', color: '#64748b', label: 'Pendente' },
+        pago: { bg: '#E3F4EA', color: '#1E7A52', label: 'Pago' },
+        aguardando: { bg: '#FEF3C7', color: '#92400E', label: 'Aguardando' },
+        processando: { bg: '#FEF3C7', color: '#92400E', label: 'Processando' },
+        recusado: { bg: '#FBEAE8', color: '#B23B32', label: 'Recusado' },
+        pendente: { bg: '#F5F6F9', color: '#6E7180', label: 'Pendente' },
     }
     const s = styles[status] || styles.pendente
     return (
@@ -223,7 +183,7 @@ function StatusBadge({ status }: { status: string }) {
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
-    if (!data) return <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Carregando dados...</div>
+    if (!data) return <div style={{ padding: '40px', textAlign: 'center', color: '#6E7180' }}>Carregando dados...</div>
 
     const {
         kpis, dailyData, paymentMethods, installments,
@@ -234,9 +194,8 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
     const maxState = topStates[0]?.revenue || 1
     const maxProduct = topProducts[0]?.revenue || 1
     const maxHourly = Math.max(...hourlyData.map(h => h.orders), 1)
-    const maxWeekday = Math.max(...weekdayData.map(d => d.revenue), 1)
 
-    const PIE_COLORS = ['#0F172A', '#6366f1', '#94A3B8', '#CBD5E1']
+    const PIE_COLORS = ['#14151F', '#2C5C86', '#6E7180', '#A0A8B8']
 
     return (
         <>
@@ -263,25 +222,25 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                         <AreaChart data={dailyData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
                             <defs>
                                 <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.12} />
-                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="#2C5C86" stopOpacity={0.12} />
+                                    <stop offset="95%" stopColor="#2C5C86" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} interval={4} />
-                            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${v / 1000}k` : v} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EF" vertical={false} />
+                            <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#6E7180', fontWeight: 600 }} tickLine={false} axisLine={false} interval={4} />
+                            <YAxis tick={{ fontSize: 10, fill: '#6E7180' }} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${v / 1000}k` : v} />
                             <Tooltip content={<RevenueTooltip />} />
-                            <Area type="monotone" dataKey="revenue" name="revenue" stroke="#6366f1" strokeWidth={2.5} fill="url(#revenueGrad)" dot={false} />
+                            <Area type="monotone" dataKey="revenue" name="revenue" stroke="#2C5C86" strokeWidth={2.5} fill="url(#revenueGrad)" dot={false} />
                         </AreaChart>
                     </ResponsiveContainer>
-                    <div style={{ marginTop: '12px', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
-                        <p style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px' }}>Pedidos Pagos por Dia</p>
+                    <div style={{ marginTop: '12px', borderTop: '1px solid #E5E7EF', paddingTop: '12px' }}>
+                        <p style={{ fontSize: '10px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px' }}>Pedidos Pagos por Dia</p>
                         <ResponsiveContainer width="100%" height={50}>
                             <BarChart data={dailyData} margin={{ top: 0, right: 4, left: -20, bottom: 0 }}>
                                 <XAxis dataKey="date" hide />
                                 <YAxis hide />
                                 <Tooltip content={<BarTooltip />} />
-                                <Bar dataKey="paidOrders" name="paidOrders" fill="#0F172A" radius={[3, 3, 0, 0]} />
+                                <Bar dataKey="paidOrders" name="paidOrders" fill="#14151F" radius={[3, 3, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -290,15 +249,15 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                 <SectionCard title="Pedidos Recentes" subtitle="Últimas 5 movimentações">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {recentOrders.length === 0 ? (
-                            <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '24px 0' }}>Nenhum pedido no período</p>
+                            <p style={{ textAlign: 'center', color: '#6E7180', fontSize: '13px', padding: '24px 0' }}>Nenhum pedido no período</p>
                         ) : recentOrders.map(o => (
-                            <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                            <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', background: '#F5F6F9', borderRadius: '10px', border: '1px solid #E5E7EF' }}>
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.fullName}</p>
-                                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{o.createdAt}</p>
+                                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#14151F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.fullName}</p>
+                                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#6E7180', fontWeight: 600 }}>{o.createdAt}</p>
                                 </div>
                                 <div style={{ textAlign: 'right' }}>
-                                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 800, color: '#0f172a' }}>R$ {fmt(o.totalPrice)}</p>
+                                    <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#14151F' }}>R$ {fmt(o.totalPrice)}</p>
                                     <StatusBadge status={o.paymentStatus} />
                                 </div>
                             </div>
@@ -314,27 +273,27 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                         {hourlyData.map(h => (
                             <div key={h.hour} style={{ textAlign: 'center' }}>
                                 <HeatmapCell value={h.orders} max={maxHourly} />
-                                <span style={{ fontSize: '8px', color: '#94a3b8', fontWeight: 600, marginTop: '2px', display: 'block' }}>{h.hour}</span>
+                                <span style={{ fontSize: '8px', color: '#6E7180', fontWeight: 600, marginTop: '2px', display: 'block' }}>{h.hour}</span>
                             </div>
                         ))}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginTop: '10px' }}>
-                        <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 600 }}>Menos</span>
-                        {['#f8fafc', '#e0e7ff', '#a5b4fc', '#6366f1', '#4338ca'].map(c => (
+                        <span style={{ fontSize: '9px', color: '#6E7180', fontWeight: 600 }}>Menos</span>
+                        {['#F5F6F9', '#E7F1F8', '#7BB8E0', '#2C5C86', '#1a3a5c'].map(c => (
                             <div key={c} style={{ width: '12px', height: '12px', borderRadius: '3px', background: c }} />
                         ))}
-                        <span style={{ fontSize: '9px', color: '#94a3b8', fontWeight: 600 }}>Mais</span>
+                        <span style={{ fontSize: '9px', color: '#6E7180', fontWeight: 600 }}>Mais</span>
                     </div>
                 </SectionCard>
 
                 <SectionCard title="Receita por Dia da Semana" subtitle="Distribuição semanal">
                     <ResponsiveContainer width="100%" height={200}>
                         <BarChart data={weekdayData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                            <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#475569', fontWeight: 700 }} tickLine={false} axisLine={false} />
-                            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${v / 1000}k` : v} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EF" vertical={false} />
+                            <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#14151F', fontWeight: 700 }} tickLine={false} axisLine={false} />
+                            <YAxis tick={{ fontSize: 10, fill: '#6E7180' }} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${v / 1000}k` : v} />
                             <Tooltip content={<BarTooltip />} />
-                            <Bar dataKey="revenue" name="revenue" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                            <Bar dataKey="revenue" name="revenue" fill="#2C5C86" radius={[6, 6, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </SectionCard>
@@ -346,18 +305,18 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                 <SectionCard title="Status dos Pedidos" subtitle="Distribuição no período">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                         {statusBreakdown.map(s => (
-                            <div key={s.status} style={{ padding: '12px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #f1f5f9' }}>
+                            <div key={s.status} style={{ padding: '12px', background: '#F5F6F9', borderRadius: '10px', border: '1px solid #E5E7EF' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color }} />
-                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>{s.label}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#14151F' }}>{s.label}</span>
                                     </div>
-                                    <span style={{ fontSize: '14px', fontWeight: 900, color: s.color }}>{s.count}</span>
+                                    <span style={{ fontSize: '14px', fontWeight: 700, color: s.color }}>{s.count}</span>
                                 </div>
-                                <div style={{ width: '100%', height: '4px', background: '#e2e8f0', borderRadius: '2px', overflow: 'hidden' }}>
+                                <div style={{ width: '100%', height: '4px', background: '#E5E7EF', borderRadius: '2px', overflow: 'hidden' }}>
                                     <div style={{ width: `${s.percentage}%`, height: '100%', background: s.color, borderRadius: '2px', transition: 'width 0.5s ease' }} />
                                 </div>
-                                <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94a3b8', fontWeight: 600, textAlign: 'right' }}>{s.percentage}%</p>
+                                <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#6E7180', fontWeight: 600, textAlign: 'right' }}>{s.percentage}%</p>
                             </div>
                         ))}
                     </div>
@@ -366,7 +325,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                 {/* Payment Methods */}
                 <SectionCard title="Método de Pagamento" subtitle="Pedidos pagos">
                     {paymentMethods.every(m => m.count === 0) ? (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '24px 0' }}>Sem dados</p>
+                        <p style={{ textAlign: 'center', color: '#6E7180', fontSize: '13px', padding: '24px 0' }}>Sem dados</p>
                     ) : (
                         <>
                             <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -388,20 +347,20 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '4px' }}>
                                 {paymentMethods.filter(m => m.count > 0).map((m, i) => (
-                                    <div key={m.method} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#f8fafc', borderRadius: '8px' }}>
+                                    <div key={m.method} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 10px', background: '#F5F6F9', borderRadius: '8px' }}>
                                         <span style={{ width: '8px', height: '8px', borderRadius: '3px', background: PIE_COLORS[i], flexShrink: 0 }} />
-                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#475569', flex: 1 }}>{m.label}</span>
-                                        <span style={{ fontSize: '12px', fontWeight: 900, color: '#1e293b' }}>{m.count}</span>
-                                        <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 700 }}>{m.percentage}%</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#6E7180', flex: 1 }}>{m.label}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#14151F' }}>{m.count}</span>
+                                        <span style={{ fontSize: '10px', color: '#6E7180', fontWeight: 600 }}>{m.percentage}%</span>
                                     </div>
                                 ))}
                             </div>
                             {cardBrands.length > 0 && (
-                                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
-                                    <p style={{ margin: '0 0 6px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Bandeiras</p>
+                                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #E5E7EF' }}>
+                                    <p style={{ margin: '0 0 6px', fontSize: '10px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Bandeiras</p>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                         {cardBrands.map(b => (
-                                            <span key={b.brand} style={{ fontSize: '10px', fontWeight: 700, color: '#6366f1', background: '#eef2ff', padding: '3px 8px', borderRadius: '12px' }}>
+                                            <span key={b.brand} style={{ fontSize: '10px', fontWeight: 700, color: '#2C5C86', background: '#E7F1F8', padding: '3px 8px', borderRadius: '12px' }}>
                                                 {b.brand} ({b.count})
                                             </span>
                                         ))}
@@ -415,15 +374,15 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                 {/* Installments */}
                 <SectionCard title="Parcelamentos" subtitle="Pedidos no cartão">
                     {installments.length === 0 ? (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '24px 0' }}>Sem dados</p>
+                        <p style={{ textAlign: 'center', color: '#6E7180', fontSize: '13px', padding: '24px 0' }}>Sem dados</p>
                     ) : (
                         <ResponsiveContainer width="100%" height={220}>
                             <BarChart data={installments} layout="vertical" margin={{ top: 0, right: 8, left: 8, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                                <XAxis type="number" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                                <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#475569', fontWeight: 700 }} tickLine={false} axisLine={false} width={28} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EF" horizontal={false} />
+                                <XAxis type="number" tick={{ fontSize: 10, fill: '#6E7180' }} tickLine={false} axisLine={false} />
+                                <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#14151F', fontWeight: 700 }} tickLine={false} axisLine={false} width={28} />
                                 <Tooltip content={<BarTooltip />} />
-                                <Bar dataKey="count" name="count" fill="#0f172a" radius={[0, 6, 6, 0]} />
+                                <Bar dataKey="count" name="count" fill="#14151F" radius={[0, 6, 6, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
@@ -434,7 +393,7 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
             <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '14px', marginBottom: '14px' }}>
                 <SectionCard title="Top Produtos" subtitle="Por faturamento">
                     {topProducts.length === 0 ? (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '24px 0' }}>Sem dados</p>
+                        <p style={{ textAlign: 'center', color: '#6E7180', fontSize: '13px', padding: '24px 0' }}>Sem dados</p>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             {topProducts.map((p, i) => (
@@ -443,18 +402,18 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                                             <span style={{
                                                 width: '22px', height: '22px', borderRadius: '6px',
-                                                background: i === 0 ? '#0f172a' : i === 1 ? '#475569' : '#94a3b8',
+                                                background: i === 0 ? '#14151F' : i === 1 ? '#2C5C86' : '#6E7180',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '10px', fontWeight: 900, color: 'white', flexShrink: 0
+                                                fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0
                                             }}>{i + 1}</span>
-                                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
+                                            <span style={{ fontSize: '12px', fontWeight: 700, color: '#14151F', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
                                         </div>
-                                        <span style={{ fontSize: '12px', fontWeight: 900, color: '#059669', whiteSpace: 'nowrap' }}>{fmtShort(p.revenue)}</span>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E7A52', whiteSpace: 'nowrap' }}>{fmtShort(p.revenue)}</span>
                                     </div>
-                                    <div style={{ width: '100%', height: '5px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${Math.round((p.revenue / maxProduct) * 100)}%`, height: '100%', background: i === 0 ? '#0f172a' : i === 1 ? '#475569' : '#94a3b8', borderRadius: '3px' }} />
+                                    <div style={{ width: '100%', height: '5px', background: '#F5F6F9', borderRadius: '3px', overflow: 'hidden' }}>
+                                        <div style={{ width: `${Math.round((p.revenue / maxProduct) * 100)}%`, height: '100%', background: i === 0 ? '#14151F' : i === 1 ? '#2C5C86' : '#6E7180', borderRadius: '3px' }} />
                                     </div>
-                                    <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{p.count} vendas</span>
+                                    <span style={{ fontSize: '10px', color: '#6E7180', fontWeight: 600 }}>{p.count} vendas</span>
                                 </div>
                             ))}
                         </div>
@@ -463,21 +422,21 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
 
                 <SectionCard title="Top Estados" subtitle="Por faturamento">
                     {topStates.length === 0 ? (
-                        <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', padding: '24px 0' }}>Sem dados geográficos</p>
+                        <p style={{ textAlign: 'center', color: '#6E7180', fontSize: '13px', padding: '24px 0' }}>Sem dados geográficos</p>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {topStates.map((s, i) => (
                                 <div key={s.state}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontSize: '10px', fontWeight: 900, color: '#94a3b8', width: '14px' }}>{i + 1}</span>
-                                            <span style={{ fontSize: '11px', fontWeight: 800, color: '#6366f1', background: '#eef2ff', padding: '2px 7px', borderRadius: '5px' }}>{s.state}</span>
-                                            <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{s.count} pedidos</span>
+                                            <span style={{ fontSize: '10px', fontWeight: 700, color: '#6E7180', width: '14px' }}>{i + 1}</span>
+                                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#2C5C86', background: '#E7F1F8', padding: '2px 7px', borderRadius: '5px' }}>{s.state}</span>
+                                            <span style={{ fontSize: '10px', color: '#6E7180', fontWeight: 600 }}>{s.count} pedidos</span>
                                         </div>
-                                        <span style={{ fontSize: '11px', fontWeight: 900, color: '#059669' }}>R$ {fmt(s.revenue)}</span>
+                                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#1E7A52' }}>R$ {fmt(s.revenue)}</span>
                                     </div>
-                                    <div style={{ width: '100%', height: '4px', background: '#f1f5f9', borderRadius: '2px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${Math.round((s.revenue / maxState) * 100)}%`, height: '100%', background: '#6366f1', borderRadius: '2px' }} />
+                                    <div style={{ width: '100%', height: '4px', background: '#F5F6F9', borderRadius: '2px', overflow: 'hidden' }}>
+                                        <div style={{ width: `${Math.round((s.revenue / maxState) * 100)}%`, height: '100%', background: '#2C5C86', borderRadius: '2px' }} />
                                     </div>
                                 </div>
                             ))}
@@ -489,35 +448,35 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
             {/* ── Order Bump Analysis ── */}
             <SectionCard title="Análise de Order Bumps" subtitle="Impacto no ticket médio e receita" style={{ marginBottom: '14px' }}>
                 <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '14px' }}>
-                    <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '16px', border: '1px solid #f1f5f9' }}>
-                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Com Bump</p>
-                        <p style={{ margin: '0 0 2px', fontSize: '24px', fontWeight: 900, color: '#1e293b' }}>{bumpStats.withBump}</p>
-                        <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>pedidos pagos</p>
-                        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e2e8f0' }}>
-                            <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Ticket Médio</p>
-                            <p style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#6366f1' }}>R$ {fmt(bumpStats.bumpAvgTicket)}</p>
+                    <div style={{ background: '#F5F6F9', borderRadius: '14px', padding: '16px', border: '1px solid #E5E7EF' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#2C5C86', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Com Bump</p>
+                        <p style={{ margin: '0 0 2px', fontSize: '24px', fontWeight: 700, color: '#14151F', fontFamily: "'Fraunces', serif" }}>{bumpStats.withBump}</p>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#6E7180', fontWeight: 600 }}>pedidos pagos</p>
+                        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #E5E7EF' }}>
+                            <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#6E7180', fontWeight: 700, textTransform: 'uppercase' }}>Ticket Médio</p>
+                            <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#2C5C86', fontFamily: "'Fraunces', serif" }}>R$ {fmt(bumpStats.bumpAvgTicket)}</p>
                         </div>
                     </div>
-                    <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '16px', border: '1px solid #f1f5f9' }}>
-                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sem Bump</p>
-                        <p style={{ margin: '0 0 2px', fontSize: '24px', fontWeight: 900, color: '#1e293b' }}>{bumpStats.withoutBump}</p>
-                        <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>pedidos pagos</p>
-                        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e2e8f0' }}>
-                            <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>Ticket Médio</p>
-                            <p style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#64748b' }}>R$ {fmt(bumpStats.nonBumpAvgTicket)}</p>
+                    <div style={{ background: '#F5F6F9', borderRadius: '14px', padding: '16px', border: '1px solid #E5E7EF' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Sem Bump</p>
+                        <p style={{ margin: '0 0 2px', fontSize: '24px', fontWeight: 700, color: '#14151F', fontFamily: "'Fraunces', serif" }}>{bumpStats.withoutBump}</p>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#6E7180', fontWeight: 600 }}>pedidos pagos</p>
+                        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #E5E7EF' }}>
+                            <p style={{ margin: '0 0 2px', fontSize: '10px', color: '#6E7180', fontWeight: 700, textTransform: 'uppercase' }}>Ticket Médio</p>
+                            <p style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#6E7180', fontFamily: "'Fraunces', serif" }}>R$ {fmt(bumpStats.nonBumpAvgTicket)}</p>
                         </div>
                     </div>
-                    <div style={{ background: '#f8fafc', borderRadius: '14px', padding: '16px', border: '1px solid #f1f5f9' }}>
-                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Receita Total</p>
-                        <p style={{ margin: '0 0 2px', fontSize: '14px', fontWeight: 900, color: '#6366f1' }}>R$ {fmt(bumpStats.bumpRevenue)}</p>
-                        <p style={{ margin: '0 0 8px', fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>com bump</p>
-                        <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ background: '#F5F6F9', borderRadius: '14px', padding: '16px', border: '1px solid #E5E7EF' }}>
+                        <p style={{ margin: '0 0 8px', fontSize: '10px', fontWeight: 700, color: '#1E7A52', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Receita Total</p>
+                        <p style={{ margin: '0 0 2px', fontSize: '16px', fontWeight: 700, color: '#2C5C86', fontFamily: "'Fraunces', serif" }}>R$ {fmt(bumpStats.bumpRevenue)}</p>
+                        <p style={{ margin: '0 0 8px', fontSize: '10px', color: '#6E7180', fontWeight: 600 }}>com bump</p>
+                        <div style={{ width: '100%', height: '6px', background: '#E5E7EF', borderRadius: '3px', overflow: 'hidden' }}>
                             <div style={{
                                 width: `${(bumpStats.bumpRevenue + bumpStats.nonBumpRevenue) > 0 ? Math.round((bumpStats.bumpRevenue / (bumpStats.bumpRevenue + bumpStats.nonBumpRevenue)) * 100) : 0}%`,
-                                height: '100%', background: '#6366f1', borderRadius: '3px'
+                                height: '100%', background: '#2C5C86', borderRadius: '3px'
                             }} />
                         </div>
-                        <p style={{ margin: '6px 0 0', fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>
+                        <p style={{ margin: '6px 0 0', fontSize: '10px', color: '#6E7180', fontWeight: 600 }}>
                             R$ {fmt(bumpStats.nonBumpRevenue)} sem bump
                         </p>
                     </div>
