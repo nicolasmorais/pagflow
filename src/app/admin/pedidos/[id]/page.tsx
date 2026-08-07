@@ -293,9 +293,11 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     {utmData.length > 0 && (
                         <div style={cardStyle}>
                             <CardHead icon={Globe} title="UTM / Rastreamento" />
-                            {utmData.map((utm) => (
-                                <FieldRow key={utm.label} icon={Globe} label={utm.label} value={utm.value} mono copyText={utm.value} />
-                            ))}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: '16px' }}>
+                                {utmData.map((utm) => (
+                                    <FieldRow key={utm.label} icon={Globe} label={utm.label} value={utm.value} mono copyText={utm.value} />
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
