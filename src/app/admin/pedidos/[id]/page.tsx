@@ -9,7 +9,7 @@ import { notFound, redirect } from 'next/navigation'
 import { deleteOrder } from '@/app/actions'
 import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
-import StatusSelector from './StatusSelector'
+import OrderStatusSelect from '../components/OrderStatusSelect'
 import InlineCopyBtn from './InlineCopyBtn'
 import ResendPixButton from './ResendPixButton'
 
@@ -139,8 +139,13 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <div style={cardStyle}>
                         <CardHead icon={ReceiptText} title="Informações do pedido" />
 
-                        {/* Status Selectors */}
-                        <StatusSelector orderId={order.id} currentStatus={order.status} currentPaymentStatus={order.paymentStatus || 'processando'} />
+                        {/* Status do Pedido */}
+                        <div style={{ marginBottom: '18px' }}>
+                            <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '8px' }}>
+                                Status do pedido
+                            </div>
+                            <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
+                        </div>
 
                         {/* Separador */}
                         <div style={{ borderTop: '1px solid #E5E7EF', margin: '18px 0' }} />
