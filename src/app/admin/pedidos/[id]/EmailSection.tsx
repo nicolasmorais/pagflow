@@ -106,7 +106,7 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
             ) : (
                 logs.map((log) => (
                     <div key={log.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', padding: '10px 0', borderBottom: '1px solid #E5E7EF' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '13.5px', fontWeight: 600 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '9px', fontSize: '13.5px', fontWeight: 600, color: '#14151F' }}>
                             {log.status === 'sent'
                                 ? <CheckCircle2 size={14} color="#1E7A52" strokeWidth={2} />
                                 : <AlertTriangle size={14} color="#B23B32" strokeWidth={2} />
