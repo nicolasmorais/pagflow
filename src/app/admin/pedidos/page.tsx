@@ -128,6 +128,40 @@ export default async function OrdersPage({
     const totalValue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0)
     const paidCount = orders.filter(o => o.paymentStatus === 'pago').length
 
+    // ── Faturamento pago no mês atual ──
+    const now = new Date()
+    const currentMonth = now.getMonth()
+    const currentYear = now.getFullYear()
+    const paidThisMonth = orders.filter(o => {
+        if (o.paymentStatus !== 'pago') return false
+        const d = new Date(o.createdAt)
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear
+    })
+    const paidMonthRevenue = paidThisMonth.reduce((s, o) => s + (o.totalPrice || 0), 0)
+
+    // ── Vendas hoje vs mesmo dia mês passado ──
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayEnd = new Date(today.getTime() + 86400000)
+    const todayOrders = orders.filter(o => {
+        const d = new Date(o.createdAt)
+        return d >= today && d < todayEnd
+    })
+    const todayCount = todayOrders.length
+    const todayRevenue = todayOrders.reduce((s, o) => s + (o.totalPrice || 0), 0)
+
+    const lastMonthSameDay = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+    const lastMonthSameDayEnd = new Date(lastMonthSameDay.getTime() + 86400000)
+    // Buscar pedidos do mesmo dia mês passado (aproximacao usando createdAt)
+    const lastMonthDayOrders = orders.filter(o => {
+        const d = new Date(o.createdAt)
+        return d >= lastMonthSameDay && d < lastMonthSameDayEnd
+    })
+    const lastMonthDayCount = lastMonthDayOrders.length
+
+    const salesGrowth = lastMonthDayCount > 0
+        ? ((todayCount - lastMonthDayCount) / lastMonthDayCount) * 100
+        : todayCount > 0 ? 100 : 0
+
     return (
         <div style={{ width: '100%', paddingBottom: '60px' }}>
             {/* Header */}
@@ -161,6 +195,13 @@ export default async function OrdersPage({
                     <SummaryCard label="Total" value={`${orders.length}`} sub="pedidos" />
                     <SummaryCard label="Pagos" value={`${paidCount}`} sub="pedidos" />
                     <SummaryCard label="Faturamento" value={`R$ ${fmt(totalValue)}`} sub="no período" />
+                    <SummaryCard label="Faturamento Pago/Mês" value={`R$ ${fmt(paidMonthRevenue)}`} sub={`${currentMonth + 1}/${currentYear}`} />
+                    <SummaryCard
+                        label="Vendas Hoje"
+                        value={`${todayCount}`}
+                        sub={todayCount > 0 ? `R$ ${fmt(todayRevenue)}` : 'sem vendas'}
+                        change={{ value: salesGrowth, positive: salesGrowth >= 0 }}
+                    />
                 </div>
 
                 {/* Filters */}
@@ -311,8 +352,9 @@ export default async function OrdersPage({
 }
 
 /* ── Summary Card ── */
-function SummaryCard({ label, value, sub }: {
+function SummaryCard({ label, value, sub, change }: {
     label: string; value: string; sub: string
+    change?: { value: number; positive: boolean }
 }) {
     return (
         <div style={{
@@ -324,9 +366,21 @@ function SummaryCard({ label, value, sub }: {
             <p style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                 {label}
             </p>
-            <p style={{ fontSize: '22px', fontWeight: 700, color: '#14151F', margin: 0, letterSpacing: '-0.03em', fontFamily: "'Fraunces', serif" }}>
-                {value}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <p style={{ fontSize: '22px', fontWeight: 700, color: '#14151F', margin: 0, letterSpacing: '-0.03em', fontFamily: "'Fraunces', serif" }}>
+                    {value}
+                </p>
+                {change && (
+                    <span style={{
+                        fontSize: '11px', fontWeight: 700,
+                        color: change.positive ? '#1E7A52' : '#B23B32',
+                        background: change.positive ? '#E3F4EA' : '#FBEAE8',
+                        padding: '3px 8px', borderRadius: '7px',
+                    }}>
+                        {change.positive ? '+' : ''}{change.value.toFixed(0)}%
+                    </span>
+                )}
+            </div>
             <p style={{ fontSize: '11px', color: '#6E7180', margin: '4px 0 0', fontWeight: 500 }}>
                 {sub}
             </p>
