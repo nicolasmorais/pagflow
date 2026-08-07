@@ -15,10 +15,10 @@ const presets = [
 ]
 
 const paymentStatuses = [
-    { key: 'todos', label: 'Todos', color: '#fff', bg: '#0f172a' },
-    { key: 'pago', label: 'Pago', color: '#16a34a', bg: '#dcfce7' },
-    { key: 'aguardando', label: 'Aguardando', color: '#d97706', bg: '#fef3c7' },
-    { key: 'recusado', label: 'Recusado', color: '#dc2626', bg: '#fee2e2' },
+    { key: 'todos', label: 'Todos', color: '#fff', bg: '#14151F' },
+    { key: 'pago', label: 'Pago', color: '#1E7A52', bg: '#E3F4EA' },
+    { key: 'aguardando', label: 'Aguardando', color: '#92400E', bg: '#FEF3C7' },
+    { key: 'recusado', label: 'Recusado', color: '#B23B32', bg: '#FBEAE8' },
 ]
 
 const paymentMethods = [
@@ -100,25 +100,25 @@ export default function OrdersFilterBar({
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Row 1: Search + Period */}
+            {/* Row 1: Search + Period + Filtros */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                 {/* Search */}
-                <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: '0', flex: '1', minWidth: '200px', maxWidth: '340px' }}>
+                <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: '0', minWidth: '220px', maxWidth: '300px' }}>
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
-                        background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px 0 0 10px',
-                        padding: '8px 12px', flex: 1,
+                        background: '#fff', border: '1px solid #E5E7EF', borderRadius: '9px 0 0 9px',
+                        padding: '9px 12px', flex: 1,
                     }}>
-                        <Search size={14} color="#94a3b8" />
+                        <Search size={14} color="#6E7180" />
                         <input
                             type="text"
-                            placeholder="Buscar por nome, e-mail ou telefone..."
+                            placeholder="Buscar..."
                             value={searchValue}
                             onChange={e => setSearchValue(e.target.value)}
                             style={{
                                 border: 'none', outline: 'none', background: 'transparent',
-                                fontSize: '13px', color: '#0f172a', width: '100%',
-                                fontWeight: 500,
+                                fontSize: '13px', color: '#14151F', width: '100%',
+                                fontWeight: 500, fontFamily: 'inherit',
                             }}
                         />
                         {searchValue && (
@@ -127,15 +127,15 @@ export default function OrdersFilterBar({
                                 onClick={() => { setSearchValue(''); updateParam('q', null) }}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
                             >
-                                <X size={14} color="#94a3b8" />
+                                <X size={14} color="#6E7180" />
                             </button>
                         )}
                     </div>
                     <button type="submit" style={{
-                        padding: '8px 14px', background: '#0f172a', color: '#fff',
-                        border: 'none', borderRadius: '0 10px 10px 0',
+                        padding: '9px 14px', background: '#14151F', color: '#fff',
+                        border: 'none', borderRadius: '0 9px 9px 0',
                         fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                        whiteSpace: 'nowrap',
+                        whiteSpace: 'nowrap', fontFamily: 'inherit',
                     }}>
                         Buscar
                     </button>
@@ -149,12 +149,12 @@ export default function OrdersFilterBar({
                             type="button"
                             onClick={() => handlePresetChange(p.value)}
                             style={{
-                                padding: '7px 12px', borderRadius: '8px',
-                                border: currentFilter === p.value ? 'none' : '1px solid #e2e8f0',
-                                background: currentFilter === p.value ? '#0f172a' : '#fff',
-                                color: currentFilter === p.value ? '#fff' : '#64748b',
+                                padding: '8px 12px', borderRadius: '8px',
+                                border: currentFilter === p.value ? 'none' : '1px solid #E5E7EF',
+                                background: currentFilter === p.value ? '#14151F' : '#fff',
+                                color: currentFilter === p.value ? '#fff' : '#6E7180',
                                 fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                transition: 'all 0.15s',
+                                transition: 'all 0.15s', fontFamily: 'inherit',
                             }}
                         >
                             {p.label}
@@ -164,13 +164,13 @@ export default function OrdersFilterBar({
                         type="button"
                         onClick={() => setShowCustom(!showCustom)}
                         style={{
-                            padding: '7px 12px', borderRadius: '8px',
-                            border: currentFilter === 'custom' ? 'none' : '1px solid #e2e8f0',
-                            background: currentFilter === 'custom' ? '#0f172a' : '#fff',
-                            color: currentFilter === 'custom' ? '#fff' : '#64748b',
+                            padding: '8px 12px', borderRadius: '8px',
+                            border: currentFilter === 'custom' ? 'none' : '1px solid #E5E7EF',
+                            background: currentFilter === 'custom' ? '#14151F' : '#fff',
+                            color: currentFilter === 'custom' ? '#fff' : '#6E7180',
                             fontSize: '12px', fontWeight: 700, cursor: 'pointer',
                             display: 'flex', alignItems: 'center', gap: '4px',
-                            transition: 'all 0.15s',
+                            transition: 'all 0.15s', fontFamily: 'inherit',
                         }}
                     >
                         <Calendar size={13} />
@@ -184,13 +184,13 @@ export default function OrdersFilterBar({
                     type="button"
                     onClick={() => setShowAdvanced(!showAdvanced)}
                     style={{
-                        padding: '7px 12px', borderRadius: '8px',
-                        border: hasActiveFilters ? '1px solid #6366f1' : '1px solid #e2e8f0',
-                        background: hasActiveFilters ? '#eef2ff' : '#fff',
-                        color: hasActiveFilters ? '#6366f1' : '#64748b',
+                        padding: '8px 12px', borderRadius: '8px',
+                        border: hasActiveFilters ? '1px solid #2C5C86' : '1px solid #E5E7EF',
+                        background: hasActiveFilters ? '#E7F1F8' : '#fff',
+                        color: hasActiveFilters ? '#2C5C86' : '#6E7180',
                         fontSize: '12px', fontWeight: 700, cursor: 'pointer',
                         display: 'flex', alignItems: 'center', gap: '4px',
-                        transition: 'all 0.15s',
+                        transition: 'all 0.15s', fontFamily: 'inherit',
                     }}
                 >
                     <Filter size={13} />
@@ -198,7 +198,7 @@ export default function OrdersFilterBar({
                     {hasActiveFilters && (
                         <span style={{
                             width: '16px', height: '16px', borderRadius: '50%',
-                            background: '#6366f1', color: '#fff', fontSize: '9px',
+                            background: '#2C5C86', color: '#fff', fontSize: '9px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontWeight: 800,
                         }}>
@@ -212,23 +212,23 @@ export default function OrdersFilterBar({
             {showCustom && (
                 <form onSubmit={handleCustomSubmit} style={{
                     display: 'flex', alignItems: 'center', gap: '8px',
-                    background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px',
+                    background: '#fff', border: '1px solid #E5E7EF', borderRadius: '9px',
                     padding: '10px 14px',
                 }}>
-                    <Calendar size={14} color="#94a3b8" />
+                    <Calendar size={14} color="#6E7180" />
                     <input type="date" name="from" defaultValue={fromDate} style={{
-                        border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px',
-                        fontSize: '13px', color: '#0f172a', fontWeight: 500,
+                        border: '1px solid #E5E7EF', borderRadius: '8px', padding: '6px 10px',
+                        fontSize: '13px', color: '#14151F', fontWeight: 500, fontFamily: 'inherit',
                     }} />
-                    <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>até</span>
+                    <span style={{ fontSize: '12px', color: '#6E7180', fontWeight: 600 }}>até</span>
                     <input type="date" name="to" defaultValue={toDate} style={{
-                        border: '1px solid #e2e8f0', borderRadius: '8px', padding: '6px 10px',
-                        fontSize: '13px', color: '#0f172a', fontWeight: 500,
+                        border: '1px solid #E5E7EF', borderRadius: '8px', padding: '6px 10px',
+                        fontSize: '13px', color: '#14151F', fontWeight: 500, fontFamily: 'inherit',
                     }} />
                     <button type="submit" style={{
-                        padding: '6px 14px', background: '#0f172a', color: '#fff',
+                        padding: '7px 14px', background: '#14151F', color: '#fff',
                         border: 'none', borderRadius: '8px',
-                        fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                        fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                     }}>
                         Filtrar
                     </button>
@@ -239,13 +239,12 @@ export default function OrdersFilterBar({
             {showAdvanced && (
                 <div style={{
                     display: 'flex', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap',
-                    background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px',
-                    padding: '14px 18px',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+                    background: '#fff', border: '1px solid #E5E7EF', borderRadius: '14px',
+                    padding: '16px 18px',
                 }}>
                     {/* Payment Status */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             Pagamento
                         </label>
                         <div style={{ display: 'flex', gap: '4px' }}>
@@ -257,10 +256,10 @@ export default function OrdersFilterBar({
                                     style={{
                                         padding: '6px 12px', borderRadius: '8px',
                                         border: 'none',
-                                        background: currentPaymentStatus === s.key ? (s.key === 'todos' ? '#0f172a' : s.bg) : '#f1f5f9',
-                                        color: currentPaymentStatus === s.key ? (s.key === 'todos' ? '#fff' : s.color) : '#64748b',
+                                        background: currentPaymentStatus === s.key ? (s.key === 'todos' ? '#14151F' : s.bg) : '#F5F6F9',
+                                        color: currentPaymentStatus === s.key ? (s.key === 'todos' ? '#fff' : s.color) : '#6E7180',
                                         fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                        transition: 'all 0.15s',
+                                        transition: 'all 0.15s', fontFamily: 'inherit',
                                     }}
                                 >
                                     {s.label}
@@ -271,7 +270,7 @@ export default function OrdersFilterBar({
 
                     {/* Payment Method */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             Método
                         </label>
                         <div style={{ display: 'flex', gap: '4px' }}>
@@ -283,10 +282,10 @@ export default function OrdersFilterBar({
                                     style={{
                                         padding: '6px 12px', borderRadius: '8px',
                                         border: 'none',
-                                        background: currentPaymentMethod === m.key ? (m.key === 'todos' ? '#0f172a' : '#eef2ff') : '#f1f5f9',
-                                        color: currentPaymentMethod === m.key ? (m.key === 'todos' ? '#fff' : '#6366f1') : '#64748b',
+                                        background: currentPaymentMethod === m.key ? (m.key === 'todos' ? '#14151F' : '#E7F1F8') : '#F5F6F9',
+                                        color: currentPaymentMethod === m.key ? (m.key === 'todos' ? '#fff' : '#2C5C86') : '#6E7180',
                                         fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                        transition: 'all 0.15s',
+                                        transition: 'all 0.15s', fontFamily: 'inherit',
                                     }}
                                 >
                                     {m.label}
@@ -297,7 +296,7 @@ export default function OrdersFilterBar({
 
                     {/* Order Status */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                             Status do Pedido
                         </label>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
@@ -309,10 +308,10 @@ export default function OrdersFilterBar({
                                     style={{
                                         padding: '6px 12px', borderRadius: '8px',
                                         border: 'none',
-                                        background: currentOrderStatus === o.key ? (o.key === 'todos' ? '#0f172a' : '#f0fdf4') : '#f1f5f9',
-                                        color: currentOrderStatus === o.key ? (o.key === 'todos' ? '#fff' : '#16a34a') : '#64748b',
+                                        background: currentOrderStatus === o.key ? (o.key === 'todos' ? '#14151F' : '#E3F4EA') : '#F5F6F9',
+                                        color: currentOrderStatus === o.key ? (o.key === 'todos' ? '#fff' : '#1E7A52') : '#6E7180',
                                         fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                        transition: 'all 0.15s',
+                                        transition: 'all 0.15s', fontFamily: 'inherit',
                                     }}
                                 >
                                     {o.label}
@@ -328,10 +327,10 @@ export default function OrdersFilterBar({
                             onClick={clearAllFilters}
                             style={{
                                 padding: '6px 12px', borderRadius: '8px',
-                                border: '1px solid #fee2e2', background: '#fff',
-                                color: '#dc2626', fontSize: '12px', fontWeight: 700,
+                                border: '1px solid #FBEAE8', background: '#fff',
+                                color: '#B23B32', fontSize: '12px', fontWeight: 700,
                                 cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                                marginLeft: 'auto',
+                                marginLeft: 'auto', fontFamily: 'inherit',
                             }}
                         >
                             <X size={12} />
