@@ -229,6 +229,9 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             </div>
                         )}
                     </div>
+
+                    {/* ── Tracking ── */}
+                    <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
                 </div>
 
                 {/* ═══════════════ COL 2: Cliente + Endereco ═══════════════ */}
@@ -283,9 +286,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </div>
                 </div>
 
-                {/* ═══════════════ COL 3: Tracking + Email + UTM ═══════════════ */}
+                {/* ═══════════════ COL 3: Email + UTM ═══════════════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, height: '100%' }}>
-                    <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
                     <EmailSection orderId={order.id} email={order.email || ''} />
 
                     {utmData.length > 0 && (
