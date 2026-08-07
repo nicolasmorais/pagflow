@@ -95,6 +95,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         {new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
                 <form action={async () => {
                     'use server'
                     await deleteOrder(id)
@@ -111,6 +113,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         Excluir pedido
                     </button>
                 </form>
+                </div>
             </div>
 
             <hr style={{ border: 'none', borderTop: '1px solid #E5E7EF', margin: '0 0 30px' }} />
@@ -126,16 +129,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <div style={cardStyle}>
                         <CardHead icon={ReceiptText} title="Informações do pedido" />
 
-                        {/* Status do Pedido */}
-                        <div style={{ marginBottom: '18px' }}>
-                            <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '8px' }}>
-                                Status do pedido
-                            </div>
-                            <OrderStatusSelect orderId={order.id} initialStatus={order.status || 'pendente'} />
-                        </div>
-
-                        {/* Separador */}
-                        <div style={{ borderTop: '1px solid #E5E7EF', margin: '18px 0' }} />
 
                         {/* Produto inline */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', paddingBottom: '16px', borderBottom: '1px solid #E5E7EF', marginBottom: '14px' }}>
