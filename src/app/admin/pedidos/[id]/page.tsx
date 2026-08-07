@@ -115,19 +115,6 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
             <hr style={{ border: 'none', borderTop: '1px solid #E5E7EF', margin: '0 0 30px' }} />
 
-            {/* ── Stepper ── */}
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '32px' }}>
-                <Step done label="Criado" />
-                <div style={{ flex: 1, height: '1px', background: '#14151F', margin: '0 14px', minWidth: '24px' }} />
-                <Step
-                    done={order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'}
-                    current={order.paymentStatus === 'pago' || order.paymentStatus === 'atendido'}
-                    failed={order.paymentStatus === 'recusado' || order.paymentStatus === 'cancelado'}
-                    label={sc.label}
-                />
-                <div style={{ flex: 1, height: '1px', background: hasSent ? '#14151F' : '#E5E7EF', margin: '0 14px', minWidth: '24px' }} />
-                <Step done={hasSent} label="Enviado" />
-            </div>
 
             {/* ── Content Grid ── */}
             <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', alignItems: 'stretch' }}>
