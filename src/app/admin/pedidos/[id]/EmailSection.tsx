@@ -81,10 +81,10 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
                     disabled={loading}
                     style={{
                         width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
-                        background: 'transparent', color: '#14151F', border: '1px solid #E5E7EF', borderRadius: '9px',
+                        background: '#1E7A52', color: '#fff', border: 'none', borderRadius: '9px',
                         padding: '11px 18px', fontSize: '13.5px', fontWeight: 600,
                         cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1,
-                        transition: 'border-color 0.15s', fontFamily: 'inherit',
+                        transition: 'all 0.15s', fontFamily: 'inherit',
                     }}
                 >
                     <RefreshCw size={14} style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }} strokeWidth={2} />
