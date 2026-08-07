@@ -150,10 +150,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 </div>
                             )}
                             <div style={{ minWidth: 0, flex: 1 }}>
-                                <div style={{ fontSize: '14.5px', fontWeight: 700 }}>{order.product?.name || 'Produto removido'}</div>
+                                <div style={{ fontSize: '14.5px', fontWeight: 700, color: '#14151F' }}>{order.product?.name || 'Produto removido'}</div>
                                 <div style={{ fontSize: '12px', color: '#6E7180', marginTop: '2px', fontFamily: "'IBM Plex Mono', monospace" }}>SKU: {order.id.slice(0, 8).toUpperCase()} · Qtd: 1</div>
                             </div>
-                            <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap' }}>R$ {fmt(order.product?.price || 0)}</div>
+                            <div style={{ fontSize: '14.5px', fontWeight: 700, whiteSpace: 'nowrap', color: '#14151F' }}>R$ {fmt(order.product?.price || 0)}</div>
                         </div>
 
                         {/* Order Bumps inline */}
