@@ -234,7 +234,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 {/* ═══════════════ COL 2: Cliente + Endereco ═══════════════ */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, height: '100%' }}>
 
-                    {/* ── Dados do Cliente ── */}
+                    {/* ── Dados do Cliente + Endereço ── */}
                     <div style={cardStyle}>
                         <CardHead icon={User} title="Dados do cliente" />
 
@@ -253,11 +253,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         <FieldRow icon={Hash} label="CPF" value={order.cpf || '—'} mono copyText={order.cpf || ''} />
                         <FieldRow icon={Mail} label="E-mail" value={order.email || 'Sem e-mail'} copyText={order.email || ''} />
                         <FieldRow icon={Phone} label="Telefone" value={order.phone || 'Sem telefone'} mono copyText={order.phone || ''} />
-                    </div>
 
-                    {/* ── Endereço de Entrega ── */}
-                    <div style={cardStyle}>
-                        <CardHead icon={MapPin} title="Endereço de entrega" />
+                        {/* Separador */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#6E7180', margin: '18px 0 6px' }}>
+                            <MapPin size={13} color="#6E7180" strokeWidth={2} />
+                            Endereço de entrega
+                        </div>
 
                         <FieldRow label="Destinatário" value={order.recipient || order.fullName || '—'} />
 
