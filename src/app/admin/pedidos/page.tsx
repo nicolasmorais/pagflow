@@ -7,12 +7,14 @@ import OrderStatusSelect from './components/OrderStatusSelect'
 import DeleteOrderButton from './components/DeleteOrderButton'
 import OrderRow from './components/OrderRow'
 import R2VerifyAllButton from './components/R2VerifyAllButton'
+import SalesCard from './components/SalesCard'
+import ConversionCard from './components/ConversionCard'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 import OrdersFilterBar from './components/OrdersFilterBar'
 import { Payment } from 'mercadopago'
 import { createMpClient } from '@/lib/mercadopago'
-import { getDateFilters } from '@/lib/date-utils'
+import { getDateFilters, startOfDayBR, endOfDayBR, formatDateStr, getBrazilNow } from '@/lib/date-utils'
 
 async function syncMercadoPagoOrders(orders: any[]) {
     if (!process.env.MP_ACCESS_TOKEN) return orders;
@@ -84,13 +86,13 @@ export default async function OrdersPage({
     const search = params.q || ''
     const { fromDate, toDate, fromDateUTC, toDateUTC } = getDateFilters(filter, params.from, params.to)
 
+    const statusFilter = status === 'pago' ? 'pago'
+        : status === 'aguardando' ? { in: ['aguardando', 'processando'] }
+        : status === 'recusado' ? 'recusado'
+        : { in: ['pago', 'aguardando', 'processando', 'recusado', 'reembolsado'] };
+
     let orders: any[] = [];
     try {
-        const statusFilter = status === 'pago' ? 'pago'
-            : status === 'aguardando' ? { in: ['aguardando', 'processando'] }
-            : status === 'recusado' ? 'recusado'
-            : { in: ['pago', 'aguardando', 'processando', 'recusado', 'reembolsado'] };
-
         const methodFilter = method === 'pix' ? 'pix' : method === 'credito' ? 'credito' : undefined;
         const orderStatusFilter = orderStatus !== 'todos' ? orderStatus : undefined;
 
@@ -125,42 +127,118 @@ export default async function OrdersPage({
 
     orders = await syncMercadoPagoOrders(orders);
 
-    const totalValue = orders.reduce((sum, o) => sum + (o.totalPrice || 0), 0)
     const paidCount = orders.filter(o => o.paymentStatus === 'pago').length
 
-    // ── Faturamento pago no mês atual ──
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    const paidThisMonth = orders.filter(o => {
-        if (o.paymentStatus !== 'pago') return false
-        const d = new Date(o.createdAt)
-        return d.getMonth() === currentMonth && d.getFullYear() === currentYear
-    })
-    const paidMonthRevenue = paidThisMonth.reduce((s, o) => s + (o.totalPrice || 0), 0)
+    // ── Vendas período atual ──
+    const currentSalesCount = orders.length
+    const currentSalesRevenue = orders.reduce((s, o) => s + (o.totalPrice || 0), 0)
 
-    // ── Vendas hoje vs mesmo dia mês passado ──
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const todayEnd = new Date(today.getTime() + 86400000)
-    const todayOrders = orders.filter(o => {
-        const d = new Date(o.createdAt)
-        return d >= today && d < todayEnd
-    })
-    const todayCount = todayOrders.length
-    const todayRevenue = todayOrders.reduce((s, o) => s + (o.totalPrice || 0), 0)
+    // ── Calcular período anterior equivalente ──
+    const nowBR = getBrazilNow()
+    let prevFromDate: string
+    let prevToDate: string
+    let comparisonLabel: string
 
-    const lastMonthSameDay = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-    const lastMonthSameDayEnd = new Date(lastMonthSameDay.getTime() + 86400000)
-    // Buscar pedidos do mesmo dia mês passado (aproximacao usando createdAt)
-    const lastMonthDayOrders = orders.filter(o => {
-        const d = new Date(o.createdAt)
-        return d >= lastMonthSameDay && d < lastMonthSameDayEnd
-    })
-    const lastMonthDayCount = lastMonthDayOrders.length
+    switch (filter) {
+        case 'today': {
+            const prev = new Date(nowBR)
+            prev.setDate(prev.getDate() - 1)
+            prevFromDate = formatDateStr(prev)
+            prevToDate = prevFromDate
+            comparisonLabel = 'vs ontem'
+            break
+        }
+        case 'yesterday': {
+            const prev = new Date(nowBR)
+            prev.setDate(prev.getDate() - 2)
+            prevFromDate = formatDateStr(prev)
+            prevToDate = prevFromDate
+            comparisonLabel = 'vs anteontem'
+            break
+        }
+        case '7dias': {
+            const from = new Date(nowBR)
+            from.setDate(from.getDate() - 14)
+            const to = new Date(nowBR)
+            to.setDate(to.getDate() - 8)
+            prevFromDate = formatDateStr(from)
+            prevToDate = formatDateStr(to)
+            comparisonLabel = 'vs os 7 dias anteriores'
+            break
+        }
+        case '30dias': {
+            const from = new Date(nowBR)
+            from.setDate(from.getDate() - 60)
+            const to = new Date(nowBR)
+            to.setDate(to.getDate() - 31)
+            prevFromDate = formatDateStr(from)
+            prevToDate = formatDateStr(to)
+            comparisonLabel = 'vs os 30 dias anteriores'
+            break
+        }
+        case 'mes': {
+            const firstDayThisMonth = new Date(nowBR.getFullYear(), nowBR.getMonth(), 1)
+            const lastDayLastMonth = new Date(nowBR.getFullYear(), nowBR.getMonth(), 0)
+            const firstDayLastMonth = new Date(nowBR.getFullYear(), nowBR.getMonth() - 1, 1)
+            // Comparar com os mesmos dias do mês passado (ex: dia 1-7 atual vs dia 1-7 passado)
+            const currentDay = nowBR.getDate()
+            const lastMonthSameDayEnd = new Date(nowBR.getFullYear(), nowBR.getMonth() - 1, currentDay)
+            prevFromDate = formatDateStr(firstDayLastMonth)
+            prevToDate = formatDateStr(lastMonthSameDayEnd > lastDayLastMonth ? lastDayLastMonth : lastMonthSameDayEnd)
+            comparisonLabel = 'vs mesmo período mês passado'
+            break
+        }
+        case 'mes-anterior': {
+            const firstDayMonthBefore = new Date(nowBR.getFullYear(), nowBR.getMonth() - 2, 1)
+            const lastDayMonthBefore = new Date(nowBR.getFullYear(), nowBR.getMonth() - 1, 0)
+            prevFromDate = formatDateStr(firstDayMonthBefore)
+            prevToDate = formatDateStr(lastDayMonthBefore)
+            comparisonLabel = 'vs mês retrasado'
+            break
+        }
+        case 'vida': {
+            // Sem comparação para "Tudo"
+            prevFromDate = fromDate
+            prevToDate = fromDate
+            comparisonLabel = 'desde o início'
+            break
+        }
+        default: {
+            // Custom: comparar com mesma duração antes do período
+            const fromD = startOfDayBR(fromDate)
+            const toD = endOfDayBR(toDate)
+            const duration = toD.getTime() - fromD.getTime()
+            const prevTo = new Date(fromD.getTime() - 1)
+            const prevFrom = new Date(prevTo.getTime() - duration)
+            prevFromDate = formatDateStr(prevFrom)
+            prevToDate = formatDateStr(prevTo)
+            comparisonLabel = 'vs período anterior'
+            break
+        }
+    }
 
-    const salesGrowth = lastMonthDayCount > 0
-        ? ((todayCount - lastMonthDayCount) / lastMonthDayCount) * 100
-        : todayCount > 0 ? 100 : 0
+    // Buscar pedidos do período anterior
+    let previousOrders: any[] = []
+    if (filter !== 'vida') {
+        try {
+            previousOrders = await prisma.order.findMany({
+                where: {
+                    deletedAt: null,
+                    createdAt: { gte: startOfDayBR(prevFromDate), lte: endOfDayBR(prevToDate) },
+                    paymentStatus: statusFilter,
+                },
+            })
+        } catch (e) { }
+    }
+    const previousSalesCount = previousOrders.length
+    const previousSalesRevenue = previousOrders.reduce((s, o) => s + (o.totalPrice || 0), 0)
+
+    // ── Métricas adicionais ──
+    const previousPaidCount = previousOrders.filter(o => o.paymentStatus === 'pago').length
+    const ordersGrowth = previousSalesCount > 0 ? ((currentSalesCount - previousSalesCount) / previousSalesCount) * 100 : currentSalesCount > 0 ? 100 : 0
+    const paidGrowth = previousPaidCount > 0 ? ((paidCount - previousPaidCount) / previousPaidCount) * 100 : paidCount > 0 ? 100 : 0
+    const revenueGrowth = previousSalesRevenue > 0 ? ((currentSalesRevenue - previousSalesRevenue) / previousSalesRevenue) * 100 : currentSalesRevenue > 0 ? 100 : 0
+    const conversionRate = currentSalesCount > 0 ? (paidCount / currentSalesCount) * 100 : 0
 
     return (
         <div style={{ width: '100%', paddingBottom: '60px' }}>
@@ -192,16 +270,17 @@ export default async function OrdersPage({
 
                 {/* Summary Cards */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-                    <SummaryCard label="Total" value={`${orders.length}`} sub="pedidos" />
-                    <SummaryCard label="Pagos" value={`${paidCount}`} sub="pedidos" />
-                    <SummaryCard label="Faturamento" value={`R$ ${fmt(totalValue)}`} sub="no período" />
-                    <SummaryCard label="Faturamento Pago/Mês" value={`R$ ${fmt(paidMonthRevenue)}`} sub={`${currentMonth + 1}/${currentYear}`} />
-                    <SummaryCard
-                        label="Vendas Hoje"
-                        value={`${todayCount}`}
-                        sub={todayCount > 0 ? `R$ ${fmt(todayRevenue)}` : 'sem vendas'}
-                        change={{ value: salesGrowth, positive: salesGrowth >= 0 }}
+                    <SalesCard
+                        currentCount={currentSalesCount}
+                        currentRevenue={currentSalesRevenue}
+                        previousCount={previousSalesCount}
+                        previousRevenue={previousSalesRevenue}
+                        comparisonLabel={comparisonLabel}
                     />
+                    <SummaryCard label="Pedidos" value={`${currentSalesCount}`} sub="pedidos no período" change={filter !== 'vida' ? { value: ordersGrowth, positive: ordersGrowth >= 0 } : undefined} />
+                    <SummaryCard label="Pagos" value={`${paidCount}`} sub={`${currentSalesCount > 0 ? Math.round((paidCount / currentSalesCount) * 100) : 0}% dos pedidos`} change={filter !== 'vida' ? { value: paidGrowth, positive: paidGrowth >= 0 } : undefined} />
+                    <ConversionCard rate={conversionRate} paidCount={paidCount} totalCount={currentSalesCount} />
+                    <SummaryCard label="Faturamento" value={`R$ ${fmt(currentSalesRevenue)}`} sub={comparisonLabel} change={filter !== 'vida' ? { value: revenueGrowth, positive: revenueGrowth >= 0 } : undefined} />
                 </div>
 
                 {/* Filters */}

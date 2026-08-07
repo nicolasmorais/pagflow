@@ -15,7 +15,9 @@ import {
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const fmtNum = (v: number) => v.toLocaleString('pt-BR')
 
-type TaboolaData = {
+type TaboolaAccount = {
+    accountId: string
+    label: string
     summary: {
         totalSpent: number
         totalImpressions: number
@@ -25,23 +27,23 @@ type TaboolaData = {
         ctr: number
         cpa: number
     }
-    daily: {
-        date: string
-        spent: number
-        impressions: number
-        clicks: number
-        conversions: number
-        cpc: number
-        ctr: number
-    }[]
-    campaigns: {
-        name: string
-        spent: number
-        impressions: number
-        clicks: number
-        conversions: number
-        status: string
-    }[]
+    daily: { date: string; spent: number }[]
+    error?: string
+}
+
+type TaboolaRevenue = {
+    accountId: string
+    paidRevenue: number
+    unpaidRevenue: number
+    totalRevenue: number
+    paidOrders: number
+    totalOrders: number
+}
+
+type TaboolaData = {
+    accounts: TaboolaAccount[]
+    revenue: TaboolaRevenue[]
+    totalSpent: number
     period: string
     dateRange: { start: string; end: string }
 }
@@ -120,9 +122,36 @@ export default function TaboolaPage() {
         return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
     }
 
-    const summary = data?.summary
-    const daily = data?.daily?.map(d => ({ ...d, date: formatDate(d.date) })) || []
-    const campaigns = data?.campaigns || []
+    const accounts = data?.accounts || []
+    const revenue = data?.revenue || []
+
+    // Aggregated summary from all accounts
+    const summary = accounts.length > 0 ? {
+        totalSpent: accounts.reduce((s, a) => s + a.summary.totalSpent, 0),
+        totalImpressions: accounts.reduce((s, a) => s + a.summary.totalImpressions, 0),
+        totalClicks: accounts.reduce((s, a) => s + a.summary.totalClicks, 0),
+        totalConversions: accounts.reduce((s, a) => s + a.summary.totalConversions, 0),
+        cpc: 0, ctr: 0, cpa: 0,
+    } : null
+    if (summary) {
+        summary.cpc = summary.totalClicks > 0 ? summary.totalSpent / summary.totalClicks : 0
+        summary.ctr = summary.totalImpressions > 0 ? (summary.totalClicks / summary.totalImpressions) * 100 : 0
+        summary.cpa = summary.totalConversions > 0 ? summary.totalSpent / summary.totalConversions : 0
+    }
+
+    // Merge daily data from all accounts
+    const dailyMap = new Map<string, number>()
+    for (const acc of accounts) {
+        for (const d of acc.daily) {
+            dailyMap.set(d.date, (dailyMap.get(d.date) || 0) + d.spent)
+        }
+    }
+    const daily = Array.from(dailyMap.entries())
+        .map(([date, spent]) => ({ date: formatDate(date), spent }))
+        .sort((a, b) => a.date.localeCompare(b.date))
+
+    const totalPaidRevenue = revenue.reduce((s, r) => s + r.paidRevenue, 0)
+    const totalUnpaidRevenue = revenue.reduce((s, r) => s + r.unpaidRevenue, 0)
 
     return (
         <div style={{ paddingBottom: '40px' }}>
@@ -383,97 +412,124 @@ export default function TaboolaPage() {
                             </ResponsiveContainer>
                         </SectionCard>
 
-                        {/* Engagement Chart */}
-                        <SectionCard title="Engajamento" subtitle="Cliques vs Impressões">
-                            <ResponsiveContainer width="100%" height={280}>
-                                <BarChart data={daily} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} tickLine={false} axisLine={false} interval={4} />
-                                    <YAxis yAxisId="left" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
-                                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 10, fill: '#94a3b8' }} tickLine={false} axisLine={false} />
-                                    <Tooltip content={<ChartTooltip />} />
-                                    <Bar yAxisId="left" dataKey="impressions" name="Impressões" fill="#3b82f6" radius={[4, 4, 0, 0]} opacity={0.8} />
-                                    <Bar yAxisId="right" dataKey="clicks" name="Cliques" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                        {/* ROAS Card */}
+                        <SectionCard title="Retorno" subtitle="Faturamento vs Gasto">
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', justifyContent: 'center', height: '100%' }}>
+                                <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px', border: '1px solid #f1f5f9' }}>
+                                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Faturamento Pago</p>
+                                    <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 900, color: '#059669', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(totalPaidRevenue)}</p>
+                                </div>
+                                <div style={{ background: '#f8fafc', borderRadius: '12px', padding: '16px', border: '1px solid #f1f5f9' }}>
+                                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Faturamento Não Pago</p>
+                                    <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 900, color: '#dc2626', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(totalUnpaidRevenue)}</p>
+                                </div>
+                                <div style={{ background: summary && summary.totalSpent > 0 ? 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' : '#f8fafc', borderRadius: '12px', padding: '16px', border: summary && summary.totalSpent > 0 ? 'none' : '1px solid #f1f5f9' }}>
+                                    <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: summary && summary.totalSpent > 0 ? 'rgba(255,255,255,0.4)' : '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>ROAS</p>
+                                    <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 900, color: summary && summary.totalSpent > 0 ? '#fff' : '#0f172a', fontFamily: "'Space Grotesk', sans-serif" }}>
+                                        {summary && summary.totalSpent > 0 ? `${(totalPaidRevenue / summary.totalSpent).toFixed(2)}x` : '—'}
+                                    </p>
+                                </div>
+                            </div>
                         </SectionCard>
                     </div>
 
-                    {/* Campaigns List */}
-                    <SectionCard title="Campanhas" subtitle={`${campaigns.length} campanhas no período`}>
-                        {campaigns.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '48px 0' }}>
-                                <div style={{
-                                    width: '64px', height: '64px', borderRadius: '18px',
-                                    background: 'linear-gradient(135deg, #f1f5f9, #e2e8f0)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    margin: '0 auto 16px',
-                                }}>
-                                    <BarChart3 size={28} color="#94a3b8" />
-                                </div>
-                                <p style={{ color: '#64748b', fontSize: '14px', fontWeight: 700, margin: 0 }}>Nenhuma campanha encontrada</p>
-                                <p style={{ color: '#cbd5e1', fontSize: '12px', margin: '6px 0 0' }}>Verifique se há campanhas ativas no Taboola</p>
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                {/* Table Header */}
-                                <div style={{
-                                    display: 'grid', gridTemplateColumns: '1fr 100px 100px 80px 80px 90px',
-                                    gap: '8px', padding: '10px 14px',
-                                    fontSize: '10px', fontWeight: 700, color: '#94a3b8',
-                                    textTransform: 'uppercase', letterSpacing: '0.06em',
-                                }}>
-                                    <span>Campanha</span>
-                                    <span style={{ textAlign: 'right' }}>Gasto</span>
-                                    <span style={{ textAlign: 'right' }}>Impressões</span>
-                                    <span style={{ textAlign: 'right' }}>Cliques</span>
-                                    <span style={{ textAlign: 'right' }}>CTR</span>
-                                    <span style={{ textAlign: 'right' }}>CPC</span>
-                                </div>
-                                {campaigns.map((camp, i) => {
-                                    const campCtr = camp.impressions > 0 ? (camp.clicks / camp.impressions) * 100 : 0
-                                    const campCpc = camp.clicks > 0 ? camp.spent / camp.clicks : 0
+                    {/* Per-Account Cards */}
+                    {accounts.length > 0 && (
+                        <SectionCard title="Contas Taboola" subtitle={`${accounts.filter(a => !a.error).length} de ${accounts.length} contas conectadas`}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '14px' }}>
+                                {accounts.map((acc, i) => {
+                                    const colors = ['#4285f4', '#8b5cf6', '#f97316']
+                                    const accent = colors[i % colors.length]
+                                    const rev = revenue.find(r => r.accountId === acc.accountId)
+                                    const paidPct = rev && rev.totalRevenue > 0 ? (rev.paidRevenue / rev.totalRevenue) * 100 : 0
                                     return (
-                                        <div key={i} style={{
-                                            display: 'grid', gridTemplateColumns: '1fr 100px 100px 80px 80px 90px',
-                                            gap: '8px', padding: '14px',
-                                            background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9',
-                                            alignItems: 'center', transition: 'all 0.2s',
+                                        <div key={acc.accountId} style={{
+                                            background: acc.error ? 'linear-gradient(145deg, #fef2f2, #fff1f2)' : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+                                            border: acc.error ? '1px solid #fecaca' : '1px solid rgba(241,245,249,0.8)',
+                                            borderRadius: '18px', padding: '20px',
+                                            boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
                                         }}>
-                                            <div style={{ minWidth: 0 }}>
-                                                <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                    {camp.name}
-                                                </p>
-                                                <span style={{
-                                                    fontSize: '9px', fontWeight: 700, textTransform: 'uppercase',
-                                                    color: camp.status === 'RUNNING' ? '#059669' : camp.status === 'PAUSED' ? '#f59e0b' : '#94a3b8',
-                                                    background: camp.status === 'RUNNING' ? '#ecfdf5' : camp.status === 'PAUSED' ? '#fffbeb' : '#f1f5f9',
-                                                    padding: '2px 6px', borderRadius: '4px',
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                                                <div style={{
+                                                    width: '36px', height: '36px', borderRadius: '10px',
+                                                    background: acc.error ? '#fecaca' : `${accent}18`,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                                 }}>
-                                                    {camp.status}
-                                                </span>
+                                                    <Target size={16} color={acc.error ? '#dc2626' : accent} />
+                                                </div>
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: acc.error ? '#991b1b' : '#0f172a' }}>{acc.label}</p>
+                                                    <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#94a3b8', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.accountId}</p>
+                                                </div>
+                                                {acc.error ? (
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: '#dc2626', background: '#fef2f2', padding: '3px 8px', borderRadius: '6px', border: '1px solid #fecaca' }}>Erro</span>
+                                                ) : (
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '3px 8px', borderRadius: '6px' }}>Conectada</span>
+                                                )}
                                             </div>
-                                            <span style={{ textAlign: 'right', fontSize: '13px', fontWeight: 900, color: '#dc2626', fontFamily: "'Space Grotesk', sans-serif" }}>
-                                                R$ {fmt(camp.spent)}
-                                            </span>
-                                            <span style={{ textAlign: 'right', fontSize: '12px', fontWeight: 700, color: '#475569', fontFamily: "'Space Grotesk', sans-serif" }}>
-                                                {fmtNum(camp.impressions)}
-                                            </span>
-                                            <span style={{ textAlign: 'right', fontSize: '12px', fontWeight: 700, color: '#475569', fontFamily: "'Space Grotesk', sans-serif" }}>
-                                                {fmtNum(camp.clicks)}
-                                            </span>
-                                            <span style={{ textAlign: 'right', fontSize: '12px', fontWeight: 700, color: campCtr >= 1 ? '#059669' : '#f59e0b', fontFamily: "'Space Grotesk', sans-serif" }}>
-                                                {campCtr.toFixed(2)}%
-                                            </span>
-                                            <span style={{ textAlign: 'right', fontSize: '12px', fontWeight: 700, color: '#475569', fontFamily: "'Space Grotesk', sans-serif" }}>
-                                                R$ {fmt(campCpc)}
-                                            </span>
+                                            {acc.error ? (
+                                                <p style={{ margin: 0, fontSize: '12px', color: '#b91c1c', fontWeight: 500 }}>{acc.error}</p>
+                                            ) : (
+                                                <>
+                                                    <p style={{ margin: '0 0 2px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gasto</p>
+                                                    <p style={{ margin: '0 0 12px', fontSize: '24px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(acc.summary.totalSpent)}</p>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                                                        <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                            <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Impressões</p>
+                                                            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{fmtNum(acc.summary.totalImpressions)}</p>
+                                                        </div>
+                                                        <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                            <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cliques</p>
+                                                            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{fmtNum(acc.summary.totalClicks)}</p>
+                                                        </div>
+                                                        <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                            <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CTR</p>
+                                                            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{acc.summary.ctr.toFixed(2)}%</p>
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                                        <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                            <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conversões</p>
+                                                            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: acc.summary.totalConversions > 0 ? '#059669' : '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{fmtNum(acc.summary.totalConversions)}</p>
+                                                        </div>
+                                                        <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                            <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CPA</p>
+                                                            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{acc.summary.cpa > 0 ? `R$ ${fmt(acc.summary.cpa)}` : '—'}</p>
+                                                        </div>
+                                                        <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                            <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CPC</p>
+                                                            <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(acc.summary.cpc)}</p>
+                                                        </div>
+                                                    </div>
+                                                    {rev && rev.totalRevenue > 0 && (
+                                                        <div style={{ marginTop: '10px', background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', borderRadius: '12px', padding: '12px', border: '1px solid #bbf7d0' }}>
+                                                            <p style={{ margin: '0 0 8px', fontSize: '9px', fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Faturamento via UTM</p>
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <div style={{ flex: 1, background: '#fff', borderRadius: '8px', padding: '8px 10px', border: '1px solid #dcfce7' }}>
+                                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#16a34a' }}>Pago</p>
+                                                                    <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 900, color: '#15803d', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(rev.paidRevenue)}</p>
+                                                                    <p style={{ margin: '1px 0 0', fontSize: '9px', color: '#86efac' }}>{rev.paidOrders} pedidos</p>
+                                                                </div>
+                                                                <div style={{ flex: 1, background: '#fff', borderRadius: '8px', padding: '8px 10px', border: '1px solid #fee2e2' }}>
+                                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#ef4444' }}>Não Pago</p>
+                                                                    <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 900, color: '#b91c1c', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(rev.unpaidRevenue)}</p>
+                                                                    <p style={{ margin: '1px 0 0', fontSize: '9px', color: '#fca5a5' }}>{rev.totalOrders - rev.paidOrders} pedidos</p>
+                                                                </div>
+                                                            </div>
+                                                            <div style={{ marginTop: '8px', height: '4px', background: '#fecaca', borderRadius: '4px', overflow: 'hidden' }}>
+                                                                <div style={{ width: `${paidPct}%`, height: '100%', background: '#22c55e', borderRadius: '4px' }} />
+                                                            </div>
+                                                            <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: 700, color: '#15803d', textAlign: 'right' }}>{paidPct.toFixed(0)}% pago</p>
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
                                     )
                                 })}
                             </div>
-                        )}
-                    </SectionCard>
+                        </SectionCard>
+                    )}
                 </>
             )}
         </div>

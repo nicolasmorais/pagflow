@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Search, Filter, X, ChevronDown, Calendar } from 'lucide-react'
 
 const presets = [
@@ -10,15 +10,15 @@ const presets = [
     { value: '7dias', label: '7 dias' },
     { value: '30dias', label: '30 dias' },
     { value: 'mes', label: 'Este mês' },
-    { value: 'mes-anterior', label: 'Mês ant.' },
+    { value: 'mes-anterior', label: 'Mês passado' },
     { value: 'vida', label: 'Tudo' },
 ]
 
 const paymentStatuses = [
-    { key: 'todos', label: 'Todos', color: '#fff', bg: '#14151F' },
-    { key: 'pago', label: 'Pago', color: '#1E7A52', bg: '#E3F4EA' },
-    { key: 'aguardando', label: 'Aguardando', color: '#92400E', bg: '#FEF3C7' },
-    { key: 'recusado', label: 'Recusado', color: '#B23B32', bg: '#FBEAE8' },
+    { key: 'todos', label: 'Todos' },
+    { key: 'pago', label: 'Pago' },
+    { key: 'aguardando', label: 'Aguardando' },
+    { key: 'recusado', label: 'Recusado' },
 ]
 
 const paymentMethods = [
@@ -56,8 +56,25 @@ export default function OrdersFilterBar({
     const router = useRouter()
     const searchParams = useSearchParams()
     const [showCustom, setShowCustom] = useState(false)
-    const [showAdvanced, setShowAdvanced] = useState(false)
+    const [showDropdown, setShowDropdown] = useState(false)
     const [searchValue, setSearchValue] = useState(currentSearch)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const customRef = useRef<HTMLDivElement>(null)
+
+    const activeCount = [currentPaymentStatus, currentPaymentMethod, currentOrderStatus].filter(v => v !== 'todos').length + (currentSearch ? 1 : 0)
+
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false)
+            }
+            if (customRef.current && !customRef.current.contains(e.target as Node)) {
+                setShowCustom(false)
+            }
+        }
+        if (showDropdown || showCustom) document.addEventListener('mousedown', handleClick)
+        return () => document.removeEventListener('mousedown', handleClick)
+    }, [showDropdown, showCustom])
 
     function updateParam(key: string, value: string | null) {
         const params = new URLSearchParams(searchParams.toString())
@@ -96,14 +113,14 @@ export default function OrdersFilterBar({
         router.push('?filter=7dias')
     }
 
-    const hasActiveFilters = currentPaymentStatus !== 'todos' || currentPaymentMethod !== 'todos' || currentOrderStatus !== 'todos' || currentSearch
-
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* Row 1: Search + Period + Filtros */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                {/* Search */}
-                <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: '0', minWidth: '220px', maxWidth: '300px' }}>
+        <>
+            <div style={{
+                display: 'flex', alignItems: 'center', gap: '10px',
+                flexWrap: 'wrap',
+            }}>
+                {/* Left: Search */}
+                <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: '0', minWidth: '200px', maxWidth: '280px' }}>
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         background: '#fff', border: '1px solid #E5E7EF', borderRadius: '9px 0 0 9px',
@@ -141,7 +158,10 @@ export default function OrdersFilterBar({
                     </button>
                 </form>
 
-                {/* Period presets */}
+                {/* Spacer */}
+                <div style={{ flex: 1 }} />
+
+                {/* Right: Period presets */}
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                     {presets.map(p => (
                         <button
@@ -155,190 +175,199 @@ export default function OrdersFilterBar({
                                 color: currentFilter === p.value ? '#fff' : '#6E7180',
                                 fontSize: '12px', fontWeight: 700, cursor: 'pointer',
                                 transition: 'all 0.15s', fontFamily: 'inherit',
+                                whiteSpace: 'nowrap',
                             }}
                         >
                             {p.label}
                         </button>
                     ))}
-                    <button
-                        type="button"
-                        onClick={() => setShowCustom(!showCustom)}
-                        style={{
-                            padding: '8px 12px', borderRadius: '8px',
-                            border: currentFilter === 'custom' ? 'none' : '1px solid #E5E7EF',
-                            background: currentFilter === 'custom' ? '#14151F' : '#fff',
-                            color: currentFilter === 'custom' ? '#fff' : '#6E7180',
-                            fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: '4px',
-                            transition: 'all 0.15s', fontFamily: 'inherit',
-                        }}
-                    >
-                        <Calendar size={13} />
-                        Personalizado
-                        <ChevronDown size={12} style={{ transform: showCustom ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                    </button>
-                </div>
-
-                {/* Advanced toggle */}
-                <button
-                    type="button"
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    style={{
-                        padding: '8px 12px', borderRadius: '8px',
-                        border: hasActiveFilters ? '1px solid #2C5C86' : '1px solid #E5E7EF',
-                        background: hasActiveFilters ? '#E7F1F8' : '#fff',
-                        color: hasActiveFilters ? '#2C5C86' : '#6E7180',
-                        fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        transition: 'all 0.15s', fontFamily: 'inherit',
-                    }}
-                >
-                    <Filter size={13} />
-                    Filtros
-                    {hasActiveFilters && (
-                        <span style={{
-                            width: '16px', height: '16px', borderRadius: '50%',
-                            background: '#2C5C86', color: '#fff', fontSize: '9px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: 800,
-                        }}>
-                            {[currentPaymentStatus, currentPaymentMethod, currentOrderStatus, currentSearch].filter(v => v !== 'todos' && v !== '').length}
-                        </span>
-                    )}
-                </button>
-            </div>
-
-            {/* Custom date range */}
-            {showCustom && (
-                <form onSubmit={handleCustomSubmit} style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    background: '#fff', border: '1px solid #E5E7EF', borderRadius: '9px',
-                    padding: '10px 14px',
-                }}>
-                    <Calendar size={14} color="#6E7180" />
-                    <input type="date" name="from" defaultValue={fromDate} style={{
-                        border: '1px solid #E5E7EF', borderRadius: '8px', padding: '6px 10px',
-                        fontSize: '13px', color: '#14151F', fontWeight: 500, fontFamily: 'inherit',
-                    }} />
-                    <span style={{ fontSize: '12px', color: '#6E7180', fontWeight: 600 }}>até</span>
-                    <input type="date" name="to" defaultValue={toDate} style={{
-                        border: '1px solid #E5E7EF', borderRadius: '8px', padding: '6px 10px',
-                        fontSize: '13px', color: '#14151F', fontWeight: 500, fontFamily: 'inherit',
-                    }} />
-                    <button type="submit" style={{
-                        padding: '7px 14px', background: '#14151F', color: '#fff',
-                        border: 'none', borderRadius: '8px',
-                        fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                    }}>
-                        Filtrar
-                    </button>
-                </form>
-            )}
-
-            {/* Advanced filters panel */}
-            {showAdvanced && (
-                <div style={{
-                    display: 'flex', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap',
-                    background: '#fff', border: '1px solid #E5E7EF', borderRadius: '14px',
-                    padding: '16px 18px',
-                }}>
-                    {/* Payment Status */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            Pagamento
-                        </label>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                            {paymentStatuses.map(s => (
-                                <button
-                                    key={s.key}
-                                    type="button"
-                                    onClick={() => updateParam('status', s.key)}
-                                    style={{
-                                        padding: '6px 12px', borderRadius: '8px',
-                                        border: 'none',
-                                        background: currentPaymentStatus === s.key ? (s.key === 'todos' ? '#14151F' : s.bg) : '#F5F6F9',
-                                        color: currentPaymentStatus === s.key ? (s.key === 'todos' ? '#fff' : s.color) : '#6E7180',
-                                        fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                        transition: 'all 0.15s', fontFamily: 'inherit',
-                                    }}
-                                >
-                                    {s.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Payment Method */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            Método
-                        </label>
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                            {paymentMethods.map(m => (
-                                <button
-                                    key={m.key}
-                                    type="button"
-                                    onClick={() => updateParam('method', m.key)}
-                                    style={{
-                                        padding: '6px 12px', borderRadius: '8px',
-                                        border: 'none',
-                                        background: currentPaymentMethod === m.key ? (m.key === 'todos' ? '#14151F' : '#E7F1F8') : '#F5F6F9',
-                                        color: currentPaymentMethod === m.key ? (m.key === 'todos' ? '#fff' : '#2C5C86') : '#6E7180',
-                                        fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                        transition: 'all 0.15s', fontFamily: 'inherit',
-                                    }}
-                                >
-                                    {m.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Order Status */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                            Status do Pedido
-                        </label>
-                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                            {orderStatuses.map(o => (
-                                <button
-                                    key={o.key}
-                                    type="button"
-                                    onClick={() => updateParam('orderStatus', o.key)}
-                                    style={{
-                                        padding: '6px 12px', borderRadius: '8px',
-                                        border: 'none',
-                                        background: currentOrderStatus === o.key ? (o.key === 'todos' ? '#14151F' : '#E3F4EA') : '#F5F6F9',
-                                        color: currentOrderStatus === o.key ? (o.key === 'todos' ? '#fff' : '#1E7A52') : '#6E7180',
-                                        fontSize: '12px', fontWeight: 700, cursor: 'pointer',
-                                        transition: 'all 0.15s', fontFamily: 'inherit',
-                                    }}
-                                >
-                                    {o.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Clear all */}
-                    {hasActiveFilters && (
+                    <div style={{ position: 'relative' }} ref={customRef}>
                         <button
                             type="button"
-                            onClick={clearAllFilters}
+                            onClick={() => setShowCustom(!showCustom)}
                             style={{
-                                padding: '6px 12px', borderRadius: '8px',
-                                border: '1px solid #FBEAE8', background: '#fff',
-                                color: '#B23B32', fontSize: '12px', fontWeight: 700,
-                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px',
-                                marginLeft: 'auto', fontFamily: 'inherit',
+                                padding: '8px 12px', borderRadius: '8px',
+                                border: currentFilter === 'custom' ? 'none' : '1px solid #E5E7EF',
+                                background: currentFilter === 'custom' ? '#14151F' : '#fff',
+                                color: currentFilter === 'custom' ? '#fff' : '#6E7180',
+                                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: '4px',
+                                transition: 'all 0.15s', fontFamily: 'inherit',
+                                whiteSpace: 'nowrap',
                             }}
                         >
-                            <X size={12} />
-                            Limpar filtros
+                            <Calendar size={13} />
+                            Personalizado
+                            <ChevronDown size={12} style={{ transform: showCustom ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                         </button>
+                        {showCustom && (
+                            <form onSubmit={handleCustomSubmit} style={{
+                                position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                background: '#fff', border: '1px solid #E5E7EF', borderRadius: '14px',
+                                padding: '14px 16px',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                                zIndex: 100, whiteSpace: 'nowrap',
+                            }}>
+                                <Calendar size={14} color="#6E7180" />
+                                <input type="date" name="from" defaultValue={fromDate} style={{
+                                    border: '1px solid #E5E7EF', borderRadius: '8px', padding: '6px 10px',
+                                    fontSize: '13px', color: '#14151F', fontWeight: 500, fontFamily: 'inherit',
+                                }} />
+                                <span style={{ fontSize: '12px', color: '#6E7180', fontWeight: 600 }}>até</span>
+                                <input type="date" name="to" defaultValue={toDate} style={{
+                                    border: '1px solid #E5E7EF', borderRadius: '8px', padding: '6px 10px',
+                                    fontSize: '13px', color: '#14151F', fontWeight: 500, fontFamily: 'inherit',
+                                }} />
+                                <button type="submit" style={{
+                                    padding: '7px 14px', background: '#14151F', color: '#fff',
+                                    border: 'none', borderRadius: '8px',
+                                    fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                                }}>
+                                    Filtrar
+                                </button>
+                            </form>
+                        )}
+                    </div>
+                </div>
+
+                {/* Filtros button */}
+                <div style={{ position: 'relative' }} ref={dropdownRef}>
+                    <button
+                        type="button"
+                        onClick={() => setShowDropdown(!showDropdown)}
+                        style={{
+                            padding: '8px 14px', borderRadius: '8px',
+                            border: activeCount > 0 ? '1px solid #2C5C86' : '1px solid #E5E7EF',
+                            background: activeCount > 0 ? '#E7F1F8' : '#fff',
+                            color: activeCount > 0 ? '#2C5C86' : '#6E7180',
+                            fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            transition: 'all 0.15s', fontFamily: 'inherit',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        <Filter size={13} />
+                        Filtros
+                        {activeCount > 0 && (
+                            <span style={{
+                                width: '16px', height: '16px', borderRadius: '50%',
+                                background: '#2C5C86', color: '#fff', fontSize: '9px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontWeight: 800,
+                            }}>
+                                {activeCount}
+                            </span>
+                        )}
+                    </button>
+
+                    {showDropdown && (
+                        <div style={{
+                            position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                            background: '#fff', border: '1px solid #E5E7EF',
+                            borderRadius: '14px', padding: '18px',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                            minWidth: '280px', zIndex: 100,
+                        }}>
+                            {/* Pagamento */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>
+                                    Status do pagamento
+                                </label>
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                    {paymentStatuses.map(s => (
+                                        <button
+                                            key={s.key}
+                                            type="button"
+                                            onClick={() => updateParam('status', s.key)}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: '8px',
+                                                border: 'none',
+                                                background: currentPaymentStatus === s.key ? '#14151F' : '#F5F6F9',
+                                                color: currentPaymentStatus === s.key ? '#fff' : '#6E7180',
+                                                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                                                transition: 'all 0.15s', fontFamily: 'inherit',
+                                            }}
+                                        >
+                                            {s.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Status da logística */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>
+                                    Status da logística
+                                </label>
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                    {orderStatuses.map(o => (
+                                        <button
+                                            key={o.key}
+                                            type="button"
+                                            onClick={() => updateParam('orderStatus', o.key)}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: '8px',
+                                                border: 'none',
+                                                background: currentOrderStatus === o.key ? '#14151F' : '#F5F6F9',
+                                                color: currentOrderStatus === o.key ? '#fff' : '#6E7180',
+                                                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                                                transition: 'all 0.15s', fontFamily: 'inherit',
+                                            }}
+                                        >
+                                            {o.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Método */}
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'block', marginBottom: '8px' }}>
+                                    Método de pagamento
+                                </label>
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                    {paymentMethods.map(m => (
+                                        <button
+                                            key={m.key}
+                                            type="button"
+                                            onClick={() => updateParam('method', m.key)}
+                                            style={{
+                                                padding: '6px 12px', borderRadius: '8px',
+                                                border: 'none',
+                                                background: currentPaymentMethod === m.key ? '#14151F' : '#F5F6F9',
+                                                color: currentPaymentMethod === m.key ? '#fff' : '#6E7180',
+                                                fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                                                transition: 'all 0.15s', fontFamily: 'inherit',
+                                            }}
+                                        >
+                                            {m.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {activeCount > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => { clearAllFilters(); setShowDropdown(false) }}
+                                    style={{
+                                        width: '100%', padding: '8px 12px', borderRadius: '8px',
+                                        border: '1px solid #FBEAE8', background: '#fff',
+                                        color: '#B23B32', fontSize: '12px', fontWeight: 700,
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                        fontFamily: 'inherit',
+                                    }}
+                                >
+                                    <X size={12} />
+                                    Limpar todos os filtros
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
-            )}
-        </div>
+            </div>
+
+        </>
     )
 }

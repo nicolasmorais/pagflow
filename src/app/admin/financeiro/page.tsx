@@ -2,46 +2,8 @@ export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
 import { formatDateStr, getBrazilNow } from '@/lib/date-utils'
+import { fetchAllTaboolaAccounts, attributeOrdersToAccounts, buildCampaignAccountMap } from '@/lib/taboola'
 import FinanceiroClient from './FinanceiroClient'
-
-const TABOOLA_CLIENT_ID = '101768521273467f9b5b87c1a86c01f2'
-const TABOOLA_CLIENT_SECRET = '43ae9bcc72054b3bb45843a20083b60b'
-const TABOOLA_ACCOUNT_ID = 'taboolaaccount-admcasocastoregmailcom'
-
-async function getTaboolaDaily(startDate: string, endDate: string): Promise<{ total: number; byDate: Map<string, number> }> {
-    try {
-        const tokenRes = await fetch('https://backstage.taboola.com/backstage/oauth/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                client_id: TABOOLA_CLIENT_ID,
-                client_secret: TABOOLA_CLIENT_SECRET,
-                grant_type: 'client_credentials',
-            }),
-            cache: 'no-store',
-        })
-        if (!tokenRes.ok) return { total: 0, byDate: new Map() }
-        const { access_token } = await tokenRes.json()
-
-        const reportRes = await fetch(
-            `https://backstage.taboola.com/backstage/api/1.0/${TABOOLA_ACCOUNT_ID}/reports/campaign-summary/dimensions/day?start_date=${startDate}&end_date=${endDate}`,
-            { headers: { Authorization: `Bearer ${access_token}`, Accept: 'application/json' }, cache: 'no-store' }
-        )
-        if (!reportRes.ok) return { total: 0, byDate: new Map() }
-        const data = await reportRes.json()
-        const byDate = new Map<string, number>()
-        let total = 0
-        for (const r of (data.results || [])) {
-            const spent = r.spent || 0
-            total += spent
-            const dateKey = (r.date || '').split(' ')[0]
-            if (dateKey) byDate.set(dateKey, (byDate.get(dateKey) || 0) + spent)
-        }
-        return { total, byDate }
-    } catch {
-        return { total: 0, byDate: new Map() }
-    }
-}
 
 const PERIOD_DAYS: Record<string, number | null> = {
     'today': 0,
@@ -144,7 +106,46 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
     const endDate = isMonthPeriod(period)
         ? formatDateStr(getMonthRange(period, now).to)
         : formatDateStr(now)
-    const { total: taboolaSpent, byDate: taboolaByDate } = await getTaboolaDaily(startDate, endDate)
+    const taboolaData = await fetchAllTaboolaAccounts(startDate, endDate)
+    const taboolaSpent = taboolaData.totalSpent
+    const taboolaByDate = taboolaData.byDate
+    const taboolaAccounts = taboolaData.accounts.map(a => ({
+        accountId: a.accountId,
+        label: a.label,
+        totalSpent: a.totalSpent,
+        totalImpressions: a.totalImpressions,
+        totalClicks: a.totalClicks,
+        totalConversions: a.totalConversions,
+        cpc: a.cpc,
+        ctr: a.ctr,
+        cpa: a.cpa,
+        error: a.error,
+    }))
+
+    // Buscar vendas atribuídas ao Taboola via UTM
+    const [taboolaOrders, campaignMap] = await Promise.all([
+        prisma.order.findMany({
+            where: {
+                deletedAt: null,
+                utmSource: { contains: 'taboola', mode: 'insensitive' },
+                ...(whereDate ? { createdAt: whereDate } : {}),
+            },
+            select: { totalPrice: true, paymentStatus: true, utmCampaign: true, utmSource: true, utmId: true },
+        }),
+        buildCampaignAccountMap(),
+    ])
+    const taboolaAttribution = attributeOrdersToAccounts(taboolaOrders, taboolaData.accounts, campaignMap)
+    const taboolaRevenue = taboolaAccounts.map(a => {
+        const attr = taboolaAttribution.byAccount.get(a.accountId)
+        return {
+            accountId: a.accountId,
+            paidRevenue: attr?.paidRevenue || 0,
+            unpaidRevenue: attr?.unpaidRevenue || 0,
+            totalRevenue: attr?.totalRevenue || 0,
+            paidOrders: attr?.paidOrders || 0,
+            totalOrders: attr?.totalOrders || 0,
+        }
+    })
 
     const kpis = {
         totalRevenue,
@@ -240,6 +241,8 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
         categoryBreakdown,
         totalCost,
         period,
+        taboolaAccounts,
+        taboolaRevenue,
     }
 
     const serializedRecords = records.map(r => ({

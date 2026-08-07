@@ -1,48 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getBrazilNow, formatDateStr } from '@/lib/date-utils'
-
-const TABOOLA_CLIENT_ID = '101768521273467f9b5b87c1a86c01f2'
-const TABOOLA_CLIENT_SECRET = '43ae9bcc72054b3bb45843a20083b60b'
-const TABOOLA_ACCOUNT_ID = 'taboolaaccount-admcasocastoregmailcom'
-const BASE_URL = 'https://backstage.taboola.com/backstage/api/1.0'
-
-let cachedToken: { token: string; expiresAt: number } | null = null
-
-async function getToken(): Promise<string> {
-    if (cachedToken && cachedToken.expiresAt > Date.now()) {
-        return cachedToken.token
-    }
-
-    const res = await fetch('https://backstage.taboola.com/backstage/oauth/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            client_id: TABOOLA_CLIENT_ID,
-            client_secret: TABOOLA_CLIENT_SECRET,
-            grant_type: 'client_credentials',
-        }),
-    })
-
-    if (!res.ok) {
-        const text = await res.text()
-        throw new Error(`Taboola auth failed: ${res.status} - ${text}`)
-    }
-
-    const data = await res.json()
-    cachedToken = {
-        token: data.access_token,
-        expiresAt: Date.now() + (data.expires_in - 60) * 1000,
-    }
-    return cachedToken.token
-}
+import { fetchAllTaboolaAccounts, fetchAccountCampaigns, TABOOLA_ACCOUNTS, attributeOrdersToAccounts, buildCampaignAccountMap } from '@/lib/taboola'
+import { prisma } from '@/lib/prisma'
 
 function getDateRange(period: string): { start: string; end: string } {
     const now = getBrazilNow()
-    const end = formatDateStr(now)
+    let end = formatDateStr(now)
     const start = new Date(now)
 
     switch (period) {
         case 'today':
+            break
+        case 'yesterday':
+            start.setDate(start.getDate() - 1)
+            end = formatDateStr(start)
+            break
+        case 'week':
+            start.setDate(start.getDate() - 7)
+            break
+        case 'this_month':
+            start.setDate(1)
+            break
+        case 'last_month':
+            start.setMonth(start.getMonth() - 1)
+            start.setDate(1)
+            end = formatDateStr(new Date(now.getFullYear(), now.getMonth(), 0))
             break
         case '7d':
             start.setDate(start.getDate() - 7)
@@ -60,113 +42,127 @@ function getDateRange(period: string): { start: string; end: string } {
     return { start: formatDateStr(start), end }
 }
 
-async function taboolaFetch(url: string, token: string): Promise<any> {
-    const res = await fetch(url, {
-        headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: 'application/json',
-        },
-    })
-    if (!res.ok) {
-        const text = await res.text()
-        throw new Error(`Taboola API ${res.status}: ${text.substring(0, 300)}`)
-    }
-    return res.json()
-}
-
 export async function GET(req: NextRequest) {
     try {
         const period = req.nextUrl.searchParams.get('period') || '30d'
+        const accountId = req.nextUrl.searchParams.get('account')
         const { start, end } = getDateRange(period)
-        const token = await getToken()
 
-        // 1. Daily summary: /reports/campaign-summary/dimensions/day
-        const summaryUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/reports/campaign-summary/dimensions/day?start_date=${start}&end_date=${end}`
-        const summaryData = await taboolaFetch(summaryUrl, token)
-        const summaryResults = summaryData.results || []
-
-        // 2. Campaign breakdown: /reports/top-campaign-content
-        let campaignItems: any[] = []
-        try {
-            const campaignUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/reports/top-campaign-content?start_date=${start}&end_date=${end}`
-            const crData = await taboolaFetch(campaignUrl, token)
-            campaignItems = crData.results || []
-        } catch {
-            // No campaign data
-        }
-
-        // 3. Campaign list for status info
-        let campaigns: any[] = []
-        try {
-            const campaignsUrl = `${BASE_URL}/${TABOOLA_ACCOUNT_ID}/campaigns?status=ALL`
-            const campaignsData = await taboolaFetch(campaignsUrl, token)
-            campaigns = campaignsData.results || []
-        } catch {
-            // Ignore
-        }
-
-        // Aggregate daily totals
-        const totalSpent = summaryResults.reduce((s: number, r: any) => s + (r.spent || 0), 0)
-        const totalImpressions = summaryResults.reduce((s: number, r: any) => s + (r.impressions || 0), 0)
-        const totalClicks = summaryResults.reduce((s: number, r: any) => s + (r.clicks || 0), 0)
-        const totalConversions = summaryResults.reduce((s: number, r: any) => s + (r.cpa_actions_num || 0), 0)
-        const cpc = totalClicks > 0 ? totalSpent / totalClicks : 0
-        const ctr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0
-        const cpa = totalConversions > 0 ? totalSpent / totalConversions : 0
-
-        // Daily chart data
-        const daily = summaryResults.map((r: any) => ({
-            date: r.date?.split(' ')[0] || r.date,
-            spent: r.spent || 0,
-            impressions: r.impressions || 0,
-            clicks: r.clicks || 0,
-            conversions: r.cpa_actions_num || 0,
-            cpc: r.cpc || 0,
-            ctr: r.ctr || 0,
-        }))
-
-        // Aggregate campaign items by campaign_id
-        const campaignMap = new Map<string, { name: string; spent: number; impressions: number; clicks: number; conversions: number; status: string }>()
-        for (const item of campaignItems) {
-            const id = String(item.campaign || 'unknown')
-            const existing = campaignMap.get(id)
-            const impressions = item.impressions || 0
-            const clicks = item.clicks || 0
-            const conversions = item.actions || 0
-            const spent = item.cpc ? item.cpc * clicks : 0
-            if (existing) {
-                existing.spent += spent
-                existing.impressions += impressions
-                existing.clicks += clicks
-                existing.conversions += conversions
-            } else {
-                const camp = campaigns.find((c: any) => String(c.id) === id)
-                campaignMap.set(id, {
-                    name: camp?.name || item.campaign_name || `Campanha ${id}`,
-                    spent,
-                    impressions,
-                    clicks,
-                    conversions,
-                    status: camp?.status || 'UNKNOWN',
-                })
+        // Single account mode
+        if (accountId) {
+            const account = TABOOLA_ACCOUNTS.find(a => a.id === accountId)
+            if (!account) {
+                return NextResponse.json({ error: 'Account not found' }, { status: 404 })
             }
+
+            const result = await fetchAllTaboolaAccounts(start, end)
+            const accData = result.accounts.find(a => a.accountId === accountId)
+            if (!accData) {
+                return NextResponse.json({ error: 'Failed to fetch account data' }, { status: 500 })
+            }
+
+            const campaigns = await fetchAccountCampaigns(accountId, start, end)
+
+            const daily = Array.from(accData.byDate.entries()).map(([date, spent]) => ({
+                date,
+                spent,
+            })).sort((a, b) => a.date.localeCompare(b.date))
+
+            // Revenue attribution for this account
+            const [taboolaOrders, campaignMap] = await Promise.all([
+                prisma.order.findMany({
+                    where: {
+                        deletedAt: null,
+                        utmSource: { contains: 'taboola', mode: 'insensitive' },
+                        createdAt: { gte: new Date(start), lte: new Date(end + 'T23:59:59') },
+                    },
+                    select: { totalPrice: true, paymentStatus: true, utmCampaign: true, utmSource: true, utmId: true },
+                }),
+                buildCampaignAccountMap(),
+            ])
+            const attribution = attributeOrdersToAccounts(taboolaOrders, [accData], campaignMap)
+            const accAttr = attribution.byAccount.get(accountId)
+
+            return NextResponse.json({
+                summary: {
+                    totalSpent: accData.totalSpent,
+                    totalImpressions: accData.totalImpressions,
+                    totalClicks: accData.totalClicks,
+                    totalConversions: accData.totalConversions,
+                    cpc: accData.cpc,
+                    ctr: accData.ctr,
+                    cpa: accData.cpa,
+                },
+                daily,
+                campaigns,
+                revenue: {
+                    paidRevenue: accAttr?.paidRevenue || 0,
+                    unpaidRevenue: accAttr?.unpaidRevenue || 0,
+                    totalRevenue: accAttr?.totalRevenue || 0,
+                    paidOrders: accAttr?.paidOrders || 0,
+                    totalOrders: accAttr?.totalOrders || 0,
+                },
+                period,
+                dateRange: { start, end },
+                accountId,
+                accountLabel: account.label,
+            })
         }
 
-        const campaignBreakdown = Array.from(campaignMap.values())
-            .sort((a, b) => b.spent - a.spent)
+        // All accounts mode
+        const result = await fetchAllTaboolaAccounts(start, end)
+
+        const accounts = result.accounts.map(acc => {
+            const daily = Array.from(acc.byDate.entries()).map(([date, spent]) => ({
+                date, spent,
+            })).sort((a, b) => a.date.localeCompare(b.date))
+
+            return {
+                accountId: acc.accountId,
+                label: acc.label,
+                summary: {
+                    totalSpent: acc.totalSpent,
+                    totalImpressions: acc.totalImpressions,
+                    totalClicks: acc.totalClicks,
+                    totalConversions: acc.totalConversions,
+                    cpc: acc.cpc,
+                    ctr: acc.ctr,
+                    cpa: acc.cpa,
+                },
+                daily,
+                error: acc.error,
+            }
+        })
+
+        // Revenue attribution via UTM
+        const [taboolaOrders, campaignMap] = await Promise.all([
+            prisma.order.findMany({
+                where: {
+                    deletedAt: null,
+                    utmSource: { contains: 'taboola', mode: 'insensitive' },
+                    createdAt: { gte: new Date(start), lte: new Date(end + 'T23:59:59') },
+                },
+                select: { totalPrice: true, paymentStatus: true, utmCampaign: true, utmSource: true, utmId: true },
+            }),
+            buildCampaignAccountMap(),
+        ])
+        const attribution = attributeOrdersToAccounts(taboolaOrders, result.accounts, campaignMap)
+        const revenue = accounts.map(a => {
+            const attr = attribution.byAccount.get(a.accountId)
+            return {
+                accountId: a.accountId,
+                paidRevenue: attr?.paidRevenue || 0,
+                unpaidRevenue: attr?.unpaidRevenue || 0,
+                totalRevenue: attr?.totalRevenue || 0,
+                paidOrders: attr?.paidOrders || 0,
+                totalOrders: attr?.totalOrders || 0,
+            }
+        })
 
         return NextResponse.json({
-            summary: {
-                totalSpent,
-                totalImpressions,
-                totalClicks,
-                totalConversions,
-                cpc,
-                ctr,
-                cpa,
-            },
-            daily,
-            campaigns: campaignBreakdown,
+            accounts,
+            revenue,
+            totalSpent: result.totalSpent,
             period,
             dateRange: { start, end },
         })
