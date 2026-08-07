@@ -250,7 +250,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             }}>
                                 {order.fullName?.charAt(0).toUpperCase() || '?'}
                             </div>
-                            <div style={{ fontSize: '15px', fontWeight: 700 }}>{order.fullName || 'Cliente sem nome'}</div>
+                            <div style={{ fontSize: '15px', fontWeight: 700, color: '#14151F' }}>{order.fullName || 'Cliente sem nome'}</div>
                         </div>
 
                         <FieldRow icon={Hash} label="CPF" value={order.cpf || '—'} mono copyText={order.cpf || ''} />

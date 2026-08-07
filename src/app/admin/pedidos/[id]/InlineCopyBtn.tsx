@@ -24,7 +24,7 @@ export default function InlineCopyBtn({ text }: { text: string }) {
                 border: '1px solid transparent', background: copied ? '#E3F4EA' : 'transparent',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
-                color: copied ? '#1E7A52' : '#9CA0AE',
+                color: copied ? '#1E7A52' : '#6E7180',
             }}
         >
             {copied
