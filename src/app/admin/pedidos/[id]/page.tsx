@@ -129,10 +129,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             </div>
 
             {/* ── Content Grid ── */}
-            <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', alignItems: 'start' }}>
+            <div className="pedido-content-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', alignItems: 'stretch' }}>
 
                 {/* ═══════════════ COL 1: Informacoes do Pedido ═══════════════ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, height: '100%' }}>
 
                     {/* ── Informações do Pedido ── */}
                     <div style={cardStyle}>
@@ -232,7 +232,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
 
                 {/* ═══════════════ COL 2: Cliente + Endereco ═══════════════ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, height: '100%' }}>
 
                     {/* ── Dados do Cliente ── */}
                     <div style={cardStyle}>
@@ -283,7 +283,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                 </div>
 
                 {/* ═══════════════ COL 3: Tracking + Email + UTM ═══════════════ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0, height: '100%' }}>
                     <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
                     <EmailSection orderId={order.id} email={order.email || ''} />
 
@@ -305,6 +305,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
 const cardStyle: React.CSSProperties = {
     background: '#FFFFFF', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '24px',
+    flex: 1,
 }
 
 function Step({ done, current, failed, label }: { done?: boolean; current?: boolean; failed?: boolean; label: string }) {

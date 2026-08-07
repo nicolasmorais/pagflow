@@ -6,6 +6,7 @@ import { updateOrderTracking, resendTrackingEmail } from '@/app/actions'
 
 const cardStyle: React.CSSProperties = {
     background: '#FFFFFF', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '24px',
+    flex: 1,
 }
 
 export default function TrackingManagement({ orderId, initialUrl }: { orderId: string; initialUrl: string | null }) {

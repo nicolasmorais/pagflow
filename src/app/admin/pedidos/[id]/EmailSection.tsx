@@ -40,7 +40,7 @@ export default function EmailSection({ orderId, email }: { orderId: string; emai
     }
 
     return (
-        <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '24px' }}>
+        <div style={{ background: '#FFFFFF', border: '1px solid #E5E7EF', borderRadius: '14px', padding: '24px', flex: 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: '#F5F6F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1px solid #E5E7EF' }}>
