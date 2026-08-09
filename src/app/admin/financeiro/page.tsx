@@ -1,57 +1,27 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
-import { formatDateStr, getBrazilNow } from '@/lib/date-utils'
+import { getDateFilters, dateToBrazilDateStr, formatDateStr } from '@/lib/date-utils'
 import { fetchAllTaboolaAccounts, attributeOrdersToAccounts, buildCampaignAccountMap } from '@/lib/taboola'
 import FinanceiroClient from './FinanceiroClient'
 
-const PERIOD_DAYS: Record<string, number | null> = {
-    'today': 0,
-    '7d': 7,
-    '30d': 30,
-    '90d': 90,
-    'all': null,
-}
-
-const isMonthPeriod = (p: string) => p === 'this_month' || p === 'last_month'
-
-function getMonthRange(period: string, now: Date): { from: Date; to: Date } {
-    if (period === 'this_month') {
-        const from = new Date(now.getFullYear(), now.getMonth(), 1)
-        from.setHours(0, 0, 0, 0)
-        const to = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
-        return { from, to }
-    }
-    // last_month
-    const from = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    from.setHours(0, 0, 0, 0)
-    const to = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999)
-    return { from, to }
+const PERIOD_TO_FILTER: Record<string, string> = {
+    'today': 'today',
+    '7d': '7dias',
+    '30d': '30dias',
+    '90d': '90dias',
+    'all': 'vida',
+    'this_month': 'mes',
+    'last_month': 'mes-anterior',
 }
 
 export default async function FinanceiroPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
     const { period: periodParam } = await searchParams
-    const period = periodParam && (PERIOD_DAYS[periodParam] !== undefined || isMonthPeriod(periodParam)) ? periodParam : '30d'
-    const days = PERIOD_DAYS[period] ?? null
+    const period = periodParam && PERIOD_TO_FILTER[periodParam] ? periodParam : '30d'
+    const filterKey = PERIOD_TO_FILTER[period]
 
-    const now = getBrazilNow()
-
-    const whereDate = (() => {
-        if (isMonthPeriod(period)) {
-            const { from, to } = getMonthRange(period, now)
-            return { gte: from, lte: to }
-        }
-        if (days !== null) {
-            const from = new Date(now)
-            if (days === 0) {
-                from.setHours(0, 0, 0, 0)
-            } else {
-                from.setDate(from.getDate() - days)
-            }
-            return { gte: from }
-        }
-        return undefined
-    })()
+    const { now, fromDateUTC, toDateUTC, fromDate, toDate } = getDateFilters(filterKey)
+    const whereDate = { gte: fromDateUTC, lte: toDateUTC }
 
     const allOrders = await prisma.order.findMany({
         where: {
@@ -87,25 +57,9 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
 
     const totalDespesas = records.filter(r => r.type === 'despesa').reduce((s, r) => s + r.amount, 0)
 
-    // Buscar gasto do Taboola no período (mesma lógica de data do whereDate)
-    const startDate = (() => {
-        if (isMonthPeriod(period)) {
-            return formatDateStr(getMonthRange(period, now).from)
-        }
-        if (days !== null) {
-            const from = new Date(now)
-            if (days === 0) {
-                from.setHours(0, 0, 0, 0)
-            } else {
-                from.setDate(from.getDate() - days)
-            }
-            return formatDateStr(from)
-        }
-        return formatDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
-    })()
-    const endDate = isMonthPeriod(period)
-        ? formatDateStr(getMonthRange(period, now).to)
-        : formatDateStr(now)
+    // Buscar gasto do Taboola no período
+    const startDate = fromDate
+    const endDate = toDate
     const taboolaData = await fetchAllTaboolaAccounts(startDate, endDate)
     const taboolaSpent = taboolaData.totalSpent
     const taboolaByDate = taboolaData.byDate
@@ -156,27 +110,11 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
         taboolaSpent,
     }
 
-    const chartDays = (() => {
-        if (isMonthPeriod(period)) {
-            const { from, to } = getMonthRange(period, now)
-            return Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1
-        }
-        return days !== null ? Math.max(days, 1) : 30
-    })()
-    const chartStart = (() => {
-        if (isMonthPeriod(period)) {
-            return getMonthRange(period, now).from
-        }
-        const from = new Date(now)
-        if (days === 0) {
-            from.setHours(0, 0, 0, 0)
-        } else if (days !== null) {
-            from.setDate(from.getDate() - (days - 1))
-        } else {
-            from.setDate(from.getDate() - 29)
-        }
-        return from
-    })()
+    // Calculate chart days from fromDate/toDate strings
+    const chartStart = new Date(fromDate + 'T12:00:00')
+    const chartEnd = new Date(toDate + 'T12:00:00')
+    const chartDays = Math.round((chartEnd.getTime() - chartStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+
     const dailyMap = new Map<string, { receita: number; despesa: number; lucro: number }>()
     for (let i = 0; i < chartDays; i++) {
         const d = new Date(chartStart)
@@ -186,7 +124,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
     }
 
     for (const order of paidOrders) {
-        const key = formatDateStr(order.createdAt)
+        const key = dateToBrazilDateStr(order.createdAt)
         if (!dailyMap.has(key)) continue
         const ex = dailyMap.get(key)!
         dailyMap.set(key, { ...ex, receita: ex.receita + (order.totalPrice || 0) })
@@ -194,7 +132,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
 
     const expenseRecords = records.filter(r => r.type === 'despesa')
     for (const rec of expenseRecords) {
-        const key = formatDateStr(rec.date)
+        const key = dateToBrazilDateStr(rec.date)
         if (!dailyMap.has(key)) continue
         const ex = dailyMap.get(key)!
         dailyMap.set(key, { ...ex, despesa: ex.despesa + rec.amount })

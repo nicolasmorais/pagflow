@@ -133,6 +133,13 @@ export function getDateFilters(filterParam?: string, fromParam?: string, toParam
             fromDate = last30DaysStr
             toDate = todayStr
             break
+        case '90dias': {
+            const last90DaysDate = new Date(now)
+            last90DaysDate.setDate(last90DaysDate.getDate() - 90)
+            fromDate = formatDateStr(last90DaysDate)
+            toDate = todayStr
+            break
+        }
         case 'mes':
             fromDate = firstDayOfMonthStr
             toDate = todayStr
