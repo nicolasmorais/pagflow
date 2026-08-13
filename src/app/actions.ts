@@ -1093,12 +1093,38 @@ export async function sendAdminNotification(order: any) {
         const email = await getCustomization('notify_admin_email');
         const method = order.paymentMethod === 'pix' ? 'PIX' : 'CARTÃO';
 
-        // Push notification
+        // Push notification - venda individual
         await sendAdminPush(
             `Venda Aprovada - ${method}`,
             `Você recebeu R$ ${order.totalPrice?.toFixed(2) || '0.00'}`,
             '/admin/vendas'
         ).catch(e => console.error("Erro no envio do Push:", e));
+
+        // Push notification - resumo acumulado
+        try {
+            const now = new Date()
+            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+            const [paidOrders, taboolaData] = await Promise.all([
+                prisma.order.findMany({
+                    where: { paymentStatus: 'pago', deletedAt: null, createdAt: { gte: startOfMonth } },
+                    select: { totalPrice: true }
+                }),
+                import('@/lib/taboola').then(m => m.fetchAllTaboolaAccounts(startOfMonth.toISOString().split('T')[0], now.toISOString().split('T')[0])).catch(() => null)
+            ])
+
+            const totalVendas = paidOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0)
+            const custosAds = taboolaData?.totalSpent || 0
+            const lucro = totalVendas - custosAds
+
+            await sendAdminPush(
+                `Você vendeu até agora: R$ ${totalVendas.toFixed(2)}`,
+                `Lucro de R$ ${lucro.toFixed(2)}`,
+                '/admin/financeiro'
+            ).catch(e => console.error("Erro no envio do Push acumulado:", e))
+        } catch (summaryError) {
+            console.error("Erro ao gerar resumo acumulado:", summaryError)
+        }
 
         // Webhook trigger
         await sendWebhook('SALE_CONFIRMED', order).catch(e => console.error("Webhook Sale Error:", e));
