@@ -364,21 +364,9 @@ export async function POST(req: NextRequest) {
 
             // Notify Admin
             try {
-                await sendAdminNotification('sale', order);
+                await sendAdminNotification(order);
             } catch (notifyError) {
                 console.error("Failed to send admin notification:", notifyError);
-            }
-        } else if (method === 'pix' && finalStatus === 'aguardando') {
-            try {
-                await sendAdminNotification('pix_pending', order);
-            } catch (notifyError) {
-                console.error("Failed to send admin notification for pix_pending:", notifyError);
-            }
-        } else if (finalStatus === 'recusado') {
-            try {
-                await sendAdminNotification('card_declined', order);
-            } catch (notifyError) {
-                console.error("Failed to send admin notification for card_declined:", notifyError);
             }
         }
 

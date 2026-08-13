@@ -1088,78 +1088,39 @@ export async function resendPixEmail(orderId: string) {
     }
 }
 
-export async function sendAdminNotification(type: 'sale' | 'pix_pending' | 'card_declined', order: any) {
+export async function sendAdminNotification(order: any) {
     try {
         const email = await getCustomization('notify_admin_email');
+        const method = order.paymentMethod === 'pix' ? 'PIX' : 'CARTÃO';
 
-        // Determina título do Push
-        let pushTitle = '';
-        let pushBody = '';
+        // Push notification
+        await sendAdminPush(
+            `✅ Compra realizada - ${method}`,
+            `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`,
+            '/admin/vendas'
+        ).catch(e => console.error("Erro no envio do Push:", e));
 
-        if (type === 'sale') {
-            const method = order.paymentMethod === 'pix' ? 'PIX' : 'CARTÃO';
-            pushTitle = `✅ Compra realizada - ${method}`;
-            pushBody = `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
-        } else if (type === 'pix_pending') {
-            pushTitle = `⏳ PIX Gerado (Pendente)`;
-            pushBody = `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
-        } else if (type === 'card_declined') {
-            pushTitle = `❌ Cartão Recusado`;
-            pushBody = `${order.fullName || 'Cliente'} — R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
-        }
+        // Webhook trigger
+        await sendWebhook('SALE_CONFIRMED', order).catch(e => console.error("Webhook Sale Error:", e));
 
-        // Tenta enviar o Web Push independentemente da configuração de e-mail
-        if (pushTitle) {
-            await sendAdminPush(pushTitle, pushBody, '/admin/vendas').catch(e => console.error("Erro no envio do Push:", e));
-        }
-
-        // --- WEBHOOK TRIGGER ---
-        if (type === 'sale') {
-            await sendWebhook('SALE_CONFIRMED', order).catch(e => console.error("Webhook Sale Error:", e));
-        }
-        // -----------------------
-
+        // Email notification
         if (!email) return;
 
         const isSalesNotify = await getCustomization('notify_sales_enabled');
+        if (isSalesNotify !== 'true') return;
 
-        if (type === 'sale' && isSalesNotify !== 'true') return;
-
-        let subject = '';
-        let htmlContent = '';
-
-        if (type === 'sale') {
-            subject = `💰 Nova Venda Recebida: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
-            htmlContent = `
+        await resend.emails.send({
+            from: 'Elabela Store <noreply@elabela.store>',
+            to: [email],
+            subject: `💰 Nova Venda Recebida: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`,
+            html: `
                 <h2>Nova venda confirmada! 🎉</h2>
                 <p><strong>Pedido:</strong> ${order.id}</p>
                 <p><strong>Cliente:</strong> ${order.fullName}</p>
                 <p><strong>Valor:</strong> R$ ${order.totalPrice?.toFixed(2) || '0.00'}</p>
                 <p>Acesse o painel para processar a venda.</p>
-            `;
-        }
-
-        if (type === 'card_declined') {
-            subject = `❌ Cartão Recusado: ${order.fullName || 'Cliente'} — R$ ${order.totalPrice?.toFixed(2) || '0.00'}`;
-            htmlContent = `
-                <h2>Pagamento com cartão recusado</h2>
-                <p><strong>Pedido:</strong> ${order.id}</p>
-                <p><strong>Cliente:</strong> ${order.fullName || 'N/A'}</p>
-                <p><strong>E-mail:</strong> ${order.email || 'N/A'}</p>
-                <p><strong>Valor:</strong> R$ ${order.totalPrice?.toFixed(2) || '0.00'}</p>
-                <p><strong>Método:</strong> Cartão de crédito</p>
-                <p>O pagamento foi recusado pela operadora. Acesse o painel para mais detalhes.</p>
-            `;
-        }
-
-        if (subject && htmlContent) {
-            await resend.emails.send({
-                from: 'Elabela Store <noreply@elabela.store>',
-                to: [email],
-                subject: subject,
-                html: htmlContent
-            });
-        }
+            `
+        });
     } catch (error) {
         console.error('Admin Notification Error:', error);
     }

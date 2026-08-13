@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
 
             if (finalStatus === 'pago' && order.paymentStatus !== 'pago') {
                 try { await sendConfirmationEmail(order.id); } catch (e) { }
-                try { await sendAdminNotification('sale', order); } catch (e) { }
+                try { await sendAdminNotification(order); } catch (e) { }
             }
         }
 
