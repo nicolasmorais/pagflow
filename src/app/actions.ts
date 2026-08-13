@@ -1095,8 +1095,8 @@ export async function sendAdminNotification(order: any) {
 
         // Push notification
         await sendAdminPush(
-            `✅ Compra realizada - ${method}`,
-            `Valor: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`,
+            `Venda Aprovada - ${method}`,
+            `Você recebeu R$ ${order.totalPrice?.toFixed(2) || '0.00'}`,
             '/admin/vendas'
         ).catch(e => console.error("Erro no envio do Push:", e));
 
