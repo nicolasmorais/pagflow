@@ -11,7 +11,7 @@ async function requireAdmin() {
 
 const ALLOWED_STATUSES = ['pendente', 'processando', 'aguardando_envio', 'cl_shopee', 'enviado', 'entregue', 'cancelado']
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
         await requireAdmin()
     } catch {
@@ -19,12 +19,28 @@ export async function GET() {
     }
 
     try {
+        const { searchParams } = new URL(request.url)
+        const from = searchParams.get('from')
+        const to = searchParams.get('to')
+
+        const where: any = {
+            paymentStatus: 'pago',
+            status: 'processando',
+            deletedAt: null,
+        }
+
+        if (from || to) {
+            where.createdAt = {}
+            if (from) {
+                where.createdAt.gte = new Date(from + 'T00:00:00')
+            }
+            if (to) {
+                where.createdAt.lte = new Date(to + 'T23:59:59')
+            }
+        }
+
         const orders = await prisma.order.findMany({
-            where: {
-                paymentStatus: 'pago',
-                status: 'processando',
-                deletedAt: null,
-            },
+            where,
             select: {
                 id: true,
                 fullName: true,
