@@ -321,7 +321,7 @@ export default async function OrdersPage({
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr>
-                                    {['Cliente', 'Produto', 'Valor', 'Pagamento', 'Status', 'Data', 'Ações'].map((h, i) => (
+                                    {['Cliente', 'Produto', 'Valor', 'Pagamento', 'Logística', 'Data', 'Ações'].map((h, i) => (
                                         <th key={i} style={{
                                             padding: '14px 20px', fontSize: '10.5px', fontWeight: 700, color: '#6E7180',
                                             textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: i === 6 ? 'right' : 'left',

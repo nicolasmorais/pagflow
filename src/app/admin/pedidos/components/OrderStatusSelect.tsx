@@ -21,6 +21,11 @@ const STATUSES = [
         dot: '#f59e0b', hoverBg: '#fde68a',
     },
     {
+        value: 'cl_shopee', label: 'CL Shopee', icon: Truck,
+        color: '#ea580c', bg: '#fff7ed', border: '#fdba74',
+        dot: '#f97316', hoverBg: '#ffedd5',
+    },
+    {
         value: 'enviado', label: 'Enviado', icon: Truck,
         color: '#1e40af', bg: '#dbeafe', border: '#93c5fd',
         dot: '#3b82f6', hoverBg: '#bfdbfe',
