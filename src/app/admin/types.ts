@@ -24,7 +24,29 @@ export type AnalyticsKpis = {
     totalRevenue: number; netRevenue: number
     totalOrders: number; paidOrders: number
     pendingOrders: number; rejectedOrders: number
+    unpaidOrders: number
     conversionRate: number; avgTicket: number; profit: number; bumpRate: number
+}
+
+export type TaboolaAccount = {
+    accountId: string; label: string
+    totalSpent: number; totalImpressions: number; totalClicks: number
+    totalConversions: number; cpc: number; ctr: number; cpa: number
+    error?: string
+}
+export type TaboolaRevenue = {
+    accountId: string; paidRevenue: number; unpaidRevenue: number
+    totalRevenue: number; paidOrders: number; totalOrders: number
+}
+
+export type TaboolaKpis = {
+    totalSpent: number
+    totalConversions: number
+    avgCpa: number
+    roas: number
+    totalImpressions: number
+    totalClicks: number
+    paidRevenue: number
 }
 
 export type AnalyticsData = {
@@ -41,4 +63,8 @@ export type AnalyticsData = {
     weekdayData: WeekdayData[]
     recentOrders: RecentOrder[]
     prevKpis: PrevPeriodKpis
+    taboolaAccounts?: TaboolaAccount[]
+    taboolaRevenue?: TaboolaRevenue[]
+    taboolaSpent?: number
+    taboolaKpis?: TaboolaKpis
 }

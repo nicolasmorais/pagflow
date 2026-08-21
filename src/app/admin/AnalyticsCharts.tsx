@@ -8,7 +8,7 @@ import {
 import {
     DollarSign, TrendingUp, ShoppingBag, CheckCircle2,
     XCircle, Clock, Ticket, Zap, ArrowUpRight, ArrowDownRight,
-    Package, MapPin, Activity, BarChart3
+    Package, MapPin, Activity, BarChart3, Target
 } from 'lucide-react'
 import type { AnalyticsData } from './types'
 
@@ -188,7 +188,8 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
     const {
         kpis, dailyData, paymentMethods, installments,
         cardBrands, topProducts, topStates, statusBreakdown, bumpStats,
-        hourlyData, weekdayData, recentOrders, prevKpis
+        hourlyData, weekdayData, recentOrders, prevKpis,
+        taboolaAccounts, taboolaRevenue, taboolaSpent, taboolaKpis
     } = data
 
     const maxState = topStates[0]?.revenue || 1
@@ -214,6 +215,36 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                     change={pctChange(kpis.avgTicket, prevKpis.avgTicket)} />
                 <KpiCard icon={XCircle} label="Recusados" value={fmtInt(kpis.rejectedOrders)} />
             </div>
+
+            {/* ── Taboola KPI Grid ── */}
+            {taboolaKpis && (
+                <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+                    <div style={{
+                        background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                        borderRadius: '14px', padding: '20px',
+                        display: 'flex', flexDirection: 'column', gap: '14px',
+                        position: 'relative', overflow: 'hidden',
+                        boxShadow: '0 4px 20px rgba(15,23,42,0.15)',
+                    }}>
+                        <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '100px', height: '100px', background: 'radial-gradient(circle, rgba(66,133,244,0.15) 0%, transparent 70%)', borderRadius: '50%' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(66,133,244,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(66,133,244,0.1)' }}>
+                                <Target size={18} strokeWidth={2} color="#7BB8E0" />
+                            </div>
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Taboola</span>
+                        </div>
+                        <div>
+                            <p style={{ margin: '0 0 6px', fontSize: '10.5px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Gasto Total</p>
+                            <p style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: '#fff', letterSpacing: '-0.04em', lineHeight: 1, fontFamily: "'Fraunces', serif" }}>R$ {fmt(taboolaKpis.totalSpent)}</p>
+                        </div>
+                    </div>
+                    <KpiCard icon={Target} label="Conversões" value={fmtInt(taboolaKpis.totalConversions)} />
+                    <KpiCard icon={DollarSign} label="CPA" value={taboolaKpis.avgCpa > 0 ? `R$ ${fmt(taboolaKpis.avgCpa)}` : '—'} />
+                    <KpiCard icon={TrendingUp} label="ROAS" value={`${taboolaKpis.roas.toFixed(2)}x`} />
+                    <KpiCard icon={Activity} label="Faturamento UTM" value={`R$ ${fmt(taboolaKpis.paidRevenue)}`} />
+                    <KpiCard icon={BarChart3} label="Impressões" value={fmtInt(taboolaKpis.totalImpressions)} />
+                </div>
+            )}
 
             {/* ── Revenue Chart + Recent Orders ── */}
             <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px', marginBottom: '14px' }}>
@@ -482,6 +513,142 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                     </div>
                 </div>
             </SectionCard>
+
+            {/* ── Taboola Accounts ── */}
+            {taboolaAccounts && taboolaAccounts.length > 0 && (
+                <SectionCard
+                    title="Contas Taboola"
+                    subtitle={`Performance por conta — ${taboolaAccounts.filter(a => !a.error).length} de ${taboolaAccounts.length} conectadas`}
+                    style={{ marginBottom: '14px' }}
+                >
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '14px' }}>
+                        {taboolaAccounts.map((acc, i) => {
+                            const colors = ['#4285f4', '#8b5cf6', '#f97316']
+                            const accent = colors[i % colors.length]
+                            return (
+                                <div key={acc.accountId} style={{
+                                    background: acc.error
+                                        ? 'linear-gradient(145deg, #fef2f2, #fff1f2)'
+                                        : 'linear-gradient(145deg, #ffffff 0%, #f8fafc 100%)',
+                                    border: acc.error ? '1px solid #fecaca' : '1px solid rgba(241,245,249,0.8)',
+                                    borderRadius: '18px', padding: '20px',
+                                    boxShadow: '0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03)',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                                        <div style={{
+                                            width: '36px', height: '36px', borderRadius: '10px',
+                                            background: acc.error ? '#fecaca' : `${accent}18`,
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                        }}>
+                                            <Target size={16} color={acc.error ? '#dc2626' : accent} />
+                                        </div>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <p style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: acc.error ? '#991b1b' : '#0f172a' }}>{acc.label}</p>
+                                            <p style={{ margin: '2px 0 0', fontSize: '10px', color: '#94a3b8', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{acc.accountId}</p>
+                                        </div>
+                                        {acc.error ? (
+                                            <span style={{ fontSize: '9px', fontWeight: 700, color: '#dc2626', background: '#fef2f2', padding: '3px 8px', borderRadius: '6px', border: '1px solid #fecaca' }}>Erro</span>
+                                        ) : (
+                                            <span style={{ fontSize: '9px', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '3px 8px', borderRadius: '6px' }}>Conectada</span>
+                                        )}
+                                    </div>
+
+                                    {acc.error ? (
+                                        <p style={{ margin: 0, fontSize: '12px', color: '#b91c1c', fontWeight: 500 }}>{acc.error}</p>
+                                    ) : (
+                                        <>
+                                            <div style={{ marginBottom: '14px' }}>
+                                                <p style={{ margin: '0 0 2px', fontSize: '10px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gasto Total</p>
+                                                <p style={{ margin: 0, fontSize: '24px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.03em', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(acc.totalSpent)}</p>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                                                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Impressões</p>
+                                                    <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{fmtInt(acc.totalImpressions)}</p>
+                                                </div>
+                                                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Cliques</p>
+                                                    <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{fmtInt(acc.totalClicks)}</p>
+                                                </div>
+                                                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CTR</p>
+                                                    <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{acc.ctr.toFixed(2)}%</p>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginTop: '8px' }}>
+                                                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conversões</p>
+                                                    <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: acc.totalConversions > 0 ? '#059669' : '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{fmtInt(acc.totalConversions)}</p>
+                                                </div>
+                                                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CPA</p>
+                                                    <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>{acc.cpa > 0 ? `R$ ${fmt(acc.cpa)}` : '—'}</p>
+                                                </div>
+                                                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '10px', border: '1px solid #f1f5f9' }}>
+                                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>CPC</p>
+                                                    <p style={{ margin: '4px 0 0', fontSize: '14px', fontWeight: 900, color: '#1e293b', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(acc.cpc)}</p>
+                                                </div>
+                                            </div>
+                                            {(() => {
+                                                const rev = taboolaRevenue?.find(r => r.accountId === acc.accountId)
+                                                if (!rev || rev.totalRevenue === 0) return null
+                                                const paidPct = rev.totalRevenue > 0 ? (rev.paidRevenue / rev.totalRevenue) * 100 : 0
+                                                return (
+                                                    <div style={{ marginTop: '10px', background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)', borderRadius: '12px', padding: '12px', border: '1px solid #bbf7d0' }}>
+                                                        <p style={{ margin: '0 0 8px', fontSize: '9px', fontWeight: 700, color: '#15803d', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Faturamento via UTM</p>
+                                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <div style={{ flex: 1, background: '#fff', borderRadius: '8px', padding: '8px 10px', border: '1px solid #dcfce7' }}>
+                                                                <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#16a34a' }}>Pago</p>
+                                                                <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 900, color: '#15803d', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(rev.paidRevenue)}</p>
+                                                                <p style={{ margin: '1px 0 0', fontSize: '9px', color: '#86efac' }}>{rev.paidOrders} pedidos</p>
+                                                            </div>
+                                                            <div style={{ flex: 1, background: '#fff', borderRadius: '8px', padding: '8px 10px', border: '1px solid #fee2e2' }}>
+                                                                <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: '#ef4444' }}>Não Pago</p>
+                                                                <p style={{ margin: '2px 0 0', fontSize: '14px', fontWeight: 900, color: '#b91c1c', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(rev.unpaidRevenue)}</p>
+                                                                <p style={{ margin: '1px 0 0', fontSize: '9px', color: '#fca5a5' }}>{rev.totalOrders - rev.paidOrders} pedidos</p>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ marginTop: '8px', height: '4px', background: '#fecaca', borderRadius: '4px', overflow: 'hidden' }}>
+                                                            <div style={{ width: `${paidPct}%`, height: '100%', background: '#22c55e', borderRadius: '4px', transition: 'width 0.4s' }} />
+                                                        </div>
+                                                        <p style={{ margin: '4px 0 0', fontSize: '10px', fontWeight: 700, color: '#15803d', textAlign: 'right' }}>{paidPct.toFixed(0)}% pago</p>
+                                                    </div>
+                                                )
+                                            })()}
+                                        </>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {taboolaAccounts.filter(a => !a.error).length > 1 && (
+                        <div style={{
+                            marginTop: '14px', padding: '16px 20px',
+                            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
+                            borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            boxShadow: '0 8px 32px rgba(15,23,42,0.2)',
+                        }}>
+                            <div>
+                                <p style={{ margin: 0, fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Taboola (todas as contas)</p>
+                                <p style={{ margin: '4px 0 0', fontSize: '22px', fontWeight: 900, color: '#fff', fontFamily: "'Space Grotesk', sans-serif" }}>R$ {fmt(taboolaSpent || 0)}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '20px' }}>
+                                <div style={{ textAlign: 'right' }}>
+                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Conversões</p>
+                                    <p style={{ margin: '2px 0 0', fontSize: '16px', fontWeight: 900, color: '#34d399', fontFamily: "'Space Grotesk', sans-serif" }}>{fmtInt(taboolaAccounts.reduce((s, a) => s + a.totalConversions, 0))}</p>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <p style={{ margin: 0, fontSize: '9px', fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>CPA Médio</p>
+                                    <p style={{ margin: '2px 0 0', fontSize: '16px', fontWeight: 900, color: '#fff', fontFamily: "'Space Grotesk', sans-serif" }}>
+                                        {(() => { const totalConv = taboolaAccounts.reduce((s, a) => s + a.totalConversions, 0); return totalConv > 0 ? `R$ ${fmt((taboolaSpent || 0) / totalConv)}` : '—' })()}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </SectionCard>
+            )}
         </>
     )
 }

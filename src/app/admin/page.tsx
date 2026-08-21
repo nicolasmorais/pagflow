@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
 import { getDateFilters, dateToBrazilDateStr, formatDateStr, getBrazilNow } from '@/lib/date-utils'
+import { fetchAllTaboolaAccounts, attributeOrdersToAccounts, buildCampaignAccountMap } from '@/lib/taboola'
 import AnalyticsCharts from './AnalyticsCharts'
 import AnalyticsFilterForm from './AnalyticsFilterForm'
 import type { AnalyticsData } from './types'
@@ -226,6 +227,60 @@ export default async function AdminPage({
         nonBumpAvgTicket: paidWithoutBump.length > 0 ? nonBumpRevenue / paidWithoutBump.length : 0,
     }
 
+    // ── Taboola Ads ───────────────────────────────────────────────────────
+    const taboolaData = await fetchAllTaboolaAccounts(fromDate, toDate)
+    const taboolaSpent = taboolaData.totalSpent
+    const taboolaAccounts = taboolaData.accounts.map(a => ({
+        accountId: a.accountId,
+        label: a.label,
+        totalSpent: a.totalSpent,
+        totalImpressions: a.totalImpressions,
+        totalClicks: a.totalClicks,
+        totalConversions: a.totalConversions,
+        cpc: a.cpc,
+        ctr: a.ctr,
+        cpa: a.cpa,
+        error: a.error,
+    }))
+
+    const taboolaOrders = await prisma.order.findMany({
+        where: {
+            deletedAt: null,
+            utmSource: { contains: 'taboola', mode: 'insensitive' },
+            createdAt: { gte: fromDateUTC, lte: toDateUTC },
+        },
+        select: { totalPrice: true, paymentStatus: true, utmCampaign: true, utmSource: true, utmId: true },
+    })
+    const campaignMap = await buildCampaignAccountMap()
+    const taboolaAttribution = attributeOrdersToAccounts(taboolaOrders, taboolaData.accounts, campaignMap)
+    const taboolaRevenue = taboolaAccounts.map(a => {
+        const attr = taboolaAttribution.byAccount.get(a.accountId)
+        return {
+            accountId: a.accountId,
+            paidRevenue: attr?.paidRevenue || 0,
+            unpaidRevenue: attr?.unpaidRevenue || 0,
+            totalRevenue: attr?.totalRevenue || 0,
+            paidOrders: attr?.paidOrders || 0,
+            totalOrders: attr?.totalOrders || 0,
+        }
+    })
+
+    // ── Taboola aggregated KPIs ────────────────────────────────────────────
+    const connectedAccounts = taboolaAccounts.filter(a => !a.error)
+    const taboolaTotalImpressions = connectedAccounts.reduce((s, a) => s + a.totalImpressions, 0)
+    const taboolaTotalClicks = connectedAccounts.reduce((s, a) => s + a.totalClicks, 0)
+    const taboolaTotalConversions = connectedAccounts.reduce((s, a) => s + a.totalConversions, 0)
+    const taboolaPaidRevenue = taboolaRevenue.reduce((s, r) => s + r.paidRevenue, 0)
+    const taboolaKpis = connectedAccounts.length > 0 ? {
+        totalSpent: taboolaSpent || 0,
+        totalConversions: taboolaTotalConversions,
+        avgCpa: taboolaTotalConversions > 0 ? (taboolaSpent || 0) / taboolaTotalConversions : 0,
+        roas: (taboolaSpent || 0) > 0 ? taboolaPaidRevenue / (taboolaSpent || 1) : 0,
+        totalImpressions: taboolaTotalImpressions,
+        totalClicks: taboolaTotalClicks,
+        paidRevenue: taboolaPaidRevenue,
+    } : undefined
+
     // ── Final data object ─────────────────────────────────────────────────
     const data: AnalyticsData = {
         kpis: {
@@ -252,6 +307,10 @@ export default async function AdminPage({
         weekdayData,
         recentOrders,
         prevKpis,
+        taboolaAccounts,
+        taboolaRevenue,
+        taboolaSpent,
+        taboolaKpis,
     }
 
     return (
