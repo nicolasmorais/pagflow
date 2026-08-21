@@ -7,6 +7,7 @@ import OrderStatusSelect from './components/OrderStatusSelect'
 import DeleteOrderButton from './components/DeleteOrderButton'
 import OrderRow from './components/OrderRow'
 import R2VerifyAllButton from './components/R2VerifyAllButton'
+import R2BackupAllButton from './components/R2BackupAllButton'
 import SalesCard from './components/SalesCard'
 import ConversionCard from './components/ConversionCard'
 
@@ -265,6 +266,7 @@ export default async function OrdersPage({
                             Lixeira
                         </Link>
                         <R2VerifyAllButton orders={orders} />
+                        <R2BackupAllButton />
                     </div>
                 </div>
 
