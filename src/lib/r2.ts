@@ -25,15 +25,25 @@ function getS3Client(): S3Client | null {
 export async function uploadOrderBackup(order: any) {
     const client = getS3Client()
     if (!client || !process.env.S3_BUCKET) {
-        console.warn('R2 not configured. Skipping backup.');
+        console.warn('[R2 Backup] R2 não configurado. Pulando backup.');
         return;
     }
 
     try {
-        // Clean order object (remove circular refs if any, though prisma objects are usually clean)
         const body = JSON.stringify(order, null, 2);
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const key = `backups/orders/${order.id}_${timestamp}.json`;
+
+        // Nome do arquivo: nome do cliente + data do pedido
+        const clientName = (order.fullName || 'Cliente')
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+            .replace(/[^a-zA-Z0-9\s]/g, '') // remove caracteres especiais
+            .trim()
+            .replace(/\s+/g, '_'); // espaços → underscore
+
+        const orderDate = order.createdAt
+            ? new Date(order.createdAt).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
+
+        const key = `backups/orders/${order.id}_${clientName}_${orderDate}.json`;
 
         const command = new PutObjectCommand({
             Bucket: process.env.S3_BUCKET,
@@ -43,10 +53,10 @@ export async function uploadOrderBackup(order: any) {
         });
 
         await client.send(command);
-        console.log(`✅ [R2 Backup] Uploaded successfully: ${key}`);
+        console.log(`✅ [R2 Backup] Upload OK: ${key}`);
         return { success: true, key };
     } catch (error) {
-        console.error('❌ [R2 Backup] Error:', error);
+        console.error('❌ [R2 Backup] Erro:', error);
         return { success: false, error };
     }
 }

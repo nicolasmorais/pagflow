@@ -91,10 +91,19 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ error: `Status inválido. Permitidos: ${ALLOWED_STATUSES.join(', ')}` }, { status: 400 })
         }
 
-        await prisma.order.update({
+        const updated = await prisma.order.update({
             where: { id: orderId },
             data: { status },
+            include: { product: true },
         })
+
+        // Backup R2
+        try {
+            const { uploadOrderBackup } = await import("@/lib/r2")
+            await uploadOrderBackup(updated)
+        } catch (r2Err) {
+            console.error("[extension-orders] Erro no backup R2:", r2Err)
+        }
 
         return NextResponse.json({ success: true })
     } catch (error: any) {

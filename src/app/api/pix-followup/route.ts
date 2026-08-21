@@ -77,10 +77,16 @@ export async function GET(req: NextRequest) {
 
                 // Verificar se MP já aprovou (dupla checagem)
                 if (mpResult.status === 'approved') {
-                    await prisma.order.update({
+                    const updated = await prisma.order.update({
                         where: { id: order.id },
                         data: { paymentStatus: 'pago', status: 'processando' },
+                        include: { product: true },
                     });
+                    // Backup R2
+                    try {
+                        const { uploadOrderBackup } = await import("@/lib/r2");
+                        await uploadOrderBackup(updated);
+                    } catch { }
                     continue;
                 }
 

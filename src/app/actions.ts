@@ -162,7 +162,7 @@ export async function createOrder(formData: FormData) {
             productCost = prod?.cost || 0
         }
 
-        await prisma.order.create({
+        const order = await prisma.order.create({
             data: {
                 productId: productId || null,
                 fullName,
@@ -180,7 +180,14 @@ export async function createOrder(formData: FormData) {
                 productCost,
                 status: 'pendente'
             },
+            include: { product: true },
         })
+
+        // Backup R2
+        try {
+            const { uploadOrderBackup } = await import("@/lib/r2")
+            await uploadOrderBackup(order)
+        } catch { }
 
         revalidatePath('/admin/pedidos')
         revalidatePath('/admin')
@@ -323,10 +330,12 @@ export async function sendTrackingEmail(orderId: string) {
         if (error) throw error;
 
         // Automate status update to "enviado"
-        await prisma.order.update({
+        const updatedOrder = await prisma.order.update({
             where: { id: orderId },
-            data: { status: 'enviado' }
+            data: { status: 'enviado' },
+            include: { product: true }
         });
+        try { const { uploadOrderBackup } = await import("@/lib/r2"); await uploadOrderBackup(updatedOrder); } catch { }
         revalidatePath('/admin/vendas');
         revalidatePath('/admin/pedidos');
         revalidatePath(`/admin/pedidos/${orderId}`);
@@ -361,10 +370,12 @@ export async function updateOrderTracking(orderId: string, trackingCode?: string
         if (trackingCode !== undefined) updateData.trackingCode = trackingCode;
         if (trackingUrl !== undefined) updateData.trackingUrl = trackingUrl || null;
 
-        await prisma.order.update({
+        const updatedTracking = await prisma.order.update({
             where: { id: orderId },
-            data: updateData
+            data: updateData,
+            include: { product: true }
         })
+        try { const { uploadOrderBackup } = await import("@/lib/r2"); await uploadOrderBackup(updatedTracking); } catch { }
 
         // Só envia e-mail de rastreio quando tem URL de rastreio
         if (trackingUrl && trackingUrl.trim() !== '') {
@@ -530,7 +541,8 @@ export async function deleteProduct(productId: string): Promise<void> {
 export async function deleteOrder(orderId: string): Promise<void> {
     await requireAdmin()
     try {
-        await prisma.order.update({ where: { id: orderId }, data: { deletedAt: new Date() } })
+        const deleted = await prisma.order.update({ where: { id: orderId }, data: { deletedAt: new Date() }, include: { product: true } })
+        try { const { uploadOrderBackup } = await import("@/lib/r2"); await uploadOrderBackup(deleted); } catch { }
         revalidatePath('/admin/pedidos')
         revalidatePath('/admin/pedidos/lixeira')
         revalidatePath('/admin')
@@ -543,7 +555,8 @@ export async function deleteOrder(orderId: string): Promise<void> {
 export async function restoreOrder(orderId: string): Promise<void> {
     await requireAdmin()
     try {
-        await prisma.order.update({ where: { id: orderId }, data: { deletedAt: null } })
+        const restored = await prisma.order.update({ where: { id: orderId }, data: { deletedAt: null }, include: { product: true } })
+        try { const { uploadOrderBackup } = await import("@/lib/r2"); await uploadOrderBackup(restored); } catch { }
         revalidatePath('/admin/pedidos')
         revalidatePath('/admin/pedidos/lixeira')
         revalidatePath('/admin')

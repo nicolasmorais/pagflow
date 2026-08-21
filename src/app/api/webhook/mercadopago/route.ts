@@ -169,6 +169,20 @@ export async function POST(req: NextRequest) {
                 }
             });
 
+            // Backup R2 sempre que status muda
+            try {
+                const fullOrder = await prisma.order.findUnique({
+                    where: { id: order.id },
+                    include: { product: true }
+                });
+                if (fullOrder) {
+                    const { uploadOrderBackup } = await import("@/lib/r2");
+                    await uploadOrderBackup(fullOrder);
+                }
+            } catch (r2Err) {
+                console.error("[Webhook MP] Erro no backup R2:", r2Err);
+            }
+
             if (finalStatus === 'pago' && order.paymentStatus !== 'pago') {
                 try { await sendConfirmationEmail(order.id); } catch (e) { }
                 try { await sendAdminNotification(order); } catch (e) { }
