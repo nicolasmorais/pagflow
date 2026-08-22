@@ -235,7 +235,7 @@ export default function PreviewPixPage() {
                                 <polyline points="20 6 9 17 4 12"/>
                             </svg>
                         </div>
-                        <div className="status-title">Pedido reservado!<br />Falta so o pagamento.</div>
+                        <div className="status-title">Seu pedido já foi encaminhado ao setor de logística.<br />Assim que o pagamento for confirmado, o envio será realizado.</div>
                         <div className="status-sub" style={{ marginTop: '6px' }}>Escaneie o QR Code ou copie o codigo abaixo</div>
                     </div>
 
