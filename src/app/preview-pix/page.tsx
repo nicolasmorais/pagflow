@@ -4,16 +4,13 @@ import { useState } from 'react';
 
 const MOCK_PIX_CODE = '00020126580014br.gov.bcb.pix0136a629534e-7693-4846-b028-571ed5f2a45f52040000530398654041.005802BR5925LOJA EXEMPLO PAGFLOW LTDA6009SAO PAULO62070503***6304E2CA';
 
-// Generate a simple placeholder QR code SVG
 function PlaceholderQR() {
     const size = 156;
     const cellSize = 6;
     const cells: boolean[][] = [];
-    // Deterministic pattern
     for (let y = 0; y < Math.floor(size / cellSize); y++) {
         cells[y] = [];
         for (let x = 0; x < Math.floor(size / cellSize); x++) {
-            // Finder patterns (corners)
             const inTopLeft = x < 7 && y < 7;
             const inTopRight = x >= Math.floor(size / cellSize) - 7 && y < 7;
             const inBottomLeft = x < 7 && y >= Math.floor(size / cellSize) - 7;
@@ -31,7 +28,7 @@ function PlaceholderQR() {
             <rect width={size} height={size} fill="white" />
             {cells.map((row, y) =>
                 row.map((filled, x) =>
-                    filled ? <rect key={`${x}-${y}`} x={x * cellSize} y={y * cellSize} width={cellSize} height={cellSize} fill="#111" /> : null
+                    filled ? <rect key={`${x}-${y}`} x={x * cellSize} y={y * cellSize} width={cellSize} height={cellSize} fill="#241F16" /> : null
                 )
             )}
         </svg>
@@ -43,272 +40,331 @@ export default function PreviewPixPage() {
 
     return (
         <>
-            <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+            <link rel="preconnect" href="https://fonts.googleapis.com" />
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+            <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Atkinson+Hyperlegible+Next:wght@500;700;800&display=swap" rel="stylesheet" />
 
             <style>{`
                 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-                :root {
-                    --bg: #F5F5F5;
-                    --white: #FFFFFF;
-                    --black: #1E1E1E;
-                    --green: #1D9A52;
-                    --green-dark: #136638;
-                    --border: #E5E7EB;
-                    --text: #1E1E1E;
-                    --muted: #6B7280;
-                    --light: #9CA3AF;
-                    --red: #B83030;
-                    --radius: 12px;
-                    --radius-sm: 8px;
-                }
                 html { scroll-behavior: smooth; }
-                body { font-family: 'Manrope', sans-serif !important; background: var(--bg); color: var(--text); line-height: 1.55; font-size: 16px; -webkit-font-smoothing: antialiased; }
-
-                .pix-page-wrapper {
-                    background: #F5F5F5;
-                    min-height: 100vh;
-                    font-family: 'Manrope', sans-serif !important;
-                    color: #111111;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
+                body {
+                    margin: 0;
+                    background: #FBF7EF;
+                    font-family: 'Atkinson Hyperlegible', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+                    color: #241F16;
+                    -webkit-font-smoothing: antialiased;
                 }
-                .pix-header-strip {
-                    background: #fff;
-                    border-bottom: 1px solid #e5e7eb;
-                    padding: 10px 20px;
+                .page {
+                    max-width: 520px;
+                    margin: 0 auto;
+                    padding: 20px 18px 48px;
+                }
+                a { color: #093F30; }
+                :focus-visible { outline: 3px solid #1D6FD8; outline-offset: 3px; }
+
+                .status {
+                    text-align: center;
+                    margin-bottom: 26px;
+                }
+                .status-badge {
+                    width: 74px; height: 74px;
+                    margin: 0 auto 16px;
+                    background: #0B5D45;
+                    border-radius: 50%;
+                    display: flex; align-items: center; justify-content: center;
+                }
+                .status-badge svg { width: 38px; height: 38px; }
+                .status h1 {
+                    font-size: 25px;
+                    font-weight: 800;
+                    line-height: 1.35;
+                    margin: 0 0 10px;
+                    color: #241F16;
+                }
+                .status p {
+                    font-size: 19px;
+                    line-height: 1.5;
+                    margin: 0;
+                    color: #4A4436;
+                    font-weight: 400;
+                }
+
+                .card {
+                    background: #FFFFFF;
+                    border: 2px solid #E7DFCC;
+                    border-radius: 18px;
+                    padding: 22px 20px;
+                    margin-bottom: 22px;
+                }
+
+                .step-instruction {
+                    text-align: center;
+                    font-size: 19px;
+                    font-weight: 700;
+                    margin: 0 0 18px;
+                }
+
+                .qr-wrap {
                     display: flex;
                     justify-content: center;
+                    margin-bottom: 6px;
+                }
+                .qr-box {
+                    width: 220px; height: 220px;
+                    background: #FBF7EF;
+                    border: 2px solid #D8CBA8;
+                    border-radius: 14px;
+                    display: flex; align-items: center; justify-content: center;
+                    padding: 16px;
+                }
+                .qr-box svg { width: 100%; height: 100%; }
+                .qr-caption {
+                    text-align: center;
+                    font-size: 15px;
+                    color: #4A4436;
+                    margin: 8px 0 0;
+                }
+
+                .or-row {
+                    display: flex;
                     align-items: center;
-                    gap: 16px;
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #4b5563;
-                    width: 100%;
+                    gap: 12px;
+                    margin: 24px 0 16px;
                 }
-                .ssl-badge { display: flex; align-items: center; gap: 6px; color: #059669; }
-                .lock-icon { width: 14px; height: 14px; fill: currentColor; }
-                .bc-badge { display: flex; align-items: center; gap: 6px; }
-                .bc-badge::before { content: ''; width: 4px; height: 4px; border-radius: 50%; background: #d1d5db; }
+                .or-row hr { flex: 1; border: none; border-top: 2px solid #E7DFCC; }
+                .or-row span { font-size: 15px; font-weight: 700; color: #4A4436; white-space: nowrap; }
 
-                .success-page-content {
-                    max-width: 480px;
-                    width: 100%;
-                    margin: 0 auto;
-                    padding: 28px 24px 60px;
-                }
-
-                .status-top { text-align: center; margin-bottom: 24px; }
-                .check-circle {
-                    width: 52px; height: 52px; border-radius: 50%;
-                    background: var(--green);
-                    display: flex; align-items: center; justify-content: center;
-                    margin: 0 auto 14px;
-                }
-                .check-circle svg { width: 26px; height: 26px; color: #fff; }
-                .status-title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; margin-bottom: 4px; line-height: 1.3; }
-                .status-sub { font-size: 13px; font-weight: 500; color: var(--muted); }
-
-                .pix-card {
-                    background: var(--white);
-                    border: 1px solid var(--border);
-                    border-radius: var(--radius);
-                    overflow: hidden;
-                    margin-bottom: 12px;
-                }
-                .qr-section { padding: 24px 24px 20px; text-align: center; }
-                .qr-instruction { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 16px; }
-                .qr-wrap {
-                    width: 180px; height: 180px;
-                    margin: 0 auto 20px;
-                    border: 1.5px solid var(--border);
-                    border-radius: var(--radius-sm);
-                    padding: 12px;
-                    background: var(--white);
-                    display: flex; align-items: center; justify-content: center;
-                }
-                .qr-wrap img, .qr-wrap svg { width: 100%; height: 100%; object-fit: contain; }
-
-                .or-divider-pix {
-                    display: flex; align-items: center; gap: 10px;
-                    margin: 0 24px 16px;
-                }
-                .or-divider-pix::before, .or-divider-pix::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-                .or-divider-pix span { font-size: 11px; font-weight: 700; color: var(--light); letter-spacing: .04em; }
-
-                .code-section { padding: 0 24px 20px; }
                 .code-box {
-                    background: var(--bg);
-                    border: 1.5px solid var(--border);
-                    border-radius: var(--radius-sm);
-                    padding: 12px 14px;
-                    font-size: 11px; font-weight: 600; color: var(--muted);
-                    word-break: break-all; line-height: 1.5;
-                    margin-bottom: 12px; letter-spacing: .01em;
-                    font-family: 'Manrope', sans-serif !important;
+                    background: #FBF7EF;
+                    border: 2px dashed #D8CBA8;
+                    border-radius: 12px;
+                    padding: 14px;
+                    font-family: monospace;
+                    font-size: 14px;
+                    color: #4A4436;
+                    word-break: break-all;
+                    line-height: 1.5;
+                    margin-bottom: 16px;
                 }
 
-                .pix-copy-btn {
-                    width: 100%; padding: 16px;
-                    background: var(--green); color: var(--white);
-                    border: none; border-radius: var(--radius-sm);
-                    font-family: 'Manrope', sans-serif !important;
-                    font-size: 16px; font-weight: 800; cursor: pointer;
-                    display: flex; align-items: center; justify-content: center; gap: 8px;
-                    transition: all .18s; letter-spacing: -.1px;
+                .btn-copy {
+                    width: 100%;
+                    background: #0B5D45;
+                    color: #fff;
+                    border: none;
+                    border-radius: 14px;
+                    padding: 20px;
+                    font-size: 20px;
+                    font-weight: 800;
+                    font-family: inherit;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                    cursor: pointer;
+                    min-height: 64px;
+                    transition: background .18s;
                 }
-                .pix-copy-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
-                .pix-copy-btn:active { transform: none; filter: none; }
-                .pix-copy-btn.copied { background: #136638; }
-                .pix-copy-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+                .btn-copy:hover { background: #093F30; }
+                .btn-copy.copied { background: #093F30; }
+                .btn-copy svg { width: 24px; height: 24px; flex: none; }
 
-                .steps-card {
-                    background: var(--white);
-                    border: 1px solid var(--border);
-                    border-radius: var(--radius);
-                    padding: 18px 20px;
-                    margin-bottom: 12px;
+                .copy-hint {
+                    text-align: center;
+                    font-size: 15px;
+                    color: #4A4436;
+                    margin: 12px 0 0;
                 }
-                .steps-title { font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
-                .step-row-pix { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
-                .step-row-pix:last-child { margin-bottom: 0; }
-                .step-num-pix {
-                    width: 24px; height: 24px; border-radius: 50%;
-                    background: #111111; color: var(--white);
-                    font-size: 11px; font-weight: 800;
+
+                .steps-title {
+                    font-size: 19px;
+                    font-weight: 800;
+                    margin: 0 0 16px;
+                }
+                .step-row {
+                    display: flex;
+                    gap: 14px;
+                    margin-bottom: 18px;
+                }
+                .step-row:last-child { margin-bottom: 0; }
+                .step-num {
+                    flex: none;
+                    width: 36px; height: 36px;
+                    border-radius: 50%;
+                    background: #E4F3EB;
+                    color: #093F30;
+                    font-weight: 800;
+                    font-size: 17px;
                     display: flex; align-items: center; justify-content: center;
-                    flex-shrink: 0; margin-top: 1px;
                 }
-                .step-text-pix { font-size: 13px; font-weight: 600; color: #111111; line-height: 1.45; }
-                .step-text-pix span { color: var(--muted); font-weight: 500; }
+                .step-text {
+                    font-size: 17px;
+                    line-height: 1.5;
+                    color: #241F16;
+                    padding-top: 5px;
+                }
+                .step-text strong { font-weight: 700; }
 
-                .trust-row-pix {
-                    display: flex; align-items: center; justify-content: center;
-                    gap: 20px; flex-wrap: wrap; padding: 14px 0;
+                .trust-row {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px 18px;
+                    justify-content: center;
+                    margin-bottom: 22px;
                 }
-                .trust-item-pix { display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; color: var(--muted); }
-                .trust-item-pix svg { width: 13px; height: 13px; color: var(--green); }
+                .trust-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+                    font-size: 15px;
+                    color: #4A4436;
+                    font-weight: 700;
+                }
+                .trust-item svg { width: 18px; height: 18px; color: #0B5D45; flex: none; }
+
+                .help-card {
+                    background: #E4F3EB;
+                    border: 2px solid #0B5D45;
+                    border-radius: 16px;
+                    padding: 20px;
+                    text-align: center;
+                }
+                .help-card p.title {
+                    font-size: 18px;
+                    font-weight: 800;
+                    margin: 0 0 6px;
+                    color: #093F30;
+                }
+                .help-card p.sub {
+                    font-size: 16px;
+                    margin: 0 0 16px;
+                    color: #4A4436;
+                }
+                .btn-help {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 10px;
+                    background: #093F30;
+                    color: #fff;
+                    text-decoration: none;
+                    border-radius: 12px;
+                    padding: 16px 22px;
+                    font-weight: 800;
+                    font-size: 17px;
+                    min-height: 56px;
+                    transition: filter .18s;
+                }
+                .btn-help:hover { filter: brightness(1.15); }
+                .btn-help svg { width: 22px; height: 22px; }
 
                 .pix-toast {
                     position: fixed; bottom: 24px; left: 50%;
                     transform: translateX(-50%) translateY(20px);
-                    background: #111111; color: var(--white);
-                    padding: 10px 20px; border-radius: 99px;
-                    font-size: 13px; font-weight: 700;
+                    background: #241F16; color: #fff;
+                    padding: 12px 24px; border-radius: 99px;
+                    font-size: 15px; font-weight: 700;
                     opacity: 0; transition: all .25s;
                     white-space: nowrap; z-index: 99; pointer-events: none;
                 }
                 .pix-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
             `}</style>
 
-            <div className="pix-page-wrapper">
-                {/* HEADER STRIP */}
-                <div className="pix-header-strip">
-                    <div className="ssl-badge">
-                        <svg className="lock-icon" viewBox="0 0 24 24">
-                            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
+            <div className="page">
+                {/* STATUS */}
+                <div className="status">
+                    <div className="status-badge">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
                         </svg>
-                        Pagamento 100% seguro
                     </div>
-                    <div className="bc-badge">Banco Central do Brasil</div>
+                    <h1>Seu pedido já está separado</h1>
+                    <p>Falta só o pagamento para enviarmos até você.</p>
                 </div>
 
-                <div className="success-page-content">
-                    {/* STATUS */}
-                    <div className="status-top">
-                        <div className="check-circle">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                        </div>
-                        <div className="status-title">Seu pedido já foi encaminhado ao setor de logística.<br />Assim que o pagamento for confirmado, o envio será realizado.</div>
-                        <div className="status-sub" style={{ marginTop: '6px' }}>Escaneie o QR Code ou copie o codigo abaixo</div>
-                    </div>
+                {/* QR CODE CARD */}
+                <div className="card">
+                    <p className="step-instruction">Como pagar com PIX</p>
 
-                    {/* MAIN PIX CARD */}
-                    <div className="pix-card">
-                        <div className="qr-section">
-                            <div className="qr-instruction">Abra o app do banco e escaneie o QR Code</div>
-                            <div className="qr-wrap">
-                                <PlaceholderQR />
-                            </div>
-                        </div>
-
-                        <div className="or-divider-pix"><span>OU COPIE O CODIGO</span></div>
-
-                        <div className="code-section">
-                            <div className="code-box">{MOCK_PIX_CODE}</div>
-                            <button
-                                className={`pix-copy-btn ${copied ? 'copied' : ''}`}
-                                onClick={() => {
-                                    navigator.clipboard.writeText(MOCK_PIX_CODE);
-                                    setCopied(true);
-                                    setTimeout(() => setCopied(false), 3000);
-                                }}
-                            >
-                                {copied ? (
-                                    <>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                        Codigo Copiado!
-                                    </>
-                                ) : (
-                                    <>
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                                        Copiar Codigo PIX
-                                    </>
-                                )}
-                            </button>
+                    <div className="qr-wrap">
+                        <div className="qr-box">
+                            <PlaceholderQR />
                         </div>
                     </div>
+                    <p className="qr-caption">Abra o aplicativo do seu banco e escaneie este código</p>
 
-                    {/* NEXT STEPS */}
-                    <div className="steps-card">
-                        <div className="steps-title">O que acontece depois?</div>
-                        <div className="step-row-pix">
-                            <div className="step-num-pix">1</div>
-                            <div className="step-text-pix">
-                                Confirmacao por e-mail em minutos <span>— assim que o pagamento for identificado em <strong>cliente@email.com</strong></span>
-                            </div>
-                        </div>
-                        <div className="step-row-pix">
-                            <div className="step-num-pix">2</div>
-                            <div className="step-text-pix">
-                                Separacao e envio do pedido <span>— pagamentos ate as 15h saem no mesmo dia.</span>
-                            </div>
-                        </div>
-                        <div className="step-row-pix">
-                            <div className="step-num-pix">3</div>
-                            <div className="step-text-pix">Codigo de rastreio por e-mail <span>— acompanhe sua entrega em tempo real</span></div>
-                        </div>
+                    <div className="or-row">
+                        <hr />
+                        <span>ou pague copiando o código</span>
+                        <hr />
                     </div>
 
-                    {/* TRUST */}
-                    <div className="trust-row-pix">
-                        <div className="trust-item-pix">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                            PIX oficial Banco Central
-                        </div>
-                        <div className="trust-item-pix">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                            Dados criptografados
-                        </div>
-                        <div className="trust-item-pix">
-                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                            Compra garantida
-                        </div>
-                    </div>
+                    <div className="code-box">{MOCK_PIX_CODE}</div>
 
-                    <div style={{ marginTop: '20px' }}>
-                        <p style={{ fontSize: '13px', color: '#777', textAlign: 'center' }}>
-                            Precisa de ajuda? <a href="mailto:suporte@loja.com" style={{ color: '#111', fontWeight: 700, textDecoration: 'none' }}>Entre em contato por e-mail</a>
-                        </p>
+                    <button
+                        className={`btn-copy ${copied ? 'copied' : ''}`}
+                        onClick={() => {
+                            navigator.clipboard.writeText(MOCK_PIX_CODE);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 3000);
+                        }}
+                    >
+                        {copied ? (
+                            <>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                Código copiado!
+                            </>
+                        ) : (
+                            <>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                                Copiar código PIX
+                            </>
+                        )}
+                    </button>
+                    <p className="copy-hint">Toque no botão, depois cole o código no aplicativo do seu banco</p>
+                </div>
+
+                {/* NEXT STEPS */}
+                <div className="card">
+                    <p className="steps-title">O que acontece depois do pagamento</p>
+                    <div className="step-row">
+                        <span className="step-num">1</span>
+                        <p className="step-text"><strong>Você recebe um e-mail de confirmação</strong> em poucos minutos, assim que identificarmos o pagamento.</p>
+                    </div>
+                    <div className="step-row">
+                        <span className="step-num">2</span>
+                        <p className="step-text"><strong>Seu pedido é enviado no mesmo dia</strong> para pagamentos feitos até às 15h.</p>
+                    </div>
+                    <div className="step-row">
+                        <span className="step-num">3</span>
+                        <p className="step-text"><strong>Você acompanha a entrega</strong> pelo código de rastreio que enviamos por e-mail.</p>
                     </div>
                 </div>
 
-                {/* TOAST */}
-                <div className={`pix-toast ${copied ? 'show' : ''}`}>✓ Codigo copiado!</div>
+                {/* TRUST */}
+                <div className="trust-row">
+                    <span className="trust-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                        PIX oficial do Banco Central
+                    </span>
+                    <span className="trust-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                        Seus dados protegidos
+                    </span>
+                </div>
+
+                {/* HELP */}
+                <div className="help-card">
+                    <p className="title">Precisa de ajuda para pagar?</p>
+                    <p className="sub">Fale com a gente pelo WhatsApp, é rapidinho</p>
+                    <a className="btn-help" href="#">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                        Chamar no WhatsApp
+                    </a>
+                </div>
             </div>
+
+            {/* TOAST */}
+            <div className={`pix-toast ${copied ? 'show' : ''}`}>✓ Código copiado!</div>
         </>
     );
 }
