@@ -1670,7 +1670,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 color: '#E07020',
                                                 lineHeight: 1.5,
                                             }}>
-                                                Ao clicar em GERAR PIX, voce confirma a compra e se compromete a pagar. Gere apenas se for realizar o pagamento.
+                                                ⚠️ Não pagar o Pix pode fazer seu nome ir para o SPC/Serasa, conforme as regras de cobrança.
                                             </span>
                                         </div>
                                         <button className="cta-btn" onClick={() => finalizar()} disabled={loading}>
