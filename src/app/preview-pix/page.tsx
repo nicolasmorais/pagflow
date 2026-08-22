@@ -215,19 +215,6 @@ export default function PreviewPixPage() {
                 </div>
 
                 <div className="success-page-content">
-                    {/* URGENCY BANNER */}
-                    <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                        background: '#FEF3E8', border: '1px solid #E07020',
-                        color: '#E07020', fontSize: '12px', fontWeight: 700,
-                        padding: '8px 16px', borderRadius: '8px',
-                        marginBottom: '16px', letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                    }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E07020" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                        Ultimas unidades disponiveis
-                    </div>
-
                     {/* STATUS */}
                     <div className="status-top">
                         <div className="check-circle">
