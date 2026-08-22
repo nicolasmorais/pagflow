@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const MOCK_PIX_CODE = '00020126580014br.gov.bcb.pix0136a629534e-7693-4846-b028-571ed5f2a45f52040000530398654041.005802BR5925LOJA EXEMPLO PAGFLOW LTDA6009SAO PAULO62070503***6304E2CA';
 
@@ -40,18 +40,6 @@ function PlaceholderQR() {
 
 export default function PreviewPixPage() {
     const [copied, setCopied] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(10 * 60); // 10 minutes
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const mins = Math.floor(timeLeft / 60);
-    const secs = timeLeft % 60;
-    const isUrgent = timeLeft <= 120;
 
     return (
         <>
@@ -212,7 +200,6 @@ export default function PreviewPixPage() {
                 }
                 .pix-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-                @keyframes blink { 50% { opacity: 0; } }
             `}</style>
 
             <div className="pix-page-wrapper">
@@ -250,53 +237,6 @@ export default function PreviewPixPage() {
                         </div>
                         <div className="status-title">Pedido reservado!<br />Falta so o pagamento.</div>
                         <div className="status-sub" style={{ marginTop: '6px' }}>Escaneie o QR Code ou copie o codigo abaixo</div>
-                    </div>
-
-                    {/* COUNTDOWN TIMER */}
-                    <div style={{
-                        background: '#fff', border: '1px solid #E5E7EB', borderRadius: '12px',
-                        padding: '18px 20px', margin: '0 0 12px', textAlign: 'center',
-                        position: 'relative', overflow: 'hidden',
-                    }}>
-                        <div style={{
-                            fontSize: '11px', fontWeight: 800, color: '#6B7280',
-                            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px',
-                        }}>
-                            {isUrgent ? 'Tempo quase esgotando' : 'Oferta expira em'}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '10px' }}>
-                            {(() => {
-                                const digitStyle: React.CSSProperties = {
-                                    background: isUrgent ? '#FDECEA' : '#F5F5F5',
-                                    color: isUrgent ? '#B83030' : '#111',
-                                    borderRadius: '8px', padding: '8px 10px',
-                                    fontSize: '28px', fontWeight: 800,
-                                    fontFamily: "'Manrope', sans-serif", lineHeight: 1,
-                                    minWidth: '44px', textAlign: 'center',
-                                    animation: timeLeft <= 60 ? 'blink 1s step-end infinite' : 'none',
-                                };
-                                const sepStyle: React.CSSProperties = {
-                                    fontSize: '24px', fontWeight: 800,
-                                    color: isUrgent ? '#B83030' : '#111', lineHeight: 1,
-                                };
-                                return (
-                                    <>
-                                        <span style={digitStyle}>{String(mins).padStart(2, '0')}</span>
-                                        <span style={sepStyle}>:</span>
-                                        <span style={digitStyle}>{String(secs).padStart(2, '0')}</span>
-                                    </>
-                                );
-                            })()}
-                        </div>
-                        <div style={{ fontSize: '12px', fontWeight: 500, color: '#6B7280' }}>
-                            Apos esse tempo, sua reserva sera liberada
-                        </div>
-                        <div style={{
-                            position: 'absolute', bottom: 0, left: 0, height: '3px',
-                            width: `${(timeLeft / 600) * 100}%`,
-                            background: isUrgent ? '#B83030' : '#1D9A52',
-                            transition: 'width 1s linear', borderRadius: '0 0 12px 12px',
-                        }} />
                     </div>
 
                     {/* MAIN PIX CARD */}
