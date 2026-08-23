@@ -819,38 +819,28 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 </div>
             ) : done ? (
                 <div className="pix-page-wrapper">
-                    <div className="pix-header-strip">
-                        <div className="ssl-badge">
-                            <svg className="lock-icon" viewBox="0 0 24 24">
-                                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z" />
-                            </svg>
-                            Pagamento 100% seguro
-                        </div>
-                        <div className="bc-badge">Banco Central do Brasil</div>
-                    </div>
-
                     {paymentMethod === 'pix' ? (
-                        <div className="pix-page-wrapper">
-                            <div className="success-page-content">
+                        <div style={{
+                            background: '#FBF7EF', minHeight: '100vh',
+                            fontFamily: "'Manrope', sans-serif",
+                        }}>
+                            <div style={{ maxWidth: 520, margin: '0 auto', padding: '20px 18px 48px' }}>
                                 {/* PIX EXPIRADO */}
                                 {pixExpired ? (
-                                    <div style={{
-                                        textAlign: 'center',
-                                        padding: '40px 20px',
-                                    }}>
+                                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                                         <div style={{
-                                            width: '64px', height: '64px', borderRadius: '50%',
+                                            width: '74px', height: '74px', borderRadius: '50%',
                                             background: '#FDECEA', margin: '0 auto 16px',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         }}>
-                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#B83030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#B83030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                                             </svg>
                                         </div>
-                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#111', marginBottom: '8px' }}>
+                                        <div style={{ fontSize: '25px', fontWeight: 800, color: '#241F16', marginBottom: '8px', fontFamily: "'Manrope', sans-serif" }}>
                                             PIX expirado
                                         </div>
-                                        <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                                        <div style={{ fontSize: '16px', color: '#4A4436', marginBottom: '24px' }}>
                                             O tempo para pagamento acabou. Gere um novo PIX para continuar.
                                         </div>
                                         <button
@@ -892,38 +882,33 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             }}
                                             disabled={pixLoading}
                                             style={{
-                                                background: '#1D9A52',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                padding: '16px 32px',
-                                                fontSize: '16px',
-                                                fontWeight: 700,
+                                                background: '#0B5D45', color: '#fff', border: 'none',
+                                                borderRadius: '14px', padding: '20px 32px',
+                                                fontSize: '18px', fontWeight: 800,
+                                                fontFamily: "'Manrope', sans-serif",
                                                 cursor: pixLoading ? 'wait' : 'pointer',
                                                 opacity: pixLoading ? 0.7 : 1,
-                                                width: '100%',
-                                                maxWidth: '320px',
+                                                width: '100%', maxWidth: '320px',
                                             }}
                                         >
                                             {pixLoading ? 'Gerando...' : 'Gerar novo PIX'}
                                         </button>
                                     </div>
                                 ) : !pixData ? (
-                                    /* PIX PROCESSANDO — sem QR code ainda */
                                     <div style={{ textAlign: 'center', padding: '40px 20px' }}>
                                         <div style={{
-                                            width: '64px', height: '64px', borderRadius: '50%',
-                                            background: '#E8F5E9', margin: '0 auto 16px',
+                                            width: '74px', height: '74px', borderRadius: '50%',
+                                            background: '#E4F3EB', margin: '0 auto 16px',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         }}>
-                                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1D9A52" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#0B5D45" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                 <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
                                             </svg>
                                         </div>
-                                        <div style={{ fontSize: '20px', fontWeight: 800, color: '#111', marginBottom: '8px' }}>
+                                        <div style={{ fontSize: '25px', fontWeight: 800, color: '#241F16', marginBottom: '8px', fontFamily: "'Manrope', sans-serif" }}>
                                             Processando pagamento...
                                         </div>
-                                        <div style={{ fontSize: '14px', color: '#6B7280', marginBottom: '24px' }}>
+                                        <div style={{ fontSize: '16px', color: '#4A4436', marginBottom: '24px' }}>
                                             Estamos gerando seu PIX. Se não aparecer em instantes, clique abaixo para tentar novamente.
                                         </div>
                                         <button
@@ -962,17 +947,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             }}
                                             disabled={pixLoading}
                                             style={{
-                                                background: '#1D9A52',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '12px',
-                                                padding: '16px 32px',
-                                                fontSize: '16px',
-                                                fontWeight: 700,
+                                                background: '#0B5D45', color: '#fff', border: 'none',
+                                                borderRadius: '14px', padding: '20px 32px',
+                                                fontSize: '18px', fontWeight: 800,
+                                                fontFamily: "'Manrope', sans-serif",
                                                 cursor: pixLoading ? 'wait' : 'pointer',
                                                 opacity: pixLoading ? 0.7 : 1,
-                                                width: '100%',
-                                                maxWidth: '320px',
+                                                width: '100%', maxWidth: '320px',
                                             }}
                                         >
                                             {pixLoading ? 'Gerando...' : 'Tentar gerar PIX novamente'}
@@ -980,202 +961,221 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                 ) : (
                                 <>
-                                {/* URGENCY: ultimas unidades */}
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    background: '#FEF3E8',
-                                    border: '1px solid #E07020',
-                                    color: '#E07020', fontSize: '12px', fontWeight: 700,
-                                    padding: '8px 16px', borderRadius: '8px',
-                                    marginBottom: '16px', letterSpacing: '0.04em',
-                                    textTransform: 'uppercase',
-                                }}>
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E07020" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                    Ultimas unidades disponiveis
-                                </div>
-
                                 {/* STATUS */}
-                                <div className="status-top">
-                                    <div className="check-circle">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="20 6 9 17 4 12"/>
+                                <div style={{ textAlign: 'center', marginBottom: '26px' }}>
+                                    <div style={{
+                                        width: 74, height: 74, margin: '0 auto 16px',
+                                        background: '#0B5D45', borderRadius: '50%',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    }}>
+                                        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="20 6 9 17 4 12" />
                                         </svg>
                                     </div>
-                                    <div className="status-title">Seu pedido já foi encaminhado ao setor de logística.<br />Assim que o pagamento for confirmado, o envio será realizado.</div>
-                                    <div className="status-sub" style={{ marginTop: '6px' }}>Escaneie o QR Code ou copie o código abaixo</div>
+                                    <h1 style={{ fontSize: '25px', fontWeight: 800, lineHeight: 1.35, margin: '0 0 10px', color: '#241F16', fontFamily: "'Manrope', sans-serif" }}>
+                                        Seu pedido já está separado
+                                    </h1>
+                                    <p style={{ fontSize: '19px', lineHeight: 1.5, margin: 0, color: '#4A4436', fontWeight: 400 }}>
+                                        Falta só o pagamento para enviarmos até você.
+                                    </p>
                                 </div>
 
-                                {/* COUNTDOWN TIMER */}
+                                {/* QR CODE CARD */}
                                 <div style={{
-                                    background: '#fff',
-                                    border: '1px solid #E5E7EB',
-                                    borderRadius: '12px',
-                                    padding: '18px 20px',
-                                    margin: '0 0 12px',
-                                    textAlign: 'center',
-                                    position: 'relative',
-                                    overflow: 'hidden',
+                                    background: '#FFFFFF', border: '2px solid #E7DFCC',
+                                    borderRadius: '18px', padding: '22px 20px', marginBottom: '22px',
                                 }}>
-                                    <div style={{
-                                        fontSize: '11px',
-                                        fontWeight: 800,
-                                        color: '#6B7280',
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.06em',
-                                        marginBottom: '10px',
-                                    }}>
-                                        {timeLeft <= 120 ? 'Tempo quase esgotando' : 'Oferta expira em'}
-                                    </div>
-                                    <div style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: '6px',
-                                        marginBottom: '10px',
-                                    }}>
-                                        {(() => {
-                                            const mins = Math.floor(timeLeft / 60);
-                                            const secs = timeLeft % 60;
-                                            const isUrgent = timeLeft <= 120;
-                                            const digitStyle = {
-                                                background: isUrgent ? '#FDECEA' : '#F5F5F5',
-                                                color: isUrgent ? '#B83030' : '#111',
-                                                borderRadius: '8px',
-                                                padding: '8px 10px',
-                                                fontSize: '28px',
-                                                fontWeight: 800,
-                                                fontFamily: "'Manrope', sans-serif",
-                                                lineHeight: 1,
-                                                minWidth: '44px',
-                                                textAlign: 'center',
-                                                animation: timeLeft <= 60 ? 'blink 1s step-end infinite' : 'none',
-                                            };
-                                            const sepStyle = {
-                                                fontSize: '24px',
-                                                fontWeight: 800,
-                                                color: isUrgent ? '#B83030' : '#111',
-                                                lineHeight: 1,
-                                            };
-                                            return (
-                                                <>
-                                                    <span style={digitStyle}>{String(mins).padStart(2, '0')}</span>
-                                                    <span style={sepStyle}>:</span>
-                                                    <span style={digitStyle}>{String(secs).padStart(2, '0')}</span>
-                                                </>
-                                            );
-                                        })()}
-                                    </div>
-                                    <div style={{
-                                        fontSize: '12px',
-                                        fontWeight: 500,
-                                        color: '#6B7280',
-                                    }}>
-                                        Após esse tempo, sua reserva será liberada
-                                    </div>
-                                    {/* Progress bar */}
-                                    <div style={{
-                                        position: 'absolute',
-                                        bottom: 0, left: 0,
-                                        height: '3px',
-                                        width: `${(timeLeft / 600) * 100}%`,
-                                        background: timeLeft <= 120 ? '#B83030' : '#1D9A52',
-                                        transition: 'width 1s linear',
-                                        borderRadius: '0 0 12px 12px',
-                                    }} />
-                                </div>
+                                    <p style={{ textAlign: 'center', fontSize: '19px', fontWeight: 700, margin: '0 0 18px' }}>
+                                        Como pagar com PIX
+                                    </p>
 
-                                {/* MAIN CARD */}
-                                <div className="pix-card">
-                                    <div className="qr-section">
-                                        <div className="qr-instruction">Abra o app do banco e escaneie o QR Code</div>
-                                        <div className="qr-wrap">
+                                    {/* COUNTDOWN TIMER */}
+                                    <div style={{
+                                        background: '#FBF7EF', border: '2px solid #D8CBA8',
+                                        borderRadius: '14px', padding: '16px 20px', marginBottom: '18px',
+                                        textAlign: 'center', position: 'relative', overflow: 'hidden',
+                                    }}>
+                                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#4A4436', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
+                                            {timeLeft <= 120 ? 'Tempo quase esgotando' : 'Oferta expira em'}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '10px' }}>
+                                            {(() => {
+                                                const mins = Math.floor(timeLeft / 60);
+                                                const secs = timeLeft % 60;
+                                                const isUrgent = timeLeft <= 120;
+                                                const digitStyle = {
+                                                    background: isUrgent ? '#FDECEA' : '#FFFFFF',
+                                                    color: isUrgent ? '#B83030' : '#241F16',
+                                                    borderRadius: '8px', padding: '8px 10px',
+                                                    fontSize: '28px', fontWeight: 800,
+                                                    fontFamily: "'Manrope', sans-serif", lineHeight: 1,
+                                                    minWidth: '44px', textAlign: 'center' as const,
+                                                    animation: timeLeft <= 60 ? 'blink 1s step-end infinite' : 'none',
+                                                    border: isUrgent ? '1px solid #FDECEA' : '1px solid #E7DFCC',
+                                                };
+                                                const sepStyle = { fontSize: '24px', fontWeight: 800, color: isUrgent ? '#B83030' : '#241F16', lineHeight: 1 };
+                                                return (
+                                                    <>
+                                                        <span style={digitStyle}>{String(mins).padStart(2, '0')}</span>
+                                                        <span style={sepStyle}>:</span>
+                                                        <span style={digitStyle}>{String(secs).padStart(2, '0')}</span>
+                                                    </>
+                                                );
+                                            })()}
+                                        </div>
+                                        <div style={{ fontSize: '12px', fontWeight: 500, color: '#4A4436' }}>
+                                            Após esse tempo, sua reserva será liberada
+                                        </div>
+                                        <div style={{
+                                            position: 'absolute', bottom: 0, left: 0,
+                                            height: '3px', width: `${(timeLeft / 600) * 100}%`,
+                                            background: timeLeft <= 120 ? '#B83030' : '#0B5D45',
+                                            transition: 'width 1s linear', borderRadius: '0 0 14px 14px',
+                                        }} />
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+                                        <div style={{
+                                            width: 220, height: 220, background: '#FBF7EF',
+                                            border: '2px solid #D8CBA8', borderRadius: '14px',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
+                                        }}>
                                             {pixData?.qrCodeBase64 ? (
-                                                <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" />
+                                                <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                                             ) : (
                                                 <div style={{ color: '#ccc', fontSize: '12px' }}>Gerando QR Code...</div>
                                             )}
                                         </div>
                                     </div>
+                                    <p style={{ textAlign: 'center', fontSize: '15px', color: '#4A4436', margin: '8px 0 0' }}>
+                                        Abra o aplicativo do seu banco e escaneie este código
+                                    </p>
 
-                                    <div className="or-divider-pix"><span>OU COPIE O CÓDIGO</span></div>
-
-                                    <div className="code-section">
-                                        <div className="code-box">{pixData?.qrCode || 'Gerando código PIX...'}</div>
-                                        <button
-                                            className={`pix-copy-btn ${copied ? 'copied' : ''}`}
-                                            onClick={() => {
-                                                if (pixData?.qrCode) {
-                                                    navigator.clipboard.writeText(pixData.qrCode);
-                                                    setCopied(true);
-                                                    setTimeout(() => setCopied(false), 3000);
-                                                }
-                                            }}
-                                        >
-                                            {copied ? (
-                                                <>
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                                    Código Copiado!
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                                                    Copiar Código PIX
-                                                </>
-                                            )}
-                                        </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '24px 0 16px' }}>
+                                        <hr style={{ flex: 1, border: 'none', borderTop: '2px solid #E7DFCC' }} />
+                                        <span style={{ fontSize: '15px', fontWeight: 700, color: '#4A4436', whiteSpace: 'nowrap' }}>ou pague copiando o código</span>
+                                        <hr style={{ flex: 1, border: 'none', borderTop: '2px solid #E7DFCC' }} />
                                     </div>
+
+                                    <div style={{
+                                        background: '#FBF7EF', border: '2px dashed #D8CBA8',
+                                        borderRadius: '12px', padding: '14px',
+                                        fontFamily: 'monospace', fontSize: '14px', color: '#4A4436',
+                                        wordBreak: 'break-all', lineHeight: 1.5, marginBottom: '16px',
+                                    }}>
+                                        {pixData?.qrCode || 'Gerando código PIX...'}
+                                    </div>
+
+                                    <button
+                                        style={{
+                                            width: '100%', background: copied ? '#093F30' : '#0B5D45',
+                                            color: '#fff', border: 'none', borderRadius: '14px',
+                                            padding: '20px', fontSize: '20px', fontWeight: 800,
+                                            fontFamily: "'Manrope', sans-serif",
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            gap: '10px', cursor: 'pointer', minHeight: '64px',
+                                            transition: 'background .18s',
+                                        }}
+                                        onClick={() => {
+                                            if (pixData?.qrCode) {
+                                                navigator.clipboard.writeText(pixData.qrCode);
+                                                setCopied(true);
+                                                setTimeout(() => setCopied(false), 3000);
+                                            }
+                                        }}
+                                    >
+                                        {copied ? (
+                                            <>
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                                Código copiado!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                                                Copiar código PIX
+                                            </>
+                                        )}
+                                    </button>
+                                    <p style={{ textAlign: 'center', fontSize: '15px', color: '#4A4436', margin: '12px 0 0' }}>
+                                        Toque no botão, depois cole o código no aplicativo do seu banco
+                                    </p>
                                 </div>
 
                                 {/* NEXT STEPS */}
-                                <div className="steps-card">
-                                    <div className="steps-title">O que acontece depois?</div>
-                                    <div className="step-row-pix">
-                                        <div className="step-num-pix">1</div>
-                                        <div className="step-text-pix">
-                                            {product?.isDigital ? 'Acesso enviado para seu e-mail' : 'Confirmação por e-mail em minutos'} <span>— assim que o pagamento for identificado em <strong>{dados.email}</strong></span>
-                                        </div>
+                                <div style={{
+                                    background: '#FFFFFF', border: '2px solid #E7DFCC',
+                                    borderRadius: '18px', padding: '22px 20px', marginBottom: '22px',
+                                }}>
+                                    <p style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 16px' }}>O que acontece depois do pagamento</p>
+                                    <div style={{ display: 'flex', gap: '14px', marginBottom: '18px' }}>
+                                        <span style={{ flex: 'none', width: 36, height: 36, borderRadius: '50%', background: '#E4F3EB', color: '#093F30', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
+                                        <p style={{ fontSize: '17px', lineHeight: 1.5, color: '#241F16', paddingTop: '5px', margin: 0 }}>
+                                            <strong>{product?.isDigital ? 'Acesso enviado para seu e-mail' : 'Você recebe um e-mail de confirmação'}</strong> {product?.isDigital ? '' : 'em poucos minutos, assim que identificarmos o pagamento.'}
+                                        </p>
                                     </div>
-                                    <div className="step-row-pix">
-                                        <div className="step-num-pix">2</div>
-                                        <div className="step-text-pix">
-                                            {product?.isDigital ? 'Verifique sua caixa de entrada' : 'Separação e envio do pedido'} <span>— {product?.isDigital ? 'o acesso chega em até 5 minutos.' : 'pagamentos até as 15h saem no mesmo dia.'}</span>
-                                        </div>
+                                    <div style={{ display: 'flex', gap: '14px', marginBottom: product?.isDigital ? 0 : '18px' }}>
+                                        <span style={{ flex: 'none', width: 36, height: 36, borderRadius: '50%', background: '#E4F3EB', color: '#093F30', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</span>
+                                        <p style={{ fontSize: '17px', lineHeight: 1.5, color: '#241F16', paddingTop: '5px', margin: 0 }}>
+                                            <strong>{product?.isDigital ? 'Verifique sua caixa de entrada' : 'Seu pedido é enviado no mesmo dia'}</strong> {product?.isDigital ? 'O acesso chega em até 5 minutos.' : 'para pagamentos feitos até às 15h.'}
+                                        </p>
                                     </div>
                                     {!product?.isDigital && (
-                                        <div className="step-row-pix">
-                                            <div className="step-num-pix">3</div>
-                                            <div className="step-text-pix">Código de rastreio por e-mail <span>— acompanhe sua entrega em tempo real</span></div>
+                                        <div style={{ display: 'flex', gap: '14px' }}>
+                                            <span style={{ flex: 'none', width: 36, height: 36, borderRadius: '50%', background: '#E4F3EB', color: '#093F30', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</span>
+                                            <p style={{ fontSize: '17px', lineHeight: 1.5, color: '#241F16', paddingTop: '5px', margin: 0 }}>
+                                                <strong>Você acompanha a entrega</strong> pelo código de rastreio que enviamos por e-mail.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
 
                                 {/* TRUST */}
-                                <div className="trust-row-pix">
-                                    <div className="trust-item-pix">
-                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                        PIX oficial Banco Central
-                                    </div>
-                                    <div className="trust-item-pix">
-                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                        Dados criptografados
-                                    </div>
-                                    <div className="trust-item-pix">
-                                        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                        Compra garantida
-                                    </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', justifyContent: 'center', marginBottom: '22px' }}>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '15px', color: '#4A4436', fontWeight: 700 }}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B5D45" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                                        PIX oficial do Banco Central
+                                    </span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '15px', color: '#4A4436', fontWeight: 700 }}>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B5D45" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                                        Seus dados protegidos
+                                    </span>
                                 </div>
 
-                                <div className="help-row" style={{ marginTop: '20px' }}>
-                                    <p style={{ fontSize: '13px', color: '#777', textAlign: 'center' }}>
-                                        Precisa de ajuda? <a href={`mailto:${customization?.supportEmail || 'suporte@loja.com'}`} style={{ color: '#111', fontWeight: 700, textDecoration: 'none' }}>Entre em contato por e-mail</a>
-                                    </p>
+                                {/* HELP */}
+                                <div style={{
+                                    background: '#E4F3EB', border: '2px solid #0B5D45',
+                                    borderRadius: '16px', padding: '20px', textAlign: 'center',
+                                }}>
+                                    <p style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 6px', color: '#093F30' }}>Precisa de ajuda para pagar?</p>
+                                    <p style={{ fontSize: '16px', margin: '0 0 16px', color: '#4A4436' }}>Fale com a gente pelo WhatsApp, é rapidinho</p>
+                                    <a
+                                        href={customization?.supportWa ? `https://wa.me/${customization.supportWa}` : '#'}
+                                        target="_blank" rel="noreferrer"
+                                        style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '10px',
+                                            background: '#093F30', color: '#fff', textDecoration: 'none',
+                                            borderRadius: '12px', padding: '16px 22px',
+                                            fontWeight: 800, fontSize: '17px', minHeight: '56px',
+                                        }}
+                                    >
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                                        Chamar no WhatsApp
+                                    </a>
                                 </div>
                                 </>
                                 )}
                             </div>
 
                             {/* TOAST */}
-                            <div className={`pix-toast ${copied ? 'show' : ''}`}>✓ Código copiado!</div>
+                            <div style={{
+                                position: 'fixed', bottom: 24, left: '50%',
+                                transform: `translateX(-50%) ${copied ? 'translateY(0)' : 'translateY(20px)'}`,
+                                background: '#241F16', color: '#fff',
+                                padding: '12px 24px', borderRadius: '99px',
+                                fontSize: '15px', fontWeight: 700,
+                                opacity: copied ? 1 : 0, transition: 'all .25s',
+                                whiteSpace: 'nowrap', zIndex: 99, pointerEvents: 'none',
+                            }}>✓ Código copiado!</div>
                         </div>
                     ) : (
                         <div className="card-confirm-page">
