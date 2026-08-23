@@ -973,7 +973,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </svg>
                                     </div>
                                     <h1 style={{ fontSize: '25px', fontWeight: 800, lineHeight: 1.35, margin: '0 0 10px', color: '#241F16', fontFamily: "'Manrope', sans-serif" }}>
-                                        Seu pedido já está separado
+                                        Seu pedido está em separação
                                     </h1>
                                     <p style={{ fontSize: '19px', lineHeight: 1.5, margin: 0, color: '#4A4436', fontWeight: 400 }}>
                                         Falta só o pagamento para enviarmos até você.
