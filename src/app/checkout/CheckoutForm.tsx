@@ -1141,27 +1141,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </span>
                                 </div>
 
-                                {/* HELP */}
-                                <div style={{
-                                    background: '#E4F3EB', border: '2px solid #0B5D45',
-                                    borderRadius: '16px', padding: '20px', textAlign: 'center',
-                                }}>
-                                    <p style={{ fontSize: '18px', fontWeight: 800, margin: '0 0 6px', color: '#093F30' }}>Precisa de ajuda para pagar?</p>
-                                    <p style={{ fontSize: '16px', margin: '0 0 16px', color: '#4A4436' }}>Fale com a gente pelo WhatsApp, é rapidinho</p>
-                                    <a
-                                        href={customization?.supportWa ? `https://wa.me/${customization.supportWa}` : '#'}
-                                        target="_blank" rel="noreferrer"
-                                        style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: '10px',
-                                            background: '#093F30', color: '#fff', textDecoration: 'none',
-                                            borderRadius: '12px', padding: '16px 22px',
-                                            fontWeight: 800, fontSize: '17px', minHeight: '56px',
-                                        }}
-                                    >
-                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-                                        Chamar no WhatsApp
-                                    </a>
-                                </div>
                                 </>
                                 )}
                             </div>
