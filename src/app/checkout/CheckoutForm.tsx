@@ -995,8 +995,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         borderRadius: '14px', padding: '16px 20px', marginBottom: '18px',
                                         textAlign: 'center', position: 'relative', overflow: 'hidden',
                                     }}>
-                                        <div style={{ fontSize: '11px', fontWeight: 800, color: '#4A4436', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '10px' }}>
-                                            {timeLeft <= 120 ? 'Tempo quase esgotando' : 'Oferta expira em'}
+                                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#241F16', marginBottom: '10px' }}>
+                                            Pague o PIX em até
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '10px' }}>
                                             {(() => {
@@ -1023,8 +1023,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 );
                                             })()}
                                         </div>
-                                        <div style={{ fontSize: '12px', fontWeight: 500, color: '#4A4436' }}>
-                                            Após esse tempo, sua reserva será liberada
+                                        <div style={{ fontSize: '13px', fontWeight: 500, color: '#4A4436' }}>
+                                            Se o tempo acabar, seu pedido será cancelado e o produto será liberado para outra pessoa
                                         </div>
                                         <div style={{
                                             position: 'absolute', bottom: 0, left: 0,
