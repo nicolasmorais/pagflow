@@ -1236,23 +1236,54 @@ export async function backupAllPaidOrders() {
     await requireAdmin()
     try {
         const { prisma } = await import('@/lib/prisma');
-        const { uploadOrderBackup } = await import('@/lib/r2');
+        const { uploadOrderBackup, verifyOrderBackup } = await import('@/lib/r2');
+
+        // Check if R2 is configured before processing
+        if (!process.env.S3_ENDPOINT || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY || !process.env.S3_BUCKET) {
+            return { success: false, error: 'R2 não configurado. Verifique as variáveis de ambiente S3_ENDPOINT, S3_ACCESS_KEY, S3_SECRET_KEY e S3_BUCKET.' };
+        }
 
         const paidOrders = await prisma.order.findMany({
             where: { paymentStatus: 'pago' },
             include: { product: true }
         });
 
-        console.log(`🚀 [Bulk Backup] Starting for ${paidOrders.length} paid orders...`);
+        console.log(`🚀 [Bulk Backup] Checking ${paidOrders.length} paid orders...`);
 
-        let successCount = 0;
+        // Filter orders that don't have backup yet
+        const ordersToBackup: typeof paidOrders = [];
         for (const order of paidOrders) {
-            const result = await uploadOrderBackup(order);
-            if (result && (result as any).success) successCount++;
+            const verification = await verifyOrderBackup(order.id);
+            if (!verification.exists) {
+                ordersToBackup.push(order);
+            }
         }
 
-        console.log(`✅ [Bulk Backup] Finished. ${successCount}/${paidOrders.length} backed up.`);
-        return { success: true, count: successCount, total: paidOrders.length };
+        if (ordersToBackup.length === 0) {
+            console.log(`✅ [Bulk Backup] All ${paidOrders.length} orders already backed up.`);
+            return { success: true, count: 0, total: paidOrders.length, skipped: paidOrders.length };
+        }
+
+        console.log(`🚀 [Bulk Backup] ${ordersToBackup.length} orders need backup. Starting...`);
+
+        let successCount = 0;
+
+        // Process in batches of 10 to avoid timeout
+        const BATCH_SIZE = 10;
+        for (let i = 0; i < ordersToBackup.length; i += BATCH_SIZE) {
+            const batch = ordersToBackup.slice(i, i + BATCH_SIZE);
+            const results = await Promise.allSettled(
+                batch.map(order => uploadOrderBackup(order))
+            );
+            for (const result of results) {
+                if (result.status === 'fulfilled' && result.value?.success) {
+                    successCount++;
+                }
+            }
+        }
+
+        console.log(`✅ [Bulk Backup] Finished. ${successCount}/${ordersToBackup.length} new backups.`);
+        return { success: true, count: successCount, total: paidOrders.length, skipped: paidOrders.length - ordersToBackup.length };
     } catch (error) {
         console.error("❌ [Bulk Backup] Error:", error);
         return { success: false, error };
