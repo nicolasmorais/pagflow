@@ -48,6 +48,16 @@ export default async function AdminPage({
     const products = await prisma.product.findMany({ select: { id: true, name: true } })
     const productMap = new Map(products.map(p => [p.id, p.name]))
 
+    // ── Fetch financial records (despesas) ─────────────────────────────
+    const financialRecords = await prisma.financialRecord.findMany({
+        where: {
+            type: 'despesa',
+            date: { gte: fromDateUTC, lte: toDateUTC },
+        },
+        select: { amount: true },
+    })
+    const totalDespesas = financialRecords.reduce((s, r) => s + r.amount, 0)
+
     // ── Segments ─────────────────────────────────────────────────────────
     const paidOrders = allOrders.filter(o => o.paymentStatus === 'pago')
     const pendingOrders = allOrders.filter(o => ['aguardando', 'processando'].includes(o.paymentStatus || ''))
@@ -61,7 +71,6 @@ export default async function AdminPage({
         : 0
     const avgTicket = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0
     const totalCost = paidOrders.reduce((s, o) => s + (o.productCost || 0), 0)
-    const profit = netRevenue - totalCost
 
     const bumpOrders = allOrders.filter(o => o.hasBump)
     const bumpRate = allOrders.length > 0
@@ -230,6 +239,9 @@ export default async function AdminPage({
     // ── Taboola Ads ───────────────────────────────────────────────────────
     const taboolaData = await fetchAllTaboolaAccounts(fromDate, toDate)
     const taboolaSpent = taboolaData.totalSpent
+
+    // ── Profit (same formula as financeiro) ─────────────────────────────
+    const profit = netRevenue - totalCost - totalDespesas - taboolaSpent
     const taboolaAccounts = taboolaData.accounts.map(a => ({
         accountId: a.accountId,
         label: a.label,
