@@ -9,8 +9,8 @@ const cardStyle: React.CSSProperties = {
     flex: 1,
 }
 
-export default function TrackingManagement({ orderId, initialUrl }: { orderId: string; initialUrl: string | null }) {
-    const [isEditing, setIsEditing] = useState(!initialUrl)
+export default function TrackingManagement({ orderId, initialUrl, initialTrackingCode }: { orderId: string; initialUrl: string | null; initialTrackingCode?: string | null }) {
+    const [isEditing, setIsEditing] = useState(!initialUrl && !initialTrackingCode)
     const [url, setUrl] = useState(initialUrl || '')
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
@@ -46,7 +46,7 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
     }
 
     /* ── View mode ── */
-    if (!isEditing && initialUrl) {
+    if (!isEditing && (initialUrl || initialTrackingCode)) {
         return (
             <div style={cardStyle}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', gap: '10px' }}>
@@ -68,19 +68,37 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
                     </div>
                 </div>
 
-                <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '8px' }}>Link de rastreio</div>
-                <a href={initialUrl} target="_blank" rel="noopener noreferrer" style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
-                    color: '#2C5C86', fontWeight: 600, textDecoration: 'none', fontSize: '13px',
-                    background: '#E7F1F8', padding: '10px 16px', borderRadius: '9px',
-                    border: '1px solid #C5DDEF', maxWidth: '100%', wordBreak: 'break-all',
-                }}>
-                    <LinkIcon size={14} style={{ flexShrink: 0 }} strokeWidth={1.8} />
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {initialUrl.length > 60 ? initialUrl.slice(0, 60) + '…' : initialUrl}
-                    </span>
-                    <ExternalLink size={13} style={{ flexShrink: 0 }} strokeWidth={1.8} />
-                </a>
+                {initialTrackingCode && (
+                    <div style={{ marginBottom: '14px' }}>
+                        <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '6px' }}>Código de rastreio</div>
+                        <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '8px',
+                            fontFamily: "'IBM Plex Mono', monospace", fontSize: '14px', fontWeight: 600,
+                            color: '#1E7A52', background: '#E3F4EA', padding: '10px 16px', borderRadius: '9px',
+                            border: '1px solid #C3E8D4', letterSpacing: '0.02em',
+                        }}>
+                            <Truck size={14} style={{ flexShrink: 0 }} strokeWidth={1.8} />
+                            {initialTrackingCode}
+                        </div>
+                    </div>
+                )}
+                {initialUrl && (
+                    <>
+                        <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '8px' }}>Link de rastreio</div>
+                        <a href={initialUrl} target="_blank" rel="noopener noreferrer" style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '8px',
+                            color: '#2C5C86', fontWeight: 600, textDecoration: 'none', fontSize: '13px',
+                            background: '#E7F1F8', padding: '10px 16px', borderRadius: '9px',
+                            border: '1px solid #C5DDEF', maxWidth: '100%', wordBreak: 'break-all',
+                        }}>
+                            <LinkIcon size={14} style={{ flexShrink: 0 }} strokeWidth={1.8} />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {initialUrl.length > 60 ? initialUrl.slice(0, 60) + '…' : initialUrl}
+                            </span>
+                            <ExternalLink size={13} style={{ flexShrink: 0 }} strokeWidth={1.8} />
+                        </a>
+                    </>
+                )}
 
                 <div style={{ marginTop: '18px', paddingTop: '16px', borderTop: '1px solid #E5E7EF' }}>
                     <button onClick={handleResend} disabled={resendLoading} style={{
@@ -115,6 +133,20 @@ export default function TrackingManagement({ orderId, initialUrl }: { orderId: s
                 )}
             </div>
 
+            {initialTrackingCode && (
+                <div style={{ marginBottom: '14px' }}>
+                    <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '6px' }}>Código de rastreio</div>
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        fontFamily: "'IBM Plex Mono', monospace", fontSize: '14px', fontWeight: 600,
+                        color: '#1E7A52', background: '#E3F4EA', padding: '10px 16px', borderRadius: '9px',
+                        border: '1px solid #C3E8D4', letterSpacing: '0.02em',
+                    }}>
+                        <Truck size={14} style={{ flexShrink: 0 }} strokeWidth={1.8} />
+                        {initialTrackingCode}
+                    </div>
+                </div>
+            )}
             <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '8px' }}>Cole o link de rastreio</div>
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <div style={{ flex: 1, minWidth: '180px', border: '1px solid #E5E7EF', borderRadius: '9px', padding: '11px 13px', fontSize: '13.5px', background: '#F5F6F9', display: 'flex', alignItems: 'center', gap: '8px' }}>

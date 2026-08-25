@@ -23,9 +23,10 @@ export async function GET(request: Request) {
         const from = searchParams.get('from')
         const to = searchParams.get('to')
 
+        const statusFilter = searchParams.get('status') || 'processando'
+
         const where: any = {
-            paymentStatus: 'pago',
-            status: 'processando',
+            status: statusFilter,
             deletedAt: null,
         }
 
@@ -60,6 +61,8 @@ export async function GET(request: Request) {
                 status: true,
                 totalPrice: true,
                 createdAt: true,
+                trackingCode: true,
+                trackingUrl: true,
                 product: { select: { name: true } },
             },
             orderBy: { createdAt: 'desc' },
@@ -94,6 +97,44 @@ export async function PATCH(request: Request) {
         const updated = await prisma.order.update({
             where: { id: orderId },
             data: { status },
+            include: { product: true },
+        })
+
+        // Backup R2
+        try {
+            const { uploadOrderBackup } = await import("@/lib/r2")
+            await uploadOrderBackup(updated)
+        } catch (r2Err) {
+            console.error("[extension-orders] Erro no backup R2:", r2Err)
+        }
+
+        return NextResponse.json({ success: true })
+    } catch (error: any) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+}
+
+export async function PUT(request: Request) {
+    try {
+        await requireAdmin()
+    } catch {
+        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    }
+
+    try {
+        const body = await request.json()
+        const { orderId, trackingCode, trackingUrl } = body
+
+        if (!orderId) {
+            return NextResponse.json({ error: 'orderId é obrigatório' }, { status: 400 })
+        }
+
+        const updated = await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                ...(trackingCode !== undefined && { trackingCode }),
+                ...(trackingUrl !== undefined && { trackingUrl }),
+            },
             include: { product: true },
         })
 

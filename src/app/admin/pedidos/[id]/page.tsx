@@ -223,7 +223,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     </div>
 
                     {/* ── Tracking ── */}
-                    <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} />
+                    <TrackingManagement orderId={order.id} initialUrl={order.trackingUrl} initialTrackingCode={order.trackingCode} />
                 </div>
 
                 {/* ═══════════════ COL 2: Cliente + Endereco ═══════════════ */}
