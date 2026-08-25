@@ -277,7 +277,7 @@ async function sendToPagFlow(order, pagflowUrl) {
     // Se ja tem orderId (match feito no popup), envia direto
     let orderId = order._pagflowOrder?.id || order.orderId || null;
 
-    // Fallback: busca por nome se nao tem orderId
+    // Fallback: busca por nome ou telefone se nao tem orderId
     if (!orderId) {
       const searchRes = await fetch(url + '?status=enviado', {
         credentials: 'include'
@@ -286,12 +286,27 @@ async function sendToPagFlow(order, pagflowUrl) {
       const pagflowOrders = searchData.orders || [];
 
       const orderName = normalizeName(order.customerName);
+      const orderPhone = normalizePhone(order.phone);
+
+      // Tenta por nome
       for (const po of pagflowOrders) {
         if (po.trackingCode) continue;
         const poName = normalizeName(po.fullName);
         if (namesMatch(orderName, poName)) {
           orderId = po.id;
           break;
+        }
+      }
+
+      // Fallback: por telefone
+      if (!orderId && orderPhone) {
+        for (const po of pagflowOrders) {
+          if (po.trackingCode) continue;
+          const poPhone = normalizePhone(po.phone);
+          if (poPhone && poPhone === orderPhone) {
+            orderId = po.id;
+            break;
+          }
         }
       }
     }
@@ -349,6 +364,10 @@ function normalizeName(name) {
     .trim();
 }
 
+function normalizePhone(phone) {
+  return (phone || '').replace(/\D/g, '').replace(/^55/, '');
+}
+
 function namesMatch(a, b) {
   if (!a || !b) return false;
   if (a === b) return true;
@@ -358,5 +377,24 @@ function namesMatch(a, b) {
     if (partsA[0] === partsB[0] && partsA[partsA.length - 1] === partsB[partsB.length - 1]) return true;
   }
   if (a.includes(b) || b.includes(a)) return true;
+  const minLen = Math.min(a.length, b.length);
+  if (minLen >= 4 && levenshtein(a, b) <= Math.ceil(minLen * 0.3)) return true;
   return false;
+}
+
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+  }
+  return dp[m][n];
 }
