@@ -23,7 +23,7 @@ export default function RastrearPage() {
         </div>
 
         <p style={footerTextStyle}>
-          Não encontrou seu pedido? Verifique se o número e CPF/telefone estão corretos.
+          Não encontrou seu pedido? Verifique se o código de rastreio está correto.
         </p>
       </div>
     </div>
