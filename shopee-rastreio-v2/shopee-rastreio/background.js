@@ -84,7 +84,16 @@ async function runExtraction(links) {
     extractState.current = i + 1;
     broadcast({ type: 'progress', current: i + 1, total: links.length });
 
-    const order = await extractOrderFromTab(links[i]);
+    let order = null;
+    const maxRetries = 3;
+
+    for (let attempt = 0; attempt < maxRetries && !order; attempt++) {
+      if (attempt > 0) {
+        broadcast({ type: 'progress', current: i + 1, total: links.length, retry: attempt });
+        await sleep(3000); // pausa antes de retry
+      }
+      order = await extractOrderFromTab(links[i]);
+    }
 
     if (order) {
       extractState.orders.push(order);
@@ -93,7 +102,10 @@ async function runExtraction(links) {
       broadcast({ type: 'order_skip', url: links[i] });
     }
 
-    if (i < links.length - 1) await sleep(900);
+    // Pausa entre pedidos: 2s normal, 5s a cada 10
+    if (i < links.length - 1) {
+      await sleep((i + 1) % 10 === 0 ? 5000 : 2000);
+    }
   }
 
   extractState.running = false;
@@ -116,17 +128,20 @@ function extractOrderFromTab(url) {
       resolve(data);
     };
 
-    const timeout = setTimeout(() => finish(null), 18000);
+    // Timeout generoso: 30s por aba
+    const timeout = setTimeout(() => finish(null), 30000);
 
     chrome.tabs.create({ url, active: false }, (tab) => {
       tabId = tab.id;
 
-      const onUpdated = async (id, info) => {
-        if (id !== tabId || info.status !== 'complete') return;
-        chrome.tabs.onUpdated.removeListener(onUpdated);
+      let loaded = false;
+
+      const doExtraction = async () => {
+        if (loaded) return;
+        loaded = true;
 
         // Aguarda o React renderizar
-        await waitForPageContent(tabId);
+        await waitForPageContent(tabId, 15000);
 
         try {
           const [result] = await chrome.scripting.executeScript({
@@ -143,7 +158,22 @@ function extractOrderFromTab(url) {
         }
       };
 
+      const onUpdated = (id, info) => {
+        if (id !== tabId || info.status !== 'complete') return;
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        doExtraction();
+      };
+
       chrome.tabs.onUpdated.addListener(onUpdated);
+
+      // Fallback: se a aba ja carregou antes do listener
+      chrome.tabs.get(tabId, (t) => {
+        if (chrome.runtime.lastError) return;
+        if (t && t.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(onUpdated);
+          doExtraction();
+        }
+      });
     });
   });
 }
@@ -530,10 +560,10 @@ function scrapeOrderPage() {
 // ─────────────────────────────────────────────
 //  Polling: aguarda React renderizar o conteudo
 // ─────────────────────────────────────────────
-async function waitForPageContent(tabId, maxWait = 9000) {
+async function waitForPageContent(tabId, maxWait = 15000) {
   const start = Date.now();
-  // Minimo de 2s para o React hidratar
-  await sleep(2000);
+  // Minimo de 3s para o React hidratar
+  await sleep(3000);
 
   while (Date.now() - start < maxWait) {
     try {
@@ -547,16 +577,17 @@ async function waitForPageContent(tabId, maxWait = 9000) {
           const hasAddress = normText.includes('endereco de entrega');
           const hasEntregaPadrao = normText.includes('entrega padrao');
           const hasStatus = /A CAMINHO|PREPARANDO|FINALIZADO|EM TRANS|COLETADO/.test(text.toUpperCase());
-          return hasTracking || hasAddress || hasEntregaPadrao || hasStatus;
+          const hasPhone = /\(\d{2}\)\s*\d/.test(text) || /\+55\s*\d/.test(text);
+          return hasTracking || hasAddress || hasEntregaPadrao || hasStatus || hasPhone;
         }
       });
       if (r?.result === true) {
-        await sleep(600); // hidratacao final
+        await sleep(1000); // hidratacao final maior
         return;
       }
     } catch { /* tab pode estar carregando ainda */ }
 
-    await sleep(700);
+    await sleep(1000);
   }
   // Timeout: tenta mesmo assim
 }
