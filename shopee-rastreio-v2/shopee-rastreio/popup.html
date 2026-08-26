@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>PagFlow Rastreio Shopee</title>
+  <style>
+    body {
+      width: 380px;
+      font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 16px;
+      background: #101418;
+      color: #eee;
+    }
+    h1 {
+      font-size: 15px;
+      margin: 0 0 12px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .settings-toggle {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .settings-toggle:hover { color: #fff; background: #333; }
+    button {
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Settings panel */
+    #settingsPanel {
+      display: none;
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    #settingsPanel label { font-size: 11px; color: #999; display: block; margin-bottom: 4px; }
+    #settingsPanel input {
+      width: 100%; box-sizing: border-box; padding: 7px 8px;
+      border-radius: 6px; border: 1px solid #333; background: #0d1013;
+      color: #eee; font-size: 13px; margin-bottom: 8px;
+    }
+    #saveSettings { width: 100%; padding: 7px; background: #1565c0; color: #fff; font-size: 12px; }
+
+    /* Section */
+    .section {
+      border-top: 1px solid #222;
+      padding-top: 10px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: 12px; font-weight: 600; color: #ccc;
+      margin-bottom: 8px;
+    }
+
+    /* Filters */
+    .filter-row {
+      display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
+    }
+    .filter-row label { font-size: 11px; color: #888; }
+    .filter-row input[type="date"], .filter-row select {
+      padding: 4px 6px; border-radius: 6px; border: 1px solid #333;
+      background: #0d1013; color: #eee; font-size: 11px; font-family: inherit;
+    }
+    .filter-row input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+    #clearDates {
+      padding: 3px 6px; border-radius: 4px; background: #333;
+      color: #aaa; font-size: 11px; cursor: pointer; border: none;
+    }
+    #clearDates:hover { color: #fff; }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%; padding: 8px; background: #1565c0; color: #fff;
+      font-size: 12px; margin-bottom: 6px;
+    }
+    .btn-extract {
+      width: 100%; padding: 10px; background: #ee4d2d; color: #fff;
+      font-size: 12px; font-weight: 600; margin-bottom: 6px;
+    }
+    .btn-extract:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-send-all {
+      width: 100%; padding: 10px; background: #22c55e; color: #fff;
+      font-size: 12px; font-weight: 600; margin-bottom: 6px;
+    }
+    .btn-send-all:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary {
+      width: 100%; padding: 8px; background: #16161f; border: 1px solid #22222e;
+      color: #888; font-size: 12px; margin-bottom: 6px;
+    }
+    .btn-secondary:hover { border-color: #3a3a4e; color: #ccc; }
+    .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost {
+      width: 100%; padding: 8px; background: none; border: 1px solid #22222e;
+      color: #555; font-size: 12px; margin-bottom: 6px;
+    }
+    .btn-ghost:hover { border-color: #3a3a4e; color: #888; }
+
+    /* Status messages */
+    #ordersStatus { font-size: 11px; color: #9ad; margin-bottom: 6px; min-height: 14px; }
+    #ordersStatus.error { color: #ff6b6b; }
+    .tracking-warn {
+      background: #f59e0b11; border: 1px solid #f59e0b44; border-radius: 8px;
+      padding: 9px 12px; font-size: 12px; color: #f59e0b; margin-bottom: 8px; display: none;
+    }
+
+    /* Progress */
+    .tracking-status-box {
+      background: #16161f; border: 1px solid #22222e; border-radius: 9px;
+      padding: 11px 13px; margin-bottom: 8px; transition: border-color .3s;
+    }
+    .tracking-status-box.active { border-color: #ee4d2d55; }
+    .tracking-status-box.success { border-color: #22c55e44; }
+    .tracking-status-row { display: flex; align-items: center; gap: 8px; }
+    .tracking-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #2a2a38; flex-shrink: 0;
+    }
+    .tracking-dot.blink { background: #ee4d2d; animation: blink 1s ease-in-out infinite; }
+    .tracking-dot.ok { background: #22c55e; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+    .tracking-status-txt { font-size: 12px; color: #888; line-height: 1.4; }
+    .tracking-status-txt.bright { color: #ccc; }
+    .tracking-prog-wrap { height: 3px; background: #22222e; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+    .tracking-prog-fill { height: 100%; background: #ee4d2d; border-radius: 2px; transition: width .4s ease; }
+    .ctrl-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #555; font-size: 12px; }
+    .limit-in {
+      width: 56px; background: #16161f; border: 1px solid #22222e;
+      border-radius: 7px; color: #ccc; padding: 5px 8px; font-size: 12px; text-align: center;
+    }
+    .limit-in:focus { outline: none; border-color: #ee4d2d; }
+
+    /* PagFlow orders list */
+    .orders-list { max-height: 200px; overflow-y: auto; margin-bottom: 8px; }
+    .order-card {
+      background: #1a1f24; border-radius: 8px; padding: 8px 10px;
+      margin-bottom: 4px; border-left: 3px solid #e6a700;
+    }
+    .order-card.matched { border-left-color: #22c55e; }
+    .order-card .order-name {
+      font-size: 12px; font-weight: 600; color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .order-card .order-meta {
+      font-size: 10px; color: #888; margin-top: 2px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .order-card .order-tracking {
+      font-size: 10px; font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #22c55e; margin-top: 2px;
+    }
+    .order-card .order-tracking.pending { color: #f59e0b; }
+    .badge-match {
+      font-size: 9px; padding: 1px 5px; border-radius: 3px;
+      background: #1b3a1b; color: #6f6; font-weight: 600;
+    }
+    .badge-match.strong {
+      background: #0d4d0d; color: #4ade80;
+    }
+    .badge-match.review {
+      background: #3a3a1b; color: #fbbf24;
+    }
+    .badge-match.ambiguous {
+      background: #3a1b1b; color: #ef4444;
+    }
+    .badge-no-match {
+      font-size: 9px; padding: 1px 5px; border-radius: 3px;
+      background: #3a1b1b; color: #f66; font-weight: 600;
+    }
+    .orders-empty { text-align: center; padding: 12px 0; color: #444; font-size: 11px; }
+
+    /* Extracted cards */
+    .extract-orders { margin-top: 8px; max-height: 250px; overflow-y: auto; }
+    .extract-empty { text-align: center; padding: 20px 0; color: #333; font-size: 12px; }
+    .extract-card {
+      background: #16161f; border: 1px solid #22222e; border-radius: 9px;
+      padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+    }
+    .extract-card:hover { border-color: #2e2e3e; }
+    .extract-card.matched { border-color: #22c55e44; }
+    .extract-info { flex: 1; min-width: 0; }
+    .extract-name {
+      font-size: 12px; font-weight: 600; color: #ddd;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .extract-match-name {
+      font-size: 10px; color: #888; margin-top: 1px;
+    }
+    .extract-track {
+      font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #22c55e; margin-top: 2px;
+    }
+    .extract-track.missing { color: #f59e0b; }
+    .extract-phone { font-size: 10px; color: #555; margin-top: 1px; }
+    .mini-btn {
+      background: none; border: 1px solid #2a2a3a; color: #666;
+      border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 600;
+      cursor: pointer; flex-shrink: 0; transition: all .2s; white-space: nowrap;
+    }
+    .mini-btn:hover:not(:disabled) { border-color: #22c55e; color: #22c55e; }
+    .mini-btn.sent { border-color: #22c55e44; color: #22c55e; opacity: .55; pointer-events: none; }
+    .mini-btn.error { border-color: #ef444466; color: #ef4444; }
+    .mini-btn:disabled { opacity: .35; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <h1>
+    Rastreio Shopee
+    <button class="settings-toggle" id="settingsToggle" title="Configuracoes">&#9881;</button>
+  </h1>
+
+  <!-- Settings -->
+  <div id="settingsPanel">
+    <label>URL do PagFlow</label>
+    <input id="pagflowUrlInput" type="text" placeholder="https://pay.elabela.store" />
+    <button id="saveSettings">Salvar URL</button>
+  </div>
+
+  <!-- 1. Importar pedidos do PagFlow -->
+  <div class="section">
+    <div class="section-title">1. Pedidos PagFlow</div>
+    <div class="filter-row">
+      <label>De:</label>
+      <input id="dateFrom" type="date" />
+      <label>Ate:</label>
+      <input id="dateTo" type="date" />
+      <button id="clearDates" title="Limpar datas">&#10005;</button>
+    </div>
+    <div class="filter-row">
+      <label>Status:</label>
+      <select id="statusFilter">
+        <option value="enviado">Enviado</option>
+        <option value="cl_shopee">CL Shopee</option>
+        <option value="rastreio_enviado">Rastreio Enviado</option>
+      </select>
+    </div>
+    <button id="importOrders" class="btn-primary">Importar pedidos</button>
+    <div id="ordersStatus"></div>
+    <div id="pagflowOrdersList" class="orders-list">
+      <div class="orders-empty">Importe os pedidos primeiro</div>
+    </div>
+  </div>
+
+  <!-- 2. Extrair rastreio da Shopee -->
+  <div class="section">
+    <div class="section-title">2. Extrair rastreio da Shopee</div>
+    <div id="trackingWarn" class="tracking-warn"></div>
+    <div id="trackingStatusBox" class="tracking-status-box">
+      <div class="tracking-status-row">
+        <div class="tracking-dot" id="trackingDot"></div>
+        <div class="tracking-status-txt" id="trackingStatusTxt">
+          Abra shopee.com.br/user/purchase e clique em Iniciar
+        </div>
+      </div>
+      <div class="tracking-prog-wrap" id="trackingProgWrap" style="display:none">
+        <div class="tracking-prog-fill" id="trackingProgFill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <span>Processar ate</span>
+      <input type="number" class="limit-in" id="extractLimit" value="30" min="1" max="300">
+      <span>pedidos</span>
+    </div>
+    <button id="startExtraction" class="btn-extract">Iniciar Extracao</button>
+    <button id="sendAllTracking" class="btn-send-all" disabled>Enviar Tudo ao PagFlow</button>
+    <button id="exportCsv" class="btn-secondary" disabled>Exportar CSV</button>
+    <button id="clearExtraction" class="btn-ghost" style="display:none">Limpar extracao</button>
+    <div id="extractOrdersList" class="extract-orders"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

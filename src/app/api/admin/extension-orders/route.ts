@@ -9,7 +9,7 @@ async function requireAdmin() {
     }
 }
 
-const ALLOWED_STATUSES = ['pendente', 'processando', 'aguardando_envio', 'cl_shopee', 'enviado', 'entregue', 'cancelado']
+const ALLOWED_STATUSES = ['pendente', 'processando', 'aguardando_envio', 'cl_shopee', 'enviado', 'entregue', 'cancelado', 'rastreio_enviado']
 
 export async function GET(request: Request) {
     try {
@@ -129,12 +129,17 @@ export async function PUT(request: Request) {
             return NextResponse.json({ error: 'orderId é obrigatório' }, { status: 400 })
         }
 
+        const updateData: any = {}
+        if (trackingCode !== undefined) updateData.trackingCode = trackingCode
+        if (trackingUrl !== undefined) updateData.trackingUrl = trackingUrl
+        // Ao enviar rastreio pela extensao, atualiza status automaticamente
+        if (trackingCode && trackingCode.trim() !== '') {
+            updateData.status = 'rastreio_enviado'
+        }
+
         const updated = await prisma.order.update({
             where: { id: orderId },
-            data: {
-                ...(trackingCode !== undefined && { trackingCode }),
-                ...(trackingUrl !== undefined && { trackingUrl }),
-            },
+            data: updateData,
             include: { product: true },
         })
 
