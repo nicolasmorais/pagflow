@@ -9,6 +9,7 @@ import { notFound, redirect } from 'next/navigation'
 import { deleteOrder } from '@/app/actions'
 import EmailSection from './EmailSection'
 import TrackingManagement from './TrackingManagement'
+import AdminStatusTimeline from './AdminStatusTimeline'
 import OrderStatusSelect from '../components/OrderStatusSelect'
 import InlineCopyBtn from './InlineCopyBtn'
 import ResendPixButton from './ResendPixButton'
@@ -220,6 +221,19 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 <ResendPixButton orderId={order.id} />
                             </div>
                         )}
+                    </div>
+
+                    {/* ── Status Timeline ── */}
+                    <div style={cardStyle}>
+                        <CardHead icon={Truck} title="Status do Pedido" />
+                        <AdminStatusTimeline
+                            status={order.status || 'pendente'}
+                            paymentStatus={order.paymentStatus || undefined}
+                            createdAt={order.createdAt.toISOString()}
+                            paidAt={order.paidAt?.toISOString() || null}
+                            shippedAt={order.shippedAt?.toISOString() || null}
+                            deliveredAt={order.deliveredAt?.toISOString() || null}
+                        />
                     </div>
 
                     {/* ── Tracking ── */}

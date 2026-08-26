@@ -27,6 +27,9 @@ model Order {
   paymentStatus     String     @default("pago")
   trackingCode      String?
   trackingUrl       String?
+  paidAt            DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
   recipient         String?
   hasBump           Boolean    @default(false)
   selectedBumps     Json?

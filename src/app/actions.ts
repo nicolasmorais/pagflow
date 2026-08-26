@@ -201,9 +201,24 @@ export async function createOrder(formData: FormData) {
 export async function updateOrderStatus(orderId: string, status: string) {
     await requireAdmin()
     try {
+        // Auto-set date fields based on status transition
+        const dateFields: Record<string, unknown> = {}
+        const now = new Date()
+        const normalized = status.toLowerCase()
+
+        if (['processando', 'pago'].includes(normalized)) {
+            dateFields.paidAt = now
+        }
+        if (['enviado', 'cl_shopee', 'rastreio_enviado'].includes(normalized)) {
+            dateFields.shippedAt = now
+        }
+        if (normalized === 'entregue') {
+            dateFields.deliveredAt = now
+        }
+
         const updated = await prisma.order.update({
             where: { id: orderId },
-            data: { status },
+            data: { status, ...dateFields },
             include: { product: true }
         })
 
@@ -212,6 +227,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
         revalidatePath('/admin/pedidos')
         revalidatePath('/admin')
+        revalidatePath(`/admin/pedidos/${orderId}`)
         return { success: true }
     } catch (error) {
         console.error('Update Status Error:', error)
