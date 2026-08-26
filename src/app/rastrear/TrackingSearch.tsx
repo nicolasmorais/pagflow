@@ -18,9 +18,7 @@ interface OrderData {
 }
 
 export default function TrackingSearch() {
-  const [orderId, setOrderId] = useState('')
-  const [identifier, setIdentifier] = useState('')
-  const [idType, setIdType] = useState<'cpf' | 'phone'>('cpf')
+  const [trackingCode, setTrackingCode] = useState('')
   const [order, setOrder] = useState<OrderData | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -30,18 +28,14 @@ export default function TrackingSearch() {
     setError('')
     setOrder(null)
 
-    if (!orderId.trim() || !identifier.trim()) {
-      setError('Preencha todos os campos')
+    if (!trackingCode.trim()) {
+      setError('Informe o código de rastreio')
       return
     }
 
     setLoading(true)
     try {
-      const params = new URLSearchParams({ orderId: orderId.trim() })
-      if (idType === 'cpf') params.set('cpf', identifier.trim())
-      else params.set('phone', identifier.trim())
-
-      const res = await fetch(`/api/rastrear?${params}`)
+      const res = await fetch(`/api/rastrear?code=${encodeURIComponent(trackingCode.trim())}`)
       const data = await res.json()
 
       if (!res.ok) {
@@ -62,35 +56,14 @@ export default function TrackingSearch() {
       {!order ? (
         <form onSubmit={handleSearch} style={formStyle}>
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>ID do Pedido</label>
+            <label style={labelStyle}>Código de Rastreio</label>
             <input
               type="text"
-              value={orderId}
-              onChange={e => setOrderId(e.target.value)}
-              placeholder="Cole o ID do pedido aqui"
+              value={trackingCode}
+              onChange={e => setTrackingCode(e.target.value)}
+              placeholder="Cole o código de rastreio aqui (ex: AB123456789BR)"
               style={inputStyle}
             />
-          </div>
-
-          <div style={fieldGroupStyle}>
-            <label style={labelStyle}>Identificação</label>
-            <div style={idRowStyle}>
-              <select
-                value={idType}
-                onChange={e => setIdType(e.target.value as 'cpf' | 'phone')}
-                style={selectStyle}
-              >
-                <option value="cpf">CPF</option>
-                <option value="phone">Telefone</option>
-              </select>
-              <input
-                type="text"
-                value={identifier}
-                onChange={e => setIdentifier(e.target.value)}
-                placeholder={idType === 'cpf' ? '000.000.000-00' : '(00) 00000-0000'}
-                style={{ ...inputStyle, flex: 1 }}
-              />
-            </div>
           </div>
 
           {error && <div style={errorStyle}>{error}</div>}
@@ -167,21 +140,6 @@ const inputStyle: React.CSSProperties = {
   outline: 'none',
   transition: 'border-color 0.2s',
   backgroundColor: '#fff',
-}
-
-const selectStyle: React.CSSProperties = {
-  padding: '14px 12px',
-  borderRadius: '12px',
-  border: '2px solid #e5e7eb',
-  fontSize: '14px',
-  outline: 'none',
-  backgroundColor: '#fff',
-  minWidth: '110px',
-}
-
-const idRowStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: '10px',
 }
 
 const buttonStyle: React.CSSProperties = {
