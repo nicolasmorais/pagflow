@@ -129,6 +129,17 @@ function extractOrderFromTab(url) {
         for (let attempt = 1; attempt <= 3; attempt++) {
           await sleep(attempt === 1 ? 4000 : 3000);
 
+          // Verifica se o tab ainda existe
+          if (done) return;
+          try {
+            await chrome.tabs.get(tabId);
+          } catch {
+            console.warn(`[Shopee Rastreio] Tab ${tabId} ja foi fechado`);
+            clearTimeout(timeout);
+            finish(null);
+            return;
+          }
+
           try {
             const [result] = await chrome.scripting.executeScript({
               target: { tabId },
@@ -143,7 +154,13 @@ function extractOrderFromTab(url) {
               return;
             }
           } catch (e) {
-            console.error(`[Shopee Rastreio] Erro tentativa ${attempt}:`, e);
+            console.error(`[Shopee Rastreio] Erro tentativa ${attempt}:`, e.message);
+            // Se o erro for "No tab", para de tentar
+            if (e.message && e.message.includes('No tab')) {
+              clearTimeout(timeout);
+              finish(null);
+              return;
+            }
           }
         }
 
@@ -175,19 +192,21 @@ function scrapeOrderPage() {
   const bodyText = document.body.innerText || '';
 
   // ── Nome do cliente — metodo primario: classes Shopee ──
-  const nameEl = document.querySelector('.S4vMsq, [class*="S4vMsq"]');
-  if (nameEl) {
-    const nameText = (nameEl.textContent || '').trim();
-    if (nameText.length >= 3 && nameText.length <= 80) {
-      result.customerName = nameText;
+  // O nome esta dentro de .lHwy0s > .S4vMsq (irmao de .LBTJ9j que tem telefone/endereco)
+  const addrContainers = document.querySelectorAll('.lHwy0s, [class*="lHwy0s"]');
+  for (const container of addrContainers) {
+    const phoneEl = container.querySelector('[class*="LBTJ9j"]');
+    if (!phoneEl) continue; // so queremos o container que tem endereco/telefone
+    const nameEl = container.querySelector('[class*="S4vMsq"]');
+    if (nameEl) {
+      const nameText = (nameEl.textContent || '').trim();
+      if (nameText.length >= 3 && nameText.length <= 80) {
+        result.customerName = nameText;
+      }
     }
-  }
-
-  // ── Telefone — metodo primario: dentro de LBTJ9j ──
-  const addrEl = document.querySelector('.LBTJ9j, [class*="LBTJ9j"]');
-  if (addrEl) {
-    const phoneMatch = (addrEl.textContent || '').match(/\(\+?\d+\)\s*\d[\d\s\-\.]{6,}/);
+    const phoneMatch = (phoneEl.textContent || '').match(/\(\+?\d+\)\s*\d[\d\s\-\.]{6,}/);
     if (phoneMatch) result.phone = phoneMatch[0].trim();
+    if (result.customerName) break;
   }
 
   // ── Codigo de rastreio — padroes brasileiros ──
