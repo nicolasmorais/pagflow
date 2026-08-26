@@ -200,7 +200,9 @@ function scrapeOrderPage() {
     const nameEl = container.querySelector('[class*="S4vMsq"]');
     if (nameEl) {
       const nameText = (nameEl.textContent || '').trim();
-      if (nameText.length >= 3 && nameText.length <= 80) {
+      // Rejeita nomes que parecem cabecalhos de secao
+      const isSectionHeader = /lembrete|secao|pedido|avaliacao|rastreio|nota fiscal|cupom|desconto|seguro|garantia/i.test(nameText);
+      if (nameText.length >= 3 && nameText.length <= 80 && !isSectionHeader) {
         result.customerName = nameText;
       }
     }
@@ -258,7 +260,8 @@ function scrapeOrderPage() {
           t.length >= 3 && t.length <= 80 &&
           !t.includes('Endereco') && !t.includes('Entrega') &&
           !t.includes('(+') && !t.startsWith('+') && !/^\d/.test(t) &&
-          /^[A-Za-zÀ-ÖØ-öø-ÿ\s'.\-]+$/.test(t)
+          /^[A-Za-zÀ-ÖØ-öø-ÿ\s'.\-]+$/.test(t) &&
+          !/lembrete|secao|pedido|avaliacao|rastreio|nota fiscal|cupom|desconto|seguro|garantia/i.test(t)
         ) {
           result.customerName = t;
           break;
@@ -276,7 +279,8 @@ function scrapeOrderPage() {
         if (
           /^[A-Za-zÀ-ÖØ-öø-ÿ\s'.\-]+$/.test(line) &&
           line.length >= 3 && line.length <= 70 &&
-          !line.includes('Endereco') && !line.includes('Padrao')
+          !line.includes('Endereco') && !line.includes('Padrao') &&
+          !/lembrete|secao|pedido|avaliacao|rastreio|nota fiscal|cupom|desconto|seguro|garantia/i.test(line)
         ) {
           result.customerName = line;
           break;

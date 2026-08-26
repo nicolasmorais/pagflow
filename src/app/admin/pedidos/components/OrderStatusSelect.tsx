@@ -31,6 +31,11 @@ const STATUSES = [
         dot: '#3b82f6', hoverBg: '#bfdbfe',
     },
     {
+        value: 'rastreio_enviado', label: 'Rastreio Enviado', icon: Truck,
+        color: '#0e7490', bg: '#ecfeff', border: '#67e8f9',
+        dot: '#06b6d4', hoverBg: '#cffafe',
+    },
+    {
         value: 'entregue', label: 'Entregue', icon: CheckCircle2,
         color: '#065f46', bg: '#d1fae5', border: '#6ee7b7',
         dot: '#10b981', hoverBg: '#a7f3d0',

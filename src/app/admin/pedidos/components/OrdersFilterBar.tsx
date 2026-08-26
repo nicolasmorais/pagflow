@@ -33,6 +33,7 @@ const orderStatuses = [
     { key: 'processando', label: 'Processando' },
     { key: 'cl_shopee', label: 'CL Shopee' },
     { key: 'enviado', label: 'Enviado' },
+    { key: 'rastreio_enviado', label: 'Rastreio Enviado' },
     { key: 'entregue', label: 'Entregue' },
     { key: 'cancelado', label: 'Cancelado' },
 ]

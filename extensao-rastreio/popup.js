@@ -296,15 +296,20 @@ function matchExtractedOrders() {
     const extName = normalizeName(ext.customerName);
     const extPhone = normalizePhone(ext.phone);
     let matched = null;
-    let debugInfo = '';
 
-    // Tenta match por nome primeiro
-    for (const po of pagflowOrders) {
-      if (po._matched) continue;
-      const poName = normalizeName(po.fullName);
-      if (namesMatch(extName, poName)) {
-        matched = po;
-        break;
+    // Ignora nome se parece cabecalho de secao
+    const isBadName = !extName || extName.length < 3 ||
+      /lembrete|secao|pedido|avaliacao|rastreio|nota fiscal/i.test(ext.customerName || '');
+
+    // Tenta match por nome primeiro (so se o nome for valido)
+    if (!isBadName) {
+      for (const po of pagflowOrders) {
+        if (po._matched) continue;
+        const poName = normalizeName(po.fullName);
+        if (namesMatch(extName, poName)) {
+          matched = po;
+          break;
+        }
       }
     }
 
@@ -328,13 +333,9 @@ function matchExtractedOrders() {
     } else {
       ext._pagflowOrder = null;
       ext._matchedName = null;
-      // Debug: mostra por que nao deu match
-      const availableNames = pagflowOrders
-        .filter(o => !o._matched)
-        .map(o => o.fullName)
-        .join(', ');
-      debugInfo = `Extraido: "${ext.customerName || '(vazio)'}" | Disponiveis: ${availableNames || '(nenhum)'}`;
-      if (extPhone) debugInfo += ` | Tel: ${extPhone}`;
+      // Debug detalhado
+      const phones = pagflowOrders.map(o => `${o.fullName}: raw="${o.phone || 'null'}" norm="${normalizePhone(o.phone) || 'vazio'}"`).join(' | ');
+      const debugInfo = `Extraido: "${ext.customerName || 'vazio'}" tel="${ext.phone || 'vazio'}" norm="${extPhone || 'vazio'}" | PagFlow: ${phones}`;
       ext._debugInfo = debugInfo;
       console.log('[Match Debug]', debugInfo);
     }
