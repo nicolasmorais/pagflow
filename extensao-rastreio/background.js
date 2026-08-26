@@ -365,7 +365,7 @@ async function sendToPagFlow(order, pagflowUrl) {
       body: JSON.stringify({
         orderId: orderId,
         trackingCode: order.trackingCode,
-        trackingUrl: order.url || '',
+        // Nao envia trackingUrl — API gera automaticamente rastreio.elabela.store
       }),
     });
 

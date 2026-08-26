@@ -131,10 +131,9 @@ export async function PUT(request: Request) {
 
         const updateData: any = {}
         if (trackingCode !== undefined) updateData.trackingCode = trackingCode
-        if (trackingUrl !== undefined) {
-            updateData.trackingUrl = trackingUrl
-        } else if (trackingCode && trackingCode.trim() !== '') {
-            // Auto-gera URL de rastreio quando a extensao envia so o codigo
+
+        // Sempre gera link do Tracker Delivery — ignora URLs do Shopee
+        if (trackingCode && trackingCode.trim() !== '') {
             updateData.trackingUrl = `https://rastreio.elabela.store/?code=${encodeURIComponent(trackingCode.trim())}`
         }
         // Ao enviar rastreio pela extensao, atualiza status automaticamente
