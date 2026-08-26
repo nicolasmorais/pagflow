@@ -10,8 +10,9 @@ const cardStyle: React.CSSProperties = {
 }
 
 export default function TrackingManagement({ orderId, initialUrl, initialTrackingCode }: { orderId: string; initialUrl: string | null; initialTrackingCode?: string | null }) {
+    const trackingLink = initialTrackingCode ? `https://rastreio.elabela.store/?code=${encodeURIComponent(initialTrackingCode)}` : ''
     const [isEditing, setIsEditing] = useState(!initialUrl && !initialTrackingCode)
-    const [url, setUrl] = useState(initialUrl || '')
+    const [url, setUrl] = useState(initialUrl || trackingLink || '')
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
     const [resendLoading, setResendLoading] = useState(false)
