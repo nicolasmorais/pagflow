@@ -71,14 +71,24 @@ export default function TrackingManagement({ orderId, initialUrl, initialTrackin
                 {initialTrackingCode && (
                     <div style={{ marginBottom: '14px' }}>
                         <div style={{ fontSize: '10.5px', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#6E7180', marginBottom: '6px' }}>Código de rastreio</div>
-                        <div style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '8px',
-                            fontFamily: "'IBM Plex Mono', monospace", fontSize: '14px', fontWeight: 600,
-                            color: '#1E7A52', background: '#E3F4EA', padding: '10px 16px', borderRadius: '9px',
-                            border: '1px solid #C3E8D4', letterSpacing: '0.02em',
-                        }}>
-                            <Truck size={14} style={{ flexShrink: 0 }} strokeWidth={1.8} />
-                            {initialTrackingCode}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <div style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                fontFamily: "'IBM Plex Mono', monospace", fontSize: '14px', fontWeight: 600,
+                                color: '#1E7A52', background: '#E3F4EA', padding: '10px 16px', borderRadius: '9px',
+                                border: '1px solid #C3E8D4', letterSpacing: '0.02em',
+                            }}>
+                                <Truck size={14} style={{ flexShrink: 0 }} strokeWidth={1.8} />
+                                {initialTrackingCode}
+                            </div>
+                            <a href={`https://rastreio.elabela.store/?code=${encodeURIComponent(initialTrackingCode)}`} target="_blank" rel="noopener noreferrer" style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                background: '#14151F', color: '#fff', padding: '10px 16px', borderRadius: '9px',
+                                fontSize: '12px', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap',
+                            }}>
+                                <ExternalLink size={13} strokeWidth={2} />
+                                Rastrear pedido
+                            </a>
                         </div>
                     </div>
                 )}
