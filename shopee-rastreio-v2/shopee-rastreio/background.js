@@ -140,15 +140,35 @@ function extractOrderFromTab(url) {
         if (loaded) return;
         loaded = true;
 
-        // Aguarda o React renderizar
-        await waitForPageContent(tabId, 15000);
-
         let data = null;
+        const maxAttempts = 3;
 
-        // Tenta extrair ate 3x na mesma aba antes de fechar
-        for (let attempt = 0; attempt < 3; attempt++) {
-          if (attempt > 0) await sleep(3000);
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          // No retry: recarrega a aba e espera de novo
+          if (attempt > 0) {
+            await new Promise((resolve) => {
+              chrome.tabs.reload(tabId, {}, resolve);
+            });
+            await sleep(4000); // espera carregar apos reload
+          }
 
+          // Aguarda o React renderizar (mais tempo nas tentativas)
+          await waitForPageContent(tabId, 15000 + (attempt * 5000));
+
+          // Scroll para forcar lazy loading
+          try {
+            await chrome.scripting.executeScript({
+              target: { tabId },
+              func: () => {
+                window.scrollTo(0, document.body.scrollHeight);
+              }
+            });
+            await sleep(1500);
+            window.scrollTo(0, 0);
+            await sleep(500);
+          } catch {}
+
+          // Tenta extrair
           try {
             const [result] = await chrome.scripting.executeScript({
               target: { tabId },
@@ -156,7 +176,6 @@ function extractOrderFromTab(url) {
             });
             data = result?.result;
 
-            // So aceita se extraiu pelo menos tracking OU nome
             if (data && (data.trackingCode || data.customerName)) break;
           } catch (e) {
             console.error('[Shopee Rastreio] Erro no script attempt ' + (attempt + 1) + ':', e);
