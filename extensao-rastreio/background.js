@@ -174,7 +174,23 @@ function scrapeOrderPage() {
 
   const bodyText = document.body.innerText || '';
 
-  // Codigo de rastreio — padroes brasileiros
+  // ── Nome do cliente — metodo primario: classes Shopee ──
+  const nameEl = document.querySelector('.S4vMsq, [class*="S4vMsq"]');
+  if (nameEl) {
+    const nameText = (nameEl.textContent || '').trim();
+    if (nameText.length >= 3 && nameText.length <= 80) {
+      result.customerName = nameText;
+    }
+  }
+
+  // ── Telefone — metodo primario: dentro de LBTJ9j ──
+  const addrEl = document.querySelector('.LBTJ9j, [class*="LBTJ9j"]');
+  if (addrEl) {
+    const phoneMatch = (addrEl.textContent || '').match(/\(\+?\d+\)\s*\d[\d\s\-\.]{6,}/);
+    if (phoneMatch) result.phone = phoneMatch[0].trim();
+  }
+
+  // ── Codigo de rastreio — padroes brasileiros ──
   const trackPatterns = [
     /\b(BR[0-9]{9,13}[A-Z]{0,2})\b/,
     /\b([A-Z]{2}[0-9]{9}[A-Z]{2})\b/,
@@ -198,34 +214,36 @@ function scrapeOrderPage() {
     }
   }
 
-  // Nome do cliente
-  let addressHeading = null;
-  const walker2 = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-  let n;
-  while ((n = walker2.nextNode())) {
-    const t = (n.textContent || '').trim();
-    if (t === 'Endereco De Entrega' || t === 'Endereco de Entrega' || t === 'Endereco de entrega') {
-      addressHeading = n.parentElement;
-      break;
-    }
-  }
-
-  if (addressHeading) {
-    let container = addressHeading;
-    for (let i = 0; i < 5; i++) container = container.parentElement || container;
-
-    const allInContainer = container.querySelectorAll('*');
-    for (const el of allInContainer) {
-      if (el.children.length > 0) continue;
-      const t = (el.textContent || '').trim();
-      if (
-        t.length >= 3 && t.length <= 80 &&
-        !t.includes('Endereco') && !t.includes('Entrega') &&
-        !t.includes('(+') && !t.startsWith('+') && !/^\d/.test(t) &&
-        /^[A-Za-zÀ-ÖØ-öø-ÿ\s'.\-]+$/.test(t)
-      ) {
-        result.customerName = t;
+  // ── Nome fallback: busca por "Endereco De Entrega" ──
+  if (!result.customerName) {
+    let addressHeading = null;
+    const walker2 = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = walker2.nextNode())) {
+      const t = (n.textContent || '').trim();
+      if (t === 'Endereco De Entrega' || t === 'Endereco de Entrega' || t === 'Endereco de entrega') {
+        addressHeading = n.parentElement;
         break;
+      }
+    }
+
+    if (addressHeading) {
+      let container = addressHeading;
+      for (let i = 0; i < 5; i++) container = container.parentElement || container;
+
+      const allInContainer = container.querySelectorAll('*');
+      for (const el of allInContainer) {
+        if (el.children.length > 0) continue;
+        const t = (el.textContent || '').trim();
+        if (
+          t.length >= 3 && t.length <= 80 &&
+          !t.includes('Endereco') && !t.includes('Entrega') &&
+          !t.includes('(+') && !t.startsWith('+') && !/^\d/.test(t) &&
+          /^[A-Za-zÀ-ÖØ-öø-ÿ\s'.\-]+$/.test(t)
+        ) {
+          result.customerName = t;
+          break;
+        }
       }
     }
   }
@@ -248,11 +266,13 @@ function scrapeOrderPage() {
     }
   }
 
-  // Telefone
-  const phoneMatch = bodyText.match(/\(\+?\d+\)\s*\d[\d\s\-\.]{6,}/);
-  if (phoneMatch) result.phone = phoneMatch[0].trim();
+  // ── Telefone fallback ──
+  if (!result.phone) {
+    const phoneMatch = bodyText.match(/\(\+?\d+\)\s*\d[\d\s\-\.]{6,}/);
+    if (phoneMatch) result.phone = phoneMatch[0].trim();
+  }
 
-  // Status
+  // ── Status ──
   const statuses = ['A CAMINHO', 'PREPARANDO', 'FINALIZADO', 'A PAGAR', 'CANCELADO', 'EM TRANSITO'];
   const upper = bodyText.toUpperCase();
   for (const s of statuses) {

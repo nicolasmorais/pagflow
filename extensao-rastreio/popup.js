@@ -296,6 +296,7 @@ function matchExtractedOrders() {
     const extName = normalizeName(ext.customerName);
     const extPhone = normalizePhone(ext.phone);
     let matched = null;
+    let debugInfo = '';
 
     // Tenta match por nome primeiro
     for (const po of pagflowOrders) {
@@ -323,9 +324,19 @@ function matchExtractedOrders() {
       matched._matched = true;
       ext._pagflowOrder = matched;
       ext._matchedName = matched.fullName;
+      ext._debugInfo = null;
     } else {
       ext._pagflowOrder = null;
       ext._matchedName = null;
+      // Debug: mostra por que nao deu match
+      const availableNames = pagflowOrders
+        .filter(o => !o._matched)
+        .map(o => o.fullName)
+        .join(', ');
+      debugInfo = `Extraido: "${ext.customerName || '(vazio)'}" | Disponiveis: ${availableNames || '(nenhum)'}`;
+      if (extPhone) debugInfo += ` | Tel: ${extPhone}`;
+      ext._debugInfo = debugInfo;
+      console.log('[Match Debug]', debugInfo);
     }
   });
 
@@ -460,7 +471,13 @@ chrome.runtime.onMessage.addListener((msg) => {
     case "done":
       const n = extractedOrders.length;
       const matched = extractedOrders.filter(o => o._pagflowOrder).length;
-      setTrackingStatus("done", `Concluido! ${n} extraido(s), ${matched} com match.`);
+      const unmatched = pagflowOrders.filter(o => !o._matched).length;
+      let statusMsg = `Concluido! ${n} extraido(s), ${matched} com match.`;
+      if (unmatched > 0) {
+        const missingNames = pagflowOrders.filter(o => !o._matched).map(o => o.fullName).join(', ');
+        statusMsg += ` ${unmatched} sem match: ${missingNames}`;
+      }
+      setTrackingStatus("done", statusMsg);
       startExtractionBtn.disabled = false;
       const hasSendable = extractedOrders.filter(o => o._pagflowOrder && o.trackingCode).length > 0;
       sendAllTrackingBtn.disabled = !hasSendable;
@@ -485,9 +502,11 @@ function renderExtractedList() {
     const phone = o.phone ? `<div class="extract-phone">${escapeHtml(o.phone)}</div>` : "";
     const matchLine = o._pagflowOrder
       ? `<div class="extract-match-name">Match: ${escapeHtml(o._matchedName)}</div>`
+      : o._debugInfo
+      ? `<div class="extract-match-name" style="color:#f66;font-size:9px;line-height:1.3">${escapeHtml(o._debugInfo)}</div>`
       : o.customerName
       ? '<div class="extract-match-name" style="color:#f66">Sem match no PagFlow</div>'
-      : "";
+      : '<div class="extract-match-name" style="color:#f66">Nome nao detectado na Shopee</div>';
     const cardCls = o._pagflowOrder ? " extract-card matched" : "extract-card";
     const canSend = o._pagflowOrder && o.trackingCode;
 
