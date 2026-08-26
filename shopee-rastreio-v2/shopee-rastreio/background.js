@@ -143,19 +143,28 @@ function extractOrderFromTab(url) {
         // Aguarda o React renderizar
         await waitForPageContent(tabId, 15000);
 
-        try {
-          const [result] = await chrome.scripting.executeScript({
-            target: { tabId },
-            func: scrapeOrderPage
-          });
-          clearTimeout(timeout);
-          const data = result?.result;
-          finish(data && (data.trackingCode || data.customerName) ? { ...data, url } : null);
-        } catch (e) {
-          clearTimeout(timeout);
-          console.error('[Shopee Rastreio] Erro no script:', e);
-          finish(null);
+        let data = null;
+
+        // Tenta extrair ate 3x na mesma aba antes de fechar
+        for (let attempt = 0; attempt < 3; attempt++) {
+          if (attempt > 0) await sleep(3000);
+
+          try {
+            const [result] = await chrome.scripting.executeScript({
+              target: { tabId },
+              func: scrapeOrderPage
+            });
+            data = result?.result;
+
+            // So aceita se extraiu pelo menos tracking OU nome
+            if (data && (data.trackingCode || data.customerName)) break;
+          } catch (e) {
+            console.error('[Shopee Rastreio] Erro no script attempt ' + (attempt + 1) + ':', e);
+          }
         }
+
+        clearTimeout(timeout);
+        finish(data && (data.trackingCode || data.customerName) ? { ...data, url } : null);
       };
 
       const onUpdated = (id, info) => {
