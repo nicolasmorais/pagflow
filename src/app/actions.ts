@@ -1122,37 +1122,32 @@ export async function sendAdminNotification(order: any) {
         const email = await getCustomization('notify_admin_email');
         const method = order.paymentMethod === 'pix' ? 'PIX' : 'CARTÃO';
 
-        // Push notification - venda individual
-        await sendAdminPush(
-            `Venda Aprovada - ${method}`,
-            `Você recebeu R$ ${order.totalPrice?.toFixed(2) || '0.00'}`,
-            '/admin/vendas'
-        ).catch(e => console.error("Erro no envio do Push:", e));
-
-        // Push notification - resumo acumulado
+        // Push notification - vendas do dia + lucro
         try {
             const now = new Date()
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+            const startOfDay = new Date(now.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }))
+            startOfDay.setHours(0, 0, 0, 0)
 
-            const [paidOrders, taboolaData] = await Promise.all([
+            const [paidOrdersToday, taboolaData] = await Promise.all([
                 prisma.order.findMany({
-                    where: { paymentStatus: 'pago', deletedAt: null, createdAt: { gte: startOfMonth } },
-                    select: { totalPrice: true }
+                    where: { paymentStatus: 'pago', deletedAt: null, createdAt: { gte: startOfDay } },
+                    select: { totalPrice: true, productCost: true, shippingPrice: true }
                 }),
-                import('@/lib/taboola').then(m => m.fetchAllTaboolaAccounts(startOfMonth.toISOString().split('T')[0], now.toISOString().split('T')[0])).catch(() => null)
+                import('@/lib/taboola').then(m => m.fetchAllTaboolaAccounts(startOfDay.toISOString().split('T')[0], now.toISOString().split('T')[0])).catch(() => null)
             ])
 
-            const totalVendas = paidOrders.reduce((sum, o) => sum + (o.totalPrice || 0), 0)
-            const custosAds = taboolaData?.totalSpent || 0
-            const lucro = totalVendas - custosAds
+            const totalVendasDia = paidOrdersToday.reduce((sum, o) => sum + (o.totalPrice || 0), 0)
+            const custoProdutosDia = paidOrdersToday.reduce((sum, o) => sum + ((o.productCost || 0) + (o.shippingPrice || 0)), 0)
+            const custosAdsDia = taboolaData?.totalSpent || 0
+            const lucroDia = totalVendasDia - custoProdutosDia - custosAdsDia
 
             await sendAdminPush(
-                `Você vendeu até agora: R$ ${totalVendas.toFixed(2)}`,
-                `Lucro de R$ ${lucro.toFixed(2)}`,
+                `💰 Vendas de hoje: R$ ${totalVendasDia.toFixed(2)}`,
+                `Lucro: R$ ${lucroDia.toFixed(2)} • ${paidOrdersToday.length} venda(s)`,
                 '/admin/financeiro'
-            ).catch(e => console.error("Erro no envio do Push acumulado:", e))
+            ).catch(e => console.error("Erro no envio do Push diário:", e))
         } catch (summaryError) {
-            console.error("Erro ao gerar resumo acumulado:", summaryError)
+            console.error("Erro ao gerar resumo diário:", summaryError)
         }
 
         // Webhook trigger
