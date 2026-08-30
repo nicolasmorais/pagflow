@@ -8,7 +8,8 @@ import {
 import {
     DollarSign, TrendingUp, ShoppingBag, CheckCircle2,
     XCircle, Clock, Ticket, Zap, ArrowUpRight, ArrowDownRight,
-    Package, MapPin, Activity, BarChart3, Target
+    Package, MapPin, Activity, BarChart3, Target,
+    Sunrise, Sun, Sunset, Moon, Trophy
 } from 'lucide-react'
 import type { AnalyticsData } from './types'
 
@@ -188,15 +189,17 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
     const {
         kpis, dailyData, paymentMethods, installments,
         cardBrands, topProducts, topStates, statusBreakdown, bumpStats,
-        hourlyData, weekdayData, recentOrders, prevKpis,
+        hourlyData, weekdayData, topHours, shiftData, bestShift, recentOrders, prevKpis,
         taboolaAccounts, taboolaRevenue, taboolaSpent, taboolaKpis
     } = data
 
     const maxState = topStates[0]?.revenue || 1
     const maxProduct = topProducts[0]?.revenue || 1
     const maxHourly = Math.max(...hourlyData.map(h => h.orders), 1)
+    const maxTopHour = Math.max(...topHours.map(h => h.total), 1)
 
     const PIE_COLORS = ['#14151F', '#2C5C86', '#6E7180', '#A0A8B8']
+    const SHIFT_ICONS: Record<string, any> = { madrugada: Moon, manha: Sunrise, tarde: Sun, noite: Sunset }
 
     return (
         <>
@@ -327,6 +330,90 @@ export default function AnalyticsCharts({ data }: { data: AnalyticsData }) {
                             <Bar dataKey="revenue" name="revenue" fill="#2C5C86" radius={[6, 6, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
+                </SectionCard>
+            </div>
+
+            {/* ── Turnos + Top Horários ── */}
+            <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
+                <SectionCard title="Vendas por Turno" subtitle={`${bestShift.label} é o turno com mais vendas pagas`}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {shiftData.map(s => {
+                            const Icon = SHIFT_ICONS[s.shift] || Clock
+                            const isBest = s.shift === bestShift.shift && bestShift.paid > 0
+                            return (
+                                <div key={s.shift} style={{
+                                    padding: '12px', borderRadius: '12px',
+                                    background: isBest ? '#14151F' : '#F5F6F9',
+                                    border: isBest ? 'none' : '1px solid #E5E7EF',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{
+                                                width: '28px', height: '28px', borderRadius: '8px',
+                                                background: isBest ? 'rgba(123,184,224,0.15)' : '#FFFFFF',
+                                                border: isBest ? '1px solid rgba(123,184,224,0.2)' : '1px solid #E5E7EF',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <Icon size={14} color={isBest ? '#7BB8E0' : '#2C5C86'} />
+                                            </div>
+                                            <div>
+                                                <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: isBest ? '#fff' : '#14151F' }}>{s.label}</p>
+                                                <p style={{ margin: 0, fontSize: '9px', color: isBest ? 'rgba(255,255,255,0.4)' : '#6E7180', fontWeight: 600 }}>{s.range}</p>
+                                            </div>
+                                            {isBest && (
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '9px', fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.12)', padding: '3px 7px', borderRadius: '6px' }}>
+                                                    <Trophy size={10} /> Top
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span style={{ fontSize: '13px', fontWeight: 700, color: isBest ? '#fff' : '#14151F' }}>R$ {fmt(s.revenue)}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '6px' }}>
+                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#1E7A52', background: isBest ? 'rgba(52,211,153,0.12)' : '#E3F4EA', padding: '3px 8px', borderRadius: '6px' }}>{s.paid} pagas</span>
+                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#92400E', background: isBest ? 'rgba(217,119,6,0.15)' : '#FEF3C7', padding: '3px 8px', borderRadius: '6px' }}>{s.pending} aguard.</span>
+                                        <span style={{ fontSize: '10px', fontWeight: 700, color: '#B23B32', background: isBest ? 'rgba(178,59,50,0.15)' : '#FBEAE8', padding: '3px 8px', borderRadius: '6px' }}>{s.rejected} recus.</span>
+                                        <span style={{ fontSize: '10px', fontWeight: 700, color: isBest ? 'rgba(255,255,255,0.5)' : '#6E7180', background: isBest ? 'rgba(255,255,255,0.08)' : '#FFFFFF', border: isBest ? 'none' : '1px solid #E5E7EF', padding: '3px 8px', borderRadius: '6px' }}>{s.total} total</span>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+                </SectionCard>
+
+                <SectionCard title="Top Horários de Vendas" subtitle="Horas com mais pedidos, por status">
+                    {topHours.every(h => h.total === 0) ? (
+                        <p style={{ textAlign: 'center', color: '#6E7180', fontSize: '13px', padding: '24px 0' }}>Sem dados no período</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {topHours.map((h, i) => (
+                                <div key={h.hour}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '5px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                            <span style={{
+                                                width: '22px', height: '22px', borderRadius: '6px',
+                                                background: i === 0 ? '#14151F' : i === 1 ? '#2C5C86' : '#6E7180',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '10px', fontWeight: 700, color: 'white', flexShrink: 0
+                                            }}>{i + 1}</span>
+                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#14151F' }}>{h.hour}</span>
+                                        </div>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#1E7A52', whiteSpace: 'nowrap' }}>R$ {fmt(h.revenue)}</span>
+                                    </div>
+                                    <div style={{ width: '100%', height: '6px', background: '#F5F6F9', borderRadius: '3px', overflow: 'hidden', display: 'flex' }}>
+                                        <div style={{ width: `${(h.paid / maxTopHour) * 100}%`, height: '100%', background: '#1E7A52' }} />
+                                        <div style={{ width: `${(h.pending / maxTopHour) * 100}%`, height: '100%', background: '#d97706' }} />
+                                        <div style={{ width: `${(h.rejected / maxTopHour) * 100}%`, height: '100%', background: '#B23B32' }} />
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                                        <span style={{ fontSize: '10px', color: '#1E7A52', fontWeight: 600 }}>{h.paid} pagas</span>
+                                        <span style={{ fontSize: '10px', color: '#92400E', fontWeight: 600 }}>{h.pending} aguard.</span>
+                                        <span style={{ fontSize: '10px', color: '#B23B32', fontWeight: 600 }}>{h.rejected} recus.</span>
+                                        <span style={{ fontSize: '10px', color: '#6E7180', fontWeight: 600, marginLeft: 'auto' }}>{h.total} total</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </SectionCard>
             </div>
 

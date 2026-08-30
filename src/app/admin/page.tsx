@@ -131,6 +131,51 @@ export default async function AdminPage({
     }
     const hourlyData = Array.from(hourlyMap.entries()).map(([hour, orders]) => ({ hour: `${hour}h`, orders }))
 
+    // ── Hourly detail (paid/pending/rejected) + shift breakdown ────────────
+    const hourlyDetailMap = new Map<string, { paid: number; pending: number; rejected: number; total: number; revenue: number }>()
+    for (let h = 0; h < 24; h++) hourlyDetailMap.set(String(h).padStart(2, '0'), { paid: 0, pending: 0, rejected: 0, total: 0, revenue: 0 })
+
+    const SHIFTS = [
+        { key: 'madrugada', label: 'Madrugada', range: '00h–05h59', hours: [0, 1, 2, 3, 4, 5] },
+        { key: 'manha', label: 'Manhã', range: '06h–11h59', hours: [6, 7, 8, 9, 10, 11] },
+        { key: 'tarde', label: 'Tarde', range: '12h–17h59', hours: [12, 13, 14, 15, 16, 17] },
+        { key: 'noite', label: 'Noite', range: '18h–23h59', hours: [18, 19, 20, 21, 22, 23] },
+    ]
+    const hourToShift = new Map<number, string>()
+    for (const s of SHIFTS) for (const h of s.hours) hourToShift.set(h, s.key)
+
+    const shiftStatsMap = new Map<string, { paid: number; pending: number; rejected: number; total: number; revenue: number }>()
+    for (const s of SHIFTS) shiftStatsMap.set(s.key, { paid: 0, pending: 0, rejected: 0, total: 0, revenue: 0 })
+
+    for (const o of allOrders) {
+        const hStr = new Date(o.createdAt).toLocaleString('pt-BR', { hour: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' })
+        const hourNum = parseInt(hStr, 10) % 24
+        const hKey = String(hourNum).padStart(2, '0')
+        const detail = hourlyDetailMap.get(hKey)!
+        const isPaid = o.paymentStatus === 'pago'
+        const isPending = ['aguardando', 'processando'].includes(o.paymentStatus || '')
+        const isRejected = o.paymentStatus === 'recusado'
+        detail.total += 1
+        if (isPaid) { detail.paid += 1; detail.revenue += o.totalPrice || 0 }
+        if (isPending) detail.pending += 1
+        if (isRejected) detail.rejected += 1
+
+        const shiftKey = hourToShift.get(hourNum)!
+        const shiftStat = shiftStatsMap.get(shiftKey)!
+        shiftStat.total += 1
+        if (isPaid) { shiftStat.paid += 1; shiftStat.revenue += o.totalPrice || 0 }
+        if (isPending) shiftStat.pending += 1
+        if (isRejected) shiftStat.rejected += 1
+    }
+
+    const topHours = Array.from(hourlyDetailMap.entries())
+        .map(([hour, d]) => ({ hour: `${hour}h`, ...d }))
+        .sort((a, b) => b.paid - a.paid || b.total - a.total)
+        .slice(0, 5)
+
+    const shiftData = SHIFTS.map(s => ({ shift: s.key, label: s.label, range: s.range, ...shiftStatsMap.get(s.key)! }))
+    const bestShift = shiftData.reduce((best, s) => (s.paid > best.paid ? s : best), shiftData[0])
+
     // ── Weekday distribution ──────────────────────────────────────────────
     const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
     const weekdayMap = new Map<string, { revenue: number; orders: number }>()
@@ -317,6 +362,9 @@ export default async function AdminPage({
         bumpStats,
         hourlyData,
         weekdayData,
+        topHours,
+        shiftData,
+        bestShift,
         recentOrders,
         prevKpis,
         taboolaAccounts,
