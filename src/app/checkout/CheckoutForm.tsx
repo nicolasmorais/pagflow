@@ -48,6 +48,54 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     }, []);
 
+    const getVisitorId = () => {
+        if (typeof window === 'undefined') return '';
+        try {
+            let vid = window.localStorage.getItem('pf_vid');
+            if (!vid) {
+                vid = crypto.randomUUID();
+                window.localStorage.setItem('pf_vid', vid);
+            }
+            return vid;
+        } catch {
+            return '';
+        }
+    };
+
+    const getUrlParams = () => {
+        if (typeof window === 'undefined') return {} as Record<string, string | null>;
+        const p = new URLSearchParams(window.location.search);
+        return {
+            clickId: p.get('tblci'),
+            utmSource: p.get('utm_source'),
+            utmMedium: p.get('utm_medium'),
+            utmCampaign: p.get('utm_campaign'),
+            utmTerm: p.get('utm_term'),
+            utmContent: p.get('utm_content'),
+        };
+    };
+
+    const trackFunnel = (step: string, orderId?: string) => {
+        if (typeof window === 'undefined') return;
+        try {
+            const visitorId = getVisitorId();
+            if (!visitorId) return;
+            const params = getUrlParams();
+            fetch('/api/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    visitorId,
+                    step,
+                    productId: product?.id || null,
+                    orderId: orderId || null,
+                    ...params,
+                }),
+                keepalive: true,
+            }).catch(() => {});
+        } catch {}
+    };
+
     const trackTaboolaEvent = (eventName: string, data: any = {}) => {
         if (typeof window === 'undefined') return;
         const _tfa = (window as any)._tfa || [];
@@ -120,6 +168,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
         // Track start_checkout for all Taboola pixels
         trackTaboolaEvent('start_checkout');
+        trackFunnel('page_view');
 
         // ── Google Analytics (GA4) + Google Ads gtag.js ──
         if (!document.getElementById('gtag-script')) {
@@ -376,6 +425,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             }
 
             setStep(product?.isDigital ? 3 : 2);
+            trackFunnel('dados_completo');
             trackGoogleEvent('add_contact_info', {
                 currency: 'BRL',
                 value: finalPrice,
@@ -401,6 +451,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         setErrors(newErrors);
         if (Object.keys(newErrors).length === 0) {
             setStep(3);
+            trackFunnel('entrega_completa');
             trackGoogleEvent('add_shipping_info', {
                 currency: 'BRL',
                 value: finalPrice,
@@ -416,6 +467,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     async function finalizar(brickData?: any) {
         setLoading(true);
+        trackFunnel('pagamento_iniciado');
         try {
             // Capturar o Device ID gerado pelo security.js
             const deviceId = (window as any).MP_DEVICE_SESSION_ID || (window as any).mercadopago?.deviceFingerprint;
@@ -459,6 +511,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     utmPlacement: searchParams.get('utm_placement'),
                     utmId: searchParams.get('utm_id'),
                     utmCreativeName: searchParams.get('utm_creative_name'),
+                    clickId: searchParams.get('tblci'),
+                    visitorId: getVisitorId(),
                 },
                 deviceId: deviceId
             };
@@ -479,6 +533,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             }
 
             if (result.success) {
+                trackFunnel('pedido_criado', result.orderId);
+
                 // Taboola: Track EVERY attempt (approved, declined, pending Pix)
                 trackTaboolaEvent('make_purchase', { revenue: finalPrice, currency: 'BRL' });
 

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
     BarChart3,
+    LineChart,
     ShoppingCart,
     Package,
     Truck,
@@ -27,6 +28,7 @@ const menuSections = [
         label: 'Visão Geral',
         items: [
             { icon: BarChart3, label: 'Dashboard', href: '/admin' },
+            { icon: LineChart, label: 'Analytics', href: '/admin/analytics' },
             { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
             { icon: Wallet, label: 'Financeiro', href: '/admin/financeiro' },
         ]

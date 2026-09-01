@@ -51,8 +51,33 @@ model Order {
   utmCreativeName   String?
   productCost       Float      @default(0)
   deletedAt         DateTime?
+  clickId           String?
+  visitorId         String?
   emailLogs         EmailLog[]
   product           Product?   @relation(fields: [productId], references: [id])
+
+  @@index([clickId])
+  @@index([visitorId])
+}
+
+model CheckoutEvent {
+  id          String   @id @default(cuid())
+  visitorId   String
+  productId   String?
+  step        String
+  orderId     String?
+  clickId     String?
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+  createdAt   DateTime @default(now())
+
+  @@index([visitorId])
+  @@index([step])
+  @@index([createdAt])
+  @@index([clickId])
 }
 
 model Product {
