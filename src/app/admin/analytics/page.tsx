@@ -155,6 +155,43 @@ export default async function AnalyticsFunnelPage({
     }
     const dailyData = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date))
 
+    // ── Web Vitals reais do checkout (performance de carregamento) ──
+    const vitals = await prisma.webVital.findMany({
+        where: { createdAt: { gte: fromDateUTC, lte: toDateUTC }, path: { startsWith: '/checkout' } },
+        select: { name: true, value: true, rating: true },
+    })
+    const VITAL_ORDER = ['LCP', 'INP', 'CLS', 'FCP', 'TTFB']
+    const vitalsByName = new Map<string, { values: number[]; good: number; needsImprovement: number; poor: number }>()
+    for (const name of VITAL_ORDER) vitalsByName.set(name, { values: [], good: 0, needsImprovement: 0, poor: 0 })
+    for (const v of vitals) {
+        const bucket = vitalsByName.get(v.name)
+        if (!bucket) continue
+        bucket.values.push(v.value)
+        if (v.rating === 'good') bucket.good += 1
+        else if (v.rating === 'needs-improvement') bucket.needsImprovement += 1
+        else if (v.rating === 'poor') bucket.poor += 1
+    }
+    function p75(values: number[]) {
+        if (values.length === 0) return 0
+        const sorted = [...values].sort((a, b) => a - b)
+        return sorted[Math.floor(0.75 * (sorted.length - 1))]
+    }
+    const webVitals = VITAL_ORDER.map(name => {
+        const b = vitalsByName.get(name)!
+        const total = b.values.length
+        return {
+            name,
+            p75: p75(b.values),
+            total,
+            good: b.good,
+            needsImprovement: b.needsImprovement,
+            poor: b.poor,
+            goodPct: total > 0 ? (b.good / total) * 100 : 0,
+            needsImprovementPct: total > 0 ? (b.needsImprovement / total) * 100 : 0,
+            poorPct: total > 0 ? (b.poor / total) * 100 : 0,
+        }
+    })
+
     return (
         <div style={{ padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
@@ -164,7 +201,7 @@ export default async function AnalyticsFunnelPage({
                 <AnalyticsFilterForm currentFilter={currentFilter} fromDate={fromDate} toDate={toDate} />
             </div>
 
-            <FunnelCharts funnel={funnel} breakdown={breakdown} totalPageViews={totalPageViews} kpis={kpis} dailyData={dailyData} />
+            <FunnelCharts funnel={funnel} breakdown={breakdown} totalPageViews={totalPageViews} kpis={kpis} dailyData={dailyData} webVitals={webVitals} />
         </div>
     )
 }

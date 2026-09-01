@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { reportWebVitals } from '@/lib/web-vitals-reporter'
 import './checkout.css'
 
 export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
@@ -169,6 +170,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         // Track start_checkout for all Taboola pixels
         trackTaboolaEvent('start_checkout');
         trackFunnel('page_view');
+        reportWebVitals(getVisitorId());
 
         // ── Google Analytics (GA4) + Google Ads gtag.js ──
         if (!document.getElementById('gtag-script')) {

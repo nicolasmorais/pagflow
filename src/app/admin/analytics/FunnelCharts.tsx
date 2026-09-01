@@ -19,9 +19,29 @@ type BreakdownRow = {
 }
 type Kpis = { visitas: number; iniciaramCheckout: number; pedidos: number; pagos: number; pagosRastreados: number; conversao: number; receita: number }
 type DailyPoint = { date: string; visitas: number; pedidos: number; pagos: number }
+type WebVitalRow = { name: string; p75: number; total: number; good: number; needsImprovement: number; poor: number; goodPct: number; needsImprovementPct: number; poorPct: number }
 
 const FUNNEL_COLORS = ['#E7F1F8', '#7BB8E0', '#2C5C86', '#1a3a5c', '#1E7A52']
 const PIE_COLORS = ['#14151F', '#2C5C86', '#6E7180', '#A0A8B8']
+const STATUS_GOOD = '#1E7A52'
+const STATUS_NEEDS_IMPROVEMENT = '#d97706'
+const STATUS_POOR = '#B23B32'
+
+const VITAL_INFO: Record<string, { label: string; unit: 'ms' | 's' | 'raw'; description: string }> = {
+    LCP: { label: 'LCP', unit: 's', description: 'Tempo até o maior elemento visível carregar' },
+    INP: { label: 'INP', unit: 'ms', description: 'Resposta a cliques/toques do usuário' },
+    CLS: { label: 'CLS', unit: 'raw', description: 'Estabilidade visual (layout não pula)' },
+    FCP: { label: 'FCP', unit: 's', description: 'Tempo até o primeiro conteúdo aparecer' },
+    TTFB: { label: 'TTFB', unit: 'ms', description: 'Tempo de resposta do servidor' },
+}
+
+function fmtVital(name: string, value: number) {
+    const info = VITAL_INFO[name]
+    if (!info) return value.toFixed(2)
+    if (info.unit === 's') return `${(value / 1000).toFixed(2)}s`
+    if (info.unit === 'ms') return `${Math.round(value)}ms`
+    return value.toFixed(3)
+}
 
 function fmt(n: number) {
     return n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -93,12 +113,13 @@ function DailyTooltip({ active, payload, label }: any) {
     )
 }
 
-export default function FunnelCharts({ funnel, breakdown, totalPageViews, kpis, dailyData }: {
+export default function FunnelCharts({ funnel, breakdown, totalPageViews, kpis, dailyData, webVitals }: {
     funnel: FunnelStep[]
     breakdown: BreakdownRow[]
     totalPageViews: number
     kpis: Kpis
     dailyData: DailyPoint[]
+    webVitals: WebVitalRow[]
 }) {
     const maxVisits = Math.max(...breakdown.map(b => b.visits), 1)
     const withVisits = breakdown.filter(b => b.visits > 0)
@@ -242,6 +263,42 @@ export default function FunnelCharts({ funnel, breakdown, totalPageViews, kpis, 
                     )}
                 </SectionCard>
             </div>
+
+            {/* ── Web Vitals reais ── */}
+            <SectionCard title="Performance real do checkout" subtitle="Web Vitals medidos no navegador de quem visitou (dados reais, não simulados)">
+                {webVitals.every(v => v.total === 0) ? (
+                    <p style={{ textAlign: 'center', color: '#6E7180', fontSize: '13px', padding: '24px 0' }}>Ainda sem medições nesse período.</p>
+                ) : (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                        {webVitals.map(v => {
+                            const info = VITAL_INFO[v.name]
+                            return (
+                                <div key={v.name} style={{ padding: '14px', background: '#F5F6F9', borderRadius: '12px', border: '1px solid #E5E7EF' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '2px' }}>
+                                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#14151F' }}>{info?.label || v.name}</span>
+                                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#14151F', fontFamily: "'Fraunces', serif" }}>
+                                            {v.total > 0 ? fmtVital(v.name, v.p75) : '—'}
+                                        </span>
+                                    </div>
+                                    <p style={{ margin: '0 0 8px', fontSize: '10px', color: '#6E7180' }}>{info?.description}</p>
+                                    {v.total > 0 ? (
+                                        <>
+                                            <div style={{ width: '100%', height: '6px', borderRadius: '3px', overflow: 'hidden', display: 'flex' }}>
+                                                <div style={{ width: `${v.goodPct}%`, height: '100%', background: STATUS_GOOD }} />
+                                                <div style={{ width: `${v.needsImprovementPct}%`, height: '100%', background: STATUS_NEEDS_IMPROVEMENT }} />
+                                                <div style={{ width: `${v.poorPct}%`, height: '100%', background: STATUS_POOR }} />
+                                            </div>
+                                            <p style={{ margin: '6px 0 0', fontSize: '10px', color: '#6E7180' }}>{v.total} medições · p75</p>
+                                        </>
+                                    ) : (
+                                        <p style={{ margin: 0, fontSize: '10px', color: '#6E7180' }}>Sem dados</p>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+                )}
+            </SectionCard>
         </div>
     )
 }

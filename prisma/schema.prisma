@@ -80,6 +80,19 @@ model CheckoutEvent {
   @@index([clickId])
 }
 
+model WebVital {
+  id        String   @id @default(cuid())
+  name      String
+  value     Float
+  rating    String
+  path      String?
+  visitorId String?
+  createdAt DateTime @default(now())
+
+  @@index([name])
+  @@index([createdAt])
+}
+
 model Product {
   id            String          @id @default(cuid())
   name          String

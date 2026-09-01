@@ -34,7 +34,8 @@
     "resend": "^6.10.0",
     "tailwind-animate": "^0.2.10",
     "tailwind-merge": "^3.5.0",
-    "web-push": "^3.6.7"
+    "web-push": "^3.6.7",
+    "web-vitals": "^6.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
