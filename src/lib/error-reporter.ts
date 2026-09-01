@@ -7,7 +7,16 @@ function getMetadata() {
     };
 }
 
+function isNextNavigationSignal(error: unknown) {
+    const digest = (error as any)?.digest;
+    if (typeof digest === 'string' && (digest.startsWith('NEXT_REDIRECT') || digest === 'NEXT_NOT_FOUND')) return true;
+    const message = error instanceof Error ? error.message : String(error);
+    return message === 'NEXT_REDIRECT' || message.startsWith('NEXT_REDIRECT') || message === 'NEXT_NOT_FOUND';
+}
+
 export function reportError(error: unknown, source = 'client', extra?: Record<string, any>) {
+    if (isNextNavigationSignal(error)) return; // sinal interno de navegação do Next.js, não é um erro real
+
     const message = error instanceof Error ? error.message : String(error);
     const stack = error instanceof Error ? error.stack : undefined;
     const dedupeKey = `${source}:${message}`;

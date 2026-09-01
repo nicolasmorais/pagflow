@@ -85,9 +85,22 @@ export default async function CheckoutPage({
         }) : Promise.resolve([])
     ]);
 
+    // Link aponta para um produto que não existe mais (excluído/id inválido): não renderizar
+    // um checkout falso que sempre falha no pagamento — avisa o cliente e para por aqui.
+    if (productId && !dbProduct) {
+        return (
+            <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', fontFamily: 'sans-serif' }}>
+                <div>
+                    <h1 style={{ fontSize: '20px', fontWeight: 700, marginBottom: '8px' }}>Este link de pagamento não está mais disponível</h1>
+                    <p style={{ color: '#6E7180', fontSize: '14px' }}>O produto associado a este link foi removido ou o endereço está incorreto. Entre em contato com quem enviou o link para obter um novo.</p>
+                </div>
+            </div>
+        )
+    }
+
     let product = dbProduct;
 
-    // Default product if none found or no ID provided
+    // Default product if no ID provided at all
     if (!product) {
         product = {
             id: '',
