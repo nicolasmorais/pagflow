@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
-import { getDateFilters } from '@/lib/date-utils'
+import { getDateFilters, dateToBrazilDateStr } from '@/lib/date-utils'
 import AnalyticsFilterForm from '../AnalyticsFilterForm'
 import FunnelCharts from './FunnelCharts'
 
@@ -38,6 +38,7 @@ export default async function AnalyticsFunnelPage({
             utmCampaign: true,
             paymentStatus: true,
             totalPrice: true,
+            createdAt: true,
         },
     })
 
@@ -118,6 +119,41 @@ export default async function AnalyticsFunnelPage({
         .sort((a, b) => b.visits - a.visits || b.pedidos - a.pedidos)
 
     const totalPageViews = visitorsByStep.page_view.size
+    const totalPedidos = orders.length
+    const totalPagos = orders.filter(o => o.paymentStatus === 'pago').length
+    const receitaTotal = orders.filter(o => o.paymentStatus === 'pago').reduce((s, o) => s + (o.totalPrice || 0), 0)
+    const kpis = {
+        visitas: totalPageViews,
+        iniciaramCheckout: visitorsByStep.dados_completo.size,
+        pedidos: totalPedidos,
+        pagos: totalPagos,
+        pagosRastreados: pagoVisitorIds.size,
+        conversao: totalPageViews > 0 ? (pagoVisitorIds.size / totalPageViews) * 100 : 0,
+        receita: receitaTotal,
+    }
+
+    // ── Série diária: visitas x pedidos x pagos ──
+    const dailyMap = new Map<string, { date: string; visitas: number; pedidos: number; pagos: number }>()
+    function getDay(d: string) {
+        if (!dailyMap.has(d)) dailyMap.set(d, { date: d, visitas: 0, pedidos: 0, pagos: 0 })
+        return dailyMap.get(d)!
+    }
+    const seenVisitorPerDay = new Set<string>()
+    for (const e of events) {
+        if (e.step !== 'page_view') continue
+        const d = dateToBrazilDateStr(e.createdAt)
+        const dedupKey = `${d}|${e.visitorId}`
+        if (seenVisitorPerDay.has(dedupKey)) continue
+        seenVisitorPerDay.add(dedupKey)
+        getDay(d).visitas += 1
+    }
+    for (const o of orders) {
+        const d = dateToBrazilDateStr(o.createdAt)
+        const day = getDay(d)
+        day.pedidos += 1
+        if (o.paymentStatus === 'pago') day.pagos += 1
+    }
+    const dailyData = Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date))
 
     return (
         <div style={{ padding: '24px' }}>
@@ -128,7 +164,7 @@ export default async function AnalyticsFunnelPage({
                 <AnalyticsFilterForm currentFilter={currentFilter} fromDate={fromDate} toDate={toDate} />
             </div>
 
-            <FunnelCharts funnel={funnel} breakdown={breakdown} totalPageViews={totalPageViews} />
+            <FunnelCharts funnel={funnel} breakdown={breakdown} totalPageViews={totalPageViews} kpis={kpis} dailyData={dailyData} />
         </div>
     )
 }
