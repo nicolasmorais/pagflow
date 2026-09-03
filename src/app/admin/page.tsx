@@ -19,43 +19,42 @@ export default async function AdminPage({
         params.filter, params.from, params.to
     )
 
-    // ── Fetch all orders ──────────────────────────────────────────────────
-    const allOrders = await prisma.order.findMany({
-        where: {
-            deletedAt: null,
-            createdAt: {
-                gte: fromDateUTC,
-                lte: toDateUTC,
+    // ── Fetch all orders + related data in parallel ────────────────────────
+    const [allOrders, products, financialRecords] = await Promise.all([
+        prisma.order.findMany({
+            where: {
+                deletedAt: null,
+                createdAt: {
+                    gte: fromDateUTC,
+                    lte: toDateUTC,
+                },
             },
-        },
-        select: {
-            id: true,
-            fullName: true,
-            paymentStatus: true,
-            paymentMethod: true,
-            totalPrice: true,
-            netReceived: true,
-            cardBrand: true,
-            installments: true,
-            hasBump: true,
-            estado: true,
-            createdAt: true,
-            productId: true,
-            productCost: true,
-        }
-    })
-
-    const products = await prisma.product.findMany({ select: { id: true, name: true } })
+            select: {
+                id: true,
+                fullName: true,
+                paymentStatus: true,
+                paymentMethod: true,
+                totalPrice: true,
+                netReceived: true,
+                cardBrand: true,
+                installments: true,
+                hasBump: true,
+                estado: true,
+                createdAt: true,
+                productId: true,
+                productCost: true,
+            }
+        }),
+        prisma.product.findMany({ select: { id: true, name: true } }),
+        prisma.financialRecord.findMany({
+            where: {
+                type: 'despesa',
+                date: { gte: fromDateUTC, lte: toDateUTC },
+            },
+            select: { amount: true },
+        }),
+    ])
     const productMap = new Map(products.map(p => [p.id, p.name]))
-
-    // ── Fetch financial records (despesas) ─────────────────────────────
-    const financialRecords = await prisma.financialRecord.findMany({
-        where: {
-            type: 'despesa',
-            date: { gte: fromDateUTC, lte: toDateUTC },
-        },
-        select: { amount: true },
-    })
     const totalDespesas = financialRecords.reduce((s, r) => s + r.amount, 0)
 
     // ── Segments ─────────────────────────────────────────────────────────
@@ -282,7 +281,18 @@ export default async function AdminPage({
     }
 
     // ── Taboola Ads ───────────────────────────────────────────────────────
-    const taboolaData = await fetchAllTaboolaAccounts(fromDate, toDate)
+    const [taboolaData, taboolaOrders, campaignMap] = await Promise.all([
+        fetchAllTaboolaAccounts(fromDate, toDate),
+        prisma.order.findMany({
+            where: {
+                deletedAt: null,
+                utmSource: { contains: 'taboola', mode: 'insensitive' },
+                createdAt: { gte: fromDateUTC, lte: toDateUTC },
+            },
+            select: { totalPrice: true, paymentStatus: true, utmCampaign: true, utmSource: true, utmId: true },
+        }),
+        buildCampaignAccountMap(),
+    ])
     const taboolaSpent = taboolaData.totalSpent
 
     // ── Profit (same formula as financeiro) ─────────────────────────────
@@ -300,15 +310,6 @@ export default async function AdminPage({
         error: a.error,
     }))
 
-    const taboolaOrders = await prisma.order.findMany({
-        where: {
-            deletedAt: null,
-            utmSource: { contains: 'taboola', mode: 'insensitive' },
-            createdAt: { gte: fromDateUTC, lte: toDateUTC },
-        },
-        select: { totalPrice: true, paymentStatus: true, utmCampaign: true, utmSource: true, utmId: true },
-    })
-    const campaignMap = await buildCampaignAccountMap()
     const taboolaAttribution = attributeOrdersToAccounts(taboolaOrders, taboolaData.accounts, campaignMap)
     const taboolaRevenue = taboolaAccounts.map(a => {
         const attr = taboolaAttribution.byAccount.get(a.accountId)

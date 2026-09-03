@@ -30,10 +30,10 @@ async function syncMercadoPagoOrders(orders: any[]) {
     try {
         const client = createMpClient();
         const paymentClient = new Payment(client);
-        for (const order of pendingOrders) {
+        await Promise.all(pendingOrders.map(async (order) => {
             try {
                 let mpResult: any = null;
-                for (let attempt = 1; attempt <= 3; attempt++) {
+                for (let attempt = 1; attempt <= 2; attempt++) {
                     try {
                         mpResult = await paymentClient.get({ id: order.mpPaymentId });
                         break;
@@ -41,8 +41,8 @@ async function syncMercadoPagoOrders(orders: any[]) {
                         const isRetryable = mpErr?.message?.includes('Premature close') ||
                             mpErr?.message?.includes('socket hang up') ||
                             mpErr?.message?.includes('ECONNRESET');
-                        if (isRetryable && attempt < 3) {
-                            await new Promise(r => setTimeout(r, attempt * 1000));
+                        if (isRetryable && attempt < 2) {
+                            await new Promise(r => setTimeout(r, 500));
                             continue;
                         }
                         throw mpErr;
@@ -61,7 +61,7 @@ async function syncMercadoPagoOrders(orders: any[]) {
                     }
                 }
             } catch (e) { }
-        }
+        }));
     } catch (e) { }
     return orders;
 }
