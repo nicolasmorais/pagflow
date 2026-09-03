@@ -1456,6 +1456,14 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
                                     </div>
                                 )}
+                                {product?.isDigital && (
+                                    <div className={`field ${errors.cep ? 'error' : ''}`}>
+                                        <label className="field-label">CEP <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(opcional)</span></label>
+                                        <input type="text" placeholder="00000-000" maxLength={9} value={endereco.cep} onChange={e => handleCEPChange(e.target.value)} />
+                                        {errors.cep && <div className="error-msg">⚠️ {errors.cep}</div>}
+                                        <div className="field-hint">Ajuda a validar o pagamento com mais segurança</div>
+                                    </div>
+                                )}
 
                                 <button className="cta-btn" onClick={validateStep1} disabled={step1Loading}>
                                     {step1Loading ? 'Carregando...' : (product?.isDigital ? 'Continuar para o Pagamento' : 'Continuar para a Entrega')}

@@ -193,14 +193,14 @@ export async function POST(req: NextRequest) {
                     number: cpfToSave || '19119119100'
                 },
                 phone: phoneData,
-                address: {
+                address: (orderData.cep || orderData.rua) ? {
                     zip_code: orderData.cep?.replace(/\D/g, '') || '',
                     street_name: orderData.rua || '',
                     street_number: orderData.numero || '',
                     neighborhood: orderData.bairro || '',
                     city: orderData.cidade || '',
                     federal_unit: (orderData.estado || '').toUpperCase()
-                }
+                } : undefined
             },
             additional_info: {
                 items: [
