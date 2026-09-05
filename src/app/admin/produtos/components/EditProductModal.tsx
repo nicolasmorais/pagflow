@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Loader2, Package, DollarSign, Image as ImageIcon, Globe, Store } from 'lucide-react'
+import { X, Loader2, Package, DollarSign, Image as ImageIcon, Globe, Store, Target } from 'lucide-react'
 import { updateProduct } from '@/app/actions'
 
 const inputStyle: React.CSSProperties = {
@@ -146,6 +146,15 @@ export default function EditProductModal({ product, onClose }: { product: any; o
                             <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94a3b8' }}>Enviado por e-mail após pagamento confirmado.</p>
                         </div>
                     )}
+
+                    <div style={{ marginBottom: '20px' }}>
+                        <label style={labelStyle}><Target size={12} /> Evento de compra customizado</label>
+                        <input name="purchaseEventName" type="text" style={inputStyle} defaultValue={product.purchaseEventName || ''} placeholder="Ex: make_purchase (padrão)"
+                            onFocus={e => { e.target.style.borderColor = '#0f172a'; e.target.style.background = '#fff' }}
+                            onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
+                        />
+                        <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94a3b8' }}>Se preenchido, substitui o evento de compra padrão do pixel Taboola só para este produto.</p>
+                    </div>
 
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <button type="button" onClick={onClose} style={{

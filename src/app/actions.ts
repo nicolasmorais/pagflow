@@ -433,6 +433,7 @@ export async function createProduct(formData: FormData): Promise<void> {
     const accessLink = formData.get('accessLink') as string
     const storeName = formData.get('storeName') as string
     const storeLogo = formData.get('storeLogo') as string
+    const purchaseEventName = formData.get('purchaseEventName') as string
 
     if (!imageUrl || imageUrl.trim() === '') {
         imageUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop';
@@ -451,7 +452,8 @@ export async function createProduct(formData: FormData): Promise<void> {
             isDigital,
             accessLink: isDigital ? (accessLink || null) : null,
             storeName: storeName || 'Elabela Store',
-            storeLogo: storeLogo || null
+            storeLogo: storeLogo || null,
+            purchaseEventName: purchaseEventName?.trim() || null
         }
 
         await prisma.product.create({
@@ -477,6 +479,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
     const accessLink = formData.get('accessLink') as string
     const storeName = formData.get('storeName') as string
     const storeLogo = formData.get('storeLogo') as string
+    const purchaseEventName = formData.get('purchaseEventName') as string
 
     if (!id || !name || isNaN(price)) {
         throw new Error('Preencha os campos obrigatórios')
@@ -498,7 +501,8 @@ export async function updateProduct(formData: FormData): Promise<void> {
             isDigital,
             accessLink: isDigital ? (accessLink || null) : null,
             storeName: storeName || 'Elabela Store',
-            storeLogo: storeLogo || null
+            storeLogo: storeLogo || null,
+            purchaseEventName: purchaseEventName?.trim() || null
         }
 
         const existingProduct = await prisma.product.findUnique({ where: { id } })
@@ -534,7 +538,8 @@ export async function duplicateProduct(productId: string): Promise<void> {
                 isDigital: product.isDigital,
                 accessLink: product.accessLink,
                 storeName: product.storeName,
-                storeLogo: product.storeLogo
+                storeLogo: product.storeLogo,
+                purchaseEventName: product.purchaseEventName
             }
         })
         revalidatePath('/admin/produtos')

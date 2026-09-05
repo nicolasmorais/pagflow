@@ -106,6 +106,7 @@ model Product {
   cost          Float           @default(0)
   isDigital     Boolean         @default(false)
   accessLink    String?
+  purchaseEventName String?
   orders        Order[]
   orderBumps    OrderBump[]
   productPixels product_pixels[]

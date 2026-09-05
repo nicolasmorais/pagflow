@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Plus, Package, DollarSign, Image as ImageIcon, Percent, Loader2, Store } from 'lucide-react'
+import { X, Plus, Package, DollarSign, Image as ImageIcon, Percent, Loader2, Store, Target } from 'lucide-react'
 import { createProduct } from '@/app/actions'
 
 interface NewProductModalProps {
@@ -315,6 +315,20 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                     )}
 
 
+                    <div className="form-group">
+                        <label className="form-label">
+                            <Target size={14} /> Evento de compra customizado (opcional)
+                        </label>
+                        <input
+                            name="purchaseEventName"
+                            type="text"
+                            className="form-input"
+                            placeholder="Ex: make_purchase (padrão)"
+                        />
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            Se preenchido, substitui o evento de compra padrão do pixel Taboola só para este produto.
+                        </div>
+                    </div>
 
                     <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
                         <button

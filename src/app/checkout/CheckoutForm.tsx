@@ -538,7 +538,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 trackFunnel('pedido_criado', result.orderId);
 
                 // Taboola: Track EVERY attempt (approved, declined, pending Pix)
-                trackTaboolaEvent('make_purchase', { revenue: finalPrice, currency: 'BRL' });
+                // Produtos podem sobrescrever o evento padrão via product.purchaseEventName
+                trackTaboolaEvent(product?.purchaseEventName || 'make_purchase', { revenue: finalPrice, currency: 'BRL' });
 
                 // Google Analytics: purchase event
                 trackGoogleEvent('purchase', {
