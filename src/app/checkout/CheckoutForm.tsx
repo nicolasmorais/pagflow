@@ -168,7 +168,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
 
         // Track start_checkout for all Taboola pixels
-        trackTaboolaEvent('start_checkout');
+        // Produtos podem sobrescrever o evento padrão via product.startCheckoutEventName
+        trackTaboolaEvent(product?.startCheckoutEventName || 'start_checkout');
         trackFunnel('page_view');
         reportWebVitals(getVisitorId());
 

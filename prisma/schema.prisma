@@ -107,6 +107,7 @@ model Product {
   isDigital     Boolean         @default(false)
   accessLink    String?
   purchaseEventName String?
+  startCheckoutEventName String?
   orders        Order[]
   orderBumps    OrderBump[]
   productPixels product_pixels[]

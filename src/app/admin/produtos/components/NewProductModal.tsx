@@ -317,6 +317,21 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
 
                     <div className="form-group">
                         <label className="form-label">
+                            <Target size={14} /> Evento de "iniciar checkout" customizado (opcional)
+                        </label>
+                        <input
+                            name="startCheckoutEventName"
+                            type="text"
+                            className="form-input"
+                            placeholder="Ex: start_checkout (padrão)"
+                        />
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
+                            Se preenchido, substitui o evento de início de checkout padrão do pixel Taboola só para este produto.
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">
                             <Target size={14} /> Evento de compra customizado (opcional)
                         </label>
                         <input
