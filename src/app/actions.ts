@@ -303,7 +303,7 @@ export async function sendTrackingEmail(orderId: string) {
             htmlContent = `
                 <div style="font-family:'Manrope',sans-serif;max-width:600px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
                     <div style="background:linear-gradient(135deg,#2563eb,#3b82f6);padding:36px 32px;text-align:center;">
-                        <div style="font-size:48px;margin-bottom:12px;">📦</div>
+                        ${order.product?.storeLogo ? `<img src="${order.product.storeLogo}" alt="${order.product?.storeName || 'PagFlow'}" style="max-height:50px;margin-bottom:12px;border-radius:8px;" />` : `<div style="font-size:48px;margin-bottom:12px;">📦</div>`}
                         <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pedido Enviado!</h1>
                         <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, ${(order.fullName || '').split(' ')[0]}!</p>
                     </div>
@@ -323,7 +323,7 @@ export async function sendTrackingEmail(orderId: string) {
 
 
         const { error } = await resend.emails.send({
-            from: 'Elabela Store <noreply@elabela.store>',
+            from: `${order.product?.storeName || 'PagFlow'} <noreply@elabela.store>`,
             to: [order.email],
             subject: subject,
             html: htmlContent,
@@ -1170,7 +1170,7 @@ export async function sendAdminNotification(order: any) {
         if (isSalesNotify !== 'true') return;
 
         await resend.emails.send({
-            from: 'Elabela Store <noreply@elabela.store>',
+            from: 'PagFlow <noreply@elabela.store>',
             to: [email],
             subject: `💰 Nova Venda Recebida: R$ ${order.totalPrice?.toFixed(2) || '0.00'}`,
             html: `
