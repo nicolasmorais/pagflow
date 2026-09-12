@@ -1540,16 +1540,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         {(shippingRules && shippingRules.length > 0 ? shippingRules : [
                                             { name: 'Entrega Econômica', price: 0, delivery_time: '7' }
                                         ]).map((opt: any, idx: number) => {
-                                            const days = parseInt(String(opt.delivery_time).replace(/\D/g, '')) || 7;
-                                            const entregaDate = new Date();
-                                            entregaDate.setDate(entregaDate.getDate() + days);
-                                            const dateStr = entregaDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
                                             return (
                                                 <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
                                                     <div className="frad"></div>
                                                     <div>
                                                         <div className="frete-name" style={{display:'flex', alignItems:'center'}}>{opt.name} {opt.price === 0 && <span className="tag-free">GRÁTIS</span>}</div>
-                                                        <div className="frete-sub">Chega até dia {dateStr}</div>
+                                                        <div className="frete-sub">Chega de 3 a 7 dias úteis</div>
                                                     </div>
                                                     <div className={`frete-cost ${opt.price === 0 ? 'free' : ''}`} style={{marginLeft:'auto'}}>{opt.price === 0 ? 'GRÁTIS' : `R$ ${Number(opt.price).toFixed(2).replace('.', ',')}`}</div>
                                                 </div>
