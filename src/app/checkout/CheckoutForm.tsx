@@ -1379,13 +1379,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </div>
                                     ))
                                 }
-                                <div style={{
-                                    display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-                                    padding: '12px 16px', borderTop: '1px solid #e5e7eb', marginTop: '4px',
-                                    fontSize: '15px', fontWeight: 800,
-                                }}>
-                                    <span style={{ color: '#059669' }}>R$ {finalPrice.toFixed(2).replace('.', ',')}</span>
-                                </div>
                             </div>
                             <div className="trust-section">
                                 {product?.isDigital ? (
