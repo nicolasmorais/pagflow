@@ -34,13 +34,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        // Log completo do body para debug
-        console.log('[Webhook Sync] Body completo:', JSON.stringify(body));
-
-        // Sync payload (flat): { id, status, amount (BRL), final_amount, pix_code, ... }
-        const identifier = body.id;
-        const rawStatus = body.status;
-        const amount = body.amount;
+        // Sync payload real: { event, transaction: { reference_id, status, amount }, ... }
+        const identifier = body.transaction?.reference_id;
+        const rawStatus = body.transaction?.status;
+        const amount = body.transaction?.amount;
 
         console.log(`[Webhook Sync] id: ${identifier}, status: ${rawStatus}`);
 
