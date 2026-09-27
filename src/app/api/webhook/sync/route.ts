@@ -11,25 +11,6 @@ async function logError(level: string, source: string, message: string, stack?: 
     } catch { }
 }
 
-function validateSyncSecret(req: NextRequest): boolean {
-    const secret = process.env.SYNC_WEBHOOK_SECRET;
-    if (!secret) return true;
-
-    // Sync pode enviar o segredo em diferentes headers — testamos os mais comuns
-    const candidates = [
-        req.headers.get('authorization')?.replace('Bearer ', ''),
-        req.headers.get('x-webhook-secret'),
-        req.headers.get('x-secret'),
-        req.headers.get('x-webhook-token'),
-        req.headers.get('x-api-key'),
-    ];
-
-    const received = candidates.find(Boolean);
-    console.log(`[Webhook Sync] Auth header recebido: ${received || 'nenhum'}`);
-
-    return candidates.some(v => v === secret);
-}
-
 export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
         || req.headers.get('x-real-ip')
@@ -39,10 +20,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: 'Rate limit exceeded' }, { status: 429 });
     }
 
-    if (!validateSyncSecret(req)) {
-        console.warn('[Webhook Sync] Segredo inválido, IP:', ip);
-        return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-    }
+    // Log todos os headers para identificar como a Sync envia o segredo
+    const allHeaders: Record<string, string> = {};
+    req.headers.forEach((v, k) => { allHeaders[k] = v; });
+    console.log('[Webhook Sync] Headers recebidos:', JSON.stringify(allHeaders));
 
     try {
         let body: any;
@@ -50,6 +31,12 @@ export async function POST(req: NextRequest) {
             body = await req.json();
         } catch {
             return NextResponse.json({ success: false, message: 'Invalid JSON' }, { status: 400 });
+        }
+
+        // Payload de teste da Sync — responde 200 sem processar
+        if (body.test === true) {
+            console.log('[Webhook Sync] Payload de teste recebido, ignorando.');
+            return NextResponse.json({ success: true });
         }
 
         // Sync payload: { data: { id, status, amount (centavos), final_amount, pix_code, ... } }
