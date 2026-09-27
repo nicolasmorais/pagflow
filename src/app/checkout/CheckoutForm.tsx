@@ -1718,23 +1718,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                 )}
 
-                                <div className={`pay-opt ${paymentMethod === 'card' ? 'selected' : ''}`} onClick={() => setPaymentMethod('card')} style={{marginTop:'10px'}}>
-                                    <div className="prad"></div>
-                                    <div className="pay-icon" style={{color:'#444'}}>💳</div>
-                                    <div style={{flex:1}}>
-                                        <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>Cartão de Crédito <span className="pay-badge n">Até 10x</span></div>
-                                        <div className="pay-desc">Pague com segurança</div>
-                                    </div>
-                                </div>
-                                {paymentMethod === 'card' && (
-                                    <div className="card-extra">
-                                        <div id="paymentBrick_container" style={{ marginTop: '0px' }}></div>
-                                        <div className="cta-note" style={{marginTop:'12px'}}>
-                                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                            Pagamento processado com segurança via Mercado Pago
-                                        </div>
-                                    </div>
-                                )}
 
                             </div>
                         </div>
