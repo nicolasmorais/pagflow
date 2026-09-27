@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
         // ── Eventos de ASSINATURA ────────────────────────────────────────────
         if (event.startsWith('assinatura') || event.startsWith('cobranca')) {
             const mandateId = body.mandate_id || body.subscription?.mandate_id;
+            const subscriptionToken = body.subscription_token || body.subscription?.subscription_token;
             const subscriptionEvent = event;
 
             console.log(`[Webhook Sync] Subscription event: ${subscriptionEvent}, mandateId: ${mandateId}`);
@@ -52,8 +53,18 @@ export async function POST(req: NextRequest) {
                 if (order) {
                     let newPaymentStatus = order.paymentStatus;
                     let newStatus = order.status;
+                    let parcelasPagas = order.parcelasPagas ?? 0;
+                    let shouldCancel = false;
 
-                    if (subscriptionEvent === 'assinatura_ativada' || subscriptionEvent === 'cobranca_paga') {
+                    if (subscriptionEvent === 'cobranca_paga') {
+                        parcelasPagas += 1;
+                        newPaymentStatus = 'pago';
+                        newStatus = 'processando';
+                        const total = order.totalParcelas ?? 4;
+                        if (parcelasPagas >= total) {
+                            shouldCancel = true;
+                        }
+                    } else if (subscriptionEvent === 'assinatura_ativada') {
                         newPaymentStatus = 'pago';
                         newStatus = 'processando';
                     } else if (subscriptionEvent === 'assinatura_cancelada') {
@@ -62,14 +73,27 @@ export async function POST(req: NextRequest) {
                         newPaymentStatus = 'aguardando';
                     }
 
-                    if (newPaymentStatus !== order.paymentStatus) {
-                        await prisma.order.update({
-                            where: { id: order.id },
-                            data: { paymentStatus: newPaymentStatus, status: newStatus }
-                        });
-                        if (newPaymentStatus === 'pago' && order.paymentStatus !== 'pago') {
-                            try { await sendConfirmationEmail(order.id); } catch { }
-                            try { await sendAdminNotification(order); } catch { }
+                    const wasAlreadyPaid = order.paymentStatus === 'pago';
+                    await prisma.order.update({
+                        where: { id: order.id },
+                        data: { paymentStatus: newPaymentStatus, status: newStatus, parcelasPagas }
+                    });
+
+                    if (subscriptionEvent === 'cobranca_paga' && !wasAlreadyPaid) {
+                        try { await sendConfirmationEmail(order.id); } catch { }
+                        try { await sendAdminNotification(order); } catch { }
+                    }
+
+                    if (shouldCancel) {
+                        const token = subscriptionToken || order.mpPaymentId;
+                        if (token) {
+                            try {
+                                const { cancelSubscription } = await import('@/lib/sync-subscription');
+                                await cancelSubscription(token);
+                                console.log(`[Webhook Sync] Assinatura ${token} cancelada após ${parcelasPagas} parcelas.`);
+                            } catch (cancelErr) {
+                                console.error('[Webhook Sync] Erro ao cancelar assinatura:', cancelErr);
+                            }
                         }
                     }
                 }

@@ -37,6 +37,8 @@ model Order {
   totalPrice        Float      @default(0)
   mpPaymentId       String?
   subscriptionMandateId String?
+  parcelasPagas     Int        @default(0)
+  totalParcelas     Int        @default(4)
   installments      Int?
   installmentAmount Float?
   cardBrand         String?
