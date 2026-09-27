@@ -179,8 +179,9 @@ export default async function AssinaturasPage() {
                         const avatarBg = colors[order.fullName?.charCodeAt(0) ?? 0 % colors.length];
 
                         return (
-                            <div
+                            <Link
                                 key={order.id}
+                                href={`/admin/assinaturas/${order.id}`}
                                 style={{
                                     display: 'grid',
                                     gridTemplateColumns: '1.8fr 1.2fr 0.8fr 0.9fr 1fr 1fr 0.7fr',
@@ -188,6 +189,9 @@ export default async function AssinaturasPage() {
                                     borderBottom: idx < orders.length - 1 ? '1px solid #f1f5f9' : 'none',
                                     alignItems: 'center',
                                     gap: 8,
+                                    textDecoration: 'none',
+                                    color: 'inherit',
+                                    cursor: 'pointer',
                                 }}
                             >
                                 {/* Assinante */}
@@ -248,7 +252,7 @@ export default async function AssinaturasPage() {
                                         {s.label}
                                     </span>
                                 </div>
-                            </div>
+                            </Link>
                         );
                     })
                 )}
