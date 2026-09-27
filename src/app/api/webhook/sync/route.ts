@@ -20,10 +20,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: 'Rate limit exceeded' }, { status: 429 });
     }
 
-    // Log todos os headers para identificar como a Sync envia o segredo
-    const allHeaders: Record<string, string> = {};
-    req.headers.forEach((v, k) => { allHeaders[k] = v; });
-    console.log('[Webhook Sync] Headers recebidos:', JSON.stringify(allHeaders));
+    // Validação do segredo: Authorization: Bearer <secret>
+    const secret = process.env.SYNC_WEBHOOK_SECRET;
+    if (secret) {
+        const auth = req.headers.get('authorization')?.replace('Bearer ', '').trim();
+        if (auth !== secret) {
+            console.warn('[Webhook Sync] Segredo inválido, IP:', ip);
+            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+        }
+    }
 
     try {
         let body: any;
@@ -39,13 +44,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        // Sync payload: { data: { id, status, amount (centavos), final_amount, pix_code, ... } }
-        const txData = body.data || body;
-        const identifier = txData.id;
-        const rawStatus = txData.status;
-        const amountCents = txData.amount;
+        // Sync payload (flat): { id, status, amount (BRL), final_amount, pix_code, ... }
+        const identifier = body.id;
+        const rawStatus = body.status;
+        const amount = body.amount;
 
-        console.log(`[Webhook Sync] id: ${identifier}, status: ${rawStatus}, body: ${JSON.stringify(body)}`);
+        console.log(`[Webhook Sync] id: ${identifier}, status: ${rawStatus}`);
 
         if (!identifier) {
             return NextResponse.json({ success: false, message: 'No identifier found' }, { status: 400 });
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
                 data: {
                     paymentStatus: finalStatus,
                     status: finalStatus === 'pago' ? 'processando' : order.status,
-                    totalPrice: amountCents ? Number(amountCents) / 100 : undefined,
+                    totalPrice: amount ? Number(amount) : undefined,
                 }
             });
 
