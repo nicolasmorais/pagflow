@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Loader2, Package, DollarSign, Image as ImageIcon, Globe, Store, Target } from 'lucide-react'
+import { X, Loader2, Package, DollarSign, Image as ImageIcon, Globe, Store, Target, RefreshCw } from 'lucide-react'
 import { updateProduct } from '@/app/actions'
 
 const inputStyle: React.CSSProperties = {
@@ -20,6 +20,7 @@ const labelStyle: React.CSSProperties = {
 export default function EditProductModal({ product, onClose }: { product: any; onClose: () => void }) {
     const [loading, setLoading] = useState(false)
     const [isDigital, setIsDigital] = useState(product.isDigital)
+    const [subscriptionEnabled, setSubscriptionEnabled] = useState(product.subscriptionEnabled || false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -164,6 +165,49 @@ export default function EditProductModal({ product, onClose }: { product: any; o
                         />
                         <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94a3b8' }}>Se preenchido, substitui o evento de compra padrão do pixel Taboola só para este produto.</p>
                     </div>
+
+                    {/* Assinatura PIX Automático */}
+                    <input type="hidden" name="subscriptionEnabled" value={subscriptionEnabled ? 'true' : 'false'} />
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 14px', background: '#f0fdf4', borderRadius: '12px',
+                        border: '1px solid #bbf7d0', marginBottom: subscriptionEnabled ? '14px' : '20px',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <RefreshCw size={16} color="#16a34a" />
+                            <div>
+                                <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#14532d' }}>PIX Automático Semanal</p>
+                                <p style={{ margin: 0, fontSize: '10px', color: '#4ade80' }}>Cobrança recorrente via Sync</p>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setSubscriptionEnabled(!subscriptionEnabled)}
+                            style={{
+                                width: '40px', height: '22px', borderRadius: '22px', border: 'none', cursor: 'pointer',
+                                background: subscriptionEnabled ? '#16a34a' : '#cbd5e1', position: 'relative', transition: '0.2s',
+                            }}
+                        >
+                            <span style={{
+                                position: 'absolute', height: '16px', width: '16px',
+                                left: subscriptionEnabled ? '21px' : '3px', top: '3px',
+                                background: '#fff', borderRadius: '50%', transition: '0.2s',
+                            }} />
+                        </button>
+                    </div>
+
+                    {subscriptionEnabled && (
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={labelStyle}><DollarSign size={12} /> Preço Semanal (R$)</label>
+                            <input name="subscriptionPrice" type="number" step="0.01" style={inputStyle}
+                                defaultValue={product.subscriptionPrice || product.price}
+                                placeholder="Ex: 19.90"
+                                onFocus={e => { e.target.style.borderColor = '#16a34a'; e.target.style.background = '#fff' }}
+                                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
+                            />
+                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94a3b8' }}>Valor cobrado semanalmente via PIX Automático.</p>
+                        </div>
+                    )}
 
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <button type="button" onClick={onClose} style={{

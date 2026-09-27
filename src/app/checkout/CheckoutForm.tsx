@@ -25,8 +25,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         ? shippingRules[0]
         : { name: 'Entrega Econômica', price: 0, delivery_time: '7' };
     const [shipping, setShipping] = useState(defaultShipping);
-    const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | ''>('');
+    const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'pix_automatico' | ''>('');
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
+    const [subData, setSubData] = useState<{ mandateId: string, qrCode: string, qrCodeBase64: string } | null>(null);
+    const [subLoading, setSubLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
@@ -467,6 +469,40 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
         return false;
     };
+
+    async function finalizarAssinatura() {
+        setSubLoading(true);
+        try {
+            const res = await fetch('/api/subscription/enroll', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: product?.id,
+                    orderData: {
+                        nome: dados.nome,
+                        email: dados.email,
+                        telefone: dados.telefone,
+                        cpf: dados.cpf,
+                        utmSource: new URLSearchParams(window.location.search).get('utm_source'),
+                        utmMedium: new URLSearchParams(window.location.search).get('utm_medium'),
+                        utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign'),
+                    }
+                }),
+            });
+            const result = await res.json();
+            if (result.success) {
+                setSubData({ mandateId: result.mandateId, qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
+                setCurrentOrderId(result.orderId);
+                setDone(true);
+            } else {
+                alert(result.error || 'Erro ao criar assinatura.');
+            }
+        } catch (e: any) {
+            alert('Erro ao criar assinatura: ' + e.message);
+        } finally {
+            setSubLoading(false);
+        }
+    }
 
     async function finalizar(brickData?: any) {
         setLoading(true);
@@ -1216,6 +1252,40 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 whiteSpace: 'nowrap', zIndex: 99, pointerEvents: 'none',
                             }}>✓ Código copiado!</div>
                         </div>
+                    ) : paymentMethod === 'pix_automatico' ? (
+                        <div style={{ background: '#f0fdf4', minHeight: '100vh', fontFamily: "'Manrope', sans-serif" }}>
+                            <div style={{ maxWidth: 520, margin: '0 auto', padding: '40px 18px 48px', textAlign: 'center' }}>
+                                <div style={{ width: 74, height: 74, borderRadius: '50%', background: '#dcfce7', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </div>
+                                <div style={{ fontSize: '24px', fontWeight: 800, color: '#14532d', marginBottom: '10px' }}>
+                                    Assinatura criada!
+                                </div>
+                                <div style={{ fontSize: '15px', color: '#166534', marginBottom: '24px', lineHeight: 1.5 }}>
+                                    Escaneie o QR code abaixo para <strong>autorizar</strong> a cobrança semanal automática de{' '}
+                                    <strong>R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')}</strong>.
+                                </div>
+                                {subData && (
+                                    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 20px' }}>
+                                        <img src={`data:image/png;base64,${subData.qrCodeBase64}`} alt="QR PIX Automático" style={{ width: 220, height: 220, borderRadius: 12, border: '3px solid #bbf7d0' }} />
+                                    </div>
+                                )}
+                                <div style={{ background: '#dcfce7', borderRadius: 12, padding: '16px 18px', fontSize: '13px', color: '#14532d', lineHeight: 1.6, textAlign: 'left' }}>
+                                    <strong>Como funciona:</strong>
+                                    <ol style={{ margin: '8px 0 0 16px', padding: 0 }}>
+                                        <li>Abra o app do seu banco</li>
+                                        <li>Escaneie o QR code acima</li>
+                                        <li>Autorize o PIX Automático</li>
+                                        <li>Pronto! Será cobrado automaticamente toda semana</li>
+                                    </ol>
+                                </div>
+                                <p style={{ marginTop: 20, fontSize: '12px', color: '#4ade80' }}>
+                                    Confirmação será enviada para <strong>{dados.email}</strong>
+                                </p>
+                            </div>
+                        </div>
                     ) : (
                         <div className="card-confirm-page">
                             <div className="cc-container">
@@ -1672,6 +1742,46 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             </div>
                                         )}
                                         <div style={{ height: '4px' }} />
+                                    </>
+                                )}
+
+                                {product?.subscriptionEnabled && (
+                                    <>
+                                        <div className={`pay-opt ${paymentMethod === 'pix_automatico' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix_automatico')} style={{ borderColor: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined }}>
+                                            <div className="prad" style={{ borderColor: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined, background: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined }}></div>
+                                            <div className="pay-icon" style={{ color: '#16a34a' }}>
+                                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    PIX Automático Semanal
+                                                    <span className="pay-badge g" style={{ background: '#dcfce7', color: '#166534' }}>Recorrente</span>
+                                                </div>
+                                                <div className="pay-desc">
+                                                    R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} por semana — autorize uma vez
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {paymentMethod === 'pix_automatico' && !subData && (
+                                            <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
+                                                <p style={{ color: '#14532d' }}>
+                                                    Você escaneará o QR code uma vez para <strong>autorizar</strong> a cobrança semanal automática via PIX.
+                                                    As cobranças serão feitas automaticamente todo dia sem precisar fazer nada.
+                                                </p>
+                                                <button className="cta-btn" style={{ background: '#16a34a' }} onClick={() => finalizarAssinatura()} disabled={subLoading}>
+                                                    {subLoading ? 'Criando assinatura...' : 'AUTORIZAR PIX SEMANAL'}
+                                                </button>
+                                            </div>
+                                        )}
+                                        {subData && paymentMethod === 'pix_automatico' && (
+                                            <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
+                                                <p style={{ color: '#14532d' }}><strong>Escaneie o QR code para autorizar</strong> a cobrança semanal automática.</p>
+                                                <div style={{ display: 'flex', justifyContent: 'center', margin: '12px 0' }}>
+                                                    <img src={`data:image/png;base64,${subData.qrCodeBase64}`} alt="QR PIX Automático" style={{ width: 200, height: 200 }} />
+                                                </div>
+                                                <p style={{ fontSize: '12px', color: '#166534', textAlign: 'center' }}>Após escanear, sua assinatura será ativada automaticamente.</p>
+                                            </div>
+                                        )}
                                     </>
                                 )}
 

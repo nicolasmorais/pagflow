@@ -34,7 +34,50 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        // Sync payload real: { event, transaction: { reference_id, status, amount }, ... }
+        const event = body.event as string || '';
+        console.log(`[Webhook Sync] event: ${event}`);
+
+        // ── Eventos de ASSINATURA ────────────────────────────────────────────
+        if (event.startsWith('assinatura') || event.startsWith('cobranca')) {
+            const mandateId = body.mandate_id || body.subscription?.mandate_id;
+            const subscriptionEvent = event;
+
+            console.log(`[Webhook Sync] Subscription event: ${subscriptionEvent}, mandateId: ${mandateId}`);
+
+            if (mandateId) {
+                const order = await prisma.order.findFirst({
+                    where: { subscriptionMandateId: mandateId }
+                });
+
+                if (order) {
+                    let newPaymentStatus = order.paymentStatus;
+                    let newStatus = order.status;
+
+                    if (subscriptionEvent === 'assinatura_ativada' || subscriptionEvent === 'cobranca_paga') {
+                        newPaymentStatus = 'pago';
+                        newStatus = 'processando';
+                    } else if (subscriptionEvent === 'assinatura_cancelada') {
+                        newPaymentStatus = 'recusado';
+                    } else if (subscriptionEvent === 'assinatura_em_atraso') {
+                        newPaymentStatus = 'aguardando';
+                    }
+
+                    if (newPaymentStatus !== order.paymentStatus) {
+                        await prisma.order.update({
+                            where: { id: order.id },
+                            data: { paymentStatus: newPaymentStatus, status: newStatus }
+                        });
+                        if (newPaymentStatus === 'pago' && order.paymentStatus !== 'pago') {
+                            try { await sendConfirmationEmail(order.id); } catch { }
+                            try { await sendAdminNotification(order); } catch { }
+                        }
+                    }
+                }
+            }
+            return NextResponse.json({ success: true });
+        }
+
+        // ── Eventos de TRANSAÇÃO PIX normal ─────────────────────────────────
         const identifier = body.transaction?.reference_id;
         const rawStatus = body.transaction?.status;
         const amount = body.transaction?.amount;
@@ -63,7 +106,6 @@ export async function POST(req: NextRequest) {
                 }
             });
 
-            // Backup R2
             try {
                 const fullOrder = await prisma.order.findUnique({
                     where: { id: order.id },
