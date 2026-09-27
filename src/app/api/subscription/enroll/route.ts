@@ -75,8 +75,15 @@ export async function POST(req: NextRequest) {
         }
 
         // Gerar QR base64
+        console.log('[Subscription] Enrollment response:', JSON.stringify(enrollment));
+        const pixCode = enrollment.qr_code
+            || (enrollment as any).pix_code
+            || (enrollment as any).qr_code_url
+            || (enrollment as any).mandate_qr_code
+            || (enrollment as any).payment_code;
+        if (!pixCode) throw new Error(`[Sync] QR code não encontrado na resposta: ${JSON.stringify(enrollment)}`);
         const QRCode = await import('qrcode');
-        const qrCodeBase64 = (await QRCode.toDataURL(enrollment.qr_code)).replace('data:image/png;base64,', '');
+        const qrCodeBase64 = (await QRCode.toDataURL(pixCode)).replace('data:image/png;base64,', '');
 
         // Salvar ou atualizar pedido
         const orderDataToSave: any = {
