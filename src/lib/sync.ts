@@ -54,6 +54,8 @@ export interface SyncCashInResponse {
 export async function syncCashIn(payload: SyncCashInRequest): Promise<SyncCashInResponse> {
     const token = await getSyncToken();
 
+    console.log('[Sync] CashIn request:', JSON.stringify(payload));
+
     const res = await fetch(`${BASE_URL}/cash-in`, {
         method: 'POST',
         headers: {
@@ -63,12 +65,14 @@ export async function syncCashIn(payload: SyncCashInRequest): Promise<SyncCashIn
         body: JSON.stringify(payload),
     });
 
+    const text = await res.text();
+    console.log(`[Sync] CashIn response ${res.status}:`, text);
+
     if (!res.ok) {
-        const text = await res.text();
         throw new Error(`[Sync] Falha no cash-in: ${res.status} ${text}`);
     }
 
-    return res.json();
+    return JSON.parse(text);
 }
 
 export interface SyncTransactionData {
