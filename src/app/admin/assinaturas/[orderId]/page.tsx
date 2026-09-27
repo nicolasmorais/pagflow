@@ -25,9 +25,11 @@ const CHARGE_STATUS: Record<string, { label: string; color: string; bg: string }
     failed:  { label: 'Falhou',   color: '#b91c1c', bg: '#fee2e2' },
 };
 
-export default async function AssinaturaDetailPage({ params }: { params: { orderId: string } }) {
+export default async function AssinaturaDetailPage({ params }: { params: Promise<{ orderId: string }> }) {
+    const { orderId } = await params;
+
     const order = await prisma.order.findUnique({
-        where: { id: params.orderId },
+        where: { id: orderId },
         include: { product: true },
     });
 
