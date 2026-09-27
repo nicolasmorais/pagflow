@@ -27,7 +27,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [shipping, setShipping] = useState(defaultShipping);
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'pix_automatico' | ''>('');
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
-    const [subData, setSubData] = useState<{ mandateId: string, mandateStatus: string } | null>(null);
+    const [subData, setSubData] = useState<{ mandateId: string, mandateStatus: string, qrCodeBase64: string, checkoutUrl: string } | null>(null);
     const [subLoading, setSubLoading] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
@@ -491,7 +491,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             });
             const result = await res.json();
             if (result.success) {
-                setSubData({ mandateId: result.mandateId, mandateStatus: result.mandateStatus });
+                setSubData({ mandateId: result.mandateId, mandateStatus: result.mandateStatus, qrCodeBase64: result.qrCodeBase64 || '', checkoutUrl: result.checkoutUrl || '' });
                 setCurrentOrderId(result.orderId);
                 setDone(true);
             } else {
@@ -1263,16 +1263,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 <div style={{ fontSize: '24px', fontWeight: 800, color: '#14532d', marginBottom: '10px' }}>
                                     Assinatura criada!
                                 </div>
-                                <div style={{ fontSize: '15px', color: '#166534', marginBottom: '24px', lineHeight: 1.5 }}>
-                                    Seu banco recebeu a solicitação de <strong>R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} / semana</strong>. Agora basta autorizar no app.
+                                <div style={{ fontSize: '15px', color: '#166534', marginBottom: '20px', lineHeight: 1.5 }}>
+                                    Escaneie o QR code para autorizar <strong>R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} / semana</strong>
                                 </div>
-                                <div style={{ background: '#dcfce7', borderRadius: 12, padding: '16px 18px', fontSize: '13px', color: '#14532d', lineHeight: 1.8, textAlign: 'left' }}>
+                                {subData?.qrCodeBase64 && (
+                                    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 20px' }}>
+                                        <img src={`data:image/png;base64,${subData.qrCodeBase64}`} alt="QR PIX Parcelado" style={{ width: 220, height: 220, borderRadius: 12, border: '3px solid #bbf7d0' }} />
+                                    </div>
+                                )}
+                                <div style={{ background: '#dcfce7', borderRadius: 12, padding: '14px 18px', fontSize: '13px', color: '#14532d', lineHeight: 1.8, textAlign: 'left' }}>
                                     <strong>Como autorizar:</strong>
                                     <ol style={{ margin: '8px 0 0 16px', padding: 0 }}>
-                                        <li>Abra o app do seu banco</li>
-                                        <li>Vá em PIX → PIX Automático</li>
-                                        <li>Encontre a solicitação pendente</li>
-                                        <li>Autorize — pronto! A cobrança será feita toda semana automaticamente</li>
+                                        <li>Abra a câmera ou app do banco</li>
+                                        <li>Escaneie o QR code acima</li>
+                                        <li>Autorize o PIX Automático semanal</li>
                                     </ol>
                                 </div>
                                 <p style={{ marginTop: 20, fontSize: '12px', color: '#4ade80' }}>
@@ -1874,17 +1878,16 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                                         {paymentMethod === 'pix_automatico' && subData && (
                                             <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
-                                                <div style={{ textAlign: 'center', marginBottom: 10 }}>
-                                                    <span style={{ fontSize: 36 }}>📱</span>
-                                                </div>
-                                                <p style={{ color: '#14532d', fontWeight: 700, textAlign: 'center', margin: '0 0 8px' }}>
-                                                    Autorize no app do seu banco
+                                                <p style={{ color: '#14532d', fontWeight: 700, textAlign: 'center', margin: '0 0 12px' }}>
+                                                    Escaneie para autorizar o PIX Semanal
                                                 </p>
-                                                <p style={{ color: '#166534', fontSize: 13, textAlign: 'center', margin: '0 0 12px' }}>
-                                                    Seu banco enviou uma solicitação de PIX Automático. Abra o app e autorize para ativar a assinatura semanal.
-                                                </p>
-                                                <div style={{ background: '#dcfce7', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#14532d' }}>
-                                                    Banco → PIX → PIX Automático → Autorizar solicitação pendente
+                                                {subData.qrCodeBase64 && (
+                                                    <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 12px' }}>
+                                                        <img src={`data:image/png;base64,${subData.qrCodeBase64}`} alt="QR PIX Parcelado" style={{ width: 200, height: 200, borderRadius: 10, border: '3px solid #bbf7d0' }} />
+                                                    </div>
+                                                )}
+                                                <div style={{ background: '#dcfce7', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#14532d', textAlign: 'center' }}>
+                                                    Abra o app do banco → escaneie → autorize o PIX Automático
                                                 </div>
                                             </div>
                                         )}

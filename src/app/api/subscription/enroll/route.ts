@@ -77,7 +77,6 @@ export async function POST(req: NextRequest) {
 
         console.log('[Subscription] Enrollment response:', JSON.stringify(enrollment));
 
-        // PIX Automático não gera QR code — o mandato é autorizado direto no app do banco
         const mandateId = (enrollment as any).payment?.mandate_id
             || (enrollment as any).mandate_id
             || enrollment.mandate_id;
@@ -86,6 +85,13 @@ export async function POST(req: NextRequest) {
             || enrollment.mandate_status
             || 'pending_authorization';
         const subscriptionToken = (enrollment as any).subscription_token || '';
+
+        // Gera QR code a partir da URL de checkout do subscription_token
+        const checkoutUrl = `https://app.syncpayments.com.br/subscription/${subscriptionToken}`;
+        const QRCode = await import('qrcode');
+        const qrCodeBase64 = subscriptionToken
+            ? (await QRCode.toDataURL(checkoutUrl)).replace('data:image/png;base64,', '')
+            : '';
 
         // Salvar ou atualizar pedido
         const orderDataToSave: any = {
@@ -125,6 +131,8 @@ export async function POST(req: NextRequest) {
             mandateId,
             mandateStatus,
             subscriptionToken,
+            checkoutUrl,
+            qrCodeBase64,
         });
 
     } catch (error: any) {
