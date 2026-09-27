@@ -20,18 +20,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: 'Rate limit exceeded' }, { status: 429 });
     }
 
-    // Validação do segredo
-    const secret = process.env.SYNC_WEBHOOK_SECRET;
-    const rawAuth = req.headers.get('authorization') || '';
-    console.log(`[Webhook Sync] Authorization raw: "${rawAuth}"`);
-    if (secret) {
-        const auth = rawAuth.replace('Bearer ', '').trim();
-        if (auth !== secret) {
-            console.warn('[Webhook Sync] Segredo inválido, IP:', ip);
-            return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-        }
-    }
-
     try {
         let body: any;
         try {
