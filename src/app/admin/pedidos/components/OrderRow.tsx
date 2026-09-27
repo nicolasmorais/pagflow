@@ -40,7 +40,9 @@ export default function OrderRow({ order }: { order: any }) {
             </td>
             <td style={{ padding: '14px 20px' }}>
                 <p style={{ margin: 0, fontSize: '13px', fontWeight: 600, color: '#14151F' }}>{order.product?.name || 'Produto'}</p>
-                <p style={{ margin: 0, fontSize: '11px', color: '#6E7180' }}>{order.paymentMethod === 'pix' ? 'PIX' : 'Cartão'}</p>
+                <p style={{ margin: 0, fontSize: '11px', color: '#6E7180' }}>
+                    {order.paymentMethod === 'pix' ? 'PIX' : order.paymentMethod === 'pix_automatico' ? 'PIX Parcelado' : 'Cartão'}
+                </p>
             </td>
             <td style={{ padding: '14px 20px' }}>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#14151F', fontFamily: "'Fraunces', serif" }}>R$ {fmt(order.totalPrice || 0)}</span>

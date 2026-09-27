@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, RefreshCw, User, Package, CreditCard, AlertTriangle } from 'lucide-react';
 import SyncButton from '../SyncButton';
+import SubscriptionActions from '../SubscriptionActions';
 
 function dateBR(iso: string | null | undefined) {
     if (!iso) return '—';
@@ -194,6 +195,14 @@ export default async function AssinaturaDetailPage({ params }: { params: Promise
                     )}
                 </div>
             </div>
+
+            {/* Ações */}
+            {syncData?.status && (
+                <div style={{ marginTop: 20, background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '18px 20px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14 }}>Ações</div>
+                    <SubscriptionActions orderId={order.id} status={syncData.status} />
+                </div>
+            )}
 
             {/* Iniciou em */}
             <div style={{ marginTop: 16, fontSize: 12, color: '#94a3b8', textAlign: 'right' }}>

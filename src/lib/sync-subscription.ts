@@ -84,3 +84,25 @@ export async function cancelSubscription(subscriptionToken: string): Promise<voi
     console.log(`[Sync Subscription] Cancel response ${res.status}:`, text);
     if (!res.ok) throw new Error(`[Sync] Falha ao cancelar assinatura: ${res.status} ${text}`);
 }
+
+export async function suspendSubscription(subscriptionToken: string): Promise<void> {
+    const token = await getSyncToken();
+    const res = await fetch(`${BASE_URL}/subscriptions/${subscriptionToken}/suspend`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    });
+    const text = await res.text();
+    console.log(`[Sync Subscription] Suspend response ${res.status}:`, text);
+    if (!res.ok) throw new Error(`[Sync] Falha ao suspender assinatura: ${res.status} ${text}`);
+}
+
+export async function resumeSubscription(subscriptionToken: string): Promise<void> {
+    const token = await getSyncToken();
+    const res = await fetch(`${BASE_URL}/subscriptions/${subscriptionToken}/resume`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    });
+    const text = await res.text();
+    console.log(`[Sync Subscription] Resume response ${res.status}:`, text);
+    if (!res.ok) throw new Error(`[Sync] Falha ao reativar assinatura: ${res.status} ${text}`);
+}

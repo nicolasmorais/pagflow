@@ -170,16 +170,28 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         ))}
 
                         {/* Metodo + Parcelas */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
                             {order.paymentMethod === 'pix' ? (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#E7F1F8', color: '#2C5C86', fontSize: '11.5px', fontWeight: 700, padding: '5px 11px', borderRadius: '7px', letterSpacing: '0.02em' }}>PIX</span>
+                            ) : order.paymentMethod === 'pix_automatico' ? (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#dcfce7', color: '#15803d', fontSize: '11.5px', fontWeight: 700, padding: '5px 11px', borderRadius: '7px', letterSpacing: '0.02em' }}>PIX Parcelado</span>
                             ) : (
                                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#E7F1F8', color: '#2C5C86', fontSize: '11.5px', fontWeight: 700, padding: '5px 11px', borderRadius: '7px', letterSpacing: '0.02em' }}>
                                     {order.cardBrand ? order.cardBrand.toUpperCase() : 'CARTÃO'}
                                 </span>
                             )}
-                            {order.installments && (
+                            {order.paymentMethod === 'pix_automatico' && (
+                                <span style={{ fontSize: '12.5px', color: '#6E7180' }}>
+                                    {order.parcelasPagas ?? 0}/{order.totalParcelas ?? 4} parcelas pagas
+                                </span>
+                            )}
+                            {order.installments && order.paymentMethod !== 'pix_automatico' && (
                                 <span style={{ fontSize: '12.5px', color: '#6E7180' }}>{order.installments}x de R$ {fmt(order.installmentAmount || 0)}</span>
+                            )}
+                            {order.paymentMethod === 'pix_automatico' && (
+                                <Link href={`/admin/assinaturas/${order.id}`} style={{ fontSize: '11.5px', color: '#15803d', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0fdf4', padding: '5px 10px', borderRadius: 7, border: '1px solid #bbf7d0' }}>
+                                    Ver assinatura →
+                                </Link>
                             )}
                         </div>
 
