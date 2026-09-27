@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification, sendPixEmail } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createMpClient } from "@/lib/mercadopago";
+import { syncCashIn, SYNC_STATUS_MAP } from "@/lib/sync";
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -157,74 +158,121 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: "O valor do pedido deve ser maior que zero para processar o pagamento." }, { status: 400 });
         }
 
-        // 2. Processar Pagamento Mercado Pago
-        const { deviceId, idempotencyKey } = body;
-        const client = createMpClient();
+        // 2. Processar Pagamento
+        const isCard = method === 'credit_card' || method === 'card';
+        const isPix = method === 'pix';
 
-        // ── Construct Base URL and Notification URL for Webhooks ────────────────
+        // ── Construct Base URL ────────────────────────────────────────────────
         const protocol = req.headers.get('x-forwarded-proto') || 'https';
         const host = req.headers.get('host');
         const baseUrl = `${protocol}://${host}`;
-
-        // Ensure we have a valid public URL for Mercado Pago notifications
         const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
-        const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/mercadopago`;
 
-        const cleanPhone = (phone || "").replace(/\D/g, '');
-        const phoneData = cleanPhone.length >= 10 ? {
-            area_code: cleanPhone.slice(0, 2),
-            number: cleanPhone.slice(2)
-        } : undefined;
+        let finalStatus = 'recusado';
+        let qrCode: string | null = null;
+        let qrCodeBase64: string | null = null;
+        let pixStatusForResponse = 'recusado';
+        let transactionId: string | number | null = null;
 
-        let mpPayload: any = {
-            transaction_amount: serverPrice,
-            description: `Pedido ${order.id} - ${product?.name || 'Produto'}${bumpsTotal > 0 ? ` + ${selectedBumpIds.length} oferta(s)` : ''}`,
-            external_reference: order.id,
-            statement_descriptor: "PAGFLOW*PRODUTO",
-            binary_mode: true,
-            payment_method_id: method === 'pix' ? 'pix' : undefined,
-            notification_url: notificationUrl,
-            payer: {
-                email: orderData.email || 'cliente@pagflow.com',
-                first_name: fullName.split(' ')[0] || "Cliente",
-                last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
-                identification: {
-                    type: 'CPF',
-                    number: cpfToSave || '19119119100'
+        if (isPix) {
+            // ── PIX via Sync ─────────────────────────────────────────────────
+            const cleanPhone = (phone || "").replace(/\D/g, '');
+            const webhookUrl = isLocal ? 'https://placeholder.invalid/api/webhook/sync' : `${baseUrl}/api/webhook/sync`;
+
+            const syncResult = await syncCashIn({
+                amount: serverPrice,
+                description: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
+                webhook_url: webhookUrl,
+                client: {
+                    name: fullName || 'Cliente PagFlow',
+                    cpf: cpfToSave,
+                    email: orderData.email || 'cliente@pagflow.com',
+                    phone: cleanPhone || '00000000000',
                 },
-                phone: phoneData,
-                address: (orderData.cep || orderData.rua) ? {
-                    zip_code: orderData.cep?.replace(/\D/g, '') || '',
-                    street_name: orderData.rua || '',
-                    street_number: orderData.numero || '',
-                    neighborhood: orderData.bairro || '',
-                    city: orderData.cidade || '',
-                    federal_unit: (orderData.estado || '').toUpperCase()
-                } : undefined
-            },
-            additional_info: {
-                items: [
-                    {
+            });
+
+            console.log('[Sync] CashIn identifier:', syncResult.identifier);
+            transactionId = syncResult.identifier;
+
+            // Gerar QR code base64 a partir do pix_code
+            const QRCode = await import('qrcode');
+            qrCode = syncResult.pix_code;
+            qrCodeBase64 = (await QRCode.toDataURL(syncResult.pix_code)).replace('data:image/png;base64,', '');
+
+            finalStatus = 'aguardando';
+            pixStatusForResponse = 'aguardando';
+
+            try {
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: {
+                        paymentStatus: 'aguardando',
+                        status: 'pendente',
+                        mpPaymentId: syncResult.identifier,
+                    }
+                });
+            } catch (dbErr) {
+                console.error('[Sync] Failed to update order after cash-in:', dbErr);
+            }
+
+            // Enviar e-mail com QR Code PIX
+            try {
+                await sendPixEmail(order.id, qrCode, qrCodeBase64);
+            } catch (pixEmailErr) {
+                console.error('[Sync] Failed to send PIX email:', pixEmailErr);
+            }
+
+        } else if (isCard) {
+            // ── Cartão via Mercado Pago ────────────────────────────────────────
+            const { deviceId, idempotencyKey } = body;
+            const client = createMpClient();
+            const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/mercadopago`;
+
+            const cleanPhone = (phone || "").replace(/\D/g, '');
+            const phoneData = cleanPhone.length >= 10 ? {
+                area_code: cleanPhone.slice(0, 2),
+                number: cleanPhone.slice(2)
+            } : undefined;
+
+            const mpPayload: any = {
+                transaction_amount: serverPrice,
+                description: `Pedido ${order.id} - ${product?.name || 'Produto'}${bumpsTotal > 0 ? ` + ${selectedBumpIds.length} oferta(s)` : ''}`,
+                external_reference: order.id,
+                statement_descriptor: "PAGFLOW*PRODUTO",
+                binary_mode: true,
+                notification_url: notificationUrl,
+                payer: {
+                    email: orderData.email || 'cliente@pagflow.com',
+                    first_name: fullName.split(' ')[0] || "Cliente",
+                    last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
+                    identification: { type: 'CPF', number: cpfToSave || '19119119100' },
+                    phone: phoneData,
+                    address: (orderData.cep || orderData.rua) ? {
+                        zip_code: orderData.cep?.replace(/\D/g, '') || '',
+                        street_name: orderData.rua || '',
+                        street_number: orderData.numero || '',
+                        neighborhood: orderData.bairro || '',
+                        city: orderData.cidade || '',
+                        federal_unit: (orderData.estado || '').toUpperCase()
+                    } : undefined
+                },
+                additional_info: {
+                    items: [{
                         id: product?.id || 'default',
                         title: product?.name || 'Produto Digital',
                         quantity: 1,
                         unit_price: serverPrice,
                         category_id: 'others',
                         description: product?.name || `Compra realizada no PagFlow - ID ${order.id}`
+                    }],
+                    payer: {
+                        first_name: fullName.split(' ')[0] || "Cliente",
+                        last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
+                        phone: phoneData
                     }
-                ],
-                payer: {
-                    first_name: fullName.split(' ')[0] || "Cliente",
-                    last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
-                    phone: phoneData
                 }
-            }
-        };
+            };
 
-        const isCard = method === 'credit_card' || method === 'card';
-
-        if (isCard) {
-            // O Card Payment Brick do MP pode enviar dados diretamente ou aninhados em formData
             const brick = brickData?.formData || brickData;
             const card = cardData?.formData || cardData;
 
@@ -238,9 +286,6 @@ export async function POST(req: NextRequest) {
                 mpPayload.installments = Number(brick.installments);
                 mpPayload.payment_method_id = brick.payment_method_id;
                 if (brick.issuer_id) mpPayload.issuer_id = brick.issuer_id;
-
-                // Importante: Para CARTÃO, usamos o CPF que o cliente digitou no Brick
-                // para evitar que o CPF fixo do PIX cause a negação do cartão.
                 if (brick.payer?.identification?.number) {
                     mpPayload.payer.identification.number = brick.payer.identification.number.replace(/\D/g, '');
                 }
@@ -249,7 +294,6 @@ export async function POST(req: NextRequest) {
                 mpPayload.installments = Number(card.installments) || 1;
                 mpPayload.payment_method_id = card.payment_method_id;
                 if (card.issuer_id) mpPayload.issuer_id = card.issuer_id;
-
                 if (card.payer?.identification?.number) {
                     mpPayload.payer.identification.number = card.payer.identification.number.replace(/\D/g, '');
                 }
@@ -257,17 +301,8 @@ export async function POST(req: NextRequest) {
                 console.error("❌ Token do cartão ausente. brickData:", brickData, "cardData:", cardData);
                 return NextResponse.json({ success: false, error: "Dados do cartão incompletos. Token não recebido." }, { status: 400 });
             }
-        }
 
-        const payment = new Payment(client);
-        if (process.env.NODE_ENV !== 'production') {
-            console.log("Creating Payment with payload:", JSON.stringify(mpPayload, null, 2));
-        }
-
-        const finalIdempotencyKey = idempotencyKey || crypto.randomUUID();
-
-        // Validar CPF para cartão: verificar se o CPF final (do Brick ou do formulário) é válido
-        if (isCard) {
+            // Validar CPF para cartão
             const finalCpf = mpPayload.payer?.identification?.number || '';
             if (!finalCpf || finalCpf.length !== 11 || finalCpf === '19119119100') {
                 return NextResponse.json({
@@ -275,73 +310,79 @@ export async function POST(req: NextRequest) {
                     error: "CPF é obrigatório para pagamento com cartão de crédito. Por favor, preencha seu CPF no formulário ou no campo de cartão."
                 }, { status: 400 });
             }
-        }
 
-        let mpResult: any = null;
-        const MAX_RETRIES = 3;
-        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+            const payment = new Payment(client);
+            if (process.env.NODE_ENV !== 'production') {
+                console.log("Creating Payment with payload:", JSON.stringify(mpPayload, null, 2));
+            }
+
+            const finalIdempotencyKey = idempotencyKey || crypto.randomUUID();
+            let mpResult: any = null;
+            const MAX_RETRIES = 3;
+            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                    mpResult = await payment.create({
+                        body: mpPayload,
+                        requestOptions: {
+                            idempotencyKey: finalIdempotencyKey,
+                            customHeaders: deviceId ? { 'X-Id-Device': deviceId } : undefined,
+                        }
+                    });
+                    break;
+                } catch (mpErr: any) {
+                    const isRetryable = mpErr?.message?.includes('Premature close') ||
+                        mpErr?.message?.includes('socket hang up') ||
+                        mpErr?.message?.includes('ECONNRESET') ||
+                        mpErr?.message?.includes('ETIMEDOUT') ||
+                        mpErr?.code === 'ECONNRESET' ||
+                        mpErr?.code === 'ETIMEDOUT';
+                    if (isRetryable && attempt < MAX_RETRIES) {
+                        console.warn(`[MP] Attempt ${attempt} failed (${mpErr.message}), retrying in ${attempt * 1000}ms...`);
+                        await new Promise(r => setTimeout(r, attempt * 1000));
+                        continue;
+                    }
+                    throw mpErr;
+                }
+            }
+            console.log("MP Result ID:", mpResult.id);
+            transactionId = mpResult.id;
+
+            const mpStatusMap: Record<string, string> = {
+                'approved': 'pago',
+                'pending': 'aguardando',
+                'in_process': 'aguardando',
+                'authorized': 'aguardando',
+                'in_mediation': 'aguardando',
+                'rejected': 'recusado',
+                'cancelled': 'recusado',
+                'refunded': 'recusado',
+                'charged_back': 'recusado'
+            };
+            finalStatus = mpStatusMap[mpResult.status || ''] || 'recusado';
+
             try {
-                mpResult = await payment.create({
-                    body: mpPayload,
-                    requestOptions: {
-                        idempotencyKey: finalIdempotencyKey,
-                        customHeaders: deviceId ? { 'X-Id-Device': deviceId } : undefined,
+                await prisma.order.update({
+                    where: { id: order.id },
+                    data: {
+                        paymentStatus: finalStatus,
+                        status: finalStatus === 'pago' ? 'processando' : 'pendente',
+                        mpPaymentId: String(mpResult.id),
+                        totalPrice: mpResult.transaction_amount ? Number(mpResult.transaction_amount) : undefined,
+                        installments: mpResult.installments || null,
+                        installmentAmount: (mpResult as any).transaction_details?.installment_amount || null,
+                        cardBrand: mpResult.payment_method_id || null,
+                        netReceived: (mpResult as any).transaction_details?.net_received_amount || null
                     }
                 });
-                break;
-            } catch (mpErr: any) {
-                const isRetryable = mpErr?.message?.includes('Premature close') ||
-                    mpErr?.message?.includes('socket hang up') ||
-                    mpErr?.message?.includes('ECONNRESET') ||
-                    mpErr?.message?.includes('ETIMEDOUT') ||
-                    mpErr?.code === 'ECONNRESET' ||
-                    mpErr?.code === 'ETIMEDOUT';
-                if (isRetryable && attempt < MAX_RETRIES) {
-                    console.warn(`[MP] Attempt ${attempt} failed (${mpErr.message}), retrying in ${attempt * 1000}ms...`);
-                    await new Promise(r => setTimeout(r, attempt * 1000));
-                    continue;
-                }
-                throw mpErr;
+                console.log("Order updated successfully with MP Result ID:", mpResult.id);
+            } catch (dbErr) {
+                console.error("DEBUG: Failed to update order in DB, but payment was created in MP:", dbErr);
             }
-        }
-        console.log("MP Result ID:", mpResult.id);
-
-        // 3. Update DB com status final
-        const statusMap: Record<string, string> = {
-            'approved': 'pago',
-            'pending': 'aguardando',
-            'in_process': 'aguardando',
-            'authorized': 'aguardando',
-            'in_mediation': 'aguardando',
-            'rejected': 'recusado',
-            'cancelled': 'recusado',
-            'refunded': 'recusado',
-            'charged_back': 'recusado'
-        };
-
-        const finalStatus = statusMap[mpResult.status || ''] || 'recusado';
-
-        try {
-            await prisma.order.update({
-                where: { id: order.id },
-                data: {
-                    paymentStatus: finalStatus,
-                    status: finalStatus === 'pago' ? 'processando' : 'pendente',
-                    mpPaymentId: String(mpResult.id),
-                    totalPrice: mpResult.transaction_amount ? Number(mpResult.transaction_amount) : undefined,
-                    installments: mpResult.installments || null,
-                    installmentAmount: (mpResult as any).transaction_details?.installment_amount || null,
-                    cardBrand: mpResult.payment_method_id || null,
-                    netReceived: (mpResult as any).transaction_details?.net_received_amount || null
-                }
-            });
-            console.log("Order updated successfully with MP Result ID:", mpResult.id);
-        } catch (dbErr) {
-            console.error("DEBUG: Failed to update order in DB, but payment was created in MP:", dbErr);
-            // We don't throw here to ensure the user gets a response if possible
+        } else {
+            return NextResponse.json({ success: false, error: "Método de pagamento inválido." }, { status: 400 });
         }
 
-        // ── R2 Backup Trigger ──────────────────────────────────────────────────
+        // ── R2 Backup ─────────────────────────────────────────────────────────
         try {
             const fullOrder = await prisma.order.findUnique({
                 where: { id: order.id },
@@ -354,17 +395,14 @@ export async function POST(req: NextRequest) {
         } catch (r2Err) {
             console.error("Failed to trigger R2 backup:", r2Err);
         }
-        // ───────────────────────────────────────────────────────────────────────
 
-        // 4. Enviar E-mail se aprovado
+        // ── E-mails se aprovado (cartão) ──────────────────────────────────────
         if (finalStatus === 'pago') {
             try {
                 await sendConfirmationEmail(order.id);
             } catch (emailError) {
                 console.error("Failed to send confirmation email:", emailError);
             }
-
-            // Notify Admin
             try {
                 await sendAdminNotification(order);
             } catch (notifyError) {
@@ -372,40 +410,13 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        let qrCode: string | null = null;
-        let qrCodeBase64: string | null = null;
-        let pixStatusForResponse = finalStatus;
-
-        if (method === 'pix' && mpResult.point_of_interaction?.transaction_data) {
-            qrCode = mpResult.point_of_interaction.transaction_data.qr_code || null;
-            qrCodeBase64 = mpResult.point_of_interaction.transaction_data.qr_code_base64 || null;
-
-            // PIX sem QR code → marcar como "processando" (problema na geração)
-            if (!qrCode || !qrCodeBase64) {
-                await prisma.order.update({
-                    where: { id: order.id },
-                    data: { paymentStatus: 'processando' }
-                });
-                pixStatusForResponse = 'processando';
-                console.warn(`[PIX] Order ${order.id}: PIX created but QR code missing. Marked as processando.`);
-            } else if (finalStatus === 'aguardando') {
-                // Enviar e-mail com QR Code PIX
-                try {
-                    await sendPixEmail(order.id, qrCode, qrCodeBase64);
-                } catch (pixEmailErr) {
-                    console.error("Failed to send PIX email:", pixEmailErr);
-                }
-            }
-        }
-
         return NextResponse.json({
             success: true,
             orderId: order.id,
-            paymentStatus: pixStatusForResponse,
+            paymentStatus: isPix ? pixStatusForResponse : finalStatus,
             qrCode,
             qrCodeBase64,
-            statusDetail: mpResult.status_detail,
-            transactionId: mpResult.id
+            transactionId
         });
 
     } catch (error: any) {

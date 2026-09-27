@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPixFollowupEmail } from "@/app/actions";
-import { createMpClient } from "@/lib/mercadopago";
-import { Payment } from "mercadopago";
+import { getSyncTransaction, SYNC_STATUS_MAP } from "@/lib/sync";
 
 // Cron job: envia e-mails de follow-up para PIX pendente
 // Follow-up 1: 2 horas após criação
@@ -43,10 +42,6 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: true, message: 'Nenhum PIX pendente', processed: 0 });
         }
 
-        // Buscar QR codes do MP para os pedidos
-        const client = createMpClient();
-        const payment = new Payment(client);
-
         let sent1 = 0;
         let sent2 = 0;
         let errors = 0;
@@ -69,26 +64,28 @@ export async function GET(req: NextRequest) {
             if (!order.mpPaymentId) continue;
 
             try {
-                const mpResult = await payment.get({ id: order.mpPaymentId });
-                const qrCode = mpResult.point_of_interaction?.transaction_data?.qr_code || null;
-                const qrCodeBase64 = mpResult.point_of_interaction?.transaction_data?.qr_code_base64 || null;
+                const syncTx = await getSyncTransaction(order.mpPaymentId);
+                const qrCode = syncTx.pix_code;
 
-                if (!qrCode || !qrCodeBase64) continue;
+                if (!qrCode) continue;
 
-                // Verificar se MP já aprovou (dupla checagem)
-                if (mpResult.status === 'approved') {
+                // Verificar se Sync já aprovou (dupla checagem)
+                if (syncTx.status === 'completed') {
                     const updated = await prisma.order.update({
                         where: { id: order.id },
                         data: { paymentStatus: 'pago', status: 'processando' },
                         include: { product: true },
                     });
-                    // Backup R2
                     try {
                         const { uploadOrderBackup } = await import("@/lib/r2");
                         await uploadOrderBackup(updated);
                     } catch { }
                     continue;
                 }
+
+                // Gerar QR code base64
+                const QRCode = await import('qrcode');
+                const qrCodeBase64 = (await QRCode.toDataURL(qrCode)).replace('data:image/png;base64,', '');
 
                 if (needsFollowup1) {
                     const result = await sendPixFollowupEmail(order.id, qrCode, qrCodeBase64, 1);
