@@ -28,11 +28,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, message: 'Invalid JSON' }, { status: 400 });
         }
 
-        // Sync envia o identifier e o status no payload do webhook
-        const identifier = body.identifier || body.data?.identifier;
-        const rawStatus = body.status || body.data?.status;
+        // Sync payload: { data: { id, status, amount (centavos), final_amount, pix_code, ... } }
+        const txData = body.data || body;
+        const identifier = txData.id;
+        const rawStatus = txData.status;
+        const amountCents = txData.amount;
 
-        console.log(`[Webhook Sync] identifier: ${identifier}, status: ${rawStatus}`);
+        console.log(`[Webhook Sync] id: ${identifier}, status: ${rawStatus}, body: ${JSON.stringify(body)}`);
 
         if (!identifier) {
             return NextResponse.json({ success: false, message: 'No identifier found' }, { status: 400 });
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
                 data: {
                     paymentStatus: finalStatus,
                     status: finalStatus === 'pago' ? 'processando' : order.status,
-                    totalPrice: body.amount ? Number(body.amount) : undefined,
+                    totalPrice: amountCents ? Number(amountCents) / 100 : undefined,
                 }
             });
 
