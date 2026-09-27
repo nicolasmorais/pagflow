@@ -74,16 +74,17 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // Gerar QR base64
         console.log('[Subscription] Enrollment response:', JSON.stringify(enrollment));
-        const pixCode = enrollment.qr_code
-            || (enrollment as any).pix_code
-            || (enrollment as any).qr_code_url
-            || (enrollment as any).mandate_qr_code
-            || (enrollment as any).payment_code;
-        if (!pixCode) throw new Error(`[Sync] QR code não encontrado na resposta: ${JSON.stringify(enrollment)}`);
-        const QRCode = await import('qrcode');
-        const qrCodeBase64 = (await QRCode.toDataURL(pixCode)).replace('data:image/png;base64,', '');
+
+        // PIX Automático não gera QR code — o mandato é autorizado direto no app do banco
+        const mandateId = (enrollment as any).payment?.mandate_id
+            || (enrollment as any).mandate_id
+            || enrollment.mandate_id;
+        const mandateStatus = (enrollment as any).payment?.status
+            || (enrollment as any).status
+            || enrollment.mandate_status
+            || 'pending_authorization';
+        const subscriptionToken = (enrollment as any).subscription_token || '';
 
         // Salvar ou atualizar pedido
         const orderDataToSave: any = {
@@ -95,7 +96,8 @@ export async function POST(req: NextRequest) {
             paymentStatus: 'aguardando',
             paymentMethod: 'pix_automatico',
             totalPrice: subscriptionPrice,
-            subscriptionMandateId: enrollment.mandate_id,
+            subscriptionMandateId: mandateId || null,
+            mpPaymentId: subscriptionToken || null,
             product: productId ? { connect: { id: productId } } : undefined,
             utmSource: orderData.utmSource || null,
             utmMedium: orderData.utmMedium || null,
@@ -119,10 +121,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             orderId: order.id,
-            mandateId: enrollment.mandate_id,
-            mandateStatus: enrollment.mandate_status,
-            qrCode: enrollment.qr_code,
-            qrCodeBase64,
+            mandateId,
+            mandateStatus,
+            subscriptionToken,
         });
 
     } catch (error: any) {
