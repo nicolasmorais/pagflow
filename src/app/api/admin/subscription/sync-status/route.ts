@@ -14,20 +14,12 @@ export async function POST(req: NextRequest) {
         if (!subscriptionToken) return NextResponse.json({ success: false, error: 'Sem subscription_token neste pedido' }, { status: 400 });
 
         const details = await getSubscriptionDetails(subscriptionToken);
-        console.log('[SyncStatus] Resposta Sync:', JSON.stringify(details));
 
-        // Tenta extrair número de cobranças pagas de campos possíveis
-        const parcelasPagas: number =
-            details.paid_charges_count ??
-            details.charges_paid ??
-            details.payments_count ??
-            details.charges?.filter((c: any) => c.status === 'paid' || c.status === 'pago').length ??
-            order.parcelasPagas;
+        // Conta parcelas pagas pelo array charges
+        const charges: any[] = details.charges ?? [];
+        const parcelasPagas = charges.filter((c: any) => c.status === 'paid').length;
 
-        const syncStatus: string =
-            details.status ?? details.mandate_status ?? order.paymentStatus;
-
-        // Atualiza o pedido com os dados reais da Sync
+        // Atualiza o banco com o estado real
         const updated = await prisma.order.update({
             where: { id: orderId },
             data: { parcelasPagas },
@@ -37,8 +29,17 @@ export async function POST(req: NextRequest) {
             success: true,
             parcelasPagas: updated.parcelasPagas,
             totalParcelas: updated.totalParcelas,
-            syncStatus,
-            raw: details,
+            status: details.status,
+            nextChargeAt: details.next_charge_at,
+            overdueSince: details.overdue_since,
+            retryCount: details.retry_count ?? 0,
+            charges: charges.map((c: any) => ({
+                cycle: c.cycle_number,
+                status: c.status,
+                amount: c.amount,
+                dueDate: c.due_date,
+                paidAt: c.paid_at,
+            })),
         });
 
     } catch (error: any) {
