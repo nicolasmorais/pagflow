@@ -277,6 +277,15 @@ model FinancialRecord {
   updatedAt   DateTime @updatedAt
 }
 
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  event       String
+  processedAt DateTime @default(now())
+
+  @@index([eventId])
+}
+
 model ErrorLog {
   id        String   @id @default(cuid())
   level     String   @default("error") // "error" | "warning" | "critical"
