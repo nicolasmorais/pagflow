@@ -197,15 +197,8 @@ export default function EditProductModal({ product, onClose }: { product: any; o
                     </div>
 
                     {subscriptionEnabled && (
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={labelStyle}><DollarSign size={12} /> Preço Semanal (R$)</label>
-                            <input name="subscriptionPrice" type="number" step="0.01" style={inputStyle}
-                                defaultValue={product.subscriptionPrice || product.price}
-                                placeholder="Ex: 19.90"
-                                onFocus={e => { e.target.style.borderColor = '#16a34a'; e.target.style.background = '#fff' }}
-                                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
-                            />
-                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94a3b8' }}>Valor cobrado semanalmente via PIX Automático.</p>
+                        <div style={{ marginBottom: '20px', background: '#f0fdf4', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#166534' }}>
+                            Valor por parcela calculado automaticamente: preço do produto ÷ nº de parcelas escolhido pelo cliente (2x, 3x ou 4x).
                         </div>
                     )}
 

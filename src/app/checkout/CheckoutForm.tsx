@@ -1836,7 +1836,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     <span className="pay-badge g" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' }}>Semanal</span>
                                                 </div>
                                                 <div className="pay-desc" style={{ color: '#16a34a', fontWeight: 600 }}>
-                                                    {parcelas}x de R$ {((( product?.subscriptionPrice || product?.price || 0) * 4) / parcelas).toFixed(2).replace('.', ',')} — autorize uma vez, pague sempre
+                                                    {parcelas}x de R$ {((product?.price || 0) / parcelas).toFixed(2).replace('.', ',')} — autorize uma vez, pague sempre
                                                 </div>
                                             </div>
                                         </div>
@@ -1845,8 +1845,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
                                                 {/* Seletor de parcelas */}
                                                 {(() => {
-                                                    const basePrice = product?.subscriptionPrice || product?.price || 0;
-                                                    const total = basePrice * 4;
+                                                    const basePrice = product?.price || 0;
+                                                    const total = basePrice;
                                                     return (
                                                         <div style={{ marginBottom: 16 }}>
                                                             <p style={{ color: '#14532d', fontWeight: 700, fontSize: 13, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
