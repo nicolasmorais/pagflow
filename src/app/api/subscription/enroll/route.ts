@@ -21,11 +21,8 @@ export async function POST(req: NextRequest) {
 
         const subscriptionPrice = product.subscriptionPrice || product.price;
 
-        // Criar plano na Sync se ainda não existir
-        let planToken = product.subscriptionPlanToken;
-        if (!planToken) {
-            const protocol = req.headers.get('x-forwarded-proto') || 'https';
-            const host = req.headers.get('host');
+        // Criar (ou recriar) plano na Sync
+        const createPlan = async () => {
             const plan = await createSubscriptionPlan({
                 name: `${product.name} — Semanal`,
                 description: `Assinatura semanal de ${product.name}`,
@@ -36,12 +33,21 @@ export async function POST(req: NextRequest) {
                 grace_period_days: 3,
                 max_retry_attempts: 3,
             });
-            planToken = plan.token;
+            console.log(`[Subscription] Resposta criação plano:`, JSON.stringify(plan));
+            // Sync pode retornar token em diferentes campos
+            const token = plan.token || (plan as any).id || (plan as any).plan_token;
+            if (!token) throw new Error(`[Sync] Plano criado mas sem token. Resposta: ${JSON.stringify(plan)}`);
             await prisma.product.update({
                 where: { id: productId },
-                data: { subscriptionPlanToken: planToken },
+                data: { subscriptionPlanToken: token },
             });
-            console.log(`[Subscription] Plano criado: ${planToken}`);
+            console.log(`[Subscription] Plano criado: ${token}`);
+            return token;
+        };
+
+        let planToken = product.subscriptionPlanToken;
+        if (!planToken) {
+            planToken = await createPlan();
         }
 
         // Validar email
@@ -54,13 +60,19 @@ export async function POST(req: NextRequest) {
         const cpf = (orderData.cpf || '').replace(/\D/g, '') || '19119119100';
         const phone = (orderData.telefone || orderData.phone || '').replace(/\D/g, '') || '00000000000';
 
-        // Enrolar assinante
-        const enrollment = await enrollSubscription(planToken, {
-            name: fullName,
-            email,
-            document: cpf,
-            phone,
-        });
+        // Enrolar assinante — se 404 (plano não existe na Sync), recria e tenta de novo
+        let enrollment;
+        try {
+            enrollment = await enrollSubscription(planToken, { name: fullName, email, document: cpf, phone });
+        } catch (enrollErr: any) {
+            if (enrollErr.message?.includes('404')) {
+                console.log(`[Subscription] Plano ${planToken} não encontrado na Sync, recriando...`);
+                planToken = await createPlan();
+                enrollment = await enrollSubscription(planToken, { name: fullName, email, document: cpf, phone });
+            } else {
+                throw enrollErr;
+            }
+        }
 
         // Gerar QR base64
         const QRCode = await import('qrcode');
