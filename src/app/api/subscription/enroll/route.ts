@@ -57,7 +57,8 @@ export async function POST(req: NextRequest) {
         }
 
         const fullName = orderData.nome || orderData.fullName || 'Cliente';
-        const cpf = (orderData.cpf || '').replace(/\D/g, '') || '19119119100';
+        const cpf = (orderData.cpf || '').replace(/\D/g, '');
+        if (!cpf || cpf.length !== 11) return NextResponse.json({ success: false, error: 'CPF obrigatório (11 dígitos).' }, { status: 400 });
         const phone = (orderData.telefone || orderData.phone || '').replace(/\D/g, '') || '00000000000';
 
         // Enrolar assinante — se 404 (plano não existe na Sync), recria e tenta de novo

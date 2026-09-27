@@ -65,8 +65,7 @@ export async function POST(req: NextRequest) {
         }
         orderData.email = emailRaw;
 
-        const cpfInput = (orderData.cpf || "").replace(/\D/g, '');
-        const cpfToSave = cpfInput || "19119119100"; // Fallback apenas para Pix
+        const cpfToSave = (orderData.cpf || "").replace(/\D/g, '');
 
         // ── Buscar preços dos order bumps selecionados ──
         let bumpsTotal = 0;
@@ -245,7 +244,7 @@ export async function POST(req: NextRequest) {
                     email: orderData.email || 'cliente@pagflow.com',
                     first_name: fullName.split(' ')[0] || "Cliente",
                     last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
-                    identification: { type: 'CPF', number: cpfToSave || '19119119100' },
+                    identification: { type: 'CPF', number: cpfToSave },
                     phone: phoneData,
                     address: (orderData.cep || orderData.rua) ? {
                         zip_code: orderData.cep?.replace(/\D/g, '') || '',

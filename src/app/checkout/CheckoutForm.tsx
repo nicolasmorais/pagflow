@@ -1761,8 +1761,21 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 {paymentMethod === 'pix' && (
                                     <div className="pix-box">
                                         <p>A confirmação de pagamento é realizada em poucos minutos.<br/>Utilize o aplicativo do seu banco para pagar.</p>
+                                        {/* CPF obrigatório para PIX */}
+                                        <div style={{ marginBottom: 12 }}>
+                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6b7280', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>CPF *</label>
+                                            <input
+                                                type="text"
+                                                placeholder="000.000.000-00"
+                                                maxLength={14}
+                                                value={dados.cpf}
+                                                onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
+                                                style={{ width: '100%', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${errors.cpf ? '#ef4444' : '#d1d5db'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                            />
+                                            {errors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {errors.cpf}</div>}
+                                        </div>
                                         <div style={{
-                                            margin: '16px 0',
+                                            margin: '0 0 16px',
                                             padding: '14px 16px',
                                             background: '#FEF3E8',
                                             border: '1.5px solid #E07020',
@@ -1772,21 +1785,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             gap: '10px',
                                         }}>
                                             <span style={{ fontSize: '18px', lineHeight: 1, flexShrink: 0, marginTop: '1px' }}>&#9888;</span>
-                                            <span style={{
-                                                fontSize: '13px',
-                                                fontWeight: 700,
-                                                color: '#E07020',
-                                                lineHeight: 1.5,
-                                            }}>
+                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#E07020', lineHeight: 1.5 }}>
                                                 ⚠️ Não pagar o Pix pode fazer seu nome ir para o SPC/Serasa, conforme as regras de cobrança.
                                             </span>
                                         </div>
-                                        <button className="cta-btn" onClick={() => finalizar()} disabled={loading}>
+                                        <button className="cta-btn" onClick={() => {
+                                            const clean = dados.cpf.replace(/\D/g, '');
+                                            if (clean.length !== 11) { setErrors(p => ({ ...p, cpf: 'CPF obrigatório (11 dígitos)' })); return; }
+                                            finalizar();
+                                        }} disabled={loading}>
                                             {loading ? 'Processando...' : 'GERAR PIX'}
                                         </button>
                                         <div className="cta-note" style={{marginTop:'12px'}}>
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                            Pagamento processado com segurança via Mercado Pago
+                                            Pagamento processado com segurança via Sync
                                         </div>
                                     </div>
                                 )}
@@ -1825,16 +1837,33 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                                         {paymentMethod === 'pix_automatico' && !subData && (
                                             <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
-                                                <p style={{ color: '#14532d', margin: '0 0 14px' }}>
-                                                    Você escaneia o QR code <strong>uma única vez</strong> para autorizar a cobrança semanal automática. Após isso, o PIX é debitado toda semana sem nenhuma ação sua.
+                                                <p style={{ color: '#14532d', margin: '0 0 12px' }}>
+                                                    Autorize <strong>uma única vez</strong> no app do seu banco e o PIX será debitado toda semana automaticamente.
                                                 </p>
+                                                {/* CPF obrigatório para PIX Parcelado */}
+                                                <div style={{ marginBottom: 14 }}>
+                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#166534', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>CPF *</label>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="000.000.000-00"
+                                                        maxLength={14}
+                                                        value={dados.cpf}
+                                                        onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
+                                                        style={{ width: '100%', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${errors.cpf ? '#ef4444' : '#bbf7d0'}`, fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                                    />
+                                                    {errors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {errors.cpf}</div>}
+                                                </div>
                                                 <button
                                                     className="cta-btn"
                                                     style={{ background: '#16a34a' }}
-                                                    onClick={() => finalizarAssinatura()}
+                                                    onClick={() => {
+                                                        const clean = dados.cpf.replace(/\D/g, '');
+                                                        if (clean.length !== 11) { setErrors(p => ({ ...p, cpf: 'CPF obrigatório (11 dígitos)' })); return; }
+                                                        finalizarAssinatura();
+                                                    }}
                                                     disabled={subLoading}
                                                 >
-                                                    {subLoading ? 'Gerando QR...' : '🔄 GERAR PIX PARCELADO'}
+                                                    {subLoading ? 'Criando assinatura...' : '🔄 GERAR PIX PARCELADO'}
                                                 </button>
                                                 <div className="cta-note" style={{ marginTop: '12px' }}>
                                                     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
