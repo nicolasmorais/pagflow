@@ -29,6 +29,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
     const [subData, setSubData] = useState<{ mandateId: string, mandateStatus: string, qrCodeBase64: string, checkoutUrl: string } | null>(null);
     const [subLoading, setSubLoading] = useState(false);
+    const [parcelas, setParcelas] = useState(4);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
@@ -478,6 +479,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     productId: product?.id,
+                    parcelas,
                     orderData: {
                         nome: dados.nome,
                         email: dados.email,
@@ -1834,16 +1836,54 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     <span className="pay-badge g" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' }}>Semanal</span>
                                                 </div>
                                                 <div className="pay-desc" style={{ color: '#16a34a', fontWeight: 600 }}>
-                                                    R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} / semana — autorize uma vez, pague sempre
+                                                    {parcelas}x de R$ {((( product?.subscriptionPrice || product?.price || 0) * 4) / parcelas).toFixed(2).replace('.', ',')} — autorize uma vez, pague sempre
                                                 </div>
                                             </div>
                                         </div>
 
                                         {paymentMethod === 'pix_automatico' && !subData && (
                                             <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
-                                                <p style={{ color: '#14532d', margin: '0 0 12px' }}>
-                                                    Autorize <strong>uma única vez</strong> no app do seu banco e o PIX será debitado toda semana automaticamente.
-                                                </p>
+                                                {/* Seletor de parcelas */}
+                                                {(() => {
+                                                    const basePrice = product?.subscriptionPrice || product?.price || 0;
+                                                    const total = basePrice * 4;
+                                                    return (
+                                                        <div style={{ marginBottom: 16 }}>
+                                                            <p style={{ color: '#14532d', fontWeight: 700, fontSize: 13, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                                Escolha o número de parcelas
+                                                            </p>
+                                                            <div style={{ display: 'flex', gap: 8 }}>
+                                                                {[2, 3, 4].map(n => (
+                                                                    <button
+                                                                        key={n}
+                                                                        type="button"
+                                                                        onClick={() => setParcelas(n)}
+                                                                        style={{
+                                                                            flex: 1,
+                                                                            padding: '10px 6px',
+                                                                            borderRadius: 10,
+                                                                            border: `2px solid ${parcelas === n ? '#16a34a' : '#bbf7d0'}`,
+                                                                            background: parcelas === n ? '#16a34a' : '#fff',
+                                                                            color: parcelas === n ? '#fff' : '#166534',
+                                                                            fontWeight: 700,
+                                                                            fontSize: 13,
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all .15s',
+                                                                            textAlign: 'center' as const,
+                                                                            lineHeight: 1.4,
+                                                                        }}
+                                                                    >
+                                                                        <div>{n}x</div>
+                                                                        <div style={{ fontSize: 11, fontWeight: 600 }}>R$ {(total / n).toFixed(2).replace('.', ',')}</div>
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                            <p style={{ color: '#4ade80', fontSize: 12, textAlign: 'center', margin: '8px 0 0' }}>
+                                                                Total: R$ {total.toFixed(2).replace('.', ',')} em {parcelas} semanas
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                })()}
                                                 {/* CPF obrigatório para PIX Parcelado */}
                                                 <div style={{ marginBottom: 14 }}>
                                                     <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#166534', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>CPF *</label>

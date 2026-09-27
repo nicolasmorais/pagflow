@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { enrollSubscription, createSubscriptionPlan } from "@/lib/sync-subscription";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-const TOTAL_PARCELAS = 4;
-
 export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     const { limited } = checkRateLimit(`subscription:${ip}`, 5, 60_000);
@@ -15,12 +13,16 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { productId, orderData, orderId } = body;
+        const parcelasEscolhidas: number = Math.min(Math.max(Number(body.parcelas) || 4, 2), 4);
 
         const product = await prisma.product.findUnique({ where: { id: productId } });
         if (!product) return NextResponse.json({ success: false, error: 'Produto não encontrado.' }, { status: 404 });
         if (!product.subscriptionEnabled) return NextResponse.json({ success: false, error: 'Assinatura não disponível para este produto.' }, { status: 400 });
 
-        const subscriptionPrice = product.subscriptionPrice || product.price;
+        // Total fixo = preço base × 4; parcela = total / parcelas escolhidas
+        const basePrice = product.subscriptionPrice || product.price;
+        const totalPrice = basePrice * 4;
+        const subscriptionPrice = totalPrice / parcelasEscolhidas;
 
         const email = (orderData.email || '').trim().toLowerCase();
         if (!email || !email.includes('@')) {
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
         const orderRef = orderId || `tmp-${Date.now()}`;
         const plan = await createSubscriptionPlan({
             name: `${product.name} — Pedido #${orderRef}`,
-            description: `${TOTAL_PARCELAS}x R$ ${subscriptionPrice.toFixed(2)} semanal`,
+            description: `${parcelasEscolhidas}x R$ ${subscriptionPrice.toFixed(2)} semanal`,
             amount: subscriptionPrice.toFixed(2),
             periodicity_days: 7,
             billing_method: 'pix_automatico',
@@ -79,7 +81,7 @@ export async function POST(req: NextRequest) {
             totalPrice: subscriptionPrice,
             subscriptionMandateId: mandateId || null,
             mpPaymentId: subscriptionToken || null,
-            totalParcelas: TOTAL_PARCELAS,
+            totalParcelas: parcelasEscolhidas,
             parcelasPagas: 0,
             product: productId ? { connect: { id: productId } } : undefined,
             utmSource: orderData.utmSource || null,
