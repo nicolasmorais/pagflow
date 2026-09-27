@@ -62,6 +62,18 @@ export async function enrollSubscription(planToken: string, payload: EnrollPaylo
     return json.data ?? json;
 }
 
+export async function getSubscriptionDetails(subscriptionToken: string): Promise<any> {
+    const token = await getSyncToken();
+    const res = await fetch(`${BASE_URL}/subscriptions/${subscriptionToken}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const text = await res.text();
+    console.log(`[Sync Subscription] Details response ${res.status}:`, text);
+    if (!res.ok) throw new Error(`[Sync] Falha ao buscar assinatura: ${res.status} ${text}`);
+    const json = JSON.parse(text);
+    return json.data ?? json;
+}
+
 export async function cancelSubscription(subscriptionToken: string): Promise<void> {
     const token = await getSyncToken();
     const res = await fetch(`${BASE_URL}/subscriptions/${subscriptionToken}/cancel`, {

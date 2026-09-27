@@ -2,7 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { RefreshCw, Users, DollarSign, CheckCircle, Clock, XCircle, TrendingUp, ExternalLink } from 'lucide-react';
+import { RefreshCw, Users, DollarSign, CheckCircle, TrendingUp } from 'lucide-react';
+import SyncButton from './SyncButton';
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -173,7 +174,6 @@ export default async function AssinaturasPage() {
                 ) : (
                     orders.map((order, idx) => {
                         const s = getS(order.paymentStatus);
-                        const charge = chargeNumber(order.createdAt, now);
                         const initials = (order.fullName || 'AS').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
                         const colors = ['#6366f1', '#16a34a', '#d97706', '#0369a1', '#db2777'];
                         const avatarBg = colors[order.fullName?.charCodeAt(0) ?? 0 % colors.length];
@@ -215,19 +215,12 @@ export default async function AssinaturasPage() {
                                     R$ {fmt(order.totalPrice || 0)}
                                 </div>
 
-                                {/* Número da cobrança */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <div style={{
-                                        background: charge === 1 ? '#eef2ff' : charge === 2 ? '#f0fdf4' : charge >= 5 ? '#fef3c7' : '#f0fdf4',
-                                        color: charge === 1 ? '#6366f1' : charge === 2 ? '#15803d' : charge >= 5 ? '#92400e' : '#15803d',
-                                        borderRadius: 6,
-                                        padding: '3px 8px',
-                                        fontSize: 12,
-                                        fontWeight: 700,
-                                    }}>
-                                        {charge === 1 ? '1ª cobrança' : `${charge}ª cobrança`}
-                                    </div>
-                                </div>
+                                {/* Parcelas — botão sincroniza com Sync */}
+                                <SyncButton
+                                    orderId={order.id}
+                                    initialParcelas={order.parcelasPagas ?? 0}
+                                    totalParcelas={order.totalParcelas ?? 4}
+                                />
 
                                 {/* Data de início */}
                                 <div style={{ fontSize: 12, color: '#64748b' }}>
