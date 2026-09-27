@@ -188,10 +188,7 @@ export default async function AssinaturasPage() {
                                     borderBottom: idx < orders.length - 1 ? '1px solid #f1f5f9' : 'none',
                                     alignItems: 'center',
                                     gap: 8,
-                                    transition: 'background 0.1s',
                                 }}
-                                onMouseEnter={e => (e.currentTarget.style.background = '#fafafa')}
-                                onMouseLeave={e => (e.currentTarget.style.background = '')}
                             >
                                 {/* Assinante */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
