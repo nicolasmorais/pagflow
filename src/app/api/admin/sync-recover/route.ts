@@ -3,10 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { getSyncTransaction, SYNC_STATUS_MAP } from "@/lib/sync";
 import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 
-export async function POST(req: NextRequest) {
+async function recover(password: string | null) {
     const adminPassword = process.env.ADMIN_PASSWORD;
-    const auth = req.headers.get('x-admin-password');
-    if (adminPassword && auth !== adminPassword) {
+    if (adminPassword && password !== adminPassword) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -57,4 +56,14 @@ export async function POST(req: NextRequest) {
         atualizados: results.filter(r => !r.unchanged && !r.erro).length,
         resultados: results,
     });
+}
+
+export async function GET(req: NextRequest) {
+    const password = new URL(req.url).searchParams.get('password');
+    return recover(password);
+}
+
+export async function POST(req: NextRequest) {
+    const password = req.headers.get('x-admin-password');
+    return recover(password);
 }
