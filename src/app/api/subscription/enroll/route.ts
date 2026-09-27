@@ -53,20 +53,18 @@ export async function POST(req: NextRequest) {
         const enrollment = await enrollSubscription(planToken, { name: fullName, email, document: cpf, phone });
         console.log('[Subscription] Enrollment response:', JSON.stringify(enrollment));
 
-        const mandateId = (enrollment as any).payment?.mandate_id
-            || (enrollment as any).mandate_id
-            || enrollment.mandate_id;
-        const mandateStatus = (enrollment as any).payment?.status
-            || (enrollment as any).status
-            || enrollment.mandate_status
-            || 'pending_authorization';
+        const payment = (enrollment as any).payment || {};
+        const mandateId = payment.mandate_id || (enrollment as any).mandate_id || enrollment.mandate_id;
+        const mandateStatus = payment.mandate_status || payment.status || (enrollment as any).status || 'pending_authorization';
         const subscriptionToken = (enrollment as any).subscription_token || '';
+        const resumed = payment.resumed === true;
 
-        // QR code a partir da URL de checkout
-        const checkoutUrl = `https://app.syncpayments.com.br/subscription/${subscriptionToken}`;
+        // QR EMV real vem de payment.qr_code (começa com 00020126)
+        // Se resumed=true o mandato já existe e não há novo QR — cliente autoriza no app do banco
+        const qrCodeEmv: string = payment.qr_code || '';
         const QRCode = await import('qrcode');
-        const qrCodeBase64 = subscriptionToken
-            ? (await QRCode.toDataURL(checkoutUrl)).replace('data:image/png;base64,', '')
+        const qrCodeBase64 = qrCodeEmv
+            ? (await QRCode.toDataURL(qrCodeEmv)).replace('data:image/png;base64,', '')
             : '';
 
         const orderDataToSave: any = {
@@ -108,8 +106,8 @@ export async function POST(req: NextRequest) {
             mandateId,
             mandateStatus,
             subscriptionToken,
-            checkoutUrl,
             qrCodeBase64,
+            resumed,
         });
 
     } catch (error: any) {
