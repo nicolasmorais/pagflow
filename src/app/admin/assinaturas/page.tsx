@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { RefreshCw, Users, DollarSign, CheckCircle, TrendingUp } from 'lucide-react';
+import { RefreshCw, Users, DollarSign, CheckCircle, TrendingUp, BarChart3 } from 'lucide-react';
 import SyncButton from './SyncButton';
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -88,8 +88,13 @@ export default async function AssinaturasPage() {
                         <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>Cobranças recorrentes via PIX Automático Semanal</p>
                     </div>
                 </div>
-                <div style={{ fontSize: 12, color: '#94a3b8', background: '#f8fafc', padding: '6px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
-                    {total} assinatura{total !== 1 ? 's' : ''} cadastrada{total !== 1 ? 's' : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ fontSize: 12, color: '#94a3b8', background: '#f8fafc', padding: '6px 12px', borderRadius: 8, border: '1px solid #e2e8f0' }}>
+                        {total} assinatura{total !== 1 ? 's' : ''} cadastrada{total !== 1 ? 's' : ''}
+                    </div>
+                    <Link href="/admin/assinaturas/analytics" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#4f46e5)', color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
+                        <BarChart3 size={14} /> Ver análises
+                    </Link>
                 </div>
             </div>
 
