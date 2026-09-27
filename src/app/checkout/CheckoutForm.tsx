@@ -1745,54 +1745,23 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </>
                                 )}
 
-                                {product?.subscriptionEnabled && (
-                                    <>
-                                        <div className={`pay-opt ${paymentMethod === 'pix_automatico' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix_automatico')} style={{ borderColor: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined }}>
-                                            <div className="prad" style={{ borderColor: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined, background: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined }}></div>
-                                            <div className="pay-icon" style={{ color: '#16a34a' }}>
-                                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    PIX Automático Semanal
-                                                    <span className="pay-badge g" style={{ background: '#dcfce7', color: '#166534' }}>Recorrente</span>
-                                                </div>
-                                                <div className="pay-desc">
-                                                    R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} por semana — autorize uma vez
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {paymentMethod === 'pix_automatico' && !subData && (
-                                            <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
-                                                <p style={{ color: '#14532d' }}>
-                                                    Você escaneará o QR code uma vez para <strong>autorizar</strong> a cobrança semanal automática via PIX.
-                                                    As cobranças serão feitas automaticamente todo dia sem precisar fazer nada.
-                                                </p>
-                                                <button className="cta-btn" style={{ background: '#16a34a' }} onClick={() => finalizarAssinatura()} disabled={subLoading}>
-                                                    {subLoading ? 'Criando assinatura...' : 'AUTORIZAR PIX SEMANAL'}
-                                                </button>
-                                            </div>
-                                        )}
-                                        {subData && paymentMethod === 'pix_automatico' && (
-                                            <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
-                                                <p style={{ color: '#14532d' }}><strong>Escaneie o QR code para autorizar</strong> a cobrança semanal automática.</p>
-                                                <div style={{ display: 'flex', justifyContent: 'center', margin: '12px 0' }}>
-                                                    <img src={`data:image/png;base64,${subData.qrCodeBase64}`} alt="QR PIX Automático" style={{ width: 200, height: 200 }} />
-                                                </div>
-                                                <p style={{ fontSize: '12px', color: '#166534', textAlign: 'center' }}>Após escanear, sua assinatura será ativada automaticamente.</p>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
+                                {/* ── Opções de pagamento ── */}
+                                <div className="section-label" style={{ marginTop: '0', marginBottom: '10px' }}>💳 Forma de pagamento</div>
 
+                                {/* PIX À VISTA */}
                                 <div className={`pay-opt ${paymentMethod === 'pix' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix')}>
                                     <div className="prad"></div>
                                     <div className="pay-icon" style={{color:'#00B69B'}}>
                                         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
                                     </div>
                                     <div style={{flex:1}}>
-                                        <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>PIX <span className="pay-badge g">Aprovação na hora</span></div>
-                                        <div className="pay-desc">Pagamento rápido e seguro</div>
+                                        <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>
+                                            PIX à vista
+                                            <span className="pay-badge g">Aprovação na hora</span>
+                                        </div>
+                                        <div className="pay-desc">
+                                            R$ {finalPrice.toFixed(2).replace('.', ',')} — pagamento único
+                                        </div>
                                     </div>
                                 </div>
                                 {paymentMethod === 'pix' && (
@@ -1826,6 +1795,78 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             Pagamento processado com segurança via Mercado Pago
                                         </div>
                                     </div>
+                                )}
+
+                                {/* PIX PARCELADO (Semanal) — só aparece se o produto tiver assinatura ativa */}
+                                {product?.subscriptionEnabled && (
+                                    <>
+                                        <div
+                                            className={`pay-opt ${paymentMethod === 'pix_automatico' ? 'selected' : ''}`}
+                                            onClick={() => setPaymentMethod('pix_automatico')}
+                                            style={{
+                                                borderColor: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined,
+                                                background: paymentMethod === 'pix_automatico' ? '#f0fdf4' : undefined,
+                                                marginTop: 8,
+                                            }}
+                                        >
+                                            <div className="prad" style={{
+                                                borderColor: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined,
+                                                background: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined,
+                                            }}></div>
+                                            <div className="pay-icon" style={{ color: '#16a34a' }}>
+                                                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                                    <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+                                                </svg>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    PIX Parcelado
+                                                    <span className="pay-badge g" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' }}>Semanal</span>
+                                                </div>
+                                                <div className="pay-desc" style={{ color: '#16a34a', fontWeight: 600 }}>
+                                                    R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} / semana — autorize uma vez, pague sempre
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {paymentMethod === 'pix_automatico' && !subData && (
+                                            <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
+                                                <p style={{ color: '#14532d', margin: '0 0 14px' }}>
+                                                    Você escaneia o QR code <strong>uma única vez</strong> para autorizar a cobrança semanal automática. Após isso, o PIX é debitado toda semana sem nenhuma ação sua.
+                                                </p>
+                                                <button
+                                                    className="cta-btn"
+                                                    style={{ background: '#16a34a' }}
+                                                    onClick={() => finalizarAssinatura()}
+                                                    disabled={subLoading}
+                                                >
+                                                    {subLoading ? 'Gerando QR...' : '🔄 GERAR PIX PARCELADO'}
+                                                </button>
+                                                <div className="cta-note" style={{ marginTop: '12px' }}>
+                                                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                                    Processado com segurança via Sync PIX Automático
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {paymentMethod === 'pix_automatico' && subData && (
+                                            <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
+                                                <p style={{ color: '#14532d', fontWeight: 700, margin: '0 0 12px', textAlign: 'center' }}>
+                                                    Escaneie para autorizar o PIX Semanal
+                                                </p>
+                                                <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 14px' }}>
+                                                    <img
+                                                        src={`data:image/png;base64,${subData.qrCodeBase64}`}
+                                                        alt="QR PIX Parcelado"
+                                                        style={{ width: 210, height: 210, borderRadius: 12, border: '3px solid #bbf7d0' }}
+                                                    />
+                                                </div>
+                                                <p style={{ fontSize: '12px', color: '#166534', textAlign: 'center', margin: 0 }}>
+                                                    Abra seu banco → PIX → Ler QR code → Autorizar
+                                                </p>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
 
 
