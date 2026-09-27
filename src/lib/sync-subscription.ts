@@ -29,7 +29,9 @@ export async function createSubscriptionPlan(payload: SubscriptionPlanPayload): 
     });
     const text = await res.text();
     if (!res.ok) throw new Error(`[Sync] Falha ao criar plano: ${res.status} ${text}`);
-    return JSON.parse(text);
+    const json = JSON.parse(text);
+    // Sync envolve a resposta em { data: { ... } }
+    return json.data ?? json;
 }
 
 export interface EnrollPayload {
@@ -55,5 +57,7 @@ export async function enrollSubscription(planToken: string, payload: EnrollPaylo
     const text = await res.text();
     console.log(`[Sync Subscription] Enroll response ${res.status}:`, text);
     if (!res.ok) throw new Error(`[Sync] Falha ao enrolar assinante: ${res.status} ${text}`);
-    return JSON.parse(text);
+    const json = JSON.parse(text);
+    // Sync envolve a resposta em { data: { ... } }
+    return json.data ?? json;
 }
