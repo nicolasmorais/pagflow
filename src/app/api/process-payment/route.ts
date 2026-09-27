@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification, sendPixEmail } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createMpClient } from "@/lib/mercadopago";
-import { syncCashIn, SYNC_STATUS_MAP } from "@/lib/sync";
+import { createCharge, WOOVI_STATUS_MAP } from "@/lib/woovi";
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -174,29 +174,26 @@ export async function POST(req: NextRequest) {
         let transactionId: string | number | null = null;
 
         if (isPix) {
-            // ── PIX via Sync ─────────────────────────────────────────────────
-            const cleanPhone = (phone || "").replace(/\D/g, '');
-            const webhookUrl = isLocal ? 'https://placeholder.invalid/api/webhook/sync' : `${baseUrl}/api/webhook/sync`;
-
-            const syncResult = await syncCashIn({
-                amount: serverPrice,
-                description: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
-                webhook_url: webhookUrl,
-                client: {
+            // ── PIX via Woovi ─────────────────────────────────────────────────
+            const wooviResult = await createCharge({
+                correlationID: order.id,
+                value: Math.round(serverPrice * 100), // Woovi usa centavos
+                comment: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
+                customer: {
                     name: fullName || 'Cliente PagFlow',
-                    cpf: cpfToSave,
+                    taxID: cpfToSave,
                     email: orderData.email || 'cliente@pagflow.com',
-                    phone: cleanPhone || '00000000000',
+                    phone: (phone || '').replace(/\D/g, '') || undefined,
                 },
             });
 
-            console.log('[Sync] CashIn identifier:', syncResult.identifier);
-            transactionId = syncResult.identifier;
+            console.log('[Woovi] Charge correlationID:', wooviResult.correlationID);
+            transactionId = wooviResult.correlationID;
 
-            // Gerar QR code base64 a partir do pix_code
+            // Gerar QR code base64 a partir do brCode
             const QRCode = await import('qrcode');
-            qrCode = syncResult.pix_code;
-            qrCodeBase64 = (await QRCode.toDataURL(syncResult.pix_code)).replace('data:image/png;base64,', '');
+            qrCode = wooviResult.brCode;
+            qrCodeBase64 = (await QRCode.toDataURL(wooviResult.brCode)).replace('data:image/png;base64,', '');
 
             finalStatus = 'aguardando';
             pixStatusForResponse = 'aguardando';
@@ -207,18 +204,18 @@ export async function POST(req: NextRequest) {
                     data: {
                         paymentStatus: 'aguardando',
                         status: 'pendente',
-                        mpPaymentId: syncResult.identifier,
+                        mpPaymentId: wooviResult.correlationID,
                     }
                 });
             } catch (dbErr) {
-                console.error('[Sync] Failed to update order after cash-in:', dbErr);
+                console.error('[Woovi] Failed to update order after charge:', dbErr);
             }
 
             // Enviar e-mail com QR Code PIX
             try {
                 await sendPixEmail(order.id, qrCode, qrCodeBase64);
             } catch (pixEmailErr) {
-                console.error('[Sync] Failed to send PIX email:', pixEmailErr);
+                console.error('[Woovi] Failed to send PIX email:', pixEmailErr);
             }
 
         } else if (isCard) {

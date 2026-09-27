@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { enrollSubscription, createSubscriptionPlan } from "@/lib/sync-subscription";
+import { createSubscription } from "@/lib/woovi-subscription";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
@@ -33,35 +33,23 @@ export async function POST(req: NextRequest) {
         if (!cpf || cpf.length !== 11) return NextResponse.json({ success: false, error: 'CPF obrigatório (11 dígitos).' }, { status: 400 });
         const phone = (orderData.telefone || orderData.phone || '').replace(/\D/g, '') || '00000000000';
 
-        // Cria um plano exclusivo para este pedido (não reutiliza plano do produto)
+        // Cria assinatura Woovi (uma por pedido, auto-cancela após installmentCount cobranças)
         const orderRef = orderId || `tmp-${Date.now()}`;
-        const plan = await createSubscriptionPlan({
-            name: `${product.name} — Pedido #${orderRef}`,
-            description: `${parcelasEscolhidas}x R$ ${subscriptionPrice.toFixed(2)} semanal`,
-            amount: subscriptionPrice.toFixed(2),
-            periodicity_days: 7,
-            billing_method: 'pix_automatico',
-            billing_advance_days: 1,
-            grace_period_days: 3,
-            max_retry_attempts: 3,
+        const subscription = await createSubscription({
+            correlationID: orderRef,
+            name: `${product.name} — ${parcelasEscolhidas}x`,
+            value: Math.round(subscriptionPrice * 100), // Woovi usa centavos
+            customer: { name: fullName, email, taxID: cpf, phone: phone || '00000000000' },
+            comment: `${parcelasEscolhidas}x R$ ${subscriptionPrice.toFixed(2)} semanal`,
+            installmentCount: parcelasEscolhidas,
         });
-        console.log(`[Subscription] Plano criado:`, JSON.stringify(plan));
-        const planToken = plan.token || (plan as any).id || (plan as any).plan_token;
-        if (!planToken) throw new Error(`[Sync] Plano criado mas sem token. Resposta: ${JSON.stringify(plan)}`);
+        console.log(`[Subscription] Woovi criada:`, JSON.stringify(subscription));
 
-        // Enrola o cliente
-        const enrollment = await enrollSubscription(planToken, { name: fullName, email, document: cpf, phone });
-        console.log('[Subscription] Enrollment response:', JSON.stringify(enrollment));
+        const globalID = subscription.globalID;
+        if (!globalID) throw new Error(`[Woovi] Assinatura criada mas sem globalID. Resposta: ${JSON.stringify(subscription)}`);
 
-        const payment = (enrollment as any).payment || {};
-        const mandateId = payment.mandate_id || (enrollment as any).mandate_id || enrollment.mandate_id;
-        const mandateStatus = payment.mandate_status || payment.status || (enrollment as any).status || 'pending_authorization';
-        const subscriptionToken = (enrollment as any).subscription_token || '';
-        const resumed = payment.resumed === true;
-
-        // QR EMV real vem de payment.qr_code (começa com 00020126)
-        // Se resumed=true o mandato já existe e não há novo QR — cliente autoriza no app do banco
-        const qrCodeEmv: string = payment.qr_code || '';
+        // QR EMV vem de subscription.pixRecurring.emv
+        const qrCodeEmv: string = subscription.emv || '';
         const QRCode = await import('qrcode');
         const qrCodeBase64 = qrCodeEmv
             ? (await QRCode.toDataURL(qrCodeEmv)).replace('data:image/png;base64,', '')
@@ -76,8 +64,8 @@ export async function POST(req: NextRequest) {
             paymentStatus: 'aguardando',
             paymentMethod: 'pix_automatico',
             totalPrice: subscriptionPrice,
-            subscriptionMandateId: mandateId || null,
-            mpPaymentId: subscriptionToken || null,
+            subscriptionMandateId: globalID,
+            mpPaymentId: globalID,
             totalParcelas: parcelasEscolhidas,
             parcelasPagas: 0,
             product: productId ? { connect: { id: productId } } : undefined,
@@ -103,11 +91,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
             success: true,
             orderId: order.id,
-            mandateId,
-            mandateStatus,
-            subscriptionToken,
+            mandateId: globalID,
+            mandateStatus: subscription.status,
+            subscriptionToken: globalID,
             qrCodeBase64,
-            resumed,
+            resumed: false,
         });
 
     } catch (error: any) {

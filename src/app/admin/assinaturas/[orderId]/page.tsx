@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { prisma } from '@/lib/prisma';
-import { getSubscriptionDetails } from '@/lib/sync-subscription';
+import { getSubscription, listInstallments } from '@/lib/woovi-subscription';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, RefreshCw, User, Package, CreditCard, AlertTriangle } from 'lucide-react';
@@ -14,16 +14,20 @@ function dateBR(iso: string | null | undefined) {
 }
 
 const STATUS_CFG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+    ACTIVE:    { label: 'Ativa',     color: '#15803d', bg: '#dcfce7', border: '#bbf7d0' },
+    CANCELED:  { label: 'Cancelada', color: '#b91c1c', bg: '#fee2e2', border: '#fecaca' },
     active:    { label: 'Ativa',     color: '#15803d', bg: '#dcfce7', border: '#bbf7d0' },
-    suspended: { label: 'Suspensa',  color: '#92400e', bg: '#fef3c7', border: '#fde68a' },
     cancelled: { label: 'Cancelada', color: '#b91c1c', bg: '#fee2e2', border: '#fecaca' },
 };
 
 const CHARGE_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-    paid:    { label: 'Paga',     color: '#15803d', bg: '#dcfce7' },
-    pending: { label: 'Pendente', color: '#92400e', bg: '#fef3c7' },
-    expired: { label: 'Expirada', color: '#6b7280', bg: '#f1f5f9' },
-    failed:  { label: 'Falhou',   color: '#b91c1c', bg: '#fee2e2' },
+    COMPLETED: { label: 'Paga',     color: '#15803d', bg: '#dcfce7' },
+    ACTIVE:    { label: 'Pendente', color: '#92400e', bg: '#fef3c7' },
+    EXPIRED:   { label: 'Expirada', color: '#6b7280', bg: '#f1f5f9' },
+    CANCELED:  { label: 'Cancelada', color: '#b91c1c', bg: '#fee2e2' },
+    paid:      { label: 'Paga',     color: '#15803d', bg: '#dcfce7' },
+    pending:   { label: 'Pendente', color: '#92400e', bg: '#fef3c7' },
+    expired:   { label: 'Expirada', color: '#6b7280', bg: '#f1f5f9' },
 };
 
 export default async function AssinaturaDetailPage({ params }: { params: Promise<{ orderId: string }> }) {
@@ -38,16 +42,21 @@ export default async function AssinaturaDetailPage({ params }: { params: Promise
 
     let syncData: any = null;
     let syncError = '';
+    let charges: any[] = [];
     if (order.mpPaymentId) {
         try {
-            syncData = await getSubscriptionDetails(order.mpPaymentId);
+            [syncData, charges] = await Promise.all([
+                getSubscription(order.mpPaymentId),
+                listInstallments(order.mpPaymentId),
+            ]);
         } catch (e: any) {
             syncError = e.message;
         }
     }
 
-    const charges: any[] = syncData?.charges ?? [];
-    const parcelasPagas = charges.filter((c: any) => c.status === 'paid').length;
+    const parcelasPagas = charges.filter((c: any) =>
+        c.status === 'COMPLETED' || c.status === 'paid' || c.status === 'PAID'
+    ).length;
     const totalParcelas = order.totalParcelas ?? 4;
     const statusCfg = syncData ? (STATUS_CFG[syncData.status] ?? { label: syncData.status, color: '#64748b', bg: '#f1f5f9', border: '#e2e8f0' }) : null;
 
@@ -123,10 +132,9 @@ export default async function AssinaturaDetailPage({ params }: { params: Promise
                                 <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sync</span>
                             </div>
                             {[
-                                { label: 'Próximo débito',  value: dateBR(syncData.next_charge_at) },
-                                { label: 'Em atraso desde', value: dateBR(syncData.overdue_since) },
-                                { label: 'Tentativas',      value: String(syncData.retry_count ?? 0) },
-                                { label: 'Mandate ID',      value: order.subscriptionMandateId?.substring(0, 16) + '…' },
+                                { label: 'Próximo débito', value: dateBR(syncData.nextChargeAt ?? syncData.next_charge_at) },
+                                { label: 'Status Woovi',   value: syncData.status ?? '—' },
+                                { label: 'Global ID',      value: (order.mpPaymentId || '').substring(0, 20) + '…' },
                             ].map(row => (
                                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f1f5f9', fontSize: 13 }}>
                                     <span style={{ color: '#94a3b8', fontWeight: 600 }}>{row.label}</span>
@@ -136,11 +144,11 @@ export default async function AssinaturaDetailPage({ params }: { params: Promise
                         </div>
                     )}
 
-                    {syncData?.overdue_since && (
-                        <div style={{ background: '#fef3c7', borderRadius: 12, padding: '12px 16px', border: '1px solid #fde68a', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                            <AlertTriangle size={16} color="#92400e" style={{ flexShrink: 0, marginTop: 1 }} />
-                            <div style={{ fontSize: 13, color: '#92400e', fontWeight: 600 }}>
-                                Assinatura em atraso desde {dateBR(syncData.overdue_since)}. {syncData.retry_count} tentativa{syncData.retry_count !== 1 ? 's' : ''} de recobrança.
+                    {syncData?.status === 'CANCELED' && (
+                        <div style={{ background: '#fee2e2', borderRadius: 12, padding: '12px 16px', border: '1px solid #fecaca', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                            <AlertTriangle size={16} color="#b91c1c" style={{ flexShrink: 0, marginTop: 1 }} />
+                            <div style={{ fontSize: 13, color: '#b91c1c', fontWeight: 600 }}>
+                                Assinatura cancelada na Woovi.
                             </div>
                         </div>
                     )}
@@ -165,26 +173,26 @@ export default async function AssinaturaDetailPage({ params }: { params: Promise
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {[...charges].sort((a, b) => b.cycle_number - a.cycle_number).map((c: any) => {
+                            {[...charges].map((c: any, idx: number) => {
                                 const cs = CHARGE_STATUS[c.status] ?? { label: c.status, color: '#64748b', bg: '#f1f5f9' };
+                                const num = c.number ?? c.cycle_number ?? (idx + 1);
+                                const paidAt = c.paidAt ?? c.paid_at;
+                                const dueDate = c.dueDate ?? c.due_date;
+                                const amount = c.value != null ? (c.value / 100).toFixed(2).replace('.', ',') : c.amount ?? '—';
                                 return (
-                                    <div key={c.cycle_number} style={{ display: 'grid', gridTemplateColumns: '40px 1fr auto auto', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #f1f5f9' }}>
-                                        {/* Número */}
+                                    <div key={num} style={{ display: 'grid', gridTemplateColumns: '40px 1fr auto auto', alignItems: 'center', gap: 12, padding: '12px 14px', background: '#f8fafc', borderRadius: 10, border: '1px solid #f1f5f9' }}>
                                         <div style={{ width: 36, height: 36, borderRadius: '50%', background: cs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: cs.color }}>
-                                            {c.cycle_number}
+                                            {num}
                                         </div>
-                                        {/* Datas */}
                                         <div>
-                                            <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Parcela {c.cycle_number}</div>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: '#0f172a' }}>Parcela {num}</div>
                                             <div style={{ fontSize: 11, color: '#94a3b8' }}>
-                                                {c.paid_at ? `Paga em ${dateBR(c.paid_at)}` : `Vence ${dateBR(c.due_date)}`}
+                                                {paidAt ? `Paga em ${dateBR(paidAt)}` : dueDate ? `Vence ${dateBR(dueDate)}` : 'Aguardando'}
                                             </div>
                                         </div>
-                                        {/* Valor */}
                                         <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>
-                                            R$ {c.amount ?? '—'}
+                                            R$ {amount}
                                         </div>
-                                        {/* Status */}
                                         <span style={{ background: cs.bg, color: cs.color, borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 700 }}>
                                             {cs.label}
                                         </span>

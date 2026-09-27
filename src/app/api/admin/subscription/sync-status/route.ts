@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSubscriptionDetails } from "@/lib/sync-subscription";
+import { getSubscription, listInstallments } from "@/lib/woovi-subscription";
 
 export async function POST(req: NextRequest) {
     try {
@@ -10,16 +10,18 @@ export async function POST(req: NextRequest) {
         const order = await prisma.order.findUnique({ where: { id: orderId } });
         if (!order) return NextResponse.json({ success: false, error: 'Pedido não encontrado' }, { status: 404 });
 
-        const subscriptionToken = order.mpPaymentId;
-        if (!subscriptionToken) return NextResponse.json({ success: false, error: 'Sem subscription_token neste pedido' }, { status: 400 });
+        const globalID = order.mpPaymentId;
+        if (!globalID) return NextResponse.json({ success: false, error: 'Sem globalID Woovi neste pedido' }, { status: 400 });
 
-        const details = await getSubscriptionDetails(subscriptionToken);
+        const [details, installments] = await Promise.all([
+            getSubscription(globalID),
+            listInstallments(globalID),
+        ]);
 
-        // Conta parcelas pagas pelo array charges
-        const charges: any[] = details.charges ?? [];
-        const parcelasPagas = charges.filter((c: any) => c.status === 'paid').length;
+        const parcelasPagas = installments.filter((c: any) =>
+            c.status === 'COMPLETED' || c.status === 'paid' || c.status === 'PAID'
+        ).length;
 
-        // Atualiza o banco com o estado real
         const updated = await prisma.order.update({
             where: { id: orderId },
             data: { parcelasPagas },
@@ -30,20 +32,20 @@ export async function POST(req: NextRequest) {
             parcelasPagas: updated.parcelasPagas,
             totalParcelas: updated.totalParcelas,
             status: details.status,
-            nextChargeAt: details.next_charge_at,
-            overdueSince: details.overdue_since,
-            retryCount: details.retry_count ?? 0,
-            charges: charges.map((c: any) => ({
-                cycle: c.cycle_number,
+            nextChargeAt: details.nextChargeAt ?? details.next_charge_at ?? null,
+            overdueSince: null,
+            retryCount: 0,
+            charges: installments.map((c: any, i: number) => ({
+                cycle: c.number ?? c.cycle_number ?? (i + 1),
                 status: c.status,
-                amount: c.amount,
-                dueDate: c.due_date,
-                paidAt: c.paid_at,
+                amount: c.value ?? c.amount,
+                dueDate: c.dueDate ?? c.due_date ?? null,
+                paidAt: c.paidAt ?? c.paid_at ?? null,
             })),
         });
 
     } catch (error: any) {
-        console.error('[SyncStatus] Erro:', error);
+        console.error('[WooviStatus] Erro:', error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
