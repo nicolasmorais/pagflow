@@ -438,6 +438,12 @@ export async function createProduct(formData: FormData): Promise<void> {
     const subscriptionEnabled = formData.get('subscriptionEnabled') === 'true'
     const subscriptionPriceRaw = formData.get('subscriptionPrice') as string
     const subscriptionPrice = subscriptionPriceRaw ? parseFloat(subscriptionPriceRaw) : null
+    const pixPriceRaw = formData.get('pixPrice') as string
+    const pixPrice = pixPriceRaw ? parseFloat(pixPriceRaw) : null
+    const parcelasMinRaw = formData.get('parcelasMin') as string
+    const parcelasMin = parcelasMinRaw ? parseInt(parcelasMinRaw) : null
+    const parcelasMaxRaw = formData.get('parcelasMax') as string
+    const parcelasMax = parcelasMaxRaw ? parseInt(parcelasMaxRaw) : null
 
     if (!imageUrl || imageUrl.trim() === '') {
         imageUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop';
@@ -461,6 +467,9 @@ export async function createProduct(formData: FormData): Promise<void> {
             startCheckoutEventName: startCheckoutEventName?.trim() || null,
             subscriptionEnabled,
             subscriptionPrice,
+            pixPrice,
+            parcelasMin,
+            parcelasMax,
         }
 
         await prisma.product.create({
@@ -491,6 +500,12 @@ export async function updateProduct(formData: FormData): Promise<void> {
     const subscriptionEnabled = formData.get('subscriptionEnabled') === 'true'
     const subscriptionPriceRaw = formData.get('subscriptionPrice') as string
     const subscriptionPrice = subscriptionPriceRaw ? parseFloat(subscriptionPriceRaw) : null
+    const pixPriceRaw = formData.get('pixPrice') as string
+    const pixPrice = pixPriceRaw ? parseFloat(pixPriceRaw) : null
+    const parcelasMinRaw = formData.get('parcelasMin') as string
+    const parcelasMin = parcelasMinRaw ? parseInt(parcelasMinRaw) : null
+    const parcelasMaxRaw = formData.get('parcelasMax') as string
+    const parcelasMax = parcelasMaxRaw ? parseInt(parcelasMaxRaw) : null
 
     if (!id || !name || isNaN(price)) {
         throw new Error('Preencha os campos obrigatórios')
@@ -517,6 +532,9 @@ export async function updateProduct(formData: FormData): Promise<void> {
             startCheckoutEventName: startCheckoutEventName?.trim() || null,
             subscriptionEnabled,
             subscriptionPrice,
+            pixPrice,
+            parcelasMin,
+            parcelasMax,
         }
 
         const existingProduct = await prisma.product.findUnique({ where: { id } })

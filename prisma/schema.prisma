@@ -114,6 +114,9 @@ model Product {
   subscriptionEnabled    Boolean @default(false)
   subscriptionPlanToken  String?
   subscriptionPrice      Float?
+  pixPrice               Float?
+  parcelasMin            Int?
+  parcelasMax            Int?
   orders        Order[]
   orderBumps    OrderBump[]
   productPixels product_pixels[]

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Plus, Package, DollarSign, Image as ImageIcon, Percent, Loader2, Store, Target } from 'lucide-react'
+import { X, Plus, Package, DollarSign, Image as ImageIcon, Loader2, Store, Target, RefreshCw } from 'lucide-react'
 import { createProduct } from '@/app/actions'
 
 interface NewProductModalProps {
@@ -11,6 +11,7 @@ interface NewProductModalProps {
 export default function NewProductModal({ onClose }: NewProductModalProps) {
     const [loading, setLoading] = useState(false)
     const [isDigital, setIsDigital] = useState(false)
+    const [subscriptionEnabled, setSubscriptionEnabled] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -345,6 +346,83 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                             Se preenchido, substitui o evento de compra padrão do pixel Taboola só para este produto.
                         </div>
                     </div>
+
+                    {/* PIX Automático / Parcelado */}
+                    <input type="hidden" name="subscriptionEnabled" value={subscriptionEnabled ? 'true' : 'false'} />
+                    <div className="form-group" style={{
+                        background: '#f0fdf4',
+                        padding: '16px',
+                        borderRadius: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        border: '1px solid #bbf7d0',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{
+                                width: '32px', height: '32px', borderRadius: '8px',
+                                background: '#dcfce7', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', color: '#16a34a',
+                            }}>
+                                <RefreshCw size={18} />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#14532d' }}>PIX Automático Semanal</div>
+                                <div style={{ fontSize: '11px', color: '#4ade80' }}>Cobrança recorrente via Woovi</div>
+                            </div>
+                        </div>
+                        <label className="switch">
+                            <input
+                                type="checkbox"
+                                checked={subscriptionEnabled}
+                                onChange={e => setSubscriptionEnabled(e.target.checked)}
+                            />
+                            <span className="slider round" style={{ backgroundColor: subscriptionEnabled ? '#16a34a' : undefined }}></span>
+                        </label>
+                    </div>
+
+                    {subscriptionEnabled && (
+                        <div className="form-group" style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 14, padding: '16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#14532d', marginBottom: 2 }}>Configuração PIX Parcelado</div>
+                            <div>
+                                <label className="form-label" style={{ color: '#166534' }}>
+                                    <DollarSign size={14} /> Preço por parcela (R$) — opcional
+                                </label>
+                                <input
+                                    name="pixPrice"
+                                    type="number"
+                                    step="0.01"
+                                    className="form-input"
+                                    placeholder="Se vazio, usa Preço ÷ parcelas"
+                                />
+                                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 4 }}>
+                                    Deixe em branco para calcular automaticamente (preço ÷ nº de parcelas).
+                                </div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                                <div>
+                                    <label className="form-label" style={{ color: '#166534' }}>
+                                        Parcelas mínimas
+                                    </label>
+                                    <select name="parcelasMin" className="form-input" defaultValue="2">
+                                        <option value="2">2×</option>
+                                        <option value="3">3×</option>
+                                        <option value="4">4×</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="form-label" style={{ color: '#166534' }}>
+                                        Parcelas máximas
+                                    </label>
+                                    <select name="parcelasMax" className="form-input" defaultValue="6">
+                                        <option value="4">4×</option>
+                                        <option value="5">5×</option>
+                                        <option value="6">6×</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div style={{ display: 'flex', gap: '12px', marginTop: '32px' }}>
                         <button

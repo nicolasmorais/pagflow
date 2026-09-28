@@ -197,8 +197,36 @@ export default function EditProductModal({ product, onClose }: { product: any; o
                     </div>
 
                     {subscriptionEnabled && (
-                        <div style={{ marginBottom: '20px', background: '#f0fdf4', borderRadius: 10, padding: '10px 14px', fontSize: 12, color: '#166534' }}>
-                            Valor por parcela calculado automaticamente: preço do produto ÷ nº de parcelas escolhido pelo cliente (2x, 3x ou 4x).
+                        <div style={{ marginBottom: '20px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 12, padding: '14px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: '#14532d', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Configuração PIX Parcelado</div>
+                            <div>
+                                <label style={{ ...labelStyle, color: '#166534' }}><DollarSign size={12} /> Preço por parcela (R$) — opcional</label>
+                                <input name="pixPrice" type="number" step="0.01" style={inputStyle}
+                                    defaultValue={product.pixPrice ?? ''}
+                                    placeholder="Se vazio, usa Preço ÷ parcelas"
+                                    onFocus={e => { e.target.style.borderColor = '#16a34a'; e.target.style.background = '#fff' }}
+                                    onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
+                                />
+                                <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#4ade80' }}>Deixe em branco para calcular automaticamente.</p>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                <div>
+                                    <label style={{ ...labelStyle, color: '#166534' }}>Parcelas mínimas</label>
+                                    <select name="parcelasMin" style={inputStyle} defaultValue={product.parcelasMin ?? 2}>
+                                        <option value="2">2×</option>
+                                        <option value="3">3×</option>
+                                        <option value="4">4×</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={{ ...labelStyle, color: '#166534' }}>Parcelas máximas</label>
+                                    <select name="parcelasMax" style={inputStyle} defaultValue={product.parcelasMax ?? 6}>
+                                        <option value="4">4×</option>
+                                        <option value="5">5×</option>
+                                        <option value="6">6×</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                     )}
 
