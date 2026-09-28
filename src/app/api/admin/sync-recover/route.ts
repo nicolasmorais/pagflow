@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getSyncTransaction, SYNC_STATUS_MAP } from "@/lib/sync";
+import { getCharge, WOOVI_STATUS_MAP } from "@/lib/woovi";
 import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 
 async function recover(password: string | null) {
@@ -9,7 +9,7 @@ async function recover(password: string | null) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Busca todos os pedidos PIX pendentes que têm identifier da Sync
+    // Busca todos os pedidos PIX pendentes com correlationID Woovi
     const pendingOrders = await prisma.order.findMany({
         where: {
             paymentMethod: 'pix',
@@ -24,8 +24,8 @@ async function recover(password: string | null) {
 
     for (const order of pendingOrders) {
         try {
-            const tx = await getSyncTransaction(order.mpPaymentId!);
-            const newStatus = SYNC_STATUS_MAP[tx.status] || 'aguardando';
+            const charge = await getCharge(order.mpPaymentId!);
+            const newStatus = WOOVI_STATUS_MAP[charge.status] || 'aguardando';
 
             if (newStatus !== order.paymentStatus) {
                 await prisma.order.update({
@@ -42,7 +42,7 @@ async function recover(password: string | null) {
                     if (full) try { await sendAdminNotification(full); } catch { }
                 }
 
-                results.push({ orderId: order.id, de: order.paymentStatus, para: newStatus, syncStatus: tx.status });
+                results.push({ orderId: order.id, de: order.paymentStatus, para: newStatus, wooviStatus: charge.status });
             } else {
                 results.push({ orderId: order.id, status: newStatus, unchanged: true });
             }

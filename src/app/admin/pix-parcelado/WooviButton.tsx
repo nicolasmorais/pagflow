@@ -11,13 +11,11 @@ interface Charge {
     paidAt: string | null;
 }
 
-interface SyncData {
+interface WooviData {
     parcelasPagas: number;
     totalParcelas: number;
     status: string;
     nextChargeAt: string | null;
-    overdueSince: string | null;
-    retryCount: number;
     charges: Charge[];
 }
 
@@ -28,16 +26,20 @@ interface Props {
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string; bg: string }> = {
-    active:    { label: 'Ativa',      color: '#15803d', bg: '#dcfce7' },
-    suspended: { label: 'Suspensa',   color: '#92400e', bg: '#fef3c7' },
-    cancelled: { label: 'Cancelada',  color: '#b91c1c', bg: '#fee2e2' },
+    ACTIVE:    { label: 'Ativo',      color: '#15803d', bg: '#dcfce7' },
+    CANCELED:  { label: 'Cancelado',  color: '#b91c1c', bg: '#fee2e2' },
+    active:    { label: 'Ativo',      color: '#15803d', bg: '#dcfce7' },
+    cancelled: { label: 'Cancelado',  color: '#b91c1c', bg: '#fee2e2' },
 };
 
 const CHARGE_STATUS: Record<string, { label: string; color: string }> = {
-    paid:    { label: 'Paga',      color: '#15803d' },
-    pending: { label: 'Pendente',  color: '#92400e' },
-    expired: { label: 'Expirada',  color: '#6b7280' },
-    failed:  { label: 'Falhou',    color: '#b91c1c' },
+    COMPLETED: { label: 'Paga',     color: '#15803d' },
+    ACTIVE:    { label: 'Pendente', color: '#92400e' },
+    EXPIRED:   { label: 'Expirada', color: '#6b7280' },
+    CANCELED:  { label: 'Cancelada', color: '#b91c1c' },
+    paid:      { label: 'Paga',     color: '#15803d' },
+    pending:   { label: 'Pendente', color: '#92400e' },
+    expired:   { label: 'Expirada', color: '#6b7280' },
 };
 
 function dateBR(iso: string | null) {
@@ -45,10 +47,10 @@ function dateBR(iso: string | null) {
     return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
-export default function SyncButton({ orderId, initialParcelas, totalParcelas }: Props) {
+export default function WooviButton({ orderId, initialParcelas, totalParcelas }: Props) {
     const [loading, setLoading] = useState(false);
     const [parcelas, setParcelas] = useState(initialParcelas);
-    const [data, setData] = useState<SyncData | null>(null);
+    const [data, setData] = useState<WooviData | null>(null);
     const [open, setOpen] = useState(false);
     const [error, setError] = useState('');
     const panelRef = useRef<HTMLDivElement>(null);
@@ -91,7 +93,6 @@ export default function SyncButton({ orderId, initialParcelas, totalParcelas }: 
 
     return (
         <div style={{ position: 'relative' }} ref={panelRef}>
-            {/* Badge + botão */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <div style={{
                     background: parcelas >= totalParcelas ? '#fee2e2' : '#f0fdf4',
@@ -103,7 +104,7 @@ export default function SyncButton({ orderId, initialParcelas, totalParcelas }: 
                 <button
                     onClick={syncNow}
                     disabled={loading}
-                    title="Buscar dados na Sync"
+                    title="Atualizar parcelas via Woovi"
                     style={{
                         background: 'none', border: 'none', cursor: loading ? 'wait' : 'pointer',
                         padding: 2, display: 'flex', alignItems: 'center', color: '#94a3b8',
@@ -114,7 +115,6 @@ export default function SyncButton({ orderId, initialParcelas, totalParcelas }: 
                 {error && <span style={{ fontSize: 10, color: '#ef4444' }} title={error}>⚠</span>}
             </div>
 
-            {/* Painel de detalhes */}
             {open && data && (
                 <div style={{
                     position: 'fixed', zIndex: 9999,
@@ -124,9 +124,8 @@ export default function SyncButton({ orderId, initialParcelas, totalParcelas }: 
                     top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                     fontFamily: '"Space Grotesk", sans-serif',
                 }}>
-                    {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                        <div style={{ fontWeight: 800, fontSize: 14, color: '#0f172a' }}>Dados da Sync</div>
+                        <div style={{ fontWeight: 800, fontSize: 14, color: '#0f172a' }}>Dados Woovi</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             {statusCfg && (
                                 <span style={{ background: statusCfg.bg, color: statusCfg.color, borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
@@ -139,7 +138,6 @@ export default function SyncButton({ orderId, initialParcelas, totalParcelas }: 
                         </div>
                     </div>
 
-                    {/* Métricas */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
                         <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px' }}>
                             <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Parcelas pagas</div>
@@ -149,14 +147,8 @@ export default function SyncButton({ orderId, initialParcelas, totalParcelas }: 
                             <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Próximo débito</div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{dateBR(data.nextChargeAt)}</div>
                         </div>
-                        {data.overdueSince && (
-                            <div style={{ background: '#fef3c7', borderRadius: 8, padding: '10px 12px', gridColumn: '1/-1' }}>
-                                <div style={{ fontSize: 11, color: '#92400e', fontWeight: 600 }}>⚠️ Em atraso desde {dateBR(data.overdueSince)} · {data.retryCount} tentativa{data.retryCount !== 1 ? 's' : ''}</div>
-                            </div>
-                        )}
                     </div>
 
-                    {/* Histórico de cobranças */}
                     {data.charges.length > 0 && (
                         <div>
                             <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', marginBottom: 8 }}>Histórico</div>

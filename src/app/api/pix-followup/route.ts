@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPixFollowupEmail } from "@/app/actions";
-import { getSyncTransaction, SYNC_STATUS_MAP } from "@/lib/sync";
+import { getCharge, WOOVI_STATUS_MAP } from "@/lib/woovi";
 
 // Cron job: envia e-mails de follow-up para PIX pendente
 // Follow-up 1: 2 horas após criação
@@ -64,13 +64,13 @@ export async function GET(req: NextRequest) {
             if (!order.mpPaymentId) continue;
 
             try {
-                const syncTx = await getSyncTransaction(order.mpPaymentId);
-                const qrCode = syncTx.pix_code;
+                const charge = await getCharge(order.mpPaymentId);
+                const qrCode = charge.brCode;
 
                 if (!qrCode) continue;
 
-                // Verificar se Sync já aprovou (dupla checagem)
-                if (syncTx.status === 'completed') {
+                // Se Woovi já marcou como pago, atualiza e pula o follow-up
+                if (WOOVI_STATUS_MAP[charge.status] === 'pago') {
                     const updated = await prisma.order.update({
                         where: { id: order.id },
                         data: { paymentStatus: 'pago', status: 'processando' },

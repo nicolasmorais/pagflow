@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import { RefreshCw, Users, DollarSign, CheckCircle, TrendingUp, BarChart3 } from 'lucide-react';
-import SyncButton from './SyncButton';
+import WooviButton from './WooviButton';
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -225,7 +225,7 @@ export default async function PixParceladoPage() {
                                 </div>
 
                                 {/* Parcelas — botão sincroniza com Sync */}
-                                <SyncButton
+                                <WooviButton
                                     orderId={order.id}
                                     initialParcelas={order.parcelasPagas ?? 0}
                                     totalParcelas={order.totalParcelas ?? 4}

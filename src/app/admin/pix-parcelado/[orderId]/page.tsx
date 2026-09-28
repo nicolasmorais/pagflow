@@ -5,7 +5,7 @@ import { getSubscription, listInstallments } from '@/lib/woovi-subscription';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, RefreshCw, User, Package, CreditCard, AlertTriangle } from 'lucide-react';
-import SyncButton from '../SyncButton';
+import WooviButton from '../WooviButton';
 import SubscriptionActions from '../SubscriptionActions';
 
 function dateBR(iso: string | null | undefined) {
@@ -77,8 +77,8 @@ export default async function PixParceladoDetailPage({ params }: { params: Promi
                         {statusCfg.label}
                     </span>
                 )}
-                {/* Botão sync — atualiza parcelasPagas e reabre a página */}
-                <SyncButton orderId={order.id} initialParcelas={parcelasPagas || order.parcelasPagas} totalParcelas={totalParcelas} />
+                
+                <WooviButton orderId={order.id} initialParcelas={parcelasPagas || order.parcelasPagas} totalParcelas={totalParcelas} />
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 16 }}>
@@ -124,12 +124,12 @@ export default async function PixParceladoDetailPage({ params }: { params: Promi
                         ))}
                     </div>
 
-                    {/* Sync info */}
+                    
                     {syncData && (
                         <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '18px 20px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                                 <RefreshCw size={14} color="#0369a1" />
-                                <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sync</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Woovi</span>
                             </div>
                             {[
                                 { label: 'Próximo débito', value: dateBR(syncData.nextChargeAt ?? syncData.next_charge_at) },
@@ -155,7 +155,7 @@ export default async function PixParceladoDetailPage({ params }: { params: Promi
 
                     {syncError && (
                         <div style={{ background: '#fee2e2', borderRadius: 12, padding: '12px 16px', fontSize: 13, color: '#b91c1c' }}>
-                            Erro ao consultar Sync: {syncError}
+                            Erro ao consultar Woovi: {syncError}
                         </div>
                     )}
                 </div>
