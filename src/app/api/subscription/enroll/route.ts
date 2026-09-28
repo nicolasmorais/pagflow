@@ -33,15 +33,14 @@ export async function POST(req: NextRequest) {
         if (!cpf || cpf.length !== 11) return NextResponse.json({ success: false, error: 'CPF obrigatório (11 dígitos).' }, { status: 400 });
         const phone = (orderData.telefone || orderData.phone || '').replace(/\D/g, '') || '00000000000';
 
-        // Cria assinatura Woovi (uma por pedido, auto-cancela após installmentCount cobranças)
+        // Cria assinatura Woovi — endDate = hoje + (parcelas-1)*7 dias
         const orderRef = orderId || `tmp-${Date.now()}`;
         const subscription = await createSubscription({
             correlationID: orderRef,
-            name: `${product.name} — ${parcelasEscolhidas}x`,
             value: Math.round(subscriptionPrice * 100), // Woovi usa centavos
-            customer: { name: fullName, email, taxID: cpf, phone: phone || '00000000000' },
-            comment: `${parcelasEscolhidas}x R$ ${subscriptionPrice.toFixed(2)} semanal`,
-            installmentCount: parcelasEscolhidas,
+            comment: `${parcelasEscolhidas}x ${product.name}`.substring(0, 30),
+            totalParcelas: parcelasEscolhidas,
+            customer: { name: fullName, email, taxID: cpf, phone: phone || undefined },
         });
         console.log(`[Subscription] Woovi criada:`, JSON.stringify(subscription));
 

@@ -1,4 +1,4 @@
-const BASE_URL = 'https://api.openpix.com.br';
+const BASE_URL = process.env.WOOVI_BASE_URL || 'https://api.woovi-sandbox.com';
 
 function getAppId(): string {
     const appId = process.env.WOOVI_APP_ID;

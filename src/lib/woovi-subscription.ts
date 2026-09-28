@@ -1,4 +1,4 @@
-const BASE_URL = 'https://api.openpix.com.br';
+const BASE_URL = process.env.WOOVI_BASE_URL || 'https://api.woovi-sandbox.com';
 
 function getAppId(): string {
     const appId = process.env.WOOVI_APP_ID;
@@ -6,25 +6,31 @@ function getAppId(): string {
     return appId;
 }
 
+function calcEndDate(totalParcelas: number): string {
+    const date = new Date();
+    date.setDate(date.getDate() + (totalParcelas - 1) * 7);
+    return date.toISOString();
+}
+
 export interface WooviSubscriptionRequest {
     correlationID: string;
-    name: string;
     value: number; // em centavos
+    comment?: string; // max 30 chars
+    totalParcelas: number; // usado para calcular endDate
     customer: {
         name: string;
         email: string;
         taxID: string; // CPF sem máscara
         phone?: string;
-    };
-    comment?: string;
-    frequency?: 'WEEKLY' | 'MONTHLY';
-    type?: 'PIX_RECURRING';
-    installmentCount?: number; // quantas cobranças (0 = indefinido)
-    dayGenerateCharge?: number;
-    dayDue?: number;
-    pixRecurringOptions?: {
-        journey?: 'ONLY_RECURRENCY' | 'PAYMENT_ON_APPROVAL';
-        retryPolicy?: 'PERMITED' | 'NON_PERMITED';
+        address?: {
+            zipcode?: string;
+            street?: string;
+            number?: string;
+            neighborhood?: string;
+            city?: string;
+            state?: string;
+            country?: string;
+        };
     };
 }
 
@@ -33,20 +39,24 @@ export interface WooviSubscriptionResponse {
     correlationID: string;
     value: number;
     status: string;
-    emv: string; // QR code EMV para autorização
+    emv: string; // QR code EMV para autorização (Jornada 3)
 }
 
 export async function createSubscription(payload: WooviSubscriptionRequest): Promise<WooviSubscriptionResponse> {
     const appId = getAppId();
     const body = {
-        ...payload,
-        frequency: payload.frequency ?? 'WEEKLY',
-        type: payload.type ?? 'PIX_RECURRING',
-        dayGenerateCharge: payload.dayGenerateCharge ?? 3,
-        dayDue: payload.dayDue ?? 5,
-        pixRecurringOptions: payload.pixRecurringOptions ?? {
-            journey: 'ONLY_RECURRENCY',
-            retryPolicy: 'PERMITED',
+        value: payload.value,
+        type: 'PIX_RECURRING',
+        frequency: 'WEEKLY',
+        dayGenerateCharge: new Date().toISOString(),
+        endDate: calcEndDate(payload.totalParcelas),
+        dayDue: 3,
+        comment: (payload.comment ?? 'PagFlow Parcelado').substring(0, 30),
+        correlationID: payload.correlationID,
+        customer: payload.customer,
+        pixRecurringOptions: {
+            journey: 'PAYMENT_ON_APPROVAL',
+            retryPolicy: 'NON_PERMITED',
         },
     };
     console.log('[Woovi] createSubscription:', JSON.stringify(body));
@@ -103,3 +113,5 @@ export async function listInstallments(globalID: string): Promise<any[]> {
     const json = JSON.parse(text);
     return json.installments ?? json.charges ?? [];
 }
+
+export { calcEndDate };
