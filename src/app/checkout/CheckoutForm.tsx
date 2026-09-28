@@ -1819,76 +1819,121 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </div>
 
                                         {paymentMethod === 'pix_automatico' && !subData && (
-                                            <div className="pix-box" style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0' }}>
-                                                {/* Seletor de parcelas */}
-                                                {(() => {
-                                                    const basePrice = product?.price || 0;
-                                                    const total = basePrice;
-                                                    return (
-                                                        <div style={{ marginBottom: 16 }}>
-                                                            <p style={{ color: '#14532d', fontWeight: 700, fontSize: 13, margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                                                Escolha o número de parcelas
-                                                            </p>
-                                                            <div style={{ display: 'flex', gap: 8 }}>
-                                                                {[2, 3, 4].map(n => (
-                                                                    <button
-                                                                        key={n}
-                                                                        type="button"
-                                                                        onClick={() => setParcelas(n)}
-                                                                        style={{
-                                                                            flex: 1,
-                                                                            padding: '10px 6px',
-                                                                            borderRadius: 10,
-                                                                            border: `2px solid ${parcelas === n ? '#16a34a' : '#bbf7d0'}`,
-                                                                            background: parcelas === n ? '#16a34a' : '#fff',
-                                                                            color: parcelas === n ? '#fff' : '#166534',
-                                                                            fontWeight: 700,
-                                                                            fontSize: 13,
-                                                                            cursor: 'pointer',
-                                                                            transition: 'all .15s',
-                                                                            textAlign: 'center' as const,
-                                                                            lineHeight: 1.4,
-                                                                        }}
-                                                                    >
-                                                                        <div>{n}x</div>
-                                                                        <div style={{ fontSize: 11, fontWeight: 600 }}>R$ {(total / n).toFixed(2).replace('.', ',')}</div>
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                            <p style={{ color: '#4ade80', fontSize: 12, textAlign: 'center', margin: '8px 0 0' }}>
-                                                                Total: R$ {total.toFixed(2).replace('.', ',')} em {parcelas} semanas
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                })()}
-                                                {/* CPF obrigatório para PIX Parcelado */}
-                                                <div style={{ marginBottom: 14 }}>
-                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#166534', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>CPF *</label>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="000.000.000-00"
-                                                        maxLength={14}
-                                                        value={dados.cpf}
-                                                        onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
-                                                        style={{ width: '100%', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${errors.cpf ? '#ef4444' : '#bbf7d0'}`, fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
-                                                    />
-                                                    {errors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {errors.cpf}</div>}
+                                            <div style={{
+                                                background: '#fff',
+                                                border: '1px solid #e4e7ec',
+                                                borderRadius: 20,
+                                                overflow: 'hidden',
+                                                boxShadow: '0 2px 12px rgba(0,0,0,.06)',
+                                                fontFamily: "'Inter', system-ui, sans-serif",
+                                            }}>
+                                                {/* Tira superior */}
+                                                <div style={{ background: '#32bcad', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                    <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                                                        <path d="M16 3L29 10V22L16 29L3 22V10L16 3Z" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.5"/>
+                                                        <path d="M10 16L13.5 19.5L22 11" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                    </svg>
+                                                    <span style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>Pix Parcelado — débito automático</span>
                                                 </div>
-                                                <button
-                                                    className="cta-btn"
-                                                    style={{ background: '#16a34a' }}
-                                                    onClick={() => {
-                                                        const clean = dados.cpf.replace(/\D/g, '');
-                                                        if (clean.length !== 11) { setErrors(p => ({ ...p, cpf: 'CPF obrigatório (11 dígitos)' })); return; }
-                                                        finalizarAssinatura();
-                                                    }}
-                                                    disabled={subLoading}
-                                                >
-                                                    {subLoading ? 'Criando PIX Parcelado...' : '🔄 GERAR PIX PARCELADO'}
-                                                </button>
-                                                <div className="cta-note" style={{ marginTop: '12px' }}>
-                                                    <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                                    Processado com segurança via Sync PIX Automático
+                                                {/* Corpo */}
+                                                <div style={{ padding: '20px 20px 0' }}>
+                                                    <p style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '.06em', margin: '0 0 12px' }}>
+                                                        Escolha o número de parcelas
+                                                    </p>
+                                                    {/* Grid de parcelas */}
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
+                                                        {[2, 3, 4].map(n => {
+                                                            const valorParcela = (product?.price || 0) / n;
+                                                            const sel = parcelas === n;
+                                                            return (
+                                                                <button
+                                                                    key={n}
+                                                                    type="button"
+                                                                    onClick={() => setParcelas(n)}
+                                                                    style={{
+                                                                        position: 'relative',
+                                                                        padding: '14px 8px 12px',
+                                                                        borderRadius: 12,
+                                                                        border: `2px solid ${sel ? '#32bcad' : '#e4e7ec'}`,
+                                                                        background: sel ? '#edfaf8' : '#fff',
+                                                                        cursor: 'pointer',
+                                                                        textAlign: 'center' as const,
+                                                                        transition: 'all .15s',
+                                                                    }}
+                                                                >
+                                                                    {n === 4 && (
+                                                                        <span style={{
+                                                                            position: 'absolute', top: -9, right: 6,
+                                                                            background: '#32bcad', color: '#fff',
+                                                                            fontSize: 9, fontWeight: 700,
+                                                                            padding: '2px 7px', borderRadius: 20,
+                                                                            letterSpacing: '.04em', textTransform: 'uppercase' as const,
+                                                                        }}>Melhor</span>
+                                                                    )}
+                                                                    <div style={{ fontSize: 18, fontWeight: 700, color: sel ? '#32bcad' : '#0f1623', lineHeight: 1 }}>{n}×</div>
+                                                                    <div style={{ fontSize: 12, fontWeight: 500, color: sel ? '#0f9d8c' : '#6b7280', marginTop: 4 }}>
+                                                                        R$ {valorParcela.toFixed(2).replace('.', ',')}
+                                                                    </div>
+                                                                    <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>/ semana</div>
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                    {/* Linha total */}
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #f3f4f6', borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>
+                                                        <span style={{ fontSize: 13, color: '#6b7280' }}>Total</span>
+                                                        <span style={{ fontSize: 16, fontWeight: 700, color: '#0f1623' }}>
+                                                            R$ {(product?.price || 0).toFixed(2).replace('.', ',')}
+                                                        </span>
+                                                    </div>
+                                                    {/* CPF */}
+                                                    <div style={{ marginBottom: 14 }}>
+                                                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>CPF</label>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="000.000.000-00"
+                                                            maxLength={14}
+                                                            value={dados.cpf}
+                                                            onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
+                                                            style={{
+                                                                width: '100%', padding: '12px 14px',
+                                                                borderRadius: 10,
+                                                                border: `1.5px solid ${errors.cpf ? '#ef4444' : '#e4e7ec'}`,
+                                                                fontSize: 15, outline: 'none',
+                                                                background: '#fff', boxSizing: 'border-box' as const,
+                                                                fontFamily: 'inherit',
+                                                            }}
+                                                        />
+                                                        {errors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {errors.cpf}</div>}
+                                                    </div>
+                                                    {/* Botão CTA */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const clean = dados.cpf.replace(/\D/g, '');
+                                                            if (clean.length !== 11) { setErrors(p => ({ ...p, cpf: 'CPF obrigatório (11 dígitos)' })); return; }
+                                                            finalizarAssinatura();
+                                                        }}
+                                                        disabled={subLoading}
+                                                        style={{
+                                                            width: '100%', padding: '16px',
+                                                            background: subLoading ? '#9ca3af' : '#32bcad',
+                                                            color: '#fff', border: 'none', borderRadius: 14,
+                                                            fontSize: 17, fontWeight: 700,
+                                                            cursor: subLoading ? 'default' : 'pointer',
+                                                            fontFamily: 'inherit', transition: 'opacity .15s',
+                                                            marginBottom: 14,
+                                                        }}
+                                                    >
+                                                        {subLoading ? 'Criando PIX Parcelado...' : 'Gerar Pix Parcelado'}
+                                                    </button>
+                                                    {/* Badge segurança */}
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, color: '#9ca3af', paddingBottom: 20 }}>
+                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                                        </svg>
+                                                        Processado com segurança via Woovi Pix Automático
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
