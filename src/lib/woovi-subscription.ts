@@ -109,6 +109,8 @@ export async function listInstallments(globalID: string): Promise<any[]> {
     });
     const text = await res.text();
     console.log(`[Woovi] listInstallments response ${res.status}:`, text);
+    // 404 = nenhuma parcela registrada ainda (assinatura nova)
+    if (res.status === 404) return [];
     if (!res.ok) throw new Error(`[Woovi] Falha ao listar parcelas: ${res.status} ${text}`);
     const json = JSON.parse(text);
     return json.installments ?? json.charges ?? [];
