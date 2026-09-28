@@ -1,4 +1,4 @@
-const BASE_URL = process.env.WOOVI_BASE_URL || 'https://api.woovi-sandbox.com';
+const BASE_URL = process.env.WOOVI_BASE_URL || 'https://api.woovi.com';
 
 function getAppId(): string {
     const appId = process.env.WOOVI_APP_ID;
