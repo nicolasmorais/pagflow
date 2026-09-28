@@ -13,6 +13,7 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
     const [isDigital, setIsDigital] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault()
         setLoading(true)
         const formData = new FormData(e.currentTarget)
         try {
