@@ -1879,9 +1879,63 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                             );
                                                         })}
                                                     </div>
+                                                    {/* Cronograma de cobranças */}
+                                                    <div style={{ background: '#f8fafc', border: '1px solid #e4e7ec', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8 }}>
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#32bcad" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                                            </svg>
+                                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>Cronograma de cobranças</span>
+                                                        </div>
+                                                        <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.55 }}>
+                                                            A <strong style={{ color: '#0f1623' }}>1ª parcela é cobrada hoje</strong> ao autorizar o Pix no seu banco. As demais são descontadas automaticamente a cada <strong style={{ color: '#0f1623' }}>7 dias</strong>, sem ação necessária.
+                                                        </p>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                                                            {Array.from({ length: parcelas }).map((_, i) => {
+                                                                const d = new Date();
+                                                                d.setDate(d.getDate() + i * 7);
+                                                                const dia = String(d.getDate()).padStart(2, '0');
+                                                                const mes = String(d.getMonth() + 1).padStart(2, '0');
+                                                                const ano = d.getFullYear();
+                                                                const valorParcela = (product?.price || 0) / parcelas;
+                                                                const isFirst = i === 0;
+                                                                const isLast = i === parcelas - 1;
+                                                                return (
+                                                                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: isLast ? 'none' : '1px dashed #e4e7ec' }}>
+                                                                        {/* Número da parcela */}
+                                                                        <div style={{
+                                                                            width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                                                                            background: isFirst ? '#32bcad' : '#fff',
+                                                                            border: `2px solid ${isFirst ? '#32bcad' : '#d1d5db'}`,
+                                                                            color: isFirst ? '#fff' : '#6b7280',
+                                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                            fontSize: 12, fontWeight: 700,
+                                                                        }}>{i + 1}</div>
+                                                                        {/* Data + rótulo */}
+                                                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
+                                                                            <span style={{ fontSize: 13, fontWeight: 600, color: '#0f1623' }}>
+                                                                                {dia}/{mes}/{ano}
+                                                                            </span>
+                                                                            {isFirst ? (
+                                                                                <span style={{ fontSize: 10, fontWeight: 700, background: '#edfaf8', color: '#32bcad', padding: '2px 7px', borderRadius: 20, textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>
+                                                                                    Hoje
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span style={{ fontSize: 11, color: '#9ca3af' }}>em {i * 7} dias</span>
+                                                                            )}
+                                                                        </div>
+                                                                        {/* Valor */}
+                                                                        <span style={{ fontSize: 13, fontWeight: 700, color: isFirst ? '#32bcad' : '#374151', whiteSpace: 'nowrap' as const }}>
+                                                                            R$ {valorParcela.toFixed(2).replace('.', ',')}
+                                                                        </span>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
                                                     {/* Linha total */}
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #f3f4f6', borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>
-                                                        <span style={{ fontSize: 13, color: '#6b7280' }}>Total</span>
+                                                        <span style={{ fontSize: 13, color: '#6b7280' }}>Total em {parcelas} parcelas</span>
                                                         <span style={{ fontSize: 16, fontWeight: 700, color: '#0f1623' }}>
                                                             R$ {(product?.price || 0).toFixed(2).replace('.', ',')}
                                                         </span>
