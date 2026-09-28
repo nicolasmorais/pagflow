@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Copiador de Dados</title>
+  <style>
+    body {
+      width: 360px;
+      font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 16px;
+      background: #101418;
+      color: #eee;
+    }
+    h1 {
+      font-size: 15px;
+      margin: 0 0 12px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .settings-toggle {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .settings-toggle:hover { color: #fff; background: #333; }
+    button {
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #capture {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #2e7d32;
+      color: #fff;
+    }
+    #clearAll {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      background: #333;
+      color: #ccc;
+      font-size: 12px;
+    }
+    #nameForm {
+      display: none;
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    #nameForm input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 8px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    #nameForm .row { display: flex; gap: 6px; }
+    #nameForm .row button { flex: 1; padding: 7px; }
+    #saveName { background: #1565c0; color: #fff; }
+    #cancelName { background: #333; color: #ccc; }
+    #status {
+      font-size: 12px;
+      min-height: 16px;
+      margin: 6px 0;
+      color: #9ad;
+    }
+    #status.error { color: #ff6b6b; }
+    #savedList {
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .saved-item {
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .saved-item .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .saved-item .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .saved-item .date {
+      font-size: 10px;
+      color: #667;
+    }
+    .saved-item .fields {
+      font-size: 10px;
+      color: #8ab;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .saved-item .actions {
+      display: flex;
+      gap: 6px;
+    }
+    .saved-item .actions button {
+      flex: 1;
+      padding: 6px;
+      font-size: 12px;
+    }
+    .btn-paste { background: #1565c0; color: #fff; }
+    .btn-delete { background: #4a2020; color: #ff9b9b; }
+    #empty { color: #667; font-size: 11px; text-align: center; padding: 10px 0; }
+
+    /* Settings panel */
+    #settingsPanel {
+      display: none;
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    #settingsPanel label {
+      font-size: 11px;
+      color: #999;
+      display: block;
+      margin-bottom: 4px;
+    }
+    #settingsPanel input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 8px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    #saveSettings {
+      width: 100%;
+      padding: 7px;
+      background: #1565c0;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    /* Orders section */
+    .orders-section {
+      border-top: 1px solid #222;
+      padding-top: 10px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+    .orders-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .orders-header span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ccc;
+    }
+    #importOrders {
+      flex: 1;
+      padding: 8px;
+      background: #1565c0;
+      color: #fff;
+      font-size: 12px;
+    }
+    #refreshOrders {
+      padding: 8px 10px;
+      background: #333;
+      color: #ccc;
+      font-size: 12px;
+      min-width: 36px;
+    }
+    #ordersStatus {
+      font-size: 11px;
+      color: #9ad;
+      margin-bottom: 6px;
+      min-height: 14px;
+    }
+    #ordersStatus.error { color: #ff6b6b; }
+
+    /* Date filter */
+    .date-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .date-filter label {
+      font-size: 11px;
+      color: #888;
+    }
+    .date-filter input[type="date"] {
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 11px;
+      font-family: inherit;
+    }
+    .date-filter input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+    #clearDates {
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: #333;
+      color: #aaa;
+      font-size: 11px;
+      cursor: pointer;
+      border: none;
+    }
+    #clearDates:hover { color: #fff; }
+
+    /* Status filter */
+    .status-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .status-filter label {
+      font-size: 11px;
+      color: #888;
+    }
+    .status-filter select {
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* Tracking badge */
+    .badge-tracking {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #1b2a3a;
+      color: #6cf;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .badge-tracking:hover { background: #253a4a; }
+
+    /* Order item */
+    .order-item {
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 8px 10px;
+      border-left: 3px solid #e6a700;
+    }
+    .order-item.pasted {
+      border-left-color: #2e7d32;
+    }
+    .order-item .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .order-item .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .order-item .date {
+      font-size: 10px;
+      color: #667;
+    }
+    .order-item .meta {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .order-item .meta .product-name {
+      font-size: 11px;
+      color: #aaa;
+    }
+    .order-item .meta .price {
+      font-size: 11px;
+      color: #8f8;
+      font-weight: 600;
+    }
+    .badge-pago {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #1b3a1b;
+      color: #6f6;
+      font-weight: 600;
+    }
+    .badge-processando {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #3a3a1b;
+      color: #ff6;
+      font-weight: 600;
+    }
+    .badge-enviado {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #1b2a3a;
+      color: #6cf;
+    }
+    .badge-cl-shopee {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #fff7ed;
+      color: #ea580c;
+      font-weight: 600;
+    }
+    .order-item .address-preview {
+      font-size: 10px;
+      color: #8ab;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .pasted-info {
+      font-size: 10px;
+      color: #6f6;
+      margin-bottom: 4px;
+    }
+    .pasted-info.not-pasted {
+      color: #e6a700;
+    }
+    .order-item .actions {
+      display: flex;
+      gap: 6px;
+    }
+    .order-item .actions button {
+      flex: 1;
+      padding: 6px;
+      font-size: 11px;
+    }
+    .btn-mark-sent { background: #1a3a1a; color: #6f6; }
+    .btn-mark-sent:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Shopee Tracking Section */
+    .tracking-warn {
+      background: #f59e0b11;
+      border: 1px solid #f59e0b44;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 12px;
+      color: #f59e0b;
+      margin-bottom: 8px;
+      display: none;
+    }
+    .tracking-status-box {
+      background: #16161f;
+      border: 1px solid #22222e;
+      border-radius: 9px;
+      padding: 11px 13px;
+      margin-bottom: 8px;
+      transition: border-color .3s;
+    }
+    .tracking-status-box.active { border-color: #ee4d2d55; }
+    .tracking-status-box.success { border-color: #22c55e44; }
+    .tracking-status-row { display: flex; align-items: center; gap: 8px; }
+    .tracking-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #2a2a38; flex-shrink: 0;
+    }
+    .tracking-dot.blink { background: #ee4d2d; animation: blink 1s ease-in-out infinite; }
+    .tracking-dot.ok { background: #22c55e; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+    .tracking-status-txt { font-size: 12px; color: #888; line-height: 1.4; }
+    .tracking-status-txt.bright { color: #ccc; }
+    .tracking-prog-wrap { height: 3px; background: #22222e; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+    .tracking-prog-fill { height: 100%; background: #ee4d2d; border-radius: 2px; transition: width .4s ease; }
+    .ctrl-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: #555; font-size: 12px; }
+    .limit-in {
+      width: 56px; background: #16161f; border: 1px solid #22222e;
+      border-radius: 7px; color: #ccc; padding: 5px 8px; font-size: 12px; text-align: center;
+    }
+    .limit-in:focus { outline: none; border-color: #ee4d2d; }
+    .btn-extract {
+      width: 100%; padding: 10px; background: #ee4d2d; color: #fff;
+      font-size: 12px; font-weight: 600; margin-bottom: 6px;
+    }
+    .btn-extract:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-send-tracking {
+      width: 100%; padding: 10px; background: #22c55e; color: #fff;
+      font-size: 12px; font-weight: 600; margin-bottom: 6px;
+    }
+    .btn-send-tracking:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-csv {
+      width: 100%; padding: 8px; background: #16161f; border: 1px solid #22222e;
+      color: #888; font-size: 12px; margin-bottom: 6px;
+    }
+    .btn-csv:hover { border-color: #3a3a4e; color: #ccc; }
+    .btn-csv:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-clear-extract {
+      width: 100%; padding: 8px; background: none; border: 1px solid #22222e;
+      color: #555; font-size: 12px; margin-bottom: 6px;
+    }
+    .btn-clear-extract:hover { border-color: #3a3a4e; color: #888; }
+    .extract-orders { margin-top: 8px; max-height: 250px; overflow-y: auto; }
+    .extract-empty { text-align: center; padding: 20px 0; color: #333; font-size: 12px; }
+    .extract-card {
+      background: #16161f; border: 1px solid #22222e; border-radius: 9px;
+      padding: 10px 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+    }
+    .extract-card:hover { border-color: #2e2e3e; }
+    .extract-info { flex: 1; min-width: 0; }
+    .extract-name {
+      font-size: 12px; font-weight: 600; color: #ddd;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .extract-track {
+      font-size: 11px; font-family: 'SF Mono', 'Fira Code', monospace;
+      color: #22c55e; margin-top: 2px;
+    }
+    .extract-track.missing { color: #f59e0b; }
+    .extract-phone { font-size: 10px; color: #555; margin-top: 1px; }
+    .mini-btn {
+      background: none; border: 1px solid #2a2a3a; color: #666;
+      border-radius: 6px; padding: 5px 10px; font-size: 11px; font-weight: 600;
+      cursor: pointer; flex-shrink: 0; transition: all .2s; white-space: nowrap;
+    }
+    .mini-btn:hover:not(:disabled) { border-color: #22c55e; color: #22c55e; }
+    .mini-btn.sent { border-color: #22c55e44; color: #22c55e; opacity: .55; pointer-events: none; }
+    .mini-btn.error { border-color: #ef444466; color: #ef4444; }
+    .mini-btn:disabled { opacity: .35; pointer-events: none; }
+  </style>
+</head>
+<body>
+  <h1>
+    Copiador de Dados
+    <button class="settings-toggle" id="settingsToggle" title="Configuraes">&#9881;</button>
+  </h1>
+
+  <!-- Settings -->
+  <div id="settingsPanel">
+    <label>URL do PagFlow</label>
+    <input id="pagflowUrlInput" type="text" placeholder="https://pay.elabela.store" />
+    <button id="saveSettings">Salvar URL</button>
+  </div>
+
+  <!-- Import orders -->
+  <div class="orders-section">
+    <div class="orders-header">
+      <button id="importOrders">Importar pedidos PagFlow</button>
+      <button id="refreshOrders" title="Atualizar">&#8635;</button>
+    </div>
+    <div class="date-filter">
+      <label>De:</label>
+      <input id="dateFrom" type="date" />
+      <label>Até:</label>
+      <input id="dateTo" type="date" />
+      <button id="clearDates" title="Limpar datas">✕</button>
+    </div>
+    <div class="status-filter">
+      <label>Status:</label>
+      <select id="statusFilter">
+        <option value="processando">Processando (envio)</option>
+        <option value="enviado">Enviado</option>
+        <option value="cl_shopee">CL Shopee</option>
+        <option value="entregue">Entregue</option>
+      </select>
+    </div>
+    <div id="ordersStatus"></div>
+  </div>
+
+  <!-- Shopee Tracking -->
+  <div class="orders-section">
+    <div class="orders-header">
+      <span>Rastreio Shopee</span>
+    </div>
+    <div class="status-filter">
+      <label>Status:</label>
+      <select id="trackingStatusFilter">
+        <option value="enviado">Enviado</option>
+        <option value="cl_shopee">CL Shopee</option>
+      </select>
+    </div>
+    <div id="trackingWarn" class="tracking-warn"></div>
+    <div id="trackingStatusBox" class="tracking-status-box">
+      <div class="tracking-status-row">
+        <div class="tracking-dot" id="trackingDot"></div>
+        <div class="tracking-status-txt" id="trackingStatusTxt">
+          Abra a pagina de pedidos da Shopee e clique em Iniciar
+        </div>
+      </div>
+      <div class="tracking-prog-wrap" id="trackingProgWrap" style="display:none">
+        <div class="tracking-prog-fill" id="trackingProgFill" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="ctrl-row">
+      <span>Processar ate</span>
+      <input type="number" class="limit-in" id="extractLimit" value="30" min="1" max="300">
+      <span>pedidos</span>
+    </div>
+    <button id="startExtraction" class="btn-extract">Iniciar Extracao</button>
+    <button id="sendAllTracking" class="btn-send-tracking" disabled>Enviar Tudo ao PagFlow</button>
+    <button id="exportCsv" class="btn-csv" disabled>Exportar CSV</button>
+    <button id="clearExtraction" class="btn-clear-extract" style="display:none">Limpar</button>
+    <div id="extractOrdersList" class="extract-orders"></div>
+  </div>
+
+  <!-- Manual capture -->
+  <button id="capture">Capturar dados desta pagina</button>
+
+  <div id="nameForm">
+    <input id="nameInput" type="text" placeholder="Nome deste endereco (ex: Endereco 1)" />
+    <div class="row">
+      <button id="saveName">Salvar</button>
+      <button id="cancelName">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="savedList"></div>
+
+  <button id="clearAll">Limpar todos os salvos</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>

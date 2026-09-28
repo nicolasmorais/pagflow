@@ -32,7 +32,7 @@ const menuSections = [
             { icon: LineChart, label: 'Analytics', href: '/admin/analytics' },
             { icon: ShoppingCart, label: 'Pedidos', href: '/admin/pedidos' },
             { icon: Wallet, label: 'Financeiro', href: '/admin/financeiro' },
-            { icon: RefreshCw, label: 'PIX Parcelado', href: '/admin/assinaturas' },
+            { icon: RefreshCw, label: 'PIX Parcelado', href: '/admin/pix-parcelado' },
         ]
     },
     {

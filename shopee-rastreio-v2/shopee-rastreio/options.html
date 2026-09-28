@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Configurações — Shopee → PagFlow</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, 'Inter', system-ui, sans-serif;
+      background: #0f0f13;
+      color: #e2e2e8;
+      padding: 36px 32px;
+      max-width: 520px;
+    }
+
+    h1 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .sub { color: #555; font-size: 13px; margin-bottom: 32px; }
+
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1a1a24;
+    }
+
+    .field { margin-bottom: 14px; }
+    label  { display: block; font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 500; }
+
+    input, select {
+      width: 100%;
+      background: #16161f;
+      border: 1px solid #22222e;
+      border-radius: 9px;
+      color: #ddd;
+      padding: 10px 13px;
+      font-size: 13px;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus { outline: none; border-color: #ee4d2d; }
+
+    .hint { font-size: 11px; color: #444; margin-top: 5px; }
+
+    .save-row { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
+    .save-btn {
+      background: #ee4d2d;
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 11px 24px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s;
+    }
+    .save-btn:hover { opacity: .85; }
+    .saved-msg { color: #22c55e; font-size: 13px; display: none; }
+
+    /* Payload preview */
+    .payload-box {
+      background: #16161f;
+      border: 1px solid #22222e;
+      border-radius: 9px;
+      padding: 14px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: #666;
+    }
+    .payload-box .k { color: #818cf8; }
+    .payload-box .v { color: #22c55e; }
+    .payload-box .c { color: #ee4d2d; }
+    .payload-box .dim { color: #333; }
+  </style>
+</head>
+<body>
+
+  <h1>📦 Shopee → PagFlow</h1>
+  <p class="sub">Configure o endpoint da sua API para anexar os códigos de rastreio</p>
+
+  <div class="section">
+    <div class="section-title">Conexão PagFlow</div>
+
+    <div class="field">
+      <label>URL base do PagFlow</label>
+      <input type="url" id="pagflowUrl" placeholder="https://seudominio.com.br">
+      <div class="hint">Ex: https://checkout.elabela.store</div>
+    </div>
+
+    <div class="field">
+      <label>Endpoint de rastreio</label>
+      <input type="text" id="pagflowEndpoint" placeholder="/api/orders/tracking" value="/api/orders/tracking">
+      <div class="hint">Rota que recebe o POST com o código de rastreio</div>
+    </div>
+
+    <div class="field">
+      <label>API Key (Bearer token)</label>
+      <input type="password" id="pagflowKey" placeholder="sk-••••••••">
+      <div class="hint">Enviado no header Authorization: Bearer ...</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Payload enviado ao PagFlow</div>
+    <div class="payload-box">
+      <span class="c">POST</span> <span class="v">/api/orders/tracking</span><br>
+      <span class="dim">{</span><br>
+      &nbsp;&nbsp;<span class="k">"customer_name"</span>: <span class="v">"Gisele Silva"</span>,<br>
+      &nbsp;&nbsp;<span class="k">"phone"</span>: <span class="v">"(+55) 11 99999-0000"</span>,<br>
+      &nbsp;&nbsp;<span class="k">"tracking_code"</span>: <span class="v">"BR264672744104D"</span>,<br>
+      &nbsp;&nbsp;<span class="k">"shopee_order_id"</span>: <span class="v">"123456789012"</span><br>
+      <span class="dim">}</span>
+    </div>
+    <div class="hint" style="margin-top:10px">
+      No PagFlow, faça o match pelo nome ou telefone e anexe o <code style="color:#22c55e">tracking_code</code> ao pedido correspondente.
+    </div>
+  </div>
+
+  <div class="save-row">
+    <button class="save-btn" id="saveBtn">Salvar configurações</button>
+    <span class="saved-msg" id="savedMsg">✓ Salvo com sucesso!</span>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>

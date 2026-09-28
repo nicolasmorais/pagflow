@@ -497,10 +497,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 setCurrentOrderId(result.orderId);
                 setDone(true);
             } else {
-                alert(result.error || 'Erro ao criar assinatura.');
+                alert(result.error || 'Erro ao criar PIX Parcelado.');
             }
         } catch (e: any) {
-            alert('Erro ao criar assinatura: ' + e.message);
+            alert('Erro ao criar PIX Parcelado: ' + e.message);
         } finally {
             setSubLoading(false);
         }
@@ -1263,7 +1263,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </svg>
                                 </div>
                                 <div style={{ fontSize: '24px', fontWeight: 800, color: '#14532d', marginBottom: '10px' }}>
-                                    Assinatura criada!
+                                    PIX Parcelado criado!
                                 </div>
                                 <div style={{ fontSize: '15px', color: '#166534', marginBottom: '20px', lineHeight: 1.5 }}>
                                     Escaneie o QR code para autorizar <strong>R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} / semana</strong>
@@ -1918,7 +1918,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     }}
                                                     disabled={subLoading}
                                                 >
-                                                    {subLoading ? 'Criando assinatura...' : '🔄 GERAR PIX PARCELADO'}
+                                                    {subLoading ? 'Criando PIX Parcelado...' : '🔄 GERAR PIX PARCELADO'}
                                                 </button>
                                                 <div className="cta-note" style={{ marginTop: '12px' }}>
                                                     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>

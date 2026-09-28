@@ -189,8 +189,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                 <span style={{ fontSize: '12.5px', color: '#6E7180' }}>{order.installments}x de R$ {fmt(order.installmentAmount || 0)}</span>
                             )}
                             {order.paymentMethod === 'pix_automatico' && (
-                                <Link href={`/admin/assinaturas/${order.id}`} style={{ fontSize: '11.5px', color: '#15803d', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0fdf4', padding: '5px 10px', borderRadius: 7, border: '1px solid #bbf7d0' }}>
-                                    Ver assinatura →
+                                <Link href={`/admin/pix-parcelado/${order.id}`} style={{ fontSize: '11.5px', color: '#15803d', fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, background: '#f0fdf4', padding: '5px 10px', borderRadius: 7, border: '1px solid #bbf7d0' }}>
+                                    Ver PIX Parcelado →
                                 </Link>
                             )}
                         </div>

@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "PagFlow Rastreio Shopee",
+  "version": "1.0",
+  "description": "Extrai códigos de rastreio dos pedidos da Shopee e envia ao PagFlow.",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "action": {},
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://shopee.com.br/user/purchase*"],
+      "js": ["content-list.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

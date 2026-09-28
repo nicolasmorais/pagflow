@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>PagFlow Copiador</title>
+  <style>
+    body {
+      width: 360px;
+      font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      padding: 16px;
+      background: #101418;
+      color: #eee;
+    }
+    h1 {
+      font-size: 15px;
+      margin: 0 0 12px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .settings-toggle {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .settings-toggle:hover { color: #fff; background: #333; }
+    button {
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #capture {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: #2e7d32;
+      color: #fff;
+    }
+    #clearAll {
+      width: 100%;
+      padding: 8px;
+      margin-top: 10px;
+      background: #333;
+      color: #ccc;
+      font-size: 12px;
+    }
+    #nameForm {
+      display: none;
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+    #nameForm input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 8px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    #nameForm .row { display: flex; gap: 6px; }
+    #nameForm .row button { flex: 1; padding: 7px; }
+    #saveName { background: #1565c0; color: #fff; }
+    #cancelName { background: #333; color: #ccc; }
+    #status {
+      font-size: 12px;
+      min-height: 16px;
+      margin: 6px 0;
+      color: #9ad;
+    }
+    #status.error { color: #ff6b6b; }
+    #savedList {
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .saved-item {
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .saved-item .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .saved-item .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .saved-item .date {
+      font-size: 10px;
+      color: #667;
+    }
+    .saved-item .fields {
+      font-size: 10px;
+      color: #8ab;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+    .saved-item .actions {
+      display: flex;
+      gap: 6px;
+    }
+    .saved-item .actions button {
+      flex: 1;
+      padding: 6px;
+      font-size: 12px;
+    }
+    .btn-paste { background: #1565c0; color: #fff; }
+    .btn-delete { background: #4a2020; color: #ff9b9b; }
+    #empty { color: #667; font-size: 11px; text-align: center; padding: 10px 0; }
+
+    /* Settings panel */
+    #settingsPanel {
+      display: none;
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+    #settingsPanel label {
+      font-size: 11px;
+      color: #999;
+      display: block;
+      margin-bottom: 4px;
+    }
+    #settingsPanel input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 7px 8px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    #saveSettings {
+      width: 100%;
+      padding: 7px;
+      background: #1565c0;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    /* Orders section */
+    .orders-section {
+      border-top: 1px solid #222;
+      padding-top: 10px;
+      margin-top: 4px;
+      margin-bottom: 10px;
+    }
+    .orders-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .orders-header span {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ccc;
+    }
+    #importOrders {
+      flex: 1;
+      padding: 8px;
+      background: #1565c0;
+      color: #fff;
+      font-size: 12px;
+    }
+    #refreshOrders {
+      padding: 8px 10px;
+      background: #333;
+      color: #ccc;
+      font-size: 12px;
+      min-width: 36px;
+    }
+    #ordersStatus {
+      font-size: 11px;
+      color: #9ad;
+      margin-bottom: 6px;
+      min-height: 14px;
+    }
+    #ordersStatus.error { color: #ff6b6b; }
+
+    /* Date filter */
+    .date-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .date-filter label {
+      font-size: 11px;
+      color: #888;
+    }
+    .date-filter input[type="date"] {
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 11px;
+      font-family: inherit;
+    }
+    .date-filter input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+    #clearDates {
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: #333;
+      color: #aaa;
+      font-size: 11px;
+      cursor: pointer;
+      border: none;
+    }
+    #clearDates:hover { color: #fff; }
+
+    /* Status filter */
+    .status-filter {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .status-filter label {
+      font-size: 11px;
+      color: #888;
+    }
+    .status-filter select {
+      padding: 4px 6px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #0d1013;
+      color: #eee;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* Tracking badge */
+    .badge-tracking {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #1b2a3a;
+      color: #6cf;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .badge-tracking:hover { background: #253a4a; }
+
+    /* Order item */
+    .order-item {
+      background: #1a1f24;
+      border-radius: 8px;
+      padding: 8px 10px;
+      border-left: 3px solid #e6a700;
+    }
+    .order-item.pasted {
+      border-left-color: #2e7d32;
+    }
+    .order-item .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .order-item .name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .order-item .date {
+      font-size: 10px;
+      color: #667;
+    }
+    .order-item .meta {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .order-item .meta .product-name {
+      font-size: 11px;
+      color: #aaa;
+    }
+    .order-item .meta .price {
+      font-size: 11px;
+      color: #8f8;
+      font-weight: 600;
+    }
+    .badge-pago {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #1b3a1b;
+      color: #6f6;
+      font-weight: 600;
+    }
+    .badge-processando {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #3a3a1b;
+      color: #ff6;
+      font-weight: 600;
+    }
+    .badge-enviado {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #1b2a3a;
+      color: #6cf;
+    }
+    .badge-cl-shopee {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #fff7ed;
+      color: #ea580c;
+      font-weight: 600;
+    }
+    .order-item .address-preview {
+      font-size: 10px;
+      color: #8ab;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .pasted-info {
+      font-size: 10px;
+      color: #6f6;
+      margin-bottom: 4px;
+    }
+    .pasted-info.not-pasted {
+      color: #e6a700;
+    }
+    .order-item .actions {
+      display: flex;
+      gap: 6px;
+    }
+    .order-item .actions button {
+      flex: 1;
+      padding: 6px;
+      font-size: 11px;
+    }
+    .btn-mark-sent { background: #1a3a1a; color: #6f6; }
+    .btn-mark-sent:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h1>
+    PagFlow Copiador
+    <button class="settings-toggle" id="settingsToggle" title="Configuracoes">&#9881;</button>
+  </h1>
+
+  <!-- Settings -->
+  <div id="settingsPanel">
+    <label>URL do PagFlow</label>
+    <input id="pagflowUrlInput" type="text" placeholder="https://pay.elabela.store" />
+    <button id="saveSettings">Salvar URL</button>
+  </div>
+
+  <!-- Import orders -->
+  <div class="orders-section">
+    <div class="orders-header">
+      <button id="importOrders">Importar pedidos PagFlow</button>
+      <button id="refreshOrders" title="Atualizar">&#8635;</button>
+    </div>
+    <div class="date-filter">
+      <label>De:</label>
+      <input id="dateFrom" type="date" />
+      <label>Ate:</label>
+      <input id="dateTo" type="date" />
+      <button id="clearDates" title="Limpar datas">&#10005;</button>
+    </div>
+    <div class="status-filter">
+      <label>Status:</label>
+      <select id="statusFilter">
+        <option value="processando">Processando (envio)</option>
+        <option value="enviado">Enviado</option>
+        <option value="cl_shopee">CL Shopee</option>
+        <option value="entregue">Entregue</option>
+      </select>
+    </div>
+    <div id="ordersStatus"></div>
+  </div>
+
+  <!-- Manual capture -->
+  <button id="capture">Capturar dados desta pagina</button>
+
+  <div id="nameForm">
+    <input id="nameInput" type="text" placeholder="Nome deste endereco (ex: Endereco 1)" />
+    <div class="row">
+      <button id="saveName">Salvar</button>
+      <button id="cancelName">Cancelar</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <div id="savedList"></div>
+
+  <button id="clearAll">Limpar todos os salvos</button>
+
+  <script src="popup.js"></script>
+</body>
+</html>
