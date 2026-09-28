@@ -556,6 +556,54 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
 </body>
 </html>`
             }
+            {
+                name: 'PIX Parcelado — 1ª Parcela Confirmada',
+                slug: 'subscription_confirmation',
+                subject: '✅ Pagamento confirmado — seu pedido está sendo preparado!',
+                content: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<div style="max-width:600px;margin:20px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.06);">
+    <div style="background:linear-gradient(135deg,#10b981,#059669);padding:36px 32px;text-align:center;">
+        {{storeLogo}}
+        <div style="font-size:48px;margin-bottom:8px;">✅</div>
+        <h1 style="margin:0;color:#fff;font-size:26px;font-weight:800;">Pagamento confirmado!</h1>
+        <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:15px;">Olá, {{firstName}}! Sua 1ª parcela foi confirmada com sucesso. 🎉</p>
+    </div>
+    <div style="padding:32px;">
+        <div style="background:#f0fdf4;border:1.5px solid #6ee7b7;border-radius:12px;padding:20px;margin-bottom:28px;text-align:center;">
+            <p style="margin:0;font-size:13px;color:#065f46;">1ª parcela confirmada</p>
+            <p style="margin:4px 0 0;font-size:32px;font-weight:800;color:#059669;">{{installmentValue}}</p>
+            <p style="margin:8px 0 0;font-size:13px;color:#065f46;">Pedido #{{orderId}} · {{productName}}</p>
+        </div>
+        <p style="font-size:15px;color:#475569;margin:0 0 24px;">Seu pedido já está sendo preparado para despacho. Assim que sair para entrega, você vai receber um e-mail com o código de rastreio.</p>
+        <div style="border-top:1px solid #f1f5f9;padding-top:24px;">
+            <h2 style="font-size:16px;font-weight:800;color:#1e293b;margin:0 0 8px;">💳 Suas próximas cobranças</h2>
+            <p style="font-size:14px;color:#64748b;margin:0 0 16px;">As parcelas seguintes são cobradas automaticamente pelo mesmo Pix que você usou nesta compra. Mantenha saldo disponível nas datas abaixo:</p>
+            <table style="width:100%;border-collapse:collapse;border-radius:10px;overflow:hidden;">
+                <thead>
+                    <tr style="background:#f1f5f9;">
+                        <th style="padding:10px 16px;text-align:left;font-size:12px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;">Parcela</th>
+                        <th style="padding:10px 16px;text-align:left;font-size:12px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;">Data</th>
+                        <th style="padding:10px 16px;text-align:left;font-size:12px;color:#64748b;font-weight:600;border-bottom:1px solid #e2e8f0;">Valor</th>
+                    </tr>
+                </thead>
+                <tbody>{{installmentSchedule}}</tbody>
+            </table>
+            <div style="margin-top:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px;">
+                <p style="margin:0;font-size:13px;color:#92400e;">Você não precisa fazer nada. As cobranças acontecem de forma automática, sem precisar entrar no app ou fazer nenhum Pix manual.</p>
+            </div>
+        </div>
+    </div>
+    <div style="background:#f1f5f9;padding:20px;text-align:center;border-top:1px solid #e2e8f0;">
+        <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">Qualquer dúvida, basta responder este e-mail.</p>
+        <p style="margin:0;font-size:12px;color:#94a3b8;">Com carinho, {{storeName}}</p>
+    </div>
+</div>
+</body>
+</html>`
+            },
         ];
 
         setLoading(true);
