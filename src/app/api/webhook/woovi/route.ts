@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
+import { sendSubscriptionConfirmationEmail, sendAdminNotification } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { WOOVI_STATUS_MAP } from "@/lib/woovi";
 
@@ -33,7 +33,7 @@ async function handleApproved(body: any) {
         data: { paymentStatus: 'pago', status: 'processando', parcelasPagas: 1, mpPaymentId: globalID },
     });
 
-    try { await sendConfirmationEmail(order.id); } catch { }
+    try { await sendSubscriptionConfirmationEmail(order.id); } catch { }
     try { await sendAdminNotification(order); } catch { }
 
     console.log(`[Webhook Woovi] APPROVED — pedido ${order.id}, parcelasPagas=1`);
@@ -57,6 +57,16 @@ async function handleCobrCompleted(body: any) {
         where: { id: order.id },
         data: { parcelasPagas },
     });
+
+    // Push notification para o admin
+    try {
+        const { sendAdminPush } = await import('@/lib/push-service');
+        await sendAdminPush(
+            `💳 PIX Parcelado — Parcela ${installmentNumber}/${totalParcelas} paga`,
+            `${order.fullName} · R$ ${order.totalPrice?.toFixed(2) ?? '—'}`,
+            `/admin/pix-parcelado/${order.id}`
+        );
+    } catch {}
 
     // Auto-cancela se terminou
     if (parcelasPagas >= totalParcelas) {

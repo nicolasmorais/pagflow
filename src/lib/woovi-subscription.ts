@@ -114,4 +114,17 @@ export async function listInstallments(globalID: string): Promise<any[]> {
     return json.installments ?? json.charges ?? [];
 }
 
+export async function refundInstallment(chargeCorrelationID: string, value?: number): Promise<void> {
+    const appId = getAppId();
+    const body = value ? { value } : {};
+    const res = await fetch(`${BASE_URL}/api/v1/charges/${encodeURIComponent(chargeCorrelationID)}/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': appId },
+        body: JSON.stringify(body),
+    });
+    const text = await res.text();
+    console.log(`[Woovi] refundInstallment response ${res.status}:`, text);
+    if (!res.ok) throw new Error(`[Woovi] Falha ao reembolsar parcela: ${res.status} ${text}`);
+}
+
 export { calcEndDate };
