@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { reportWebVitals } from '@/lib/web-vitals-reporter'
+import PixParceladoSuccess from './PixParceladoSuccess'
 import './checkout.css'
 
 export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
@@ -27,7 +28,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [shipping, setShipping] = useState(defaultShipping);
     const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'pix_automatico' | ''>('');
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
-    const [subData, setSubData] = useState<{ mandateId: string, mandateStatus: string, qrCodeBase64: string, resumed: boolean } | null>(null);
+    const [subData, setSubData] = useState<{ mandateId: string, mandateStatus: string, qrCodeBase64: string, emv: string, resumed: boolean } | null>(null);
     const [subLoading, setSubLoading] = useState(false);
     const [parcelas, setParcelas] = useState(4);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -493,7 +494,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             });
             const result = await res.json();
             if (result.success) {
-                setSubData({ mandateId: result.mandateId, mandateStatus: result.mandateStatus, qrCodeBase64: result.qrCodeBase64 || '', resumed: result.resumed || false });
+                setSubData({ mandateId: result.mandateId, mandateStatus: result.mandateStatus, qrCodeBase64: result.qrCodeBase64 || '', emv: result.emv || '', resumed: result.resumed || false });
                 setCurrentOrderId(result.orderId);
                 setDone(true);
             } else {
@@ -1255,48 +1256,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             }}>✓ Código copiado!</div>
                         </div>
                     ) : paymentMethod === 'pix_automatico' ? (
-                        <div style={{ background: '#f0fdf4', minHeight: '100vh', fontFamily: "'Manrope', sans-serif" }}>
-                            <div style={{ maxWidth: 520, margin: '0 auto', padding: '40px 18px 48px', textAlign: 'center' }}>
-                                <div style={{ width: 74, height: 74, borderRadius: '50%', background: '#dcfce7', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="20 6 9 17 4 12"/>
-                                    </svg>
-                                </div>
-                                <div style={{ fontSize: '24px', fontWeight: 800, color: '#14532d', marginBottom: '10px' }}>
-                                    PIX Parcelado criado!
-                                </div>
-                                <div style={{ fontSize: '15px', color: '#166534', marginBottom: '20px', lineHeight: 1.5 }}>
-                                    Escaneie o QR code para autorizar <strong>R$ {(product?.subscriptionPrice || product?.price || 0).toFixed(2).replace('.', ',')} / semana</strong>
-                                </div>
-                                {subData?.qrCodeBase64 && !subData?.resumed ? (
-                                    <>
-                                        <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 16px' }}>
-                                            <img src={`data:image/png;base64,${subData.qrCodeBase64}`} alt="QR PIX Parcelado" style={{ width: 220, height: 220, borderRadius: 12, border: '3px solid #bbf7d0' }} />
-                                        </div>
-                                        <div style={{ background: '#dcfce7', borderRadius: 12, padding: '14px 18px', fontSize: '13px', color: '#14532d', lineHeight: 1.8, textAlign: 'left' }}>
-                                            <strong>Como autorizar:</strong>
-                                            <ol style={{ margin: '8px 0 0 16px', padding: 0 }}>
-                                                <li>Abra o app do banco</li>
-                                                <li>Vá em PIX → Escanear QR code</li>
-                                                <li>Escaneie o código acima</li>
-                                            </ol>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div style={{ background: '#dcfce7', borderRadius: 12, padding: '14px 18px', fontSize: '13px', color: '#14532d', lineHeight: 1.8, textAlign: 'left' }}>
-                                        <strong>Como autorizar:</strong>
-                                        <ol style={{ margin: '8px 0 0 16px', padding: 0 }}>
-                                            <li>Abra o app do banco</li>
-                                            <li>Vá em PIX → PIX Automático</li>
-                                            <li>Encontre a solicitação pendente e autorize</li>
-                                        </ol>
-                                    </div>
-                                )}
-                                <p style={{ marginTop: 20, fontSize: '12px', color: '#4ade80' }}>
-                                    Confirmação será enviada para <strong>{dados.email}</strong>
-                                </p>
-                            </div>
-                        </div>
+                        <PixParceladoSuccess
+                            qrCodeBase64={subData?.qrCodeBase64 || ''}
+                            emv={subData?.emv || ''}
+                            parcelas={parcelas}
+                            valorParcela={(product?.price || 0) / parcelas}
+                            email={dados.email || ''}
+                        />
                     ) : (
                         <div className="card-confirm-page">
                             <div className="cc-container">

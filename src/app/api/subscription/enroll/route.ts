@@ -94,6 +94,7 @@ export async function POST(req: NextRequest) {
             mandateStatus: subscription.status,
             subscriptionToken: globalID,
             qrCodeBase64,
+            emv: qrCodeEmv,
             resumed: false,
         });
 
