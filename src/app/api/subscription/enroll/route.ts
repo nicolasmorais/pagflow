@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { productId, orderData, orderId } = body;
-        const parcelasEscolhidas: number = Math.min(Math.max(Number(body.parcelas) || 4, 2), 4);
+        const parcelasEscolhidas: number = Math.min(Math.max(Number(body.parcelas) || 4, 2), 6);
 
         const product = await prisma.product.findUnique({ where: { id: productId } });
         if (!product) return NextResponse.json({ success: false, error: 'Produto não encontrado.' }, { status: 404 });

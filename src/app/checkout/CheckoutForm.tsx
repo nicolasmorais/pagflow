@@ -1841,8 +1841,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                         Escolha o número de parcelas
                                                     </p>
                                                     {/* Grid de parcelas */}
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 14 }}>
-                                                        {[2, 3, 4].map(n => {
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
+                                                        {[2, 3, 4, 6].map(n => {
                                                             const valorParcela = (product?.price || 0) / n;
                                                             const sel = parcelas === n;
                                                             return (
@@ -1861,7 +1861,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                                         transition: 'all .15s',
                                                                     }}
                                                                 >
-                                                                    {n === 4 && (
+                                                                    {n === 6 && (
                                                                         <span style={{
                                                                             position: 'absolute', top: -9, right: 6,
                                                                             background: '#32bcad', color: '#fff',
