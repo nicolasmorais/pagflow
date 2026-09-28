@@ -555,7 +555,7 @@ export default function EmailsClient({ initialTemplates }: { initialTemplates: a
 </div>
 </body>
 </html>`
-            }
+            },
             {
                 name: 'PIX Parcelado — 1ª Parcela Confirmada',
                 slug: 'subscription_confirmation',
