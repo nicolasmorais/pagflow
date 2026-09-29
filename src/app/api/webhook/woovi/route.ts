@@ -12,8 +12,9 @@ async function logError(level: string, source: string, message: string, stack?: 
 
 // PIX_AUTOMATIC_APPROVED — cliente autorizou + pagou P1 (Jornada 3)
 async function handleApproved(body: any) {
-    const globalID: string = body.globalID || body.subscriptionGlobalID;
-    const correlationID: string = body.correlationID;
+    const globalID: string = body.globalID || body.subscriptionGlobalID || body.subscription?.globalID || body.pixAutomatic?.globalID;
+    const correlationID: string = body.correlationID || body.subscription?.correlationID;
+    console.log(`[Webhook Woovi] APPROVED raw body:`, JSON.stringify(body).substring(0, 600));
 
     const order = await prisma.order.findFirst({
         where: {
@@ -24,7 +25,8 @@ async function handleApproved(body: any) {
         },
     });
     if (!order) {
-        console.log(`[Webhook Woovi] APPROVED — assinatura ${globalID} não encontrada`);
+        console.log(`[Webhook Woovi] APPROVED — pedido não encontrado. globalID=${globalID} correlationID=${correlationID}`);
+        await logError('warn', 'webhook-woovi-approved', `Pedido não encontrado: globalID=${globalID} correlationID=${correlationID}`);
         return;
     }
 
@@ -33,7 +35,7 @@ async function handleApproved(body: any) {
         data: { paymentStatus: 'pago', status: 'processando', parcelasPagas: 1, mpPaymentId: globalID },
     });
 
-    try { await sendSubscriptionConfirmationEmail(order.id); } catch { }
+    try { await sendSubscriptionConfirmationEmail(order.id); } catch (e) { console.error('[Webhook Woovi] Erro ao enviar email:', e); }
     try { await sendAdminNotification(order); } catch { }
 
     console.log(`[Webhook Woovi] APPROVED — pedido ${order.id}, parcelasPagas=1`);
