@@ -19,7 +19,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [step1Loading, setStep1Loading] = useState(false);
     const [cepResolved, setCepResolved] = useState(false);
 
-    const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
+    const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '529.982.247-25' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
     const defaultShipping = shippingRules && shippingRules.length > 0
         ? shippingRules[0]
