@@ -1748,7 +1748,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             Cartão de Crédito
                                             <span style={{ background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>até 6x sem juros</span>
                                         </div>
-                                        <div className="pay-desc">até 12x — aprovação na hora</div>
+                                        <div className="pay-desc">Pagamento seguro e rápido</div>
                                     </div>
                                 </div>
 
