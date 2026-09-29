@@ -65,7 +65,7 @@ export default async function VendasPage() {
     };
 
     for (const order of orders) {
-        if (order.mpPaymentId && (order.paymentStatus === 'processando' || order.paymentStatus === 'aguardando')) {
+        if (order.mpPaymentId && (order as any).paymentMethod !== 'pix_automatico' && (order.paymentStatus === 'processando' || order.paymentStatus === 'aguardando')) {
             try {
                 let mpResult: any = null;
                 for (let attempt = 1; attempt <= 3; attempt++) {

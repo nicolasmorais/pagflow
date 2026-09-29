@@ -20,7 +20,7 @@ import { getDateFilters, startOfDayBR, endOfDayBR, formatDateStr, getBrazilNow }
 async function syncMercadoPagoOrders(orders: any[]) {
     if (!process.env.MP_ACCESS_TOKEN) return orders;
     const pendingOrders = orders.filter(
-        o => o.mpPaymentId && (o.paymentStatus === 'processando' || o.paymentStatus === 'aguardando')
+        o => o.mpPaymentId && o.paymentMethod !== 'pix_automatico' && (o.paymentStatus === 'processando' || o.paymentStatus === 'aguardando')
     );
     if (pendingOrders.length === 0) return orders;
     const statusMap: Record<string, string> = {
