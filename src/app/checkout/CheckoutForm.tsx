@@ -1730,10 +1730,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
 
                                 {paymentMethod === 'card' && (
-                                    <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 14, padding: '18px 16px', marginBottom: 8 }}>
+                                    <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '20px 18px', marginBottom: 8 }}>
                                         {/* Número do cartão */}
-                                        <div style={{ marginBottom: 12 }}>
-                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Número do Cartão *</label>
+                                        <div style={{ marginBottom: 14 }}>
+                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Número do Cartão *</label>
                                             <input
                                                 type="tel"
                                                 inputMode="numeric"
@@ -1741,28 +1741,28 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 maxLength={19}
                                                 value={cardData.number}
                                                 onChange={e => setCardData(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
-                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.number ? '#ef4444' : '#e4e7ec'}`, fontSize: 16, letterSpacing: '0.08em', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.number ? '#ef4444' : '#d1d5db'}`, fontSize: 18, letterSpacing: '0.12em', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
                                             />
                                             {cardErrors.number && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.number}</div>}
                                         </div>
 
                                         {/* Nome no cartão */}
-                                        <div style={{ marginBottom: 12 }}>
-                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Nome no Cartão *</label>
+                                        <div style={{ marginBottom: 14 }}>
+                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Nome no Cartão *</label>
                                             <input
                                                 type="text"
                                                 placeholder="Como aparece no cartão"
                                                 value={cardData.name}
                                                 onChange={e => setCardData(p => ({ ...p, name: e.target.value.toUpperCase() }))}
-                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.name ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.name ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
                                             />
                                             {cardErrors.name && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.name}</div>}
                                         </div>
 
                                         {/* Validade + CVV */}
-                                        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                                        <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
                                             <div style={{ flex: 1 }}>
-                                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Validade *</label>
+                                                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Validade *</label>
                                                 <input
                                                     type="tel"
                                                     inputMode="numeric"
@@ -1770,12 +1770,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     maxLength={5}
                                                     value={cardData.exp}
                                                     onChange={e => setCardData(p => ({ ...p, exp: formatExpiry(e.target.value) }))}
-                                                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.exp ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                                    style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.exp ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
                                                 />
                                                 {cardErrors.exp && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.exp}</div>}
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>CVV *</label>
+                                                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>CVV *</label>
                                                 <input
                                                     type="tel"
                                                     inputMode="numeric"
@@ -1783,33 +1783,33 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     maxLength={4}
                                                     value={cardData.cvv}
                                                     onChange={e => setCardData(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
-                                                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.cvv ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                                    style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.cvv ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
                                                 />
                                                 {cardErrors.cvv && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.cvv}</div>}
                                             </div>
                                         </div>
 
                                         {/* CPF */}
-                                        <div style={{ marginBottom: 12 }}>
-                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>CPF *</label>
+                                        <div style={{ marginBottom: 14 }}>
+                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>CPF *</label>
                                             <input
                                                 type="text"
                                                 placeholder="000.000.000-00"
                                                 maxLength={14}
                                                 value={dados.cpf}
                                                 onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
-                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.cpf ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.cpf ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
                                             />
                                             {cardErrors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.cpf}</div>}
                                         </div>
 
                                         {/* Parcelas */}
-                                        <div style={{ marginBottom: 16 }}>
-                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Parcelas</label>
+                                        <div style={{ marginBottom: 18 }}>
+                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Parcelas</label>
                                             <select
                                                 value={cardData.installments}
                                                 onChange={e => setCardData(p => ({ ...p, installments: Number(e.target.value) }))}
-                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e4e7ec', fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: '2px solid #d1d5db', fontSize: 16, outline: 'none', background: '#f9fafb', boxSizing: 'border-box' }}
                                             >
                                                 {cardInstallmentOptions.map(({ n, val }) => (
                                                     <option key={n} value={n}>
