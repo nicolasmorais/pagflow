@@ -117,6 +117,7 @@ model Product {
   pixPrice               Float?
   parcelasMin            Int?
   parcelasMax            Int?
+  minInstallmentValue    Float?
   orders        Order[]
   orderBumps    OrderBump[]
   productPixels product_pixels[]

@@ -30,9 +30,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
     const [subData, setSubData] = useState<{ mandateId: string, mandateStatus: string, qrCodeBase64: string, emv: string, resumed: boolean } | null>(null);
     const [subLoading, setSubLoading] = useState(false);
-    const parcelasMin = product?.parcelasMin ?? 2;
-    const parcelasMax = product?.parcelasMax ?? 6;
-    const [parcelas, setParcelas] = useState<number>(() => Math.max(parcelasMin, 4));
+    const minInstallmentValue: number = product?.minInstallmentValue ?? 49.90;
+    const pixTotal: number = product?.pixPrice ? Number(product.pixPrice) : (product?.price || 0);
+    const parcelasOpcoes: number[] = [2, 3, 4, 5, 6].filter(n => pixTotal / n >= minInstallmentValue);
+    const parcelasMin = parcelasOpcoes[0] ?? 2;
+    const parcelasMax = parcelasOpcoes[parcelasOpcoes.length - 1] ?? 6;
+    const [parcelas, setParcelas] = useState<number>(() => parcelasOpcoes.includes(4) ? 4 : (parcelasOpcoes[0] ?? 2));
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
@@ -132,10 +135,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
     const basePrice = product?.price || 9;
 
-    // Preço por parcela do PIX Parcelado: usa pixPrice do produto se definido, senão divide o preço normal
-    const pixValorParcela = (n: number) =>
-        product?.pixPrice ? Number(product.pixPrice) : (product?.price || 0) / n;
-    // Total PIX Parcelado para N parcelas
+    // Preço por parcela = pixTotal (preço PIX Parcelado) ÷ n
+    const pixValorParcela = (n: number) => pixTotal / n;
     const pixTotalParcelado = (n: number) => pixValorParcela(n) * n;
 
     const bumpsTotal = (availableBumps || [])
@@ -1854,8 +1855,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                         Escolha o número de parcelas
                                                     </p>
                                                     {/* Grid de parcelas */}
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
-                                                        {[2, 3, 4, 6].filter(n => n >= parcelasMin && n <= parcelasMax).map(n => {
+                                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${parcelasOpcoes.length}, 1fr)`, gap: 8, marginBottom: 14 }}>
+                                                        {parcelasOpcoes.map(n => {
                                                             const valorParcela = pixValorParcela(n);
                                                             const sel = parcelas === n;
                                                             return (

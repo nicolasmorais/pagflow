@@ -80,6 +80,15 @@ export default function EditProductForm({ product }: { product: any }) {
     const [loading, setLoading] = useState(false)
     const [isDigital, setIsDigital] = useState(product.isDigital || false)
     const [subscriptionEnabled, setSubscriptionEnabled] = useState(product.subscriptionEnabled || false)
+    const [pixPriceInput, setPixPriceInput] = useState(product.pixPrice ? String(product.pixPrice) : '')
+    const [minInstInput, setMinInstInput] = useState(product.minInstallmentValue ? String(product.minInstallmentValue) : '49.90')
+
+    const calcOpcoes = () => {
+        const total = parseFloat(pixPriceInput)
+        const minVal = parseFloat(minInstInput) || 49.90
+        if (!total || total <= 0) return []
+        return [2, 3, 4, 5, 6].filter(n => total / n >= minVal)
+    }
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault()
@@ -256,32 +265,41 @@ export default function EditProductForm({ product }: { product: any }) {
                                         Configuração PIX Parcelado
                                     </div>
                                     <div>
-                                        <label style={{ ...labelStyle, color: '#166534' }}><DollarSign size={13} /> Preço por parcela (R$)</label>
-                                        <input name="pixPrice" type="number" step="0.01" style={inputStyle} defaultValue={product.pixPrice ?? ''}
-                                            placeholder="Deixe vazio para calcular automaticamente"
+                                        <label style={{ ...labelStyle, color: '#166534' }}><DollarSign size={13} /> Preço total PIX Parcelado (R$)</label>
+                                        <input name="pixPrice" type="number" step="0.01" style={inputStyle}
+                                            placeholder="Ex: 299,90"
+                                            value={pixPriceInput}
+                                            onChange={e => setPixPriceInput(e.target.value)}
                                             onFocus={e => { e.target.style.borderColor = '#16a34a'; e.target.style.background = '#fff' }}
                                             onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
                                         />
-                                        <p style={{ ...hint, color: '#4ade80' }}>Se vazio, calcula como: Preço ÷ nº de parcelas escolhido.</p>
+                                        <p style={{ ...hint, color: '#4ade80' }}>Preço cobrado no PIX Parcelado (pode ser maior que o preço à vista).</p>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                                        <div>
-                                            <label style={{ ...labelStyle, color: '#166634' }}>Parcelas mínimas</label>
-                                            <select name="parcelasMin" style={inputStyle} defaultValue={product.parcelasMin ?? 2}>
-                                                <option value="2">2×</option>
-                                                <option value="3">3×</option>
-                                                <option value="4">4×</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label style={{ ...labelStyle, color: '#166634' }}>Parcelas máximas</label>
-                                            <select name="parcelasMax" style={inputStyle} defaultValue={product.parcelasMax ?? 6}>
-                                                <option value="4">4×</option>
-                                                <option value="5">5×</option>
-                                                <option value="6">6×</option>
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label style={{ ...labelStyle, color: '#166534' }}><DollarSign size={13} /> Valor mínimo por parcela (R$)</label>
+                                        <input name="minInstallmentValue" type="number" step="0.01" style={inputStyle}
+                                            placeholder="49,90"
+                                            value={minInstInput}
+                                            onChange={e => setMinInstInput(e.target.value)}
+                                            onFocus={e => { e.target.style.borderColor = '#16a34a'; e.target.style.background = '#fff' }}
+                                            onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
+                                        />
+                                        <p style={{ ...hint, color: '#4ade80' }}>Cada parcela deve valer no mínimo este valor. As opções são calculadas automaticamente.</p>
                                     </div>
+                                    {calcOpcoes().length > 0 && (
+                                        <div style={{ background: '#dcfce7', borderRadius: 10, padding: '10px 14px' }}>
+                                            <div style={{ fontSize: 11, fontWeight: 700, color: '#14532d', marginBottom: 6 }}>
+                                                Opções no checkout:
+                                            </div>
+                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+                                                {calcOpcoes().map(n => (
+                                                    <span key={n} style={{ background: '#fff', border: '1px solid #86efac', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 700, color: '#166534' }}>
+                                                        {n}× R$ {(parseFloat(pixPriceInput) / n).toFixed(2).replace('.', ',')}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

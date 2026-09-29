@@ -13,16 +13,21 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { productId, orderData, orderId } = body;
-        const parcelasEscolhidas: number = Math.min(Math.max(Number(body.parcelas) || 4, 2), 6);
+        const parcelasRaw: number = Number(body.parcelas) || 4;
 
         const product = await prisma.product.findUnique({ where: { id: productId } });
         if (!product) return NextResponse.json({ success: false, error: 'Produto não encontrado.' }, { status: 404 });
         if (!product.subscriptionEnabled) return NextResponse.json({ success: false, error: 'Assinatura não disponível para este produto.' }, { status: 400 });
 
-        // Se o produto tem pixPrice definido, usa como preço por parcela; senão divide o preço normal
-        const subscriptionPrice = (product as any).pixPrice
-            ? Number((product as any).pixPrice)
-            : product.price / parcelasEscolhidas;
+        // Calcula opções válidas com base no valor mínimo por parcela
+        const pixTotal = (product as any).pixPrice ? Number((product as any).pixPrice) : product.price;
+        const minInstVal = (product as any).minInstallmentValue ? Number((product as any).minInstallmentValue) : 49.90;
+        const validOpcoes = [2, 3, 4, 5, 6].filter(n => pixTotal / n >= minInstVal);
+        const parcelasEscolhidas = validOpcoes.includes(parcelasRaw)
+            ? parcelasRaw
+            : (validOpcoes[validOpcoes.length - 1] ?? 4);
+
+        const subscriptionPrice = pixTotal / parcelasEscolhidas;
 
         const email = (orderData.email || '').trim().toLowerCase();
         if (!email || !email.includes('@')) {
