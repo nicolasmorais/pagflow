@@ -1875,29 +1875,27 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                 </div>
                                 {paymentMethod === 'pix' && (
-                                    <div className="pix-box">
-                                        <p>A confirmação de pagamento é realizada em poucos minutos.<br/>Utilize o aplicativo do seu banco para pagar.</p>
-                                        <div style={{
-                                            margin: '0 0 16px',
-                                            padding: '14px 16px',
-                                            background: '#FEF3E8',
-                                            border: '1.5px solid #E07020',
-                                            borderRadius: '8px',
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            gap: '10px',
-                                        }}>
-                                            <span style={{ fontSize: '18px', lineHeight: 1, flexShrink: 0, marginTop: '1px' }}>&#9888;</span>
-                                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#E07020', lineHeight: 1.5 }}>
-                                                ⚠️ Não pagar o Pix pode fazer seu nome ir para o SPC/Serasa, conforme as regras de cobrança.
+                                    <div className="pix-box" style={{ padding: '18px 16px' }}>
+                                        {/* Info row */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="#16a34a" style={{ flexShrink: 0 }}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
+                                            <span style={{ fontSize: 13, color: '#166534', lineHeight: 1.5 }}>
+                                                Confirmação em <strong>poucos minutos</strong> — pague pelo app do seu banco.
+                                            </span>
+                                        </div>
+                                        {/* Warning */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '11px 14px', background: '#fff7ed', borderRadius: 8, border: '1px solid #fed7aa' }}>
+                                            <span style={{ fontSize: 17, flexShrink: 0 }}>⚠️</span>
+                                            <span style={{ fontSize: 12, fontWeight: 600, color: '#c2410c', lineHeight: 1.5 }}>
+                                                Não pagar o PIX pode negativar seu nome no SPC/Serasa.
                                             </span>
                                         </div>
                                         <button className="cta-btn" onClick={() => finalizar()} disabled={loading}>
                                             {loading ? 'Processando...' : 'GERAR PIX'}
                                         </button>
-                                        <div className="cta-note" style={{marginTop:'12px'}}>
+                                        <div className="cta-note" style={{ marginTop: 12 }}>
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                            Pagamento processado com segurança via Sync
+                                            Pagamento processado com segurança via Woovi
                                         </div>
                                     </div>
                                 )}
