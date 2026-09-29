@@ -1744,8 +1744,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </svg>
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div className="pay-name">Cartão de Crédito</div>
-                                        <div className="pay-desc">até 12x — aprovação na hora <span style={{ color: '#16a34a', fontWeight: 700 }}>• até 6x sem juros</span></div>
+                                        <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                            Cartão de Crédito
+                                            <span style={{ background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>até 6x sem juros</span>
+                                        </div>
+                                        <div className="pay-desc">até 12x — aprovação na hora</div>
                                     </div>
                                 </div>
 
