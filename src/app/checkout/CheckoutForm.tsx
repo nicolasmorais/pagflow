@@ -1753,86 +1753,80 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
 
                                 {paymentMethod === 'card' && (
-                                    <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 10, padding: '20px 18px', marginBottom: 8 }}>
+                                    <div style={{ background: '#fafafa', border: '1px solid #e5e7eb', borderRadius: 8, padding: '14px 14px 10px', marginBottom: 8 }}>
                                         {/* Número do cartão */}
-                                        <div style={{ marginBottom: 14 }}>
-                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Número do Cartão *</label>
+                                        <div style={{ marginBottom: 8 }}>
                                             <input
                                                 type="tel"
                                                 inputMode="numeric"
-                                                placeholder="0000 0000 0000 0000"
+                                                placeholder="Número do cartão"
                                                 maxLength={19}
                                                 value={cardData.number}
                                                 onChange={e => setCardData(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
-                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.number ? '#ef4444' : '#d1d5db'}`, fontSize: 18, letterSpacing: '0.12em', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
+                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.number ? '#ef4444' : '#e5e7eb'}`, fontSize: 15, letterSpacing: '0.1em', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                             />
-                                            {cardErrors.number && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.number}</div>}
+                                            {cardErrors.number && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.number}</div>}
                                         </div>
 
                                         {/* Nome no cartão */}
-                                        <div style={{ marginBottom: 14 }}>
-                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Nome no Cartão *</label>
+                                        <div style={{ marginBottom: 8 }}>
                                             <input
                                                 type="text"
-                                                placeholder="Como aparece no cartão"
+                                                placeholder="Nome no cartão"
                                                 value={cardData.name}
                                                 onChange={e => setCardData(p => ({ ...p, name: e.target.value.toUpperCase() }))}
-                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.name ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
+                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.name ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                             />
-                                            {cardErrors.name && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.name}</div>}
+                                            {cardErrors.name && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.name}</div>}
                                         </div>
 
-                                        {/* Validade + CVV */}
-                                        <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+                                        {/* Validade + CVV + CPF */}
+                                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                                             <div style={{ flex: 1 }}>
-                                                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Validade *</label>
                                                 <input
                                                     type="tel"
                                                     inputMode="numeric"
-                                                    placeholder="MM/AA"
+                                                    placeholder="Validade MM/AA"
                                                     maxLength={5}
                                                     value={cardData.exp}
                                                     onChange={e => setCardData(p => ({ ...p, exp: formatExpiry(e.target.value) }))}
-                                                    style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.exp ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
+                                                    style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.exp ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                                 />
-                                                {cardErrors.exp && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.exp}</div>}
+                                                {cardErrors.exp && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.exp}</div>}
                                             </div>
                                             <div style={{ flex: 1 }}>
-                                                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>CVV *</label>
                                                 <input
                                                     type="tel"
                                                     inputMode="numeric"
-                                                    placeholder="000"
+                                                    placeholder="CVV"
                                                     maxLength={4}
                                                     value={cardData.cvv}
                                                     onChange={e => setCardData(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
-                                                    style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.cvv ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
+                                                    style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.cvv ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                                 />
-                                                {cardErrors.cvv && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.cvv}</div>}
+                                                {cardErrors.cvv && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.cvv}</div>}
                                             </div>
                                         </div>
 
                                         {/* CPF */}
-                                        <div style={{ marginBottom: 14 }}>
-                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>CPF *</label>
+                                        <div style={{ marginBottom: 8 }}>
                                             <input
                                                 type="text"
-                                                placeholder="000.000.000-00"
+                                                placeholder="CPF do titular"
                                                 maxLength={14}
                                                 value={dados.cpf}
                                                 onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
-                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: `2px solid ${cardErrors.cpf ? '#ef4444' : '#d1d5db'}`, fontSize: 16, outline: 'none', boxSizing: 'border-box', background: '#f9fafb' }}
+                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.cpf ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                             />
-                                            {cardErrors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.cpf}</div>}
+                                            {cardErrors.cpf && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.cpf}</div>}
                                         </div>
 
                                         {/* Parcelas */}
-                                        <div style={{ marginBottom: 18 }}>
-                                            <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Parcelas</label>
+                                        <div style={{ marginBottom: 12 }}>
                                             <select
                                                 value={cardData.installments}
                                                 onChange={e => setCardData(p => ({ ...p, installments: Number(e.target.value) }))}
-                                                style={{ width: '100%', padding: '15px 16px', borderRadius: 8, border: '2px solid #d1d5db', fontSize: 16, outline: 'none', background: '#f9fafb', boxSizing: 'border-box' }}
+                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
                                             >
                                                 {cardInstallmentOptions.map(({ n, val }) => (
                                                     <option key={n} value={n}>
