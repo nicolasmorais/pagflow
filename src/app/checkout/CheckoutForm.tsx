@@ -1725,7 +1725,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <div className="pay-name">Cartão de Crédito</div>
-                                        <div className="pay-desc">até 12x — aprovação na hora</div>
+                                        <div className="pay-desc">até 12x — aprovação na hora <span style={{ color: '#16a34a', fontWeight: 700 }}>• até 6x sem juros</span></div>
                                     </div>
                                 </div>
 
