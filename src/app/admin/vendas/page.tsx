@@ -345,7 +345,16 @@ export default async function VendasPage() {
                                                 {/* Col 4: Payment */}
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                                     {/* Method badge */}
-                                                    {order.paymentMethod === 'pix' ? (
+                                                    {order.paymentMethod === 'pix_automatico' ? (
+                                                        <span style={{
+                                                            fontSize: '10px', fontWeight: 800, color: '#0891b2',
+                                                            background: '#ecfeff', padding: '3px 9px', borderRadius: '7px',
+                                                            border: '1px solid #a5f3fc', width: 'fit-content',
+                                                            display: 'flex', alignItems: 'center', gap: '4px'
+                                                        }}>
+                                                            ❖ PIX Parcelado
+                                                        </span>
+                                                    ) : order.paymentMethod === 'pix' ? (
                                                         <span style={{
                                                             fontSize: '10px', fontWeight: 800, color: '#059669',
                                                             background: '#ecfdf5', padding: '3px 9px', borderRadius: '7px',

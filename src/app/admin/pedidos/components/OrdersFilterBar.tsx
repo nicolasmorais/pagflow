@@ -25,6 +25,7 @@ const paymentMethods = [
     { key: 'todos', label: 'Todos' },
     { key: 'pix', label: 'PIX' },
     { key: 'credito', label: 'Cartão' },
+    { key: 'pix_automatico', label: 'PIX Parcelado' },
 ]
 
 const orderStatuses = [

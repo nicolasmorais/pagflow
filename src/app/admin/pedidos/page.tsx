@@ -94,7 +94,7 @@ export default async function OrdersPage({
 
     let orders: any[] = [];
     try {
-        const methodFilter = method === 'pix' ? 'pix' : method === 'credito' ? 'credito' : undefined;
+        const methodFilter = method === 'pix' ? 'pix' : method === 'credito' ? 'credito' : method === 'pix_automatico' ? 'pix_automatico' : undefined;
         const orderStatusFilter = orderStatus !== 'todos' ? orderStatus : undefined;
 
         const where: any = {
@@ -373,7 +373,7 @@ export default async function OrdersPage({
                                                 {order.fullName}
                                             </p>
                                             <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#6E7180', fontWeight: 500 }}>
-                                                {order.product?.name || 'Produto'} · {order.paymentMethod === 'pix' ? 'PIX' : 'Cartão'}
+                                                {order.product?.name || 'Produto'} · {order.paymentMethod === 'pix' ? 'PIX' : order.paymentMethod === 'pix_automatico' ? 'PIX Parcelado' : 'Cartão'}
                                             </p>
                                         </div>
                                         <span style={{ fontSize: '16px', fontWeight: 700, color: '#14151F', fontFamily: "'Fraunces', serif", flexShrink: 0 }}>
