@@ -22,9 +22,13 @@ export async function POST(req: NextRequest) {
             c.status === 'COMPLETED' || c.status === 'paid' || c.status === 'PAID'
         ).length;
 
+        const isActive = details?.status === 'ACTIVE' || details?.status === 'PAID' || parcelasPagas > 0;
         const updated = await prisma.order.update({
             where: { id: orderId },
-            data: { parcelasPagas },
+            data: {
+                parcelasPagas,
+                ...(isActive && { paymentStatus: 'pago', status: 'processando' }),
+            },
         });
 
         return NextResponse.json({
