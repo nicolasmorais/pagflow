@@ -87,7 +87,7 @@ export default function EditProductForm({ product }: { product: any }) {
         const total = parseFloat(pixPriceInput)
         const minVal = parseFloat(minInstInput) || 49.90
         if (!total || total <= 0) return []
-        return [2, 3, 4, 5, 6].filter(n => total / n >= minVal)
+        return [2, 3, 4, 5, 6, 7, 8].filter(n => total / n >= minVal)
     }
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {

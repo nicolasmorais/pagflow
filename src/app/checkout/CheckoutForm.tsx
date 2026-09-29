@@ -32,7 +32,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [subLoading, setSubLoading] = useState(false);
     const minInstallmentValue: number = product?.minInstallmentValue ?? 49.90;
     const pixTotal: number = product?.pixPrice ? Number(product.pixPrice) : (product?.price || 0);
-    const parcelasOpcoes: number[] = [2, 3, 4, 5, 6].filter(n => pixTotal / n >= minInstallmentValue);
+    const parcelasOpcoes: number[] = [2, 3, 4, 5, 6, 7, 8].filter(n => pixTotal / n >= minInstallmentValue);
     const parcelasMin = parcelasOpcoes[0] ?? 2;
     const parcelasMax = parcelasOpcoes[parcelasOpcoes.length - 1] ?? 6;
     const [parcelas, setParcelas] = useState<number>(() => parcelasOpcoes.includes(4) ? 4 : (parcelasOpcoes[0] ?? 2));

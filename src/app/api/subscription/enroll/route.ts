@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         // Calcula opções válidas com base no valor mínimo por parcela
         const pixTotal = (product as any).pixPrice ? Number((product as any).pixPrice) : product.price;
         const minInstVal = (product as any).minInstallmentValue ? Number((product as any).minInstallmentValue) : 49.90;
-        const validOpcoes = [2, 3, 4, 5, 6].filter(n => pixTotal / n >= minInstVal);
+        const validOpcoes = [2, 3, 4, 5, 6, 7, 8].filter(n => pixTotal / n >= minInstVal);
         const parcelasEscolhidas = validOpcoes.includes(parcelasRaw)
             ? parcelasRaw
             : (validOpcoes[validOpcoes.length - 1] ?? 4);
