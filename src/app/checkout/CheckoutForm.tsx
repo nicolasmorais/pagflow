@@ -36,6 +36,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const parcelasMin = parcelasOpcoes[0] ?? 2;
     const parcelasMax = parcelasOpcoes[parcelasOpcoes.length - 1] ?? 6;
     const [parcelas, setParcelas] = useState<number>(() => parcelasMax);
+    const [parcelasOpen, setParcelasOpen] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
@@ -1851,44 +1852,71 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 </div>
                                                 {/* Corpo */}
                                                 <div style={{ padding: '20px 20px 0' }}>
-                                                    <p style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '.06em', margin: '0 0 12px' }}>
-                                                        Parcelas disponíveis
+                                                    <p style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '.06em', margin: '0 0 8px' }}>
+                                                        Número de parcelas
                                                     </p>
-                                                    {/* Lista de parcelas */}
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
-                                                        {parcelasOpcoes.map(n => {
-                                                            const valorParcela = pixValorParcela(n);
-                                                            const isMaior = n === parcelasMax;
-                                                            return (
-                                                                <div
-                                                                    key={n}
-                                                                    style={{
-                                                                        position: 'relative',
-                                                                        display: 'flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'space-between',
-                                                                        padding: '12px 16px',
-                                                                        borderRadius: 12,
-                                                                        border: `2px solid ${isMaior ? '#32bcad' : '#e4e7ec'}`,
-                                                                        background: isMaior ? '#edfaf8' : '#fafafa',
-                                                                    }}
-                                                                >
-                                                                    {isMaior && (
-                                                                        <span style={{
-                                                                            position: 'absolute', top: -9, right: 12,
-                                                                            background: '#32bcad', color: '#fff',
-                                                                            fontSize: 9, fontWeight: 700,
-                                                                            padding: '2px 7px', borderRadius: 20,
-                                                                            letterSpacing: '.04em', textTransform: 'uppercase' as const,
-                                                                        }}>Selecionado</span>
-                                                                    )}
-                                                                    <span style={{ fontSize: 16, fontWeight: 700, color: isMaior ? '#32bcad' : '#6b7280' }}>{n}×</span>
-                                                                    <span style={{ fontSize: 14, fontWeight: 600, color: isMaior ? '#0f9d8c' : '#9ca3af' }}>
-                                                                        R$ {valorParcela.toFixed(2).replace('.', ',')} / semana
-                                                                    </span>
-                                                                </div>
-                                                            );
-                                                        })}
+                                                    {/* Dropdown de parcelas */}
+                                                    <div style={{ position: 'relative', marginBottom: 14 }}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setParcelasOpen(o => !o)}
+                                                            style={{
+                                                                width: '100%',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                padding: '13px 16px',
+                                                                borderRadius: 12,
+                                                                border: '2px solid #32bcad',
+                                                                background: '#edfaf8',
+                                                                cursor: 'pointer',
+                                                                fontFamily: 'inherit',
+                                                            }}
+                                                        >
+                                                            <span style={{ fontSize: 15, fontWeight: 700, color: '#32bcad' }}>
+                                                                {parcelas}× — R$ {pixValorParcela(parcelas).toFixed(2).replace('.', ',')} / semana
+                                                            </span>
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#32bcad" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                                                                style={{ transform: parcelasOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}>
+                                                                <polyline points="6 9 12 15 18 9"/>
+                                                            </svg>
+                                                        </button>
+                                                        {parcelasOpen && (
+                                                            <div style={{
+                                                                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                                                                background: '#fff', border: '1.5px solid #e4e7ec',
+                                                                borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,.1)',
+                                                                zIndex: 50, overflow: 'hidden',
+                                                            }}>
+                                                                {parcelasOpcoes.map((n, idx) => {
+                                                                    const valorParcela = pixValorParcela(n);
+                                                                    const sel = parcelas === n;
+                                                                    const isMaior = n === parcelasMax;
+                                                                    return (
+                                                                        <button
+                                                                            key={n}
+                                                                            type="button"
+                                                                            onClick={() => { setParcelas(n); setParcelasOpen(false); }}
+                                                                            style={{
+                                                                                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                                padding: '13px 16px',
+                                                                                background: sel ? '#edfaf8' : '#fff',
+                                                                                border: 'none',
+                                                                                borderBottom: idx < parcelasOpcoes.length - 1 ? '1px solid #f0f0f0' : 'none',
+                                                                                cursor: 'pointer', fontFamily: 'inherit',
+                                                                                textAlign: 'left' as const,
+                                                                            }}
+                                                                        >
+                                                                            <span style={{ fontSize: 15, fontWeight: 700, color: sel ? '#32bcad' : '#0f1623' }}>
+                                                                                {n}×
+                                                                                {isMaior && <span style={{ fontSize: 10, fontWeight: 700, background: '#edfaf8', color: '#32bcad', padding: '2px 6px', borderRadius: 10, marginLeft: 8, verticalAlign: 'middle', border: '1px solid #b2f0e8' }}>Melhor</span>}
+                                                                            </span>
+                                                                            <span style={{ fontSize: 14, fontWeight: 600, color: sel ? '#0f9d8c' : '#6b7280' }}>
+                                                                                R$ {valorParcela.toFixed(2).replace('.', ',')} / sem
+                                                                            </span>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     {/* Cronograma de cobranças */}
                                                     <div style={{ background: '#f8fafc', border: '1px solid #e4e7ec', borderRadius: 12, padding: '14px 16px', marginBottom: 14 }}>
