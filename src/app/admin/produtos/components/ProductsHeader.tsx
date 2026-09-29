@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import { Plus, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 import { createProduct } from '@/app/actions'
 
 export default function ProductsHeader({ productCount }: { productCount: number }) {
@@ -37,6 +38,14 @@ export default function ProductsHeader({ productCount }: { productCount: number 
                     <h1 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.02em' }}>Produtos</h1>
                     <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94a3b8', fontWeight: 500 }}>{productCount} produtos cadastrados</p>
                 </div>
+                <Link href="/admin/produtos/novo" style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '10px 18px', borderRadius: 10,
+                    background: '#0f172a', color: '#fff',
+                    fontSize: 13, fontWeight: 700, textDecoration: 'none',
+                }}>
+                    <Plus size={15} /> Novo Produto
+                </Link>
             </div>
 
             {/* Quick Create Bar */}

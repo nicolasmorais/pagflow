@@ -1933,13 +1933,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                             })}
                                                         </div>
                                                     </div>
-                                                    {/* Linha total */}
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderTop: '1px solid #f3f4f6', borderBottom: '1px solid #f3f4f6', marginBottom: 16 }}>
-                                                        <span style={{ fontSize: 13, color: '#6b7280' }}>Total em {parcelas} parcelas</span>
-                                                        <span style={{ fontSize: 16, fontWeight: 700, color: '#0f1623' }}>
-                                                            R$ {(product?.price || 0).toFixed(2).replace('.', ',')}
-                                                        </span>
-                                                    </div>
                                                     {/* CPF */}
                                                     <div style={{ marginBottom: 14 }}>
                                                         <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>CPF</label>
