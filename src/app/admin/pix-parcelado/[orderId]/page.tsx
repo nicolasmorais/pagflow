@@ -63,6 +63,7 @@ export default async function PixParceladoDetailPage({ params }: { params: Promi
                 getSubscription(order.mpPaymentId),
                 listInstallments(order.mpPaymentId),
             ]);
+            console.log('[PIX Parcelado] charges raw:', JSON.stringify(charges).substring(0, 1000));
         } catch (e: any) {
             syncError = e.message;
         }
@@ -96,7 +97,7 @@ export default async function PixParceladoDetailPage({ params }: { params: Promi
         status: c.status,
         amount: c.value != null ? (c.value / 100).toFixed(2).replace('.', ',') : c.amount ?? '—',
         dueDate: c.dueDate ?? c.due_date ?? null,
-        paidAt: c.paidAt ?? c.paid_at ?? null,
+        paidAt: c.paidAt ?? c.paid_at ?? c.paymentDate ?? c.payment_date ?? c.completedAt ?? c.completed_at ?? c.updatedAt ?? c.updated_at ?? null,
         correlationID: c.correlationID ?? c.correlation_id ?? null,
     }));
 
@@ -107,11 +108,12 @@ export default async function PixParceladoDetailPage({ params }: { params: Promi
         const isPaid = realCharge && (realCharge.status === 'COMPLETED' || realCharge.status === 'paid' || realCharge.status === 'PAID');
         const isExpired = realCharge && (realCharge.status === 'EXPIRED' || realCharge.status === 'expired');
         const isCanceled = realCharge && (realCharge.status === 'CANCELED' || realCharge.status === 'cancelled');
+        const rawPaidAt = realCharge?.paidAt ?? realCharge?.paid_at ?? realCharge?.paymentDate ?? realCharge?.payment_date ?? realCharge?.completedAt ?? realCharge?.completed_at ?? realCharge?.updatedAt ?? realCharge?.updated_at ?? null;
 
         return {
             num,
             status: isPaid ? 'paid' : isExpired ? 'expired' : isCanceled ? 'canceled' : 'pending',
-            paidAt: realCharge?.paidAt ?? realCharge?.paid_at ?? null,
+            paidAt: isPaid ? rawPaidAt : null,
             estimatedDate: estimatedDate(order.createdAt, i),
             amount: realCharge?.value != null ? (realCharge.value / 100).toFixed(2).replace('.', ',') : installmentValue.toFixed(2).replace('.', ','),
             correlationID: realCharge?.correlationID ?? null,
