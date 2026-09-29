@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSubscription } from "@/lib/woovi-subscription";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { sendSubscriptionConfirmationEmail } from "@/app/actions";
 
 export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
@@ -92,6 +93,8 @@ export async function POST(req: NextRequest) {
         } else {
             order = await prisma.order.create({ data: orderDataToSave });
         }
+
+        sendSubscriptionConfirmationEmail(order.id).catch(() => {});
 
         return NextResponse.json({
             success: true,

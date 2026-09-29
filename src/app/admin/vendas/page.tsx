@@ -64,8 +64,28 @@ export default async function VendasPage() {
         'refunded': 'reembolsado'
     };
 
+    // Sync PIX Parcelado (Woovi) orders via Woovi API
+    const wooviPending = orders.filter((o: any) => o.paymentMethod === 'pix_automatico' && o.paymentStatus === 'aguardando' && o.mpPaymentId);
+    if (wooviPending.length > 0) {
+        const { getSubscription } = await import('@/lib/woovi-subscription');
+        for (const order of wooviPending) {
+            try {
+                const sub = await getSubscription(order.mpPaymentId!);
+                const status = sub?.status;
+                if (status === 'ACTIVE' || status === 'PAID') {
+                    await prisma.order.update({
+                        where: { id: order.id },
+                        data: { paymentStatus: 'pago', status: 'processando', parcelasPagas: 1 },
+                    });
+                    (order as any).paymentStatus = 'pago';
+                    (order as any).status = 'processando';
+                }
+            } catch { }
+        }
+    }
+
     for (const order of orders) {
-        if (order.mpPaymentId && (order.paymentStatus === 'processando' || order.paymentStatus === 'aguardando')) {
+        if (order.mpPaymentId && (order.paymentMethod !== 'pix_automatico') && (order.paymentStatus === 'processando' || order.paymentStatus === 'aguardando')) {
             try {
                 let mpResult: any = null;
                 for (let attempt = 1; attempt <= 3; attempt++) {
