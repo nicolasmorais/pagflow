@@ -15,7 +15,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https: http:",
       "font-src 'self' https://fonts.gstatic.com",
       "frame-src https://*.mercadopago.com https://*.mercadolibre.com https://*.mlstatic.com https://www.google.com",
-      "connect-src 'self' https://*.mercadopago.com https://*.mercadolibre.com https://*.mlstatic.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.google-analytics.com https://graph.facebook.com https://vitals.vercel-insights.com https://*.taboola.com https://viacep.com.br https://www.clarity.ms",
+      "connect-src 'self' https://*.mercadopago.com https://*.mercadolibre.com https://*.mlstatic.com https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://region1.google-analytics.com https://graph.facebook.com https://vitals.vercel-insights.com https://*.taboola.com https://viacep.com.br https://www.clarity.ms https://api.pagar.me",
       "media-src 'self' blob:",
     ].join('; '),
   },
