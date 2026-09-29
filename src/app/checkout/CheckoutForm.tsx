@@ -1854,19 +1854,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 {paymentMethod === 'pix' && (
                                     <div className="pix-box">
                                         <p>A confirmação de pagamento é realizada em poucos minutos.<br/>Utilize o aplicativo do seu banco para pagar.</p>
-                                        {/* CPF obrigatório para PIX */}
-                                        <div style={{ marginBottom: 12 }}>
-                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6b7280', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.04em' }}>CPF *</label>
-                                            <input
-                                                type="text"
-                                                placeholder="000.000.000-00"
-                                                maxLength={14}
-                                                value={dados.cpf}
-                                                onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
-                                                style={{ width: '100%', padding: '10px 13px', borderRadius: 8, border: `1.5px solid ${errors.cpf ? '#ef4444' : '#d1d5db'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-                                            />
-                                            {errors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {errors.cpf}</div>}
-                                        </div>
                                         <div style={{
                                             margin: '0 0 16px',
                                             padding: '14px 16px',
@@ -1882,11 +1869,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 ⚠️ Não pagar o Pix pode fazer seu nome ir para o SPC/Serasa, conforme as regras de cobrança.
                                             </span>
                                         </div>
-                                        <button className="cta-btn" onClick={() => {
-                                            const clean = dados.cpf.replace(/\D/g, '');
-                                            if (clean.length !== 11) { setErrors(p => ({ ...p, cpf: 'CPF obrigatório (11 dígitos)' })); return; }
-                                            finalizar();
-                                        }} disabled={loading}>
+                                        <button className="cta-btn" onClick={() => finalizar()} disabled={loading}>
                                             {loading ? 'Processando...' : 'GERAR PIX'}
                                         </button>
                                         <div className="cta-note" style={{marginTop:'12px'}}>
