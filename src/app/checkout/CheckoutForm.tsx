@@ -43,6 +43,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
 
     useEffect(() => {
+        if (maxInstallments > 1) {
+            setCardData(p => ({ ...p, installments: maxInstallments }));
+        }
+    }, [maxInstallments]);
+
+    useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const testMode = params.get('test');
         const stepParam = params.get('step');
@@ -691,6 +697,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
         return opts;
     })();
+    const maxInstallments = cardInstallmentOptions[cardInstallmentOptions.length - 1]?.n ?? 1;
 
     // Tokeniza cartão no Pagar.me e chama finalizar
     const finalizarCartao = async () => {
