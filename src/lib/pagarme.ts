@@ -1,0 +1,107 @@
+const PAGARME_BASE_URL = 'https://api.pagar.me/core/v5';
+
+function getAuthHeader(): string {
+    const key = process.env.PAGARME_SECRET_KEY || '';
+    if (!key) console.error('[Pagar.me] ⚠️  PAGARME_SECRET_KEY não definido!');
+    return 'Basic ' + Buffer.from(`${key}:`).toString('base64');
+}
+
+export interface PagarmeCardOrderParams {
+    orderId: string;
+    amount: number; // em centavos
+    installments: number;
+    cardToken: string;
+    description: string;
+    customer: {
+        name: string;
+        email: string;
+        document: string; // CPF apenas dígitos
+        phone?: string;   // apenas dígitos
+    };
+}
+
+export interface PagarmeOrderResult {
+    id: string;
+    status: 'paid' | 'pending' | 'failed' | 'canceled' | string;
+    charges: Array<{
+        id: string;
+        status: string;
+        last_transaction?: {
+            id: string;
+            status: string;
+            amount: number;
+            installments: number;
+            acquirer_return_code?: string;
+            acquirer_message?: string;
+        };
+    }>;
+}
+
+const PAGARME_STATUS_MAP: Record<string, string> = {
+    paid: 'pago',
+    pending: 'aguardando',
+    failed: 'recusado',
+    canceled: 'recusado',
+};
+
+export function mapPagarmeStatus(status: string): string {
+    return PAGARME_STATUS_MAP[status] || 'recusado';
+}
+
+export async function createCardOrder(params: PagarmeCardOrderParams): Promise<PagarmeOrderResult> {
+    const { orderId, amount, installments, cardToken, description, customer } = params;
+
+    const cleanPhone = (customer.phone || '').replace(/\D/g, '');
+    const phones = cleanPhone.length >= 10 ? {
+        mobile_phone: {
+            country_code: '55',
+            area_code: cleanPhone.slice(0, 2),
+            number: cleanPhone.slice(2),
+        }
+    } : undefined;
+
+    const body = {
+        code: orderId,
+        items: [{
+            amount,
+            description: description || 'Produto',
+            quantity: 1,
+            code: 'item-001',
+        }],
+        customer: {
+            name: customer.name,
+            email: customer.email,
+            type: 'individual',
+            document: customer.document,
+            document_type: 'CPF',
+            phones,
+        },
+        payments: [{
+            payment_method: 'credit_card',
+            credit_card: {
+                installments,
+                statement_descriptor: 'PAGFLOW',
+                card_token: cardToken,
+                capture: true,
+            },
+        }],
+    };
+
+    const res = await fetch(`${PAGARME_BASE_URL}/orders`, {
+        method: 'POST',
+        headers: {
+            Authorization: getAuthHeader(),
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        const msg = data?.message || data?.errors?.[0]?.message || `Pagar.me error ${res.status}`;
+        throw new Error(msg);
+    }
+
+    return data as PagarmeOrderResult;
+}

@@ -16,7 +16,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [pixLoading, setPixLoading] = useState(false);
     const [declined, setDeclined] = useState(false);
     const [declinedOrderId, setDeclinedOrderId] = useState('');
-    const [isMpLoaded, setIsMpLoaded] = useState(false);
     const [step1Loading, setStep1Loading] = useState(false);
     const [cepResolved, setCepResolved] = useState(false);
 
@@ -39,6 +38,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
+    const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
+    const [cardTokenizing, setCardTokenizing] = useState(false);
     const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
 
     useEffect(() => {
@@ -225,24 +226,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 })(window, document, "clarity", "script", "wgy8utofnr");
             `;
             document.head.appendChild(clarityScript);
-        }
-
-        // Injetar MP SDK V2 manualmente
-        if (!document.getElementById('mp-v2')) {
-            const script = document.createElement('script');
-            script.id = 'mp-v2';
-            script.src = 'https://sdk.mercadopago.com/js/v2?locale=pt-BR';
-            script.onload = () => setIsMpLoaded(true);
-            document.body.appendChild(script);
-        } else {
-            setIsMpLoaded(true);
-        }
-        if (!document.getElementById('mp-security')) {
-            const s = document.createElement('script');
-            s.id = 'mp-security';
-            s.src = 'https://www.mercadopago.com/v2/security.js';
-            s.setAttribute('view', 'checkout');
-            document.body.appendChild(s);
         }
 
         // Referrer Policy
@@ -546,36 +529,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     }
 
-    async function finalizar(brickData?: any) {
+    async function finalizar(pagarmeCardData?: { pagarmeToken: string; brand: string; installments: number }) {
         setLoading(true);
         trackFunnel('pagamento_iniciado');
         try {
-            // Capturar o Device ID gerado pelo security.js
-            const deviceId = (window as any).MP_DEVICE_SESSION_ID || (window as any).mercadopago?.deviceFingerprint;
-            const idempotencyKey = crypto.randomUUID();
-
             const currentMethod = paymentMethod === 'card' ? 'credit_card' : paymentMethod;
-            let tokenData: any = null;
-
-            // Se brickData existir, ele já vem tokenizado pelo Mercado Pago Brick
-            if (brickData) {
-                const payloadSrc = brickData.formData ? brickData.formData : brickData;
-                tokenData = {
-                    token: payloadSrc.token,
-                    installments: payloadSrc.installments,
-                    payment_method_id: payloadSrc.payment_method_id,
-                    issuer_id: payloadSrc.issuer_id
-                };
-            }
-            else if (paymentMethod === 'card') {
-                // ... fallback logic if needed
-            }
 
             const searchParams = new URLSearchParams(window.location.search);
-            const payload = {
+            const payload: any = {
                 method: currentMethod,
-                cardData: tokenData,
-                brickData: brickData, // Envia para o backend processar via BrickData
+                pagarmeData: pagarmeCardData ? {
+                    cardToken: pagarmeCardData.pagarmeToken,
+                    brand: pagarmeCardData.brand,
+                    installments: pagarmeCardData.installments,
+                } : undefined,
                 orderId: currentOrderId || null,
                 orderData: {
                     ...dados,
@@ -595,7 +562,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     clickId: searchParams.get('tblci'),
                     visitorId: getVisitorId(),
                 },
-                deviceId: deviceId
             };
 
             const response = await fetch('/api/process-payment', {
@@ -670,113 +636,93 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         } finally { setLoading(false); }
     }
 
-    // Efeito para inicializar o Brick
-    useEffect(() => {
-        let brickController: any = null;
-        let mounted = true;
+    // Detecta bandeira do cartão pelo número
+    const detectCardBrand = (num: string): string => {
+        const n = num.replace(/\s/g, '');
+        if (/^4/.test(n)) return 'visa';
+        if (/^5[1-5]/.test(n) || /^2(2[2-9][1-9]|[3-6]\d{2}|7[01]\d|720)/.test(n)) return 'mastercard';
+        if (/^3[47]/.test(n)) return 'amex';
+        if (/^(606282|3841)/.test(n)) return 'hipercard';
+        if (/^(4011|4312|4389|4514|4576|5041|5066|5067|509|6277|6362|6363|650|6516|6550)/.test(n)) return 'elo';
+        return 'unknown';
+    };
 
-        if (paymentMethod === 'card' && step === 3 && typeof window !== 'undefined' && isMpLoaded && (window as any).MercadoPago) {
-            const initBrick = async () => {
-                const container = document.getElementById('paymentBrick_container');
-                if (!container) return;
-                container.innerHTML = '';
+    // Formata número do cartão com espaços
+    const formatCardNumber = (v: string): string => {
+        const n = v.replace(/\D/g, '').slice(0, 16);
+        return n.replace(/(\d{4})/g, '$1 ').trim();
+    };
 
-                const mp = new (window as any).MercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY!);
-                const bricksBuilder = mp.bricks();
+    // Formata expiração MM/AA
+    const formatExpiry = (v: string): string => {
+        const n = v.replace(/\D/g, '').slice(0, 4);
+        if (n.length >= 3) return n.slice(0, 2) + '/' + n.slice(2);
+        return n;
+    };
 
-                // Prevent multiple instances in development StrictMode
-                if ((window as any).cardBrickController) {
-                    try { (window as any).cardBrickController.unmount(); } catch (e) { }
-                }
-
-                try {
-                    const initPayload = {
-                        amount: Number(finalPrice.toFixed(2)),
-                        payer: {
-                            email: dados.email,
-                            identification: {
-                                type: 'CPF',
-                                number: dados.cpf ? dados.cpf.replace(/\D/g, '') : ''
-                            }
-                        },
-                    };
-
-                    console.log("🔹 [DEBUG] O que está sendo enviado na inicialização do Mercado Pago:", initPayload);
-
-                    const controller = await bricksBuilder.create('cardPayment', 'paymentBrick_container', {
-                        initialization: initPayload,
-                        locale: 'pt-BR',
-                        customization: {
-                            visual: {
-                                style: {
-                                    theme: 'default',
-                                }
-                            }
-                        },
-                        callbacks: {
-                            onReady: () => {
-                                console.log("Card Brick Ready");
-                            },
-                            onSubmit: (formData) => {
-                                return new Promise((resolve, reject) => {
-                                    console.log("Card FormData Completo:", formData);
-
-                                    // Validar se o Brick gerou um token válido
-                                    const tokenSrc = formData?.formData || formData;
-                                    if (!tokenSrc || !tokenSrc.token) {
-                                        console.error("❌ Token não gerado pelo Brick. Possível bloqueio CORS/WAF do Mercado Pago.");
-                                        alert("Não foi possível processar o cartão. O sistema de segurança bloqueou a operação. Tente novamente ou utilize o PIX.");
-                                        reject(new Error("Token do cartão não disponível"));
-                                        return;
-                                    }
-
-                                    // Validar CPF para cartão: Brick ou formulário devem ter CPF válido
-                                    const brickCpf = tokenSrc.payer?.identification?.number?.replace(/\D/g, '') || '';
-                                    const formCpf = dados.cpf?.replace(/\D/g, '') || '';
-                                    const finalCpf = brickCpf || formCpf;
-                                    if (!finalCpf || finalCpf.length !== 11) {
-                                        alert("CPF é obrigatório para pagamento com cartão. Por favor, preencha seu CPF.");
-                                        reject(new Error("CPF obrigatório para cartão"));
-                                        return;
-                                    }
-
-                                    finalizar(formData)
-                                        .then(resolve)
-                                        .catch(reject);
-                                });
-                            },
-                            onError: (error) => {
-                                console.error("Brick Error:", error);
-                            },
-                        },
-                    });
-
-                    if (!mounted) {
-                        try { controller.unmount(); } catch (e) { }
-                    } else {
-                        brickController = controller;
-                        (window as any).cardBrickController = controller;
-                    }
-                } catch (e) {
-                    console.error("Error creating brick:", e);
-                }
-            };
-
-            initBrick();
-        }
-
-        return () => {
-            mounted = false;
-            if (brickController) {
-                try { brickController.unmount(); } catch (e) { }
-                (window as any).cardBrickController = null;
-            } else if ((window as any).cardBrickController) {
-                // Caso a promessa ainda não tinha retornado
-                try { (window as any).cardBrickController.unmount(); } catch (e) { }
-                (window as any).cardBrickController = null;
+    // Opções de parcelamento para cartão
+    const cardInstallmentOptions: { n: number; val: number }[] = (() => {
+        const opts: { n: number; val: number }[] = [];
+        for (let i = 1; i <= 12; i++) {
+            const val = finalPrice / i;
+            if (i === 1 || val >= (product?.minInstallmentValue ?? 9.9)) {
+                opts.push({ n: i, val });
             }
-        };
-    }, [paymentMethod, step, isMpLoaded, finalPrice, dados.email, dados.cpf]);
+        }
+        return opts;
+    })();
+
+    // Tokeniza cartão no Pagar.me e chama finalizar
+    const finalizarCartao = async () => {
+        const errs: Record<string, string> = {};
+        const num = cardData.number.replace(/\s/g, '');
+        if (num.length < 13) errs.number = 'Número do cartão inválido';
+        if (!cardData.name.trim()) errs.name = 'Nome no cartão obrigatório';
+        const expParts = cardData.exp.split('/');
+        if (expParts.length !== 2 || expParts[0].length !== 2 || expParts[1].length !== 2)
+            errs.exp = 'Validade inválida (MM/AA)';
+        if (cardData.cvv.length < 3) errs.cvv = 'CVV inválido';
+        const cleanCpf = dados.cpf.replace(/\D/g, '');
+        if (!cleanCpf || cleanCpf.length !== 11) errs.cpf = 'CPF obrigatório para cartão';
+
+        setCardErrors(errs);
+        if (Object.keys(errs).length > 0) return;
+
+        setCardTokenizing(true);
+        try {
+            const publicKey = process.env.NEXT_PUBLIC_PAGARME_PUBLIC_KEY;
+            const tokenRes = await fetch(
+                `https://api.pagar.me/core/v5/tokens?appId=${publicKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'card',
+                        card: {
+                            number: num,
+                            holder_name: cardData.name.trim(),
+                            exp_month: parseInt(expParts[0], 10),
+                            exp_year: parseInt(expParts[1], 10),
+                            cvv: cardData.cvv,
+                        },
+                    }),
+                }
+            );
+            const tokenData = await tokenRes.json();
+            if (!tokenRes.ok || !tokenData.id) {
+                const errMsg = tokenData?.message || tokenData?.errors?.[0]?.message || 'Erro ao tokenizar cartão';
+                alert(errMsg);
+                return;
+            }
+
+            const brand = tokenData.card?.brand?.toLowerCase() || detectCardBrand(num);
+            await finalizar({ pagarmeToken: tokenData.id, brand, installments: cardData.installments });
+        } catch (e: any) {
+            alert('Erro ao processar cartão: ' + e.message);
+        } finally {
+            setCardTokenizing(false);
+        }
+    };
 
     const renderProgressBar = () => (
         <div className="progress">
@@ -1555,7 +1501,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </button>
                                 <div className="cta-note">
                                     <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                    Pagamento processado com segurança via Mercado Pago
+                                    Pagamento processado com segurança
                                 </div>
                             </div>
                         </div>
@@ -1648,7 +1594,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </button>
                                         <div className="cta-note">
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                            Pagamento processado com segurança via Mercado Pago
+                                            Pagamento processado com segurança
                                         </div>
                                     </>
                                 )}
@@ -1768,6 +1714,126 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                                 {/* ── Opções de pagamento ── */}
                                 <div className="section-label" style={{ marginTop: '0', marginBottom: '10px' }}>💳 Forma de pagamento</div>
+
+                                {/* CARTÃO DE CRÉDITO */}
+                                <div className={`pay-opt ${paymentMethod === 'card' ? 'selected' : ''}`} onClick={() => setPaymentMethod('card')} style={{ marginBottom: 4 }}>
+                                    <div className="prad" style={{ borderColor: paymentMethod === 'card' ? 'var(--green)' : undefined, background: paymentMethod === 'card' ? 'var(--green)' : undefined }}></div>
+                                    <div className="pay-icon" style={{ color: '#6366f1' }}>
+                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                                        </svg>
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div className="pay-name">Cartão de Crédito</div>
+                                        <div className="pay-desc">até 12x — aprovação na hora</div>
+                                    </div>
+                                </div>
+
+                                {paymentMethod === 'card' && (
+                                    <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 14, padding: '18px 16px', marginBottom: 8 }}>
+                                        {/* Número do cartão */}
+                                        <div style={{ marginBottom: 12 }}>
+                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Número do Cartão *</label>
+                                            <input
+                                                type="tel"
+                                                inputMode="numeric"
+                                                placeholder="0000 0000 0000 0000"
+                                                maxLength={19}
+                                                value={cardData.number}
+                                                onChange={e => setCardData(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
+                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.number ? '#ef4444' : '#e4e7ec'}`, fontSize: 16, letterSpacing: '0.08em', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                                            />
+                                            {cardErrors.number && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.number}</div>}
+                                        </div>
+
+                                        {/* Nome no cartão */}
+                                        <div style={{ marginBottom: 12 }}>
+                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Nome no Cartão *</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Como aparece no cartão"
+                                                value={cardData.name}
+                                                onChange={e => setCardData(p => ({ ...p, name: e.target.value.toUpperCase() }))}
+                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.name ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                            />
+                                            {cardErrors.name && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.name}</div>}
+                                        </div>
+
+                                        {/* Validade + CVV */}
+                                        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Validade *</label>
+                                                <input
+                                                    type="tel"
+                                                    inputMode="numeric"
+                                                    placeholder="MM/AA"
+                                                    maxLength={5}
+                                                    value={cardData.exp}
+                                                    onChange={e => setCardData(p => ({ ...p, exp: formatExpiry(e.target.value) }))}
+                                                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.exp ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                                />
+                                                {cardErrors.exp && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.exp}</div>}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>CVV *</label>
+                                                <input
+                                                    type="tel"
+                                                    inputMode="numeric"
+                                                    placeholder="000"
+                                                    maxLength={4}
+                                                    value={cardData.cvv}
+                                                    onChange={e => setCardData(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
+                                                    style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.cvv ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                                />
+                                                {cardErrors.cvv && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.cvv}</div>}
+                                            </div>
+                                        </div>
+
+                                        {/* CPF */}
+                                        <div style={{ marginBottom: 12 }}>
+                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>CPF *</label>
+                                            <input
+                                                type="text"
+                                                placeholder="000.000.000-00"
+                                                maxLength={14}
+                                                value={dados.cpf}
+                                                onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
+                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: `1.5px solid ${cardErrors.cpf ? '#ef4444' : '#e4e7ec'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                                            />
+                                            {cardErrors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {cardErrors.cpf}</div>}
+                                        </div>
+
+                                        {/* Parcelas */}
+                                        <div style={{ marginBottom: 16 }}>
+                                            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Parcelas</label>
+                                            <select
+                                                value={cardData.installments}
+                                                onChange={e => setCardData(p => ({ ...p, installments: Number(e.target.value) }))}
+                                                style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: '1.5px solid #e4e7ec', fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
+                                            >
+                                                {cardInstallmentOptions.map(({ n, val }) => (
+                                                    <option key={n} value={n}>
+                                                        {n}x de R$ {val.toFixed(2).replace('.', ',')}
+                                                        {n === 1 ? ' (sem juros)' : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <button
+                                            className="cta-btn"
+                                            onClick={finalizarCartao}
+                                            disabled={cardTokenizing || loading}
+                                            style={{ marginBottom: 10 }}
+                                        >
+                                            {cardTokenizing || loading ? 'Processando...' : `Pagar R$ ${finalPrice.toFixed(2).replace('.', ',')}`}
+                                        </button>
+                                        <div className="cta-note">
+                                            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
+                                            Pagamento seguro via Pagar.me • PCI DSS
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* PIX À VISTA */}
                                 <div className={`pay-opt ${paymentMethod === 'pix' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix')}>

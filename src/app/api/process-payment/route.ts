@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Payment } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification, sendPixEmail } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { createMpClient } from "@/lib/mercadopago";
 import { createCharge, WOOVI_STATUS_MAP } from "@/lib/woovi";
+import { createCardOrder, mapPagarmeStatus } from "@/lib/pagarme";
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -28,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { method, cardData, orderData, brickData, orderId } = body;
+        const { method, cardData, orderData, brickData, pagarmeData, orderId } = body;
 
         // Reading selectedBumpIds from either orderData or body root
         const selectedBumpIds = orderData?.selectedBumpIds || body.selectedBumpIds || orderData?.selectedBumps || [];
@@ -219,142 +218,49 @@ export async function POST(req: NextRequest) {
             }
 
         } else if (isCard) {
-            // ── Cartão via Mercado Pago ────────────────────────────────────────
-            const { deviceId, idempotencyKey } = body;
-            const client = createMpClient();
-            const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/mercadopago`;
+            // ── Cartão via Pagar.me ───────────────────────────────────────────
 
-            const cleanPhone = (phone || "").replace(/\D/g, '');
-            const phoneData = cleanPhone.length >= 10 ? {
-                area_code: cleanPhone.slice(0, 2),
-                number: cleanPhone.slice(2)
-            } : undefined;
-
-            const mpPayload: any = {
-                transaction_amount: serverPrice,
-                description: `Pedido ${order.id} - ${product?.name || 'Produto'}${bumpsTotal > 0 ? ` + ${selectedBumpIds.length} oferta(s)` : ''}`,
-                external_reference: order.id,
-                statement_descriptor: "PAGFLOW*PRODUTO",
-                binary_mode: true,
-                notification_url: notificationUrl,
-                payer: {
-                    email: orderData.email || 'cliente@pagflow.com',
-                    first_name: fullName.split(' ')[0] || "Cliente",
-                    last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
-                    identification: { type: 'CPF', number: cpfToSave },
-                    phone: phoneData,
-                    address: (orderData.cep || orderData.rua) ? {
-                        zip_code: orderData.cep?.replace(/\D/g, '') || '',
-                        street_name: orderData.rua || '',
-                        street_number: orderData.numero || '',
-                        neighborhood: orderData.bairro || '',
-                        city: orderData.cidade || '',
-                        federal_unit: (orderData.estado || '').toUpperCase()
-                    } : undefined
-                },
-                additional_info: {
-                    items: [{
-                        id: product?.id || 'default',
-                        title: product?.name || 'Produto Digital',
-                        quantity: 1,
-                        unit_price: serverPrice,
-                        category_id: 'others',
-                        description: product?.name || `Compra realizada no PagFlow - ID ${order.id}`
-                    }],
-                    payer: {
-                        first_name: fullName.split(' ')[0] || "Cliente",
-                        last_name: fullName.split(' ').slice(1).join(' ') || "PagFlow",
-                        phone: phoneData
-                    }
-                }
-            };
-
-            const brick = brickData?.formData || brickData;
-            const card = cardData?.formData || cardData;
-
-            if (process.env.NODE_ENV !== 'production') {
-                console.log("🔹 [DEBUG] brickData recebido:", JSON.stringify(brickData, null, 2));
-                console.log("🔹 [DEBUG] cardData recebido:", JSON.stringify(cardData, null, 2));
-            }
-
-            if (brick && brick.token) {
-                mpPayload.token = brick.token;
-                mpPayload.installments = Number(brick.installments);
-                mpPayload.payment_method_id = brick.payment_method_id;
-                if (brick.issuer_id) mpPayload.issuer_id = brick.issuer_id;
-                if (brick.payer?.identification?.number) {
-                    mpPayload.payer.identification.number = brick.payer.identification.number.replace(/\D/g, '');
-                }
-            } else if (card && card.token) {
-                mpPayload.token = card.token;
-                mpPayload.installments = Number(card.installments) || 1;
-                mpPayload.payment_method_id = card.payment_method_id;
-                if (card.issuer_id) mpPayload.issuer_id = card.issuer_id;
-                if (card.payer?.identification?.number) {
-                    mpPayload.payer.identification.number = card.payer.identification.number.replace(/\D/g, '');
-                }
-            } else {
-                console.error("❌ Token do cartão ausente. brickData:", brickData, "cardData:", cardData);
-                return NextResponse.json({ success: false, error: "Dados do cartão incompletos. Token não recebido." }, { status: 400 });
-            }
-
-            // Validar CPF para cartão
-            const finalCpf = mpPayload.payer?.identification?.number || '';
-            if (!finalCpf || finalCpf.length !== 11 || finalCpf === '19119119100') {
+            // Validate CPF
+            if (!cpfToSave || cpfToSave.length !== 11) {
                 return NextResponse.json({
                     success: false,
-                    error: "CPF é obrigatório para pagamento com cartão de crédito. Por favor, preencha seu CPF no formulário ou no campo de cartão."
+                    error: "CPF é obrigatório para pagamento com cartão de crédito."
                 }, { status: 400 });
             }
 
-            const payment = new Payment(client);
-            if (process.env.NODE_ENV !== 'production') {
-                console.log("Creating Payment with payload:", JSON.stringify(mpPayload, null, 2));
+            // Expect pagarmeData: { cardToken, installments, brand }
+            if (!pagarmeData?.cardToken) {
+                console.error("[Pagar.me] cardToken ausente. pagarmeData:", pagarmeData);
+                return NextResponse.json({ success: false, error: "Dados do cartão incompletos. Token não recebido." }, { status: 400 });
             }
 
-            const finalIdempotencyKey = idempotencyKey || crypto.randomUUID();
-            let mpResult: any = null;
-            const MAX_RETRIES = 3;
-            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-                try {
-                    mpResult = await payment.create({
-                        body: mpPayload,
-                        requestOptions: {
-                            idempotencyKey: finalIdempotencyKey,
-                            customHeaders: deviceId ? { 'X-Id-Device': deviceId } : undefined,
-                        }
-                    });
-                    break;
-                } catch (mpErr: any) {
-                    const isRetryable = mpErr?.message?.includes('Premature close') ||
-                        mpErr?.message?.includes('socket hang up') ||
-                        mpErr?.message?.includes('ECONNRESET') ||
-                        mpErr?.message?.includes('ETIMEDOUT') ||
-                        mpErr?.code === 'ECONNRESET' ||
-                        mpErr?.code === 'ETIMEDOUT';
-                    if (isRetryable && attempt < MAX_RETRIES) {
-                        console.warn(`[MP] Attempt ${attempt} failed (${mpErr.message}), retrying in ${attempt * 1000}ms...`);
-                        await new Promise(r => setTimeout(r, attempt * 1000));
-                        continue;
-                    }
-                    throw mpErr;
-                }
-            }
-            console.log("MP Result ID:", mpResult.id);
-            transactionId = mpResult.id;
+            const installments = Number(pagarmeData.installments) || 1;
+            const description = `Pedido ${order.id} - ${product?.name || 'Produto'}${bumpsTotal > 0 ? ` + ${selectedBumpIds.length} oferta(s)` : ''}`;
 
-            const mpStatusMap: Record<string, string> = {
-                'approved': 'pago',
-                'pending': 'aguardando',
-                'in_process': 'aguardando',
-                'authorized': 'aguardando',
-                'in_mediation': 'aguardando',
-                'rejected': 'recusado',
-                'cancelled': 'recusado',
-                'refunded': 'recusado',
-                'charged_back': 'recusado'
-            };
-            finalStatus = mpStatusMap[mpResult.status || ''] || 'recusado';
+            const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/pagarme`;
+
+            const pagarmeResult = await createCardOrder({
+                orderId: order.id,
+                amount: Math.round(serverPrice * 100),
+                installments,
+                cardToken: pagarmeData.cardToken,
+                description,
+                customer: {
+                    name: fullName || 'Cliente PagFlow',
+                    email: orderData.email || 'cliente@pagflow.com',
+                    document: cpfToSave,
+                    phone: (phone || '').replace(/\D/g, '') || undefined,
+                },
+            });
+
+            console.log('[Pagar.me] Order ID:', pagarmeResult.id, 'Status:', pagarmeResult.status);
+            transactionId = pagarmeResult.id;
+            finalStatus = mapPagarmeStatus(pagarmeResult.status);
+
+            const lastTxn = pagarmeResult.charges?.[0]?.last_transaction;
+            const installmentAmount = lastTxn?.amount
+                ? (lastTxn.amount / 100) / (lastTxn.installments || installments)
+                : null;
 
             try {
                 await prisma.order.update({
@@ -362,17 +268,16 @@ export async function POST(req: NextRequest) {
                     data: {
                         paymentStatus: finalStatus,
                         status: finalStatus === 'pago' ? 'processando' : 'pendente',
-                        mpPaymentId: String(mpResult.id),
-                        totalPrice: mpResult.transaction_amount ? Number(mpResult.transaction_amount) : undefined,
-                        installments: mpResult.installments || null,
-                        installmentAmount: (mpResult as any).transaction_details?.installment_amount || null,
-                        cardBrand: mpResult.payment_method_id || null,
-                        netReceived: (mpResult as any).transaction_details?.net_received_amount || null
+                        mpPaymentId: pagarmeResult.id,
+                        installments: lastTxn?.installments || installments,
+                        installmentAmount: installmentAmount || null,
+                        cardBrand: pagarmeData.brand || null,
+                        paidAt: finalStatus === 'pago' ? new Date() : null,
                     }
                 });
-                console.log("Order updated successfully with MP Result ID:", mpResult.id);
+                console.log('[Pagar.me] Order updated, status:', finalStatus);
             } catch (dbErr) {
-                console.error("DEBUG: Failed to update order in DB, but payment was created in MP:", dbErr);
+                console.error('[Pagar.me] Failed to update order in DB:', dbErr);
             }
         } else {
             return NextResponse.json({ success: false, error: "Método de pagamento inválido." }, { status: 400 });
@@ -429,24 +334,12 @@ export async function POST(req: NextRequest) {
             );
         } catch { }
 
-        // Tentar capturar a mensagem de erro do Mercado Pago se existir
         let apiError = error.message;
-        if (error.cause && Array.isArray(error.cause) && error.cause[0]?.description) {
-            apiError = error.cause[0].description;
-        } else if (error.errors && Array.isArray(error.errors) && error.errors[0]?.message) {
+        if (error.errors && Array.isArray(error.errors) && error.errors[0]?.message) {
             apiError = error.errors[0].message;
         }
 
         let finalError = apiError || "Ocorreu um erro ao processar o pagamento.";
-
-        // Traduzir erro genérico do Mercado Pago para algo mais útil
-        if (finalError === "internal_error") {
-            finalError = "Erro no Mercado Pago (internal_error). Verifique suas credenciais (Access Token) ou se o Pix está ativo na conta.";
-        }
-
-        if (finalError.includes("invocation")) {
-            finalError = `${finalError} - Verifique se todos os campos obrigatórios estão preenchidos corretamente.`;
-        }
 
         return NextResponse.json({
             success: false,
