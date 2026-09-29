@@ -43,15 +43,35 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
 
     useEffect(() => {
-        // TEST MODE: Force success screen for preview
         const params = new URLSearchParams(window.location.search);
         const testMode = params.get('test');
-        if (testMode === 'pix') {
+        const stepParam = params.get('step');
+        const previewParam = params.get('preview');
+
+        const fakeDados = { nome: 'João da Silva', email: 'teste@pagflow.com', telefone: '(11) 91234-5678', cpf: '529.982.247-25' };
+        const fakeEndereco = { cep: '01310-100', rua: 'Av. Paulista', numero: '1000', complemento: 'Apto 101', bairro: 'Bela Vista', cidade: 'São Paulo', estado: 'SP', destinatario: 'João da Silva' };
+        const fakeQr = { qrCode: '00020126580014br.gov.bcb.pix013688735ef-c3ea-420c-a616-6a4fc9d061a520400005303986', qrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' };
+
+        if (stepParam === '2') {
+            setDados(fakeDados);
+            setStep(2);
+        } else if (stepParam === '3') {
+            setDados(fakeDados);
+            setEndereco(fakeEndereco);
+            setStep(3);
+        } else if (previewParam === 'pix') {
+            setDados(fakeDados);
+            setEndereco(fakeEndereco);
             setPaymentMethod('pix');
-            setPixData({ 
-                qrCode: '00020126580014br.gov.bcb.pix013688735ef-c3ea-420c-a616-6a4fc9d061a520400005303986', 
-                qrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' 
-            });
+            setPixData(fakeQr);
+            setStep(3);
+        } else if (previewParam === 'confirmacao') {
+            setDados(fakeDados);
+            setPaymentMethod('card');
+            setDone(true);
+        } else if (previewParam === 'pix-pago' || testMode === 'pix') {
+            setPaymentMethod('pix');
+            setPixData(fakeQr);
             setDone(true);
         } else if (testMode === 'card') {
             setPaymentMethod('card');
