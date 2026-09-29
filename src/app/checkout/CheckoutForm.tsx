@@ -1861,7 +1861,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div style={{flex:1}}>
                                         <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>
                                             PIX à vista
-                                            <span className="pay-badge g">Aprovação na hora</span>
+                                            <span className="pay-badge g">15% de desconto</span>
                                         </div>
                                         <div className="pay-desc">
                                             R$ {finalPrice.toFixed(2).replace('.', ',')} — pagamento único <span style={{ color: '#16a34a', fontWeight: 700 }}>• 15% de desconto</span>
