@@ -549,7 +549,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     }
 
-    async function finalizar(pagarmeCardData?: { pagarmeToken: string; brand: string; installments: number }) {
+    async function finalizar(pagarmeCardData?: { pagarmeToken: string; brand: string; installments: number; totalWithInterest?: number }) {
         setLoading(true);
         trackFunnel('pagamento_iniciado');
         try {
@@ -562,6 +562,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     cardToken: pagarmeCardData.pagarmeToken,
                     brand: pagarmeCardData.brand,
                     installments: pagarmeCardData.installments,
+                    totalWithInterest: pagarmeCardData.totalWithInterest,
                 } : undefined,
                 orderId: currentOrderId || null,
                 orderData: {
@@ -682,12 +683,19 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     // Opções de parcelamento para cartão — independente do PIX Parcelado
     const CARD_MIN_INSTALLMENT = 9.9;
-    const cardInstallmentOptions: { n: number; val: number }[] = (() => {
-        const opts: { n: number; val: number }[] = [];
+    const CARD_NO_INTEREST_MAX = 6;   // até 6x sem juros
+    const CARD_MONTHLY_RATE = 0.0199; // 1.99% a.m. para 7-12x
+    // PMT formula: P * r / (1 - (1+r)^-n)
+    const calcInstallmentValue = (total: number, n: number): number => {
+        if (n <= CARD_NO_INTEREST_MAX) return total / n;
+        return total * CARD_MONTHLY_RATE / (1 - Math.pow(1 + CARD_MONTHLY_RATE, -n));
+    };
+    const cardInstallmentOptions: { n: number; val: number; hasInterest: boolean }[] = (() => {
+        const opts: { n: number; val: number; hasInterest: boolean }[] = [];
         for (let i = 1; i <= 12; i++) {
-            const val = finalPrice / i;
+            const val = calcInstallmentValue(finalPrice, i);
             if (i === 1 || val >= CARD_MIN_INSTALLMENT) {
-                opts.push({ n: i, val });
+                opts.push({ n: i, val, hasInterest: i > CARD_NO_INTEREST_MAX });
             }
         }
         return opts;
@@ -744,7 +752,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             }
 
             const brand = tokenData.card?.brand?.toLowerCase() || detectCardBrand(num);
-            await finalizar({ pagarmeToken: tokenData.id, brand, installments: cardData.installments });
+            const chosenInstallments = cardData.installments;
+            const installmentVal = calcInstallmentValue(finalPrice, chosenInstallments);
+            const totalWithInterest = parseFloat((installmentVal * chosenInstallments).toFixed(2));
+            await finalizar({ pagarmeToken: tokenData.id, brand, installments: chosenInstallments, totalWithInterest });
         } catch (e: any) {
             alert('Erro ao processar cartão: ' + e.message);
         } finally {
@@ -1836,10 +1847,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 onChange={e => setCardData(p => ({ ...p, installments: Number(e.target.value) }))}
                                                 style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
                                             >
-                                                {cardInstallmentOptions.map(({ n, val }) => (
+                                                {cardInstallmentOptions.map(({ n, val, hasInterest }) => (
                                                     <option key={n} value={n}>
-                                                        {n}x de R$ {val.toFixed(2).replace('.', ',')}
-                                                        {n === 1 ? ' (sem juros)' : ''}
+                                                        {n}x de R$ {val.toFixed(2).replace('.', ',')} {hasInterest ? '(com juros)' : '(sem juros)'}
                                                     </option>
                                                 ))}
                                             </select>
