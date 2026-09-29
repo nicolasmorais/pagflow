@@ -35,7 +35,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const parcelasOpcoes: number[] = [2, 3, 4, 5, 6, 7, 8].filter(n => pixTotal / n >= minInstallmentValue);
     const parcelasMin = parcelasOpcoes[0] ?? 2;
     const parcelasMax = parcelasOpcoes[parcelasOpcoes.length - 1] ?? 6;
-    const [parcelas, setParcelas] = useState<number>(() => parcelasOpcoes.includes(4) ? 4 : (parcelasOpcoes[0] ?? 2));
+    const [parcelas, setParcelas] = useState<number>(() => parcelasMax);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
@@ -1852,44 +1852,41 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 {/* Corpo */}
                                                 <div style={{ padding: '20px 20px 0' }}>
                                                     <p style={{ fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '.06em', margin: '0 0 12px' }}>
-                                                        Escolha o número de parcelas
+                                                        Parcelas disponíveis
                                                     </p>
-                                                    {/* Grid de parcelas */}
-                                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${parcelasOpcoes.length}, 1fr)`, gap: 8, marginBottom: 14 }}>
+                                                    {/* Lista de parcelas */}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
                                                         {parcelasOpcoes.map(n => {
                                                             const valorParcela = pixValorParcela(n);
-                                                            const sel = parcelas === n;
+                                                            const isMaior = n === parcelasMax;
                                                             return (
-                                                                <button
+                                                                <div
                                                                     key={n}
-                                                                    type="button"
-                                                                    onClick={() => setParcelas(n)}
                                                                     style={{
                                                                         position: 'relative',
-                                                                        padding: '14px 8px 12px',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'space-between',
+                                                                        padding: '12px 16px',
                                                                         borderRadius: 12,
-                                                                        border: `2px solid ${sel ? '#32bcad' : '#e4e7ec'}`,
-                                                                        background: sel ? '#edfaf8' : '#fff',
-                                                                        cursor: 'pointer',
-                                                                        textAlign: 'center' as const,
-                                                                        transition: 'all .15s',
+                                                                        border: `2px solid ${isMaior ? '#32bcad' : '#e4e7ec'}`,
+                                                                        background: isMaior ? '#edfaf8' : '#fafafa',
                                                                     }}
                                                                 >
-                                                                    {n === 6 && (
+                                                                    {isMaior && (
                                                                         <span style={{
-                                                                            position: 'absolute', top: -9, right: 6,
+                                                                            position: 'absolute', top: -9, right: 12,
                                                                             background: '#32bcad', color: '#fff',
                                                                             fontSize: 9, fontWeight: 700,
                                                                             padding: '2px 7px', borderRadius: 20,
                                                                             letterSpacing: '.04em', textTransform: 'uppercase' as const,
-                                                                        }}>Melhor</span>
+                                                                        }}>Selecionado</span>
                                                                     )}
-                                                                    <div style={{ fontSize: 18, fontWeight: 700, color: sel ? '#32bcad' : '#0f1623', lineHeight: 1 }}>{n}×</div>
-                                                                    <div style={{ fontSize: 12, fontWeight: 500, color: sel ? '#0f9d8c' : '#6b7280', marginTop: 4 }}>
-                                                                        R$ {valorParcela.toFixed(2).replace('.', ',')}
-                                                                    </div>
-                                                                    <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>/ semana</div>
-                                                                </button>
+                                                                    <span style={{ fontSize: 16, fontWeight: 700, color: isMaior ? '#32bcad' : '#6b7280' }}>{n}×</span>
+                                                                    <span style={{ fontSize: 14, fontWeight: 600, color: isMaior ? '#0f9d8c' : '#9ca3af' }}>
+                                                                        R$ {valorParcela.toFixed(2).replace('.', ',')} / semana
+                                                                    </span>
+                                                                </div>
                                                             );
                                                         })}
                                                     </div>
