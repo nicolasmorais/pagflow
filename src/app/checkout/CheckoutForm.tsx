@@ -30,7 +30,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [pixData, setPixData] = useState<{ qrCode: string, qrCodeBase64: string } | null>(null);
     const [subData, setSubData] = useState<{ mandateId: string, mandateStatus: string, qrCodeBase64: string, emv: string, resumed: boolean } | null>(null);
     const [subLoading, setSubLoading] = useState(false);
-    const [parcelas, setParcelas] = useState(4);
+    const parcelasMin = product?.parcelasMin ?? 2;
+    const parcelasMax = product?.parcelasMax ?? 6;
+    const [parcelas, setParcelas] = useState<number>(() => Math.max(parcelasMin, 4));
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
@@ -129,6 +131,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
     const basePrice = product?.price || 9;
+
+    // Preço por parcela do PIX Parcelado: usa pixPrice do produto se definido, senão divide o preço normal
+    const pixValorParcela = (n: number) =>
+        product?.pixPrice ? Number(product.pixPrice) : (product?.price || 0) / n;
+    // Total PIX Parcelado para N parcelas
+    const pixTotalParcelado = (n: number) => pixValorParcela(n) * n;
 
     const bumpsTotal = (availableBumps || [])
         .filter((b: any) => selectedBumps.includes(b.id))
@@ -1260,7 +1268,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                             qrCodeBase64={subData?.qrCodeBase64 || ''}
                             emv={subData?.emv || ''}
                             parcelas={parcelas}
-                            valorParcela={(product?.price || 0) / parcelas}
+                            valorParcela={pixValorParcela(parcelas)}
                             email={dados.email || ''}
                         />
                     ) : (
@@ -1411,7 +1419,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="prod-name">{product?.name || "Produto"}</div>
                                         <div className="prod-qty">Quantidade: 1</div>
                                     </div>
-                                    <div className="prod-price">R$ {basePrice.toFixed(2).replace('.', ',')}</div>
+                                    <div className="prod-price">
+                                        {paymentMethod === 'pix_automatico'
+                                            ? <>{parcelas}× R$ {pixValorParcela(parcelas).toFixed(2).replace('.', ',')}</>
+                                            : <>R$ {basePrice.toFixed(2).replace('.', ',')}</>
+                                        }
+                                    </div>
                                 </div>
                                 {selectedBumps.length > 0 && availableBumps && availableBumps
                                     .filter((b: any) => selectedBumps.includes(b.id))
@@ -1813,7 +1826,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     <span className="pay-badge g" style={{ background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' }}>Semanal</span>
                                                 </div>
                                                 <div className="pay-desc" style={{ color: '#16a34a', fontWeight: 600 }}>
-                                                    {parcelas}x de R$ {((product?.price || 0) / parcelas).toFixed(2).replace('.', ',')} — autorize uma vez, pague sempre
+                                                    {parcelas}x de R$ {pixValorParcela(parcelas).toFixed(2).replace('.', ',')} — autorize uma vez, pague sempre
                                                 </div>
                                             </div>
                                         </div>
@@ -1842,8 +1855,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     </p>
                                                     {/* Grid de parcelas */}
                                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
-                                                        {[2, 3, 4, 6].map(n => {
-                                                            const valorParcela = (product?.price || 0) / n;
+                                                        {[2, 3, 4, 6].filter(n => n >= parcelasMin && n <= parcelasMax).map(n => {
+                                                            const valorParcela = pixValorParcela(n);
                                                             const sel = parcelas === n;
                                                             return (
                                                                 <button
@@ -1897,7 +1910,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                                 const dia = String(d.getDate()).padStart(2, '0');
                                                                 const mes = String(d.getMonth() + 1).padStart(2, '0');
                                                                 const ano = d.getFullYear();
-                                                                const valorParcela = (product?.price || 0) / parcelas;
+                                                                const valorParcela = pixValorParcela(parcelas);
                                                                 const isFirst = i === 0;
                                                                 const isLast = i === parcelas - 1;
                                                                 return (

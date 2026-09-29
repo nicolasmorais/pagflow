@@ -19,9 +19,10 @@ export async function POST(req: NextRequest) {
         if (!product) return NextResponse.json({ success: false, error: 'Produto não encontrado.' }, { status: 404 });
         if (!product.subscriptionEnabled) return NextResponse.json({ success: false, error: 'Assinatura não disponível para este produto.' }, { status: 400 });
 
-        // Parcela = preço do produto / parcelas escolhidas
-        const totalPrice = product.price;
-        const subscriptionPrice = totalPrice / parcelasEscolhidas;
+        // Se o produto tem pixPrice definido, usa como preço por parcela; senão divide o preço normal
+        const subscriptionPrice = (product as any).pixPrice
+            ? Number((product as any).pixPrice)
+            : product.price / parcelasEscolhidas;
 
         const email = (orderData.email || '').trim().toLowerCase();
         if (!email || !email.includes('@')) {
