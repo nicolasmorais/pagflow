@@ -1847,7 +1847,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             <span className="pay-badge g">Aprovação na hora</span>
                                         </div>
                                         <div className="pay-desc">
-                                            R$ {finalPrice.toFixed(2).replace('.', ',')} — pagamento único
+                                            R$ {finalPrice.toFixed(2).replace('.', ',')} — pagamento único <span style={{ color: '#16a34a', fontWeight: 700 }}>• 15% de desconto</span>
                                         </div>
                                     </div>
                                 </div>
