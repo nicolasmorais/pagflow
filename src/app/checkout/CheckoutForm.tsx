@@ -516,6 +516,23 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             });
             const result = await res.json();
             if (result.success) {
+                trackTaboolaEvent(product?.purchaseEventName || 'make_purchase', { revenue: pixTotal, currency: 'BRL' });
+                trackGoogleEvent('purchase', {
+                    transaction_id: result.orderId || crypto.randomUUID(),
+                    value: pixTotal,
+                    currency: 'BRL',
+                    payment_type: 'pix_automatico',
+                    items: [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price: pixTotal, quantity: 1 }]
+                });
+                if (pixels?.googleId && pixels?.googleAdsConvLabel && /^[a-zA-Z0-9_-]+$/.test(pixels.googleId) && /^[a-zA-Z0-9_-]+$/.test(pixels.googleAdsConvLabel)) {
+                    trackGoogleEvent('conversion', {
+                        send_to: `${pixels.googleId}/${pixels.googleAdsConvLabel}`,
+                        value: pixTotal,
+                        currency: 'BRL',
+                        transaction_id: result.orderId || ''
+                    });
+                }
+                trackFunnel('pedido_criado', result.orderId);
                 setSubData({ mandateId: result.mandateId, mandateStatus: result.mandateStatus, qrCodeBase64: result.qrCodeBase64 || '', emv: result.emv || '', resumed: result.resumed || false });
                 setCurrentOrderId(result.orderId);
                 setDone(true);
