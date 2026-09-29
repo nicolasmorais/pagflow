@@ -9,7 +9,7 @@ function getAppId(): string {
 function calcEndDate(totalParcelas: number): string {
     const date = new Date();
     date.setDate(date.getDate() + (totalParcelas - 1) * 7);
-    return date.toISOString();
+    return date.toISOString().split('T')[0]; // YYYY-MM-DD
 }
 
 export interface WooviSubscriptionRequest {
