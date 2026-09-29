@@ -4,10 +4,8 @@ import React, { useState } from 'react'
 import { Copy, Trash2, ExternalLink, Edit2, Check, DollarSign, Link2, Eye } from 'lucide-react'
 import Link from 'next/link'
 import { duplicateProduct, deleteProduct } from '@/app/actions'
-import EditProductModal from './EditProductModal'
 
 export default function ProductCard({ product }: { product: any }) {
-    const [isEditing, setIsEditing] = useState(false)
     const [copied, setCopied] = useState(false)
     const [deleting, setDeleting] = useState(false)
 
@@ -134,20 +132,18 @@ export default function ProductCard({ product }: { product: any }) {
 
                     {/* Actions */}
                     <div style={{ display: 'flex', gap: '6px' }}>
-                        <button
-                            onClick={() => setIsEditing(true)}
+                        <Link
+                            href={`/admin/produtos/${product.id}/editar`}
                             style={{
                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                                 padding: '8px', borderRadius: '10px',
                                 border: '1px solid #e2e8f0', background: '#fff',
-                                color: '#475569', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
-                                transition: 'all 0.15s',
+                                color: '#475569', fontSize: '11px', fontWeight: 700,
+                                textDecoration: 'none', transition: 'all 0.15s',
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#0f172a'; e.currentTarget.style.color = '#0f172a' }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#475569' }}
                         >
                             <Edit2 size={13} /> Editar
-                        </button>
+                        </Link>
                         <button
                             onClick={async () => { await duplicateProduct(product.id); window.location.reload() }}
                             style={{
@@ -181,7 +177,6 @@ export default function ProductCard({ product }: { product: any }) {
                 </div>
             </div>
 
-            {isEditing && <EditProductModal product={product} onClose={() => setIsEditing(false)} />}
         </>
     )
 }

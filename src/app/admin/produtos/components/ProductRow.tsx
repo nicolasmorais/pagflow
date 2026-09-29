@@ -4,15 +4,12 @@ import React from 'react'
 import { Copy, Trash2, ExternalLink, Edit2, ShoppingBag } from 'lucide-react'
 import Link from 'next/link'
 import { duplicateProduct, deleteProduct } from '@/app/actions'
-import EditProductModal from './EditProductModal'
 
 interface ProductRowProps {
     product: any
 }
 
 export default function ProductRow({ product }: ProductRowProps) {
-    const [isEditing, setIsEditing] = React.useState(false)
-
     const gridLayout = 'minmax(300px, 1.5fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(200px, 1.2fr) 180px';
 
     return (
@@ -131,8 +128,8 @@ export default function ProductRow({ product }: ProductRowProps) {
 
                 {/* Col 5: Actions */}
                 <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <button
-                        onClick={() => setIsEditing(true)}
+                    <Link
+                        href={`/admin/produtos/${product.id}/editar`}
                         title="Editar"
                         style={{
                             width: '40px',
@@ -144,15 +141,12 @@ export default function ProductRow({ product }: ProductRowProps) {
                             justifyContent: 'center',
                             color: '#3b82f6',
                             border: '1px solid #e2e8f0',
-                            cursor: 'pointer',
                             boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                            transition: 'all 0.2s'
+                            textDecoration: 'none',
                         }}
-                        onMouseOver={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
-                        onMouseOut={(e) => (e.currentTarget.style.borderColor = '#e2e8f0')}
                     >
                         <Edit2 size={18} />
-                    </button>
+                    </Link>
 
                     <button
                         onClick={async () => await duplicateProduct(product.id)}
@@ -206,12 +200,6 @@ export default function ProductRow({ product }: ProductRowProps) {
                 </div>
             </div>
 
-            {isEditing && (
-                <EditProductModal
-                    product={product}
-                    onClose={() => setIsEditing(false)}
-                />
-            )}
         </>
     )
 }

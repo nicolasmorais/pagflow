@@ -4,15 +4,12 @@ import React from 'react'
 import { Copy, Trash2, ExternalLink, Edit2 } from 'lucide-react'
 import Link from 'next/link'
 import { duplicateProduct, deleteProduct } from '@/app/actions'
-import EditProductModal from './EditProductModal'
 
 interface ProductItemProps {
     product: any
 }
 
 export default function ProductItem({ product }: ProductItemProps) {
-    const [isEditing, setIsEditing] = React.useState(false)
-
     return (
         <div className="dashboard-order-card" style={{ padding: '0', overflow: 'hidden' }}>
             <div style={{ height: '160px', width: '100%', position: 'relative' }}>
@@ -73,8 +70,8 @@ export default function ProductItem({ product }: ProductItemProps) {
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <button
-                        onClick={() => setIsEditing(true)}
+                    <Link
+                        href={`/admin/produtos/${product.id}/editar`}
                         className="btn-primary"
                         style={{
                             flex: 1,
@@ -86,11 +83,12 @@ export default function ProductItem({ product }: ProductItemProps) {
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '6px',
-                            border: '1px solid #dbeafe'
+                            border: '1px solid #dbeafe',
+                            textDecoration: 'none',
                         }}
                     >
                         <Edit2 size={14} /> Editar
-                    </button>
+                    </Link>
 
                     <form action={async () => {
                         await duplicateProduct(product.id)
@@ -139,12 +137,6 @@ export default function ProductItem({ product }: ProductItemProps) {
                 </div>
             </div>
 
-            {isEditing && (
-                <EditProductModal
-                    product={product}
-                    onClose={() => setIsEditing(false)}
-                />
-            )}
         </div>
     )
 }
