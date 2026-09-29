@@ -686,12 +686,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         return n;
     };
 
-    // Opções de parcelamento para cartão
+    // Opções de parcelamento para cartão — independente do PIX Parcelado
+    const CARD_MIN_INSTALLMENT = 9.9;
     const cardInstallmentOptions: { n: number; val: number }[] = (() => {
         const opts: { n: number; val: number }[] = [];
         for (let i = 1; i <= 12; i++) {
             const val = finalPrice / i;
-            if (i === 1 || val >= (product?.minInstallmentValue ?? 9.9)) {
+            if (i === 1 || val >= CARD_MIN_INSTALLMENT) {
                 opts.push({ n: i, val });
             }
         }
