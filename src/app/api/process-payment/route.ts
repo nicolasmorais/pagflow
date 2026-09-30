@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendConfirmationEmail, sendAdminNotification, sendPixEmail } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createCharge, WOOVI_STATUS_MAP } from "@/lib/woovi";
-import { createCardOrder, mapPagarmeStatus } from "@/lib/pagarme";
+import { createCardOrder, createPixOrder, mapPagarmeStatus } from "@/lib/pagarme";
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -173,26 +173,27 @@ export async function POST(req: NextRequest) {
         let transactionId: string | number | null = null;
 
         if (isPix) {
-            // ── PIX via Woovi ─────────────────────────────────────────────────
-            const wooviResult = await createCharge({
-                correlationID: order.id,
-                value: Math.round(serverPrice * 100), // Woovi usa centavos
-                comment: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
+            // ── PIX via Pagar.me ──────────────────────────────────────────────
+            const pixResult = await createPixOrder({
+                orderId: order.id,
+                amount: Math.round(serverPrice * 100),
+                description: `Pedido ${order.id} - ${product?.name || 'Produto'}`,
                 customer: {
                     name: fullName || 'Cliente PagFlow',
-                    taxID: cpfToSave,
                     email: orderData.email || 'cliente@pagflow.com',
+                    document: cpfToSave || undefined,
                     phone: (phone || '').replace(/\D/g, '') || undefined,
                 },
+                expiresIn: 3600,
             });
 
-            console.log('[Woovi] Charge correlationID:', wooviResult.correlationID);
-            transactionId = wooviResult.correlationID;
+            console.log('[Pagar.me PIX] Order ID:', pixResult.id, 'Status:', pixResult.status);
+            transactionId = pixResult.id;
 
-            // Gerar QR code base64 a partir do brCode
+            // Gerar QR code base64 a partir do qrCode EMV
             const QRCode = await import('qrcode');
-            qrCode = wooviResult.brCode;
-            qrCodeBase64 = (await QRCode.toDataURL(wooviResult.brCode)).replace('data:image/png;base64,', '');
+            qrCode = pixResult.qrCode;
+            qrCodeBase64 = (await QRCode.toDataURL(pixResult.qrCode)).replace('data:image/png;base64,', '');
 
             finalStatus = 'aguardando';
             pixStatusForResponse = 'aguardando';
@@ -203,18 +204,18 @@ export async function POST(req: NextRequest) {
                     data: {
                         paymentStatus: 'aguardando',
                         status: 'pendente',
-                        mpPaymentId: wooviResult.correlationID,
+                        mpPaymentId: pixResult.id,
                     }
                 });
             } catch (dbErr) {
-                console.error('[Woovi] Failed to update order after charge:', dbErr);
+                console.error('[Pagar.me PIX] Failed to update order:', dbErr);
             }
 
             // Enviar e-mail com QR Code PIX
             try {
                 await sendPixEmail(order.id, qrCode, qrCodeBase64);
             } catch (pixEmailErr) {
-                console.error('[Woovi] Failed to send PIX email:', pixEmailErr);
+                console.error('[Pagar.me PIX] Failed to send PIX email:', pixEmailErr);
             }
 
         } else if (isCard) {
