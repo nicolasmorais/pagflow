@@ -296,7 +296,6 @@ export function createServer() {
             custo: p.cost,
             comissao: p.commission,
             loja: p.storeName,
-            digital: p.isDigital,
             total_vendas: p._count.orders,
             receita_estimada: +(p.price * p._count.orders).toFixed(2),
           })), null, 2),

@@ -206,7 +206,7 @@ app.get('/api/products', async (_req, res) => {
 
     res.json(products.map(p => ({
       id: p.id, nome: p.name, preco: p.price, custo: p.cost,
-      comissao: p.commission, loja: p.storeName, digital: p.isDigital,
+      comissao: p.commission, loja: p.storeName,
       total_vendas: p._count.orders,
       receita_estimada: +(p.price * p._count.orders).toFixed(2),
     })))

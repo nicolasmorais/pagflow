@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
     ArrowLeft, Package, DollarSign, Image as ImageIcon,
-    Store, Target, Globe, RefreshCw, Loader2, Save,
+    Store, Target, RefreshCw, Loader2, Save,
 } from 'lucide-react'
 import { createProduct } from '@/app/actions'
 
@@ -78,7 +78,6 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
 export default function NovoProdutoPage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
-    const [isDigital, setIsDigital] = useState(false)
     const [subscriptionEnabled, setSubscriptionEnabled] = useState(false)
     const [pixPriceInput, setPixPriceInput] = useState('')
     const [minInstInput, setMinInstInput] = useState('49.90')
@@ -212,33 +211,6 @@ export default function NovoProdutoPage() {
 
                     {/* Coluna direita */}
                     <div>
-
-                        {/* Produto Digital */}
-                        <div style={card}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isDigital ? 16 : 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <div style={{ width: 36, height: 36, borderRadius: 10, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <Globe size={18} color="#3b82f6" />
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Produto Digital</div>
-                                        <div style={{ fontSize: 11, color: '#94a3b8' }}>Sem frete, envio por e-mail</div>
-                                    </div>
-                                </div>
-                                <Toggle checked={isDigital} onChange={() => setIsDigital(v => !v)} />
-                            </div>
-                            {isDigital && (
-                                <div>
-                                    <label style={label}><Globe size={13} /> Link de Acesso</label>
-                                    <input name="accessLink" type="url" style={input} placeholder="https://drive.google.com/..." required={isDigital}
-                                        onFocus={e => { e.target.style.borderColor = '#3b82f6'; e.target.style.background = '#fff' }}
-                                        onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
-                                    />
-                                    <p style={hint}>Enviado automaticamente por e-mail após confirmação do pagamento.</p>
-                                </div>
-                            )}
-                            <input type="hidden" name="isDigital" value={isDigital ? 'true' : 'false'} />
-                        </div>
 
                         {/* PIX Automático / Parcelado */}
                         <div style={card}>

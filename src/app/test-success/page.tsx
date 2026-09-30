@@ -17,7 +17,6 @@ export default function TestSuccessPage() {
     name: 'Produto de Teste Premium',
     price: 197.00,
     imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop',
-    isDigital: false
   }
 
   const mockCustomization = {

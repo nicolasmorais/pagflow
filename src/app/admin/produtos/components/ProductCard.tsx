@@ -46,13 +46,6 @@ export default function ProductCard({ product }: { product: any }) {
                         alt={product.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                    {product.isDigital && (
-                        <span style={{
-                            position: 'absolute', top: '10px', right: '10px',
-                            fontSize: '9px', fontWeight: 800, color: '#7c3aed', background: '#ede9fe',
-                            padding: '3px 8px', borderRadius: '6px', textTransform: 'uppercase', letterSpacing: '0.06em',
-                        }}>Digital</span>
-                    )}
                 </div>
 
                 {/* Content */}

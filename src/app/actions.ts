@@ -40,7 +40,6 @@ export async function sendConfirmationEmail(orderId: string) {
                 .replace(/{{firstName}}/g, (order.fullName || '').split(' ')[0])
                 .replace(/{{productName}}/g, order.product?.name || 'Produto')
                 .replace(/{{totalPrice}}/g, `R$ ${(order.totalPrice || 0).toFixed(2)}`)
-                .replace(/{{accessLink}}/g, order.product?.accessLink || '')
                 .replace(/{{paymentMethod}}/g, order.paymentMethod === 'pix' ? 'PIX' : 'Cartão de Crédito')
                 .replace(/{{storeName}}/g, storeName)
                 .replace(/{{storeLogo}}/g, order.product?.storeLogo || '')
@@ -81,14 +80,6 @@ export async function sendConfirmationEmail(orderId: string) {
                                 <strong style="color: #10b981; font-size: 20px;">R$ ${(order.totalPrice || 0).toFixed(2)}</strong>
                             </div>
                         </div>
-
-                        ${order.product?.isDigital && order.product?.accessLink ? `
-                        <div style="margin-top: 32px; padding: 24px; background: #f0f9ff; border-radius: 16px; border: 1px solid #bae6fd; text-align: center;">
-                            <h3 style="margin: 0 0 12px 0; color: #0369a1; font-size: 18px;">Seu acesso está liberado!</h3>
-                            <p style="margin: 0 0 20px 0; color: #075985; font-size: 14px;">Clique no botão abaixo para acessar o conteúdo que você adquiriu.</p>
-                            <a href="${order.product.accessLink}" style="display: inline-block; background: #0ea5e9; color: white; padding: 14px 28px; border-radius: 12px; text-decoration: none; font-weight: 800; box-shadow: 0 4px 6px -1px rgba(14, 165, 233, 0.2);">Acessar Produto Agora</a>
-                        </div>
-                        ` : ''}
                     </div>
                     <div style="background: #f1f5f9; padding: 20px; text-align: center; color: #94a3b8; font-size: 12px;">
                         <p>© ${new Date().getFullYear()} PagFlow${storeName && storeName !== 'Elabela Store' ? ` ${storeName}` : ''}.</p>
@@ -429,8 +420,6 @@ export async function createProduct(formData: FormData): Promise<void> {
     const costValue = formData.get('cost')
     const cost = costValue ? parseFloat(costValue as string) : 0
     let imageUrl = formData.get('imageUrl') as string
-    const isDigital = formData.get('isDigital') === 'true'
-    const accessLink = formData.get('accessLink') as string
     const storeName = formData.get('storeName') as string
     const storeLogo = formData.get('storeLogo') as string
     const purchaseEventName = formData.get('purchaseEventName') as string
@@ -457,8 +446,6 @@ export async function createProduct(formData: FormData): Promise<void> {
             price: isNaN(price) ? 0 : price,
             imageUrl: imageUrl || null,
             cost: isNaN(cost) ? 0 : cost,
-            isDigital,
-            accessLink: isDigital ? (accessLink || null) : null,
             storeName: storeName || 'Elabela Store',
             storeLogo: storeLogo || null,
             purchaseEventName: purchaseEventName?.trim() || null,
@@ -488,8 +475,6 @@ export async function updateProduct(formData: FormData): Promise<void> {
     const costValue = formData.get('cost')
     const cost = costValue ? parseFloat(costValue as string) : 0
     let imageUrl = formData.get('imageUrl') as string
-    const isDigital = formData.get('isDigital') === 'true'
-    const accessLink = formData.get('accessLink') as string
     const storeName = formData.get('storeName') as string
     const storeLogo = formData.get('storeLogo') as string
     const purchaseEventName = formData.get('purchaseEventName') as string
@@ -507,7 +492,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
     }
 
     try {
-        console.log('UPDATING PRODUCT:', { id, name, price, cost, imageUrl, isDigital, accessLink })
+        console.log('UPDATING PRODUCT:', { id, name, price, cost, imageUrl })
 
         if (isNaN(price)) {
             console.error('PRICE IS NaN')
@@ -519,8 +504,6 @@ export async function updateProduct(formData: FormData): Promise<void> {
             price: Number(price),
             imageUrl: imageUrl || null,
             cost: isNaN(cost) ? 0 : Number(cost),
-            isDigital,
-            accessLink: isDigital ? (accessLink || null) : null,
             storeName: storeName || 'Elabela Store',
             storeLogo: storeLogo || null,
             purchaseEventName: purchaseEventName?.trim() || null,
@@ -561,8 +544,6 @@ export async function duplicateProduct(productId: string): Promise<void> {
                 price: product.price,
                 imageUrl: product.imageUrl,
                 commission: product.commission,
-                isDigital: product.isDigital,
-                accessLink: product.accessLink,
                 storeName: product.storeName,
                 storeLogo: product.storeLogo,
                 purchaseEventName: product.purchaseEventName,
@@ -1507,7 +1488,6 @@ export async function sendTestEmail(templateId: string, toEmail: string) {
         trackingUrl: 'https://rastreamento.correios.com.br',
         trackingLink: 'https://rastreamento.correios.com.br',
         estimatedDate: new Date(Date.now() + 7 * 86400000).toLocaleDateString('pt-BR'),
-        accessLink: 'https://exemplo.com/acesso',
         storeName: 'Minha Loja',
     }
 

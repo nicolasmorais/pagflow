@@ -281,8 +281,6 @@ export async function POST(req: NextRequest) {
                 country: 'BR',
             };
 
-            const isDigital = product?.isDigital ?? false;
-
             const pagarmeResult = await createCardOrder({
                 orderId: order.id,
                 amount: chargeAmount,
@@ -290,7 +288,6 @@ export async function POST(req: NextRequest) {
                 cardToken: pagarmeData.cardToken,
                 description,
                 statementDescriptor: product?.storeName || 'PAGFLOW',
-                isDigital,
                 customer: {
                     name: fullName,
                     email: orderData.email,
@@ -299,11 +296,11 @@ export async function POST(req: NextRequest) {
                     birthdate,
                     address: billingAddress,
                 },
-                shipping: !isDigital ? {
+                shipping: {
                     name: orderData.destinatario || fullName,
                     phone: cleanPhone,
                     address: billingAddress,
-                } : undefined,
+                },
             });
 
             console.log('[Pagar.me] Order ID:', pagarmeResult.id, 'Status:', pagarmeResult.status);

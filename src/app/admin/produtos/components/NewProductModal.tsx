@@ -10,7 +10,6 @@ interface NewProductModalProps {
 
 export default function NewProductModal({ onClose }: NewProductModalProps) {
     const [loading, setLoading] = useState(false)
-    const [isDigital, setIsDigital] = useState(false)
     const [subscriptionEnabled, setSubscriptionEnabled] = useState(false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -258,63 +257,6 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                             />
                         </div>
                     </div>
-
-                    <div className="form-group" style={{
-                        background: '#f8fafc',
-                        padding: '16px',
-                        borderRadius: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        border: '1px solid #e2e8f0'
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '8px',
-                                background: '#f0f9ff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: '#0ea5e9'
-                            }}>
-                                <Package size={18} />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b' }}>Produto Digital</div>
-                                <div style={{ fontSize: '11px', color: '#64748b' }}>Remove a etapa de entrega no checkout</div>
-                            </div>
-                        </div>
-                        <label className="switch">
-                            <input
-                                type="checkbox"
-                                name="isDigital"
-                                value="true"
-                                checked={isDigital}
-                                onChange={e => setIsDigital(e.target.checked)}
-                            />
-                            <span className="slider round"></span>
-                        </label>
-                    </div>
-
-                    {isDigital && (
-                        <div className="form-group" style={{ animation: 'modalSlideUp 0.3s ease-out' }}>
-                            <label className="form-label">
-                                <Plus size={14} /> Link de Acesso (Google Drive, etc)
-                            </label>
-                            <input
-                                name="accessLink"
-                                type="url"
-                                className="form-input"
-                                placeholder="https://drive.google.com/..."
-                                required={isDigital}
-                            />
-                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '4px' }}>
-                                Este link será enviado automaticamente por e-mail após a confirmação do pagamento.
-                            </div>
-                        </div>
-                    )}
 
 
                     <div className="form-group">

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Loader2, Package, DollarSign, Image as ImageIcon, Globe, Store, Target, RefreshCw } from 'lucide-react'
+import { X, Loader2, Package, DollarSign, Image as ImageIcon, Store, Target, RefreshCw } from 'lucide-react'
 import { updateProduct } from '@/app/actions'
 
 const inputStyle: React.CSSProperties = {
@@ -19,7 +19,6 @@ const labelStyle: React.CSSProperties = {
 
 export default function EditProductModal({ product, onClose }: { product: any; onClose: () => void }) {
     const [loading, setLoading] = useState(false)
-    const [isDigital, setIsDigital] = useState(product.isDigital)
     const [subscriptionEnabled, setSubscriptionEnabled] = useState(product.subscriptionEnabled || false)
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -107,46 +106,6 @@ export default function EditProductModal({ product, onClose }: { product: any; o
                             />
                         </div>
                     </div>
-
-                    {/* Digital Toggle */}
-                    <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '12px 14px', background: '#f8fafc', borderRadius: '12px',
-                        border: '1px solid #f1f5f9', marginBottom: isDigital ? '14px' : '20px',
-                    }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Globe size={16} color="#6366f1" />
-                            <div>
-                                <p style={{ margin: 0, fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Produto Digital</p>
-                                <p style={{ margin: 0, fontSize: '10px', color: '#94a3b8' }}>Sem frete, envio por e-mail</p>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setIsDigital(!isDigital)}
-                            style={{
-                                width: '40px', height: '22px', borderRadius: '22px', border: 'none', cursor: 'pointer',
-                                background: isDigital ? '#6366f1' : '#cbd5e1', position: 'relative', transition: '0.2s',
-                            }}
-                        >
-                            <span style={{
-                                position: 'absolute', height: '16px', width: '16px',
-                                left: isDigital ? '21px' : '3px', top: '3px',
-                                background: '#fff', borderRadius: '50%', transition: '0.2s',
-                            }} />
-                        </button>
-                    </div>
-
-                    {isDigital && (
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={labelStyle}><Globe size={12} /> Link de Acesso</label>
-                            <input name="accessLink" type="url" style={inputStyle} defaultValue={product.accessLink || ''} placeholder="https://drive.google.com/..."
-                                onFocus={e => { e.target.style.borderColor = '#0f172a'; e.target.style.background = '#fff' }}
-                                onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
-                            />
-                            <p style={{ margin: '4px 0 0', fontSize: '10px', color: '#94a3b8' }}>Enviado por e-mail após pagamento confirmado.</p>
-                        </div>
-                    )}
 
                     <div style={{ marginBottom: '14px' }}>
                         <label style={labelStyle}><Target size={12} /> Evento de "iniciar checkout" customizado</label>

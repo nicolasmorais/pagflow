@@ -22,7 +22,6 @@ export interface PagarmeCardOrderParams {
     cardToken: string;
     description: string;
     statementDescriptor?: string;
-    isDigital?: boolean;
     customer: {
         name: string;
         email: string;
@@ -155,7 +154,7 @@ export async function createPixOrder(params: PagarmePixOrderParams): Promise<Pag
 }
 
 export function buildCardOrderBody(params: PagarmeCardOrderParams): any {
-    const { orderId, amount, installments, cardToken, description, statementDescriptor, isDigital, customer, shipping } = params;
+    const { orderId, amount, installments, cardToken, description, statementDescriptor, customer, shipping } = params;
     const { birthdate } = customer;
 
     const cleanPhone = (customer.phone || '').replace(/\D/g, '');
@@ -205,7 +204,7 @@ export function buildCardOrderBody(params: PagarmeCardOrderParams): any {
         }],
     };
 
-    if (!isDigital && shipping) {
+    if (shipping) {
         body.shipping = {
             amount: 0,
             description: 'Entrega',
