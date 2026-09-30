@@ -683,24 +683,19 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     // Opções de parcelamento para cartão — independente do PIX Parcelado
     const CARD_MIN_INSTALLMENT = 9.9;
-    const CARD_NO_INTEREST_MAX = 6; // até 6x sem juros
-    // MDR Pagar.me por parcela — usado para repassar custo ao comprador em 7-12x
-    const PAGARME_MDR: Record<number, number> = {
-        1: 0.0419, 2: 0.0726, 3: 0.0940, 4: 0.1100, 5: 0.1233, 6: 0.1363,
-        7: 0.1491, 8: 0.1617, 9: 0.1740, 10: 0.1860, 11: 0.1971, 12: 0.2095,
-    };
-    // 1-6x: sem juros (price/n). 7-12x: repassa MDR → price / (1 - MDR) / n
+    const CARD_FREE_INSTALLMENTS = 5;  // 1-5x sem juros
+    const CARD_INTEREST_RATE = 0.05;   // 5% a.m. juros simples (Pagar.me)
+    // 1-5x: sem juros. 6-12x: juros simples → price * (1 + rate * n) / n
     const calcInstallmentValue = (total: number, n: number): number => {
-        if (n <= CARD_NO_INTEREST_MAX) return total / n;
-        const mdr = PAGARME_MDR[n] ?? 0.2095;
-        return (total / (1 - mdr)) / n;
+        if (n <= CARD_FREE_INSTALLMENTS) return total / n;
+        return total * (1 + CARD_INTEREST_RATE * n) / n;
     };
     const cardInstallmentOptions: { n: number; val: number; hasInterest: boolean }[] = (() => {
         const opts: { n: number; val: number; hasInterest: boolean }[] = [];
         for (let i = 1; i <= 12; i++) {
             const val = calcInstallmentValue(finalPrice, i);
             if (i === 1 || val >= CARD_MIN_INSTALLMENT) {
-                opts.push({ n: i, val, hasInterest: i > CARD_NO_INTEREST_MAX });
+                opts.push({ n: i, val, hasInterest: i > CARD_FREE_INSTALLMENTS });
             }
         }
         return opts;
@@ -1770,7 +1765,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div style={{ flex: 1 }}>
                                         <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                             Cartão de Crédito
-                                            <span style={{ background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>até 6x sem juros</span>
+                                            <span style={{ background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>até 5x sem juros</span>
                                         </div>
                                         <div className="pay-desc">Pagamento seguro e rápido</div>
                                     </div>

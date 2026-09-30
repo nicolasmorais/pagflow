@@ -238,16 +238,11 @@ export async function POST(req: NextRequest) {
             const installments = Number(pagarmeData.installments) || 1;
             const description = `Pedido ${order.id} - ${product?.name || 'Produto'}${bumpsTotal > 0 ? ` + ${selectedBumpIds.length} oferta(s)` : ''}`;
 
-            // Para parcelas com juros, o cliente envia o total já calculado com juros
-            const chargeAmount = (pagarmeData.totalWithInterest && pagarmeData.totalWithInterest > serverPrice)
-                ? Math.round(pagarmeData.totalWithInterest * 100)
-                : Math.round(serverPrice * 100);
-
             const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/pagarme`;
 
             const pagarmeResult = await createCardOrder({
                 orderId: order.id,
-                amount: chargeAmount,
+                amount: Math.round(serverPrice * 100),
                 installments,
                 cardToken: pagarmeData.cardToken,
                 description,
