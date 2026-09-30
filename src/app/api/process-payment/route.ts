@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
             const rua = orderData.rua || '';
             const numero = orderData.numero || 'S/N';
             const addressLine1 = rua ? `${rua}, ${numero}` : '';
-            const customerAddress = addressLine1 ? {
+            const billingAddress = addressLine1 ? {
                 line_1: addressLine1,
                 line_2: orderData.complemento || undefined,
                 zip_code: (orderData.cep || '').replace(/\D/g, ''),
@@ -263,13 +263,18 @@ export async function POST(req: NextRequest) {
                 installments,
                 cardToken: pagarmeData.cardToken,
                 description,
+                statementDescriptor: product?.storeName || 'PAGFLOW',
                 customer: {
                     name: fullName || 'Cliente PagFlow',
                     email: orderData.email || 'cliente@pagflow.com',
                     document: cpfToSave,
                     phone: (phone || '').replace(/\D/g, '') || undefined,
-                    address: customerAddress,
+                    address: billingAddress,
                 },
+                billing: billingAddress ? {
+                    name: fullName || 'Cliente PagFlow',
+                    address: billingAddress,
+                } : undefined,
             });
 
             console.log('[Pagar.me] Order ID:', pagarmeResult.id, 'Status:', pagarmeResult.status);

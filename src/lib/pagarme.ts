@@ -6,25 +6,32 @@ function getAuthHeader(): string {
     return 'Basic ' + Buffer.from(`${key}:`).toString('base64');
 }
 
+export interface PagarmeAddress {
+    line_1: string;
+    line_2?: string;
+    zip_code: string;
+    city: string;
+    state: string;
+    country?: string;
+}
+
 export interface PagarmeCardOrderParams {
     orderId: string;
     amount: number; // em centavos
     installments: number;
     cardToken: string;
     description: string;
+    statementDescriptor?: string;
     customer: {
         name: string;
         email: string;
-        document: string; // CPF apenas dígitos
-        phone?: string;   // apenas dígitos
-        address?: {
-            line_1: string;
-            line_2?: string;
-            zip_code: string;
-            city: string;
-            state: string;
-            country?: string;
-        };
+        document: string;
+        phone?: string;
+        address?: PagarmeAddress;
+    };
+    billing?: {
+        name: string;
+        address: PagarmeAddress;
     };
 }
 
@@ -145,7 +152,7 @@ export async function createPixOrder(params: PagarmePixOrderParams): Promise<Pag
 }
 
 export async function createCardOrder(params: PagarmeCardOrderParams): Promise<PagarmeOrderResult> {
-    const { orderId, amount, installments, cardToken, description, customer } = params;
+    const { orderId, amount, installments, cardToken, description, statementDescriptor, customer, billing } = params;
 
     const cleanPhone = (customer.phone || '').replace(/\D/g, '');
     const phones = cleanPhone.length >= 10 ? {
@@ -156,7 +163,16 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
         }
     } : undefined;
 
-    const body = {
+    const buildAddress = (addr: PagarmeAddress) => ({
+        line_1: addr.line_1,
+        ...(addr.line_2 ? { line_2: addr.line_2 } : {}),
+        zip_code: addr.zip_code.replace(/\D/g, ''),
+        city: addr.city,
+        state: addr.state,
+        country: addr.country || 'BR',
+    });
+
+    const body: any = {
         code: orderId,
         items: [{
             amount,
@@ -171,27 +187,25 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
             document: customer.document,
             document_type: 'CPF',
             phones,
-            ...(customer.address ? {
-                address: {
-                    line_1: customer.address.line_1,
-                    line_2: customer.address.line_2 || '',
-                    zip_code: customer.address.zip_code,
-                    city: customer.address.city,
-                    state: customer.address.state,
-                    country: customer.address.country || 'BR',
-                }
-            } : {}),
+            ...(customer.address ? { address: buildAddress(customer.address) } : {}),
         },
         payments: [{
             payment_method: 'credit_card',
             credit_card: {
                 installments,
-                statement_descriptor: 'PAGFLOW',
+                statement_descriptor: (statementDescriptor || 'PAGFLOW').substring(0, 13).toUpperCase(),
                 card_token: cardToken,
                 capture: true,
             },
         }],
     };
+
+    if (billing) {
+        body.billing = {
+            name: billing.name,
+            address: buildAddress(billing.address),
+        };
+    }
 
     const res = await fetch(`${PAGARME_BASE_URL}/orders`, {
         method: 'POST',
