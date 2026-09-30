@@ -32,7 +32,7 @@ export interface PagarmeCardOrderParams {
     billing?: {
         name: string;
         address: PagarmeAddress;
-    };
+    }; // always pass for antifraud — antifraude Pagar.me requires at least one address
     antifraudMetadata?: {
         ip?: string;
         session?: string;

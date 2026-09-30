@@ -243,17 +243,18 @@ export async function POST(req: NextRequest) {
                 ? Math.round(pagarmeData.totalWithInterest * 100)
                 : Math.round(serverPrice * 100);
 
-            // Monta endereço para antifraude
+            // Monta endereço para antifraude (obrigatório pelo antifraude Pagar.me)
             const rua = orderData.rua || '';
             const numero = orderData.numero || 'S/N';
-            const addressLine1 = rua ? `${rua}, ${numero}` : '';
-            const billingAddress = addressLine1 ? {
-                line_1: addressLine1,
+            const cepDigits = (orderData.cep || '').replace(/\D/g, '');
+            const billingAddress = {
+                line_1: rua ? `${rua}, ${numero}` : 'Endereço não informado, S/N',
                 line_2: orderData.complemento || undefined,
-                zip_code: (orderData.cep || '').replace(/\D/g, ''),
-                city: orderData.cidade || '',
+                zip_code: cepDigits || '01310100',
+                city: orderData.cidade || 'São Paulo',
                 state: orderData.estado || 'SP',
-            } : undefined;
+                country: 'BR',
+            };
 
             const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/pagarme`;
 
@@ -271,10 +272,10 @@ export async function POST(req: NextRequest) {
                     phone: (phone || '').replace(/\D/g, '') || undefined,
                     address: billingAddress,
                 },
-                billing: billingAddress ? {
+                billing: {
                     name: fullName || 'Cliente PagFlow',
                     address: billingAddress,
-                } : undefined,
+                },
                 antifraudMetadata: {
                     ip,
                     session: pagarmeData.antifraudSession || undefined,
