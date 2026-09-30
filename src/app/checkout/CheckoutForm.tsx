@@ -41,6 +41,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
     const [cardTokenizing, setCardTokenizing] = useState(false);
     const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
+    const [antifraudSession] = useState<string>(() => {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '');
+        return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    });
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -563,6 +567,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     brand: pagarmeCardData.brand,
                     installments: pagarmeCardData.installments,
                     totalWithInterest: pagarmeCardData.totalWithInterest,
+                    antifraudSession,
                 } : undefined,
                 orderId: currentOrderId || null,
                 orderData: {

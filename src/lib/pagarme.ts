@@ -33,6 +33,10 @@ export interface PagarmeCardOrderParams {
         name: string;
         address: PagarmeAddress;
     };
+    antifraudMetadata?: {
+        ip?: string;
+        session?: string;
+    };
 }
 
 export interface PagarmeOrderResult {
@@ -152,7 +156,7 @@ export async function createPixOrder(params: PagarmePixOrderParams): Promise<Pag
 }
 
 export async function createCardOrder(params: PagarmeCardOrderParams): Promise<PagarmeOrderResult> {
-    const { orderId, amount, installments, cardToken, description, statementDescriptor, customer, billing } = params;
+    const { orderId, amount, installments, cardToken, description, statementDescriptor, customer, billing, antifraudMetadata } = params;
 
     const cleanPhone = (customer.phone || '').replace(/\D/g, '');
     const phones = cleanPhone.length >= 10 ? {
@@ -204,6 +208,13 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
         body.billing = {
             name: billing.name,
             address: buildAddress(billing.address),
+        };
+    }
+
+    if (antifraudMetadata?.ip || antifraudMetadata?.session) {
+        body.antifraud_metadata = {
+            ...(antifraudMetadata.ip ? { ip: antifraudMetadata.ip } : {}),
+            ...(antifraudMetadata.session ? { session: antifraudMetadata.session } : {}),
         };
     }
 

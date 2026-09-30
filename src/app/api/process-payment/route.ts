@@ -275,6 +275,10 @@ export async function POST(req: NextRequest) {
                     name: fullName || 'Cliente PagFlow',
                     address: billingAddress,
                 } : undefined,
+                antifraudMetadata: {
+                    ip,
+                    session: pagarmeData.antifraudSession || undefined,
+                },
             });
 
             console.log('[Pagar.me] Order ID:', pagarmeResult.id, 'Status:', pagarmeResult.status);
