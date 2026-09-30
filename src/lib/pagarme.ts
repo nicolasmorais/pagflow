@@ -177,6 +177,7 @@ export function buildCardOrderBody(params: PagarmeCardOrderParams): any {
 
     const body: any = {
         code: orderId,
+        antifraud_enabled: false,
         items: [{
             amount,
             description: description || 'Produto',
