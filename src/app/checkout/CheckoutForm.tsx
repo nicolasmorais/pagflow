@@ -683,12 +683,17 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     // Opções de parcelamento para cartão — independente do PIX Parcelado
     const CARD_MIN_INSTALLMENT = 9.9;
-    const CARD_NO_INTEREST_MAX = 6;   // até 6x sem juros
-    const CARD_MONTHLY_RATE = 0.0199; // 1.99% a.m. para 7-12x
-    // PMT formula: P * r / (1 - (1+r)^-n)
+    const CARD_NO_INTEREST_MAX = 6; // até 6x sem juros
+    // MDR Pagar.me por parcela — usado para repassar custo ao comprador em 7-12x
+    const PAGARME_MDR: Record<number, number> = {
+        1: 0.0419, 2: 0.0726, 3: 0.0940, 4: 0.1100, 5: 0.1233, 6: 0.1363,
+        7: 0.1491, 8: 0.1617, 9: 0.1740, 10: 0.1860, 11: 0.1971, 12: 0.2095,
+    };
+    // 1-6x: sem juros (price/n). 7-12x: repassa MDR → price / (1 - MDR) / n
     const calcInstallmentValue = (total: number, n: number): number => {
         if (n <= CARD_NO_INTEREST_MAX) return total / n;
-        return total * CARD_MONTHLY_RATE / (1 - Math.pow(1 + CARD_MONTHLY_RATE, -n));
+        const mdr = PAGARME_MDR[n] ?? 0.2095;
+        return (total / (1 - mdr)) / n;
     };
     const cardInstallmentOptions: { n: number; val: number; hasInterest: boolean }[] = (() => {
         const opts: { n: number; val: number; hasInterest: boolean }[] = [];
