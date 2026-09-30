@@ -22,6 +22,7 @@ export interface PagarmeCardOrderParams {
     cardToken: string;
     description: string;
     statementDescriptor?: string;
+    isDigital?: boolean;
     customer: {
         name: string;
         email: string;
@@ -32,7 +33,12 @@ export interface PagarmeCardOrderParams {
     billing?: {
         name: string;
         address: PagarmeAddress;
-    }; // always pass for antifraud — antifraude Pagar.me requires at least one address
+    };
+    shipping?: {
+        name: string;
+        phone?: string;
+        address: PagarmeAddress;
+    };
     antifraudMetadata?: {
         ip?: string;
         session?: string;
@@ -156,7 +162,7 @@ export async function createPixOrder(params: PagarmePixOrderParams): Promise<Pag
 }
 
 export async function createCardOrder(params: PagarmeCardOrderParams): Promise<PagarmeOrderResult> {
-    const { orderId, amount, installments, cardToken, description, statementDescriptor, customer, billing, antifraudMetadata } = params;
+    const { orderId, amount, installments, cardToken, description, statementDescriptor, isDigital, customer, billing, shipping, antifraudMetadata } = params;
 
     const cleanPhone = (customer.phone || '').replace(/\D/g, '');
     const phones = cleanPhone.length >= 10 ? {
@@ -183,6 +189,7 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
             description: description || 'Produto',
             quantity: 1,
             code: 'item-001',
+            tangible: !isDigital,
         }],
         customer: {
             name: customer.name,
@@ -208,6 +215,16 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
         body.billing = {
             name: billing.name,
             address: buildAddress(billing.address),
+        };
+    }
+
+    if (!isDigital && shipping) {
+        body.shipping = {
+            amount: 0,
+            description: 'Entrega',
+            recipient_name: shipping.name,
+            ...(shipping.phone ? { recipient_phone: shipping.phone } : {}),
+            address: buildAddress(shipping.address),
         };
     }
 

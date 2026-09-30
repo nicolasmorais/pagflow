@@ -258,6 +258,9 @@ export async function POST(req: NextRequest) {
 
             const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/pagarme`;
 
+            const isDigital = product?.isDigital ?? true;
+            const cleanPhone = (phone || '').replace(/\D/g, '') || undefined;
+
             const pagarmeResult = await createCardOrder({
                 orderId: order.id,
                 amount: chargeAmount,
@@ -265,17 +268,23 @@ export async function POST(req: NextRequest) {
                 cardToken: pagarmeData.cardToken,
                 description,
                 statementDescriptor: product?.storeName || 'PAGFLOW',
+                isDigital,
                 customer: {
                     name: fullName || 'Cliente PagFlow',
                     email: orderData.email || 'cliente@pagflow.com',
                     document: cpfToSave,
-                    phone: (phone || '').replace(/\D/g, '') || undefined,
+                    phone: cleanPhone,
                     address: billingAddress,
                 },
                 billing: {
                     name: fullName || 'Cliente PagFlow',
                     address: billingAddress,
                 },
+                shipping: !isDigital ? {
+                    name: fullName || 'Cliente PagFlow',
+                    phone: cleanPhone,
+                    address: billingAddress,
+                } : undefined,
                 antifraudMetadata: {
                     ip,
                     session: pagarmeData.antifraudSession || undefined,
