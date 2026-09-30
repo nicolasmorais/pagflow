@@ -274,6 +274,11 @@ export async function POST(req: NextRequest) {
                     email: orderData.email || 'cliente@pagflow.com',
                     document: cpfToSave,
                     phone: cleanPhone,
+                    birthdate: (() => {
+                        const raw = (orderData.nascimento || '').replace(/\D/g, '');
+                        if (raw.length === 8) return `${raw.slice(4)}-${raw.slice(2, 4)}-${raw.slice(0, 2)}`;
+                        return undefined;
+                    })(),
                     address: billingAddress,
                 },
                 billing: {

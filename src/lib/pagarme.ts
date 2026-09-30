@@ -28,6 +28,7 @@ export interface PagarmeCardOrderParams {
         email: string;
         document: string;
         phone?: string;
+        birthdate?: string; // formato YYYY-MM-DD
         address?: PagarmeAddress;
     };
     billing?: {
@@ -163,6 +164,7 @@ export async function createPixOrder(params: PagarmePixOrderParams): Promise<Pag
 
 export async function createCardOrder(params: PagarmeCardOrderParams): Promise<PagarmeOrderResult> {
     const { orderId, amount, installments, cardToken, description, statementDescriptor, isDigital, customer, billing, shipping, antifraudMetadata } = params;
+    const { birthdate } = customer;
 
     const cleanPhone = (customer.phone || '').replace(/\D/g, '');
     const phones = cleanPhone.length >= 10 ? {
@@ -198,6 +200,7 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
             document: customer.document,
             document_type: 'CPF',
             phones,
+            ...(birthdate ? { birthdate } : {}),
             ...(customer.address ? { address: buildAddress(customer.address) } : {}),
         },
         payments: [{

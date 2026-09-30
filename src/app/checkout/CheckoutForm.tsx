@@ -19,7 +19,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [step1Loading, setStep1Loading] = useState(false);
     const [cepResolved, setCepResolved] = useState(false);
 
-    const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '' });
+    const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '', nascimento: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
     const defaultShipping = shippingRules && shippingRules.length > 0
         ? shippingRules[0]
@@ -41,10 +41,18 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
     const [cardTokenizing, setCardTokenizing] = useState(false);
     const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
-    const [antifraudSession] = useState<string>(() => {
+    const [antifraudSession, setAntifraudSession] = useState<string>(() => {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '');
         return Math.random().toString(36).substring(2) + Date.now().toString(36);
     });
+
+    useEffect(() => {
+        import('@fingerprintjs/fingerprintjs').then(FingerprintJS =>
+            FingerprintJS.load().then(fp => fp.get())
+        ).then(result => {
+            setAntifraudSession(result.visitorId);
+        }).catch(() => { /* fallback já definido no estado inicial */ });
+    }, []);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -359,6 +367,18 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const formatCPF = (v: string) => {
         let clean = v.replace(/\D/g, '');
         return clean.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    };
+
+    const formatDate = (v: string) => {
+        let d = v.replace(/\D/g, '').slice(0, 8);
+        if (d.length > 4) return d.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+        if (d.length > 2) return d.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+        return d;
+    };
+    const parseDateToISO = (v: string) => {
+        const parts = v.replace(/\D/g, '');
+        if (parts.length !== 8) return undefined;
+        return `${parts.slice(4)}-${parts.slice(2, 4)}-${parts.slice(0, 2)}`;
     };
 
     const formatTel = (v: string) => {
@@ -1531,6 +1551,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
                                     </div>
                                 )}
+                                <div className="field">
+                                    <label className="field-label">Data de Nascimento <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(opcional)</span></label>
+                                    <input type="text" placeholder="DD/MM/AAAA" maxLength={10} value={dados.nascimento} onChange={e => handleMaskDados('nascimento', e.target.value, formatDate)} />
+                                    <div className="field-hint">Ajuda a validar o pagamento com mais segurança</div>
+                                </div>
                                 {product?.isDigital && (
                                     <div className={`field ${errors.cep ? 'error' : ''}`}>
                                         <label className="field-label">CEP <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(opcional)</span></label>
