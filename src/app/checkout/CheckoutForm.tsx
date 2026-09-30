@@ -683,16 +683,16 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     // Opções de parcelamento para cartão — independente do PIX Parcelado
     const CARD_MIN_INSTALLMENT = 9.9;
-    const CARD_FREE_INSTALLMENTS = 5;  // 1-5x sem juros
-    const CARD_INTEREST_RATE = 0.05;   // 5% a.m. juros simples (Pagar.me)
-    // 1-5x: sem juros. 6-12x: juros simples → price * (1 + rate * n) / n
+    const CARD_FREE_INSTALLMENTS = 1;  // só 1x sem juros
+    const CARD_INTEREST_RATE = 0.05;   // 5% a.m. juros simples
+    // 1x: sem juros. 2-18x: price * (1 + 0.05 * n) / n
     const calcInstallmentValue = (total: number, n: number): number => {
         if (n <= CARD_FREE_INSTALLMENTS) return total / n;
         return total * (1 + CARD_INTEREST_RATE * n) / n;
     };
     const cardInstallmentOptions: { n: number; val: number; hasInterest: boolean }[] = (() => {
         const opts: { n: number; val: number; hasInterest: boolean }[] = [];
-        for (let i = 1; i <= 12; i++) {
+        for (let i = 1; i <= 18; i++) {
             const val = calcInstallmentValue(finalPrice, i);
             if (i === 1 || val >= CARD_MIN_INSTALLMENT) {
                 opts.push({ n: i, val, hasInterest: i > CARD_FREE_INSTALLMENTS });
@@ -1765,7 +1765,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div style={{ flex: 1 }}>
                                         <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                             Cartão de Crédito
-                                            <span style={{ background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>até 5x sem juros</span>
+                                            <span style={{ background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>em até 18x</span>
                                         </div>
                                         <div className="pay-desc">Pagamento seguro e rápido</div>
                                     </div>

@@ -172,7 +172,7 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
                 card_token: cardToken,
                 capture: true,
                 interest_rate: 5,         // 5% a.m. juros simples
-                free_installments: 5,     // 1-5x sem juros
+                free_installments: 1,     // só 1x sem juros
             },
         }],
     };
