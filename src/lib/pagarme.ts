@@ -17,6 +17,14 @@ export interface PagarmeCardOrderParams {
         email: string;
         document: string; // CPF apenas dígitos
         phone?: string;   // apenas dígitos
+        address?: {
+            line_1: string;
+            line_2?: string;
+            zip_code: string;
+            city: string;
+            state: string;
+            country?: string;
+        };
     };
 }
 
@@ -163,6 +171,16 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
             document: customer.document,
             document_type: 'CPF',
             phones,
+            ...(customer.address ? {
+                address: {
+                    line_1: customer.address.line_1,
+                    line_2: customer.address.line_2 || '',
+                    zip_code: customer.address.zip_code,
+                    city: customer.address.city,
+                    state: customer.address.state,
+                    country: customer.address.country || 'BR',
+                }
+            } : {}),
         },
         payments: [{
             payment_method: 'credit_card',
@@ -171,8 +189,6 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
                 statement_descriptor: 'PAGFLOW',
                 card_token: cardToken,
                 capture: true,
-                interest_rate: 5,         // 5% a.m. juros simples
-                free_installments: 1,     // só 1x sem juros
             },
         }],
     };

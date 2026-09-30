@@ -238,11 +238,28 @@ export async function POST(req: NextRequest) {
             const installments = Number(pagarmeData.installments) || 1;
             const description = `Pedido ${order.id} - ${product?.name || 'Produto'}${bumpsTotal > 0 ? ` + ${selectedBumpIds.length} oferta(s)` : ''}`;
 
+            // Para parcelas com juros, o frontend calcula o total correto
+            const chargeAmount = (pagarmeData.totalWithInterest && pagarmeData.totalWithInterest > serverPrice)
+                ? Math.round(pagarmeData.totalWithInterest * 100)
+                : Math.round(serverPrice * 100);
+
+            // Monta endereço para antifraude
+            const rua = orderData.rua || '';
+            const numero = orderData.numero || 'S/N';
+            const addressLine1 = rua ? `${rua}, ${numero}` : '';
+            const customerAddress = addressLine1 ? {
+                line_1: addressLine1,
+                line_2: orderData.complemento || undefined,
+                zip_code: (orderData.cep || '').replace(/\D/g, ''),
+                city: orderData.cidade || '',
+                state: orderData.estado || 'SP',
+            } : undefined;
+
             const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/pagarme`;
 
             const pagarmeResult = await createCardOrder({
                 orderId: order.id,
-                amount: Math.round(serverPrice * 100),
+                amount: chargeAmount,
                 installments,
                 cardToken: pagarmeData.cardToken,
                 description,
@@ -251,6 +268,7 @@ export async function POST(req: NextRequest) {
                     email: orderData.email || 'cliente@pagflow.com',
                     document: cpfToSave,
                     phone: (phone || '').replace(/\D/g, '') || undefined,
+                    address: customerAddress,
                 },
             });
 
