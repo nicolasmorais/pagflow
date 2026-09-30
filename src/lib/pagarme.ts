@@ -31,18 +31,10 @@ export interface PagarmeCardOrderParams {
         birthdate?: string; // formato YYYY-MM-DD
         address?: PagarmeAddress;
     };
-    billing?: {
-        name: string;
-        address: PagarmeAddress;
-    };
     shipping?: {
         name: string;
         phone?: string;
         address: PagarmeAddress;
-    };
-    antifraudMetadata?: {
-        ip?: string;
-        session?: string;
     };
 }
 
@@ -162,8 +154,8 @@ export async function createPixOrder(params: PagarmePixOrderParams): Promise<Pag
     };
 }
 
-export async function createCardOrder(params: PagarmeCardOrderParams): Promise<PagarmeOrderResult> {
-    const { orderId, amount, installments, cardToken, description, statementDescriptor, isDigital, customer, billing, shipping, antifraudMetadata } = params;
+export function buildCardOrderBody(params: PagarmeCardOrderParams): any {
+    const { orderId, amount, installments, cardToken, description, statementDescriptor, isDigital, customer, shipping } = params;
     const { birthdate } = customer;
 
     const cleanPhone = (customer.phone || '').replace(/\D/g, '');
@@ -191,7 +183,6 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
             description: description || 'Produto',
             quantity: 1,
             code: 'item-001',
-            tangible: !isDigital,
         }],
         customer: {
             name: customer.name,
@@ -206,20 +197,13 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
         payments: [{
             payment_method: 'credit_card',
             credit_card: {
+                operation_type: 'auth_and_capture',
                 installments,
                 statement_descriptor: (statementDescriptor || 'PAGFLOW').substring(0, 13).toUpperCase(),
                 card_token: cardToken,
-                capture: true,
             },
         }],
     };
-
-    if (billing) {
-        body.billing = {
-            name: billing.name,
-            address: buildAddress(billing.address),
-        };
-    }
 
     if (!isDigital && shipping) {
         body.shipping = {
@@ -231,12 +215,11 @@ export async function createCardOrder(params: PagarmeCardOrderParams): Promise<P
         };
     }
 
-    if (antifraudMetadata?.ip || antifraudMetadata?.session) {
-        body.antifraud_metadata = {
-            ...(antifraudMetadata.ip ? { ip: antifraudMetadata.ip } : {}),
-            ...(antifraudMetadata.session ? { session: antifraudMetadata.session } : {}),
-        };
-    }
+    return body;
+}
+
+export async function createCardOrder(params: PagarmeCardOrderParams): Promise<PagarmeOrderResult> {
+    const body = buildCardOrderBody(params);
 
     const res = await fetch(`${PAGARME_BASE_URL}/orders`, {
         method: 'POST',

@@ -41,19 +41,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
     const [cardTokenizing, setCardTokenizing] = useState(false);
     const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
-    const [antifraudSession, setAntifraudSession] = useState<string>(() => {
-        if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '');
-        return Math.random().toString(36).substring(2) + Date.now().toString(36);
-    });
-
-    useEffect(() => {
-        import('@fingerprintjs/fingerprintjs').then(FingerprintJS =>
-            FingerprintJS.load().then(fp => fp.get())
-        ).then(result => {
-            setAntifraudSession(result.visitorId);
-        }).catch(() => { /* fallback já definido no estado inicial */ });
-    }, []);
-
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const testMode = params.get('test');
@@ -587,7 +574,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     brand: pagarmeCardData.brand,
                     installments: pagarmeCardData.installments,
                     totalWithInterest: pagarmeCardData.totalWithInterest,
-                    antifraudSession,
                 } : undefined,
                 orderId: currentOrderId || null,
                 orderData: {
@@ -733,6 +719,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     }, [maxInstallments]);
 
+    const cardInputStyle = (hasError: boolean): React.CSSProperties => ({ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${hasError ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' });
+
     // Tokeniza cartão no Pagar.me e chama finalizar
     const finalizarCartao = async () => {
         const errs: Record<string, string> = {};
@@ -745,6 +733,17 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (cardData.cvv.length < 3) errs.cvv = 'CVV inválido';
         const cleanCpf = dados.cpf.replace(/\D/g, '');
         if (!cleanCpf || cleanCpf.length !== 11) errs.cpf = 'CPF obrigatório para cartão';
+        const nasc = parseDateToISO(dados.nascimento);
+        const nascDate = nasc ? new Date(nasc + 'T12:00:00') : null;
+        const age = nascDate ? (Date.now() - nascDate.getTime()) / (365.25 * 24 * 3600 * 1000) : NaN;
+        if (!nascDate || isNaN(age) || age < 16 || age > 110 || nascDate.toISOString().slice(0, 10) !== nasc) errs.nascimento = 'Data de nascimento inválida';
+        if (!dados.email.trim()) errs.email = 'E-mail obrigatório para cartão';
+        if (endereco.cep.replace(/\D/g, '').length !== 8) errs.cep = 'CEP obrigatório';
+        if (!endereco.rua.trim()) errs.rua = 'Rua obrigatória';
+        if (!endereco.numero.trim()) errs.numero = 'Número obrigatório';
+        if (!endereco.bairro.trim()) errs.bairro = 'Bairro obrigatório';
+        if (!endereco.cidade.trim()) errs.cidade = 'Cidade obrigatória';
+        if (!/^[A-Za-z]{2}$/.test(endereco.estado.trim())) errs.estado = 'UF inválida';
 
         setCardErrors(errs);
         if (Object.keys(errs).length > 0) return;
@@ -1551,11 +1550,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
                                     </div>
                                 )}
-                                <div className="field">
-                                    <label className="field-label">Data de Nascimento <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(opcional)</span></label>
-                                    <input type="text" placeholder="DD/MM/AAAA" maxLength={10} value={dados.nascimento} onChange={e => handleMaskDados('nascimento', e.target.value, formatDate)} />
-                                    <div className="field-hint">Ajuda a validar o pagamento com mais segurança</div>
-                                </div>
                                 {product?.isDigital && (
                                     <div className={`field ${errors.cep ? 'error' : ''}`}>
                                         <label className="field-label">CEP <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(opcional)</span></label>
@@ -1869,6 +1863,54 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             />
                                             {cardErrors.cpf && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.cpf}</div>}
                                         </div>
+
+                                        {/* Nascimento */}
+                                        <div style={{ marginBottom: 8 }}>
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                placeholder="Data de nascimento (DD/MM/AAAA)"
+                                                maxLength={10}
+                                                value={dados.nascimento}
+                                                onChange={e => { handleMaskDados('nascimento', e.target.value, formatDate); if (cardErrors.nascimento) setCardErrors(p => { const n = { ...p }; delete n.nascimento; return n; }); }}
+                                                style={cardInputStyle(!!cardErrors.nascimento)}
+                                            />
+                                            {cardErrors.nascimento && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.nascimento}</div>}
+                                        </div>
+
+                                        {/* Endereço de cobrança (produto digital não passa pela etapa de entrega) */}
+                                        {product?.isDigital && (
+                                            <div style={{ marginBottom: 8 }}>
+                                                <div style={{ fontSize: 12, color: '#64748b', margin: '4px 0 6px' }}>Endereço de cobrança do cartão</div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                                                    <input type="text" inputMode="numeric" placeholder="CEP" maxLength={9} value={endereco.cep}
+                                                        onChange={e => { handleCEPChange(e.target.value); setCardErrors(p => { const n = { ...p }; delete n.cep; delete n.rua; delete n.bairro; delete n.cidade; delete n.estado; return n; }); }}
+                                                        style={cardInputStyle(!!cardErrors.cep)} />
+                                                    <input type="text" placeholder="Número" maxLength={10} value={endereco.numero}
+                                                        onChange={e => { setEndereco(p => ({ ...p, numero: e.target.value })); setCardErrors(p => { const n = { ...p }; delete n.numero; return n; }); }}
+                                                        style={cardInputStyle(!!cardErrors.numero)} />
+                                                </div>
+                                                <input type="text" placeholder="Rua" value={endereco.rua}
+                                                    onChange={e => { setEndereco(p => ({ ...p, rua: e.target.value })); setCardErrors(p => { const n = { ...p }; delete n.rua; return n; }); }}
+                                                    style={{ ...cardInputStyle(!!cardErrors.rua), marginBottom: 8 }} />
+                                                <input type="text" placeholder="Bairro" value={endereco.bairro}
+                                                    onChange={e => { setEndereco(p => ({ ...p, bairro: e.target.value })); setCardErrors(p => { const n = { ...p }; delete n.bairro; return n; }); }}
+                                                    style={{ ...cardInputStyle(!!cardErrors.bairro), marginBottom: 8 }} />
+                                                <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: 8 }}>
+                                                    <input type="text" placeholder="Cidade" value={endereco.cidade}
+                                                        onChange={e => { setEndereco(p => ({ ...p, cidade: e.target.value })); setCardErrors(p => { const n = { ...p }; delete n.cidade; return n; }); }}
+                                                        style={cardInputStyle(!!cardErrors.cidade)} />
+                                                    <input type="text" placeholder="UF" maxLength={2} value={endereco.estado}
+                                                        onChange={e => { setEndereco(p => ({ ...p, estado: e.target.value.toUpperCase() })); setCardErrors(p => { const n = { ...p }; delete n.estado; return n; }); }}
+                                                        style={cardInputStyle(!!cardErrors.estado)} />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {(() => {
+                                            const addrErr = ['email', 'cep', 'rua', 'numero', 'bairro', 'cidade', 'estado'].map(k => cardErrors[k]).filter(Boolean);
+                                            if (!addrErr.length) return null;
+                                            return <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 8 }}>⚠️ {addrErr.join(' · ')}{!product?.isDigital ? ' — volte à etapa de entrega para completar.' : ''}</div>;
+                                        })()}
 
                                         {/* Parcelas */}
                                         <div style={{ marginBottom: 12 }}>

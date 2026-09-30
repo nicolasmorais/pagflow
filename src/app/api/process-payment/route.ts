@@ -243,23 +243,45 @@ export async function POST(req: NextRequest) {
                 ? Math.round(pagarmeData.totalWithInterest * 100)
                 : Math.round(serverPrice * 100);
 
-            // Monta endereço para antifraude (obrigatório pelo antifraude Pagar.me)
-            const rua = orderData.rua || '';
-            const numero = orderData.numero || 'S/N';
+            // Antifraude PSP exige cliente completo: sem fallbacks inventados
+            const rua = (orderData.rua || '').trim();
+            const numero = (orderData.numero || '').trim();
+            const bairro = (orderData.bairro || '').trim();
+            const cidade = (orderData.cidade || '').trim();
+            const estado = (orderData.estado || '').trim().toUpperCase();
             const cepDigits = (orderData.cep || '').replace(/\D/g, '');
+            const cleanPhone = (phone || '').replace(/\D/g, '');
+            const nascRaw = (orderData.nascimento || '').replace(/\D/g, '');
+            const birthdate = nascRaw.length === 8 ? `${nascRaw.slice(4)}-${nascRaw.slice(2, 4)}-${nascRaw.slice(0, 2)}` : '';
+
+            const missing: string[] = [];
+            if (!orderData.nome?.trim() && !orderData.fullName?.trim()) missing.push('nome');
+            if (!orderData.email) missing.push('e-mail');
+            if (cleanPhone.length < 10) missing.push('telefone');
+            if (!birthdate || isNaN(Date.parse(birthdate))) missing.push('data de nascimento');
+            if (cepDigits.length !== 8) missing.push('CEP');
+            if (!rua) missing.push('rua');
+            if (!numero) missing.push('número');
+            if (!bairro) missing.push('bairro');
+            if (!cidade) missing.push('cidade');
+            if (!/^[A-Z]{2}$/.test(estado)) missing.push('estado');
+            if (missing.length) {
+                return NextResponse.json({
+                    success: false,
+                    error: `Para pagar com cartão, preencha: ${missing.join(', ')}.`
+                }, { status: 400 });
+            }
+
             const billingAddress = {
-                line_1: rua ? `${rua}, ${numero}` : 'Endereço não informado, S/N',
+                line_1: `${numero}, ${rua}, ${bairro}`,
                 line_2: orderData.complemento || undefined,
-                zip_code: cepDigits || '01310100',
-                city: orderData.cidade || 'São Paulo',
-                state: orderData.estado || 'SP',
+                zip_code: cepDigits,
+                city: cidade,
+                state: estado,
                 country: 'BR',
             };
 
-            const notificationUrl = isLocal ? undefined : `${baseUrl}/api/webhook/pagarme`;
-
-            const isDigital = product?.isDigital ?? true;
-            const cleanPhone = (phone || '').replace(/\D/g, '') || undefined;
+            const isDigital = product?.isDigital ?? false;
 
             const pagarmeResult = await createCardOrder({
                 orderId: order.id,
@@ -270,30 +292,18 @@ export async function POST(req: NextRequest) {
                 statementDescriptor: product?.storeName || 'PAGFLOW',
                 isDigital,
                 customer: {
-                    name: fullName || 'Cliente PagFlow',
-                    email: orderData.email || 'cliente@pagflow.com',
+                    name: fullName,
+                    email: orderData.email,
                     document: cpfToSave,
                     phone: cleanPhone,
-                    birthdate: (() => {
-                        const raw = (orderData.nascimento || '').replace(/\D/g, '');
-                        if (raw.length === 8) return `${raw.slice(4)}-${raw.slice(2, 4)}-${raw.slice(0, 2)}`;
-                        return undefined;
-                    })(),
-                    address: billingAddress,
-                },
-                billing: {
-                    name: fullName || 'Cliente PagFlow',
+                    birthdate,
                     address: billingAddress,
                 },
                 shipping: !isDigital ? {
-                    name: fullName || 'Cliente PagFlow',
+                    name: orderData.destinatario || fullName,
                     phone: cleanPhone,
                     address: billingAddress,
                 } : undefined,
-                antifraudMetadata: {
-                    ip,
-                    session: pagarmeData.antifraudSession || undefined,
-                },
             });
 
             console.log('[Pagar.me] Order ID:', pagarmeResult.id, 'Status:', pagarmeResult.status);
