@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -10,18 +10,19 @@ import {
     Package,
     Truck,
     Target,
-    Sparkles,
     Mail,
     AlertTriangle,
     Megaphone,
     Settings,
     Bell,
     LogOut,
-    X,
     Wallet,
     Bot,
-    RefreshCw
+    RefreshCw,
+    PackagePlus,
+    Palette
 } from 'lucide-react'
+import { logoutAction } from './auth-actions'
 import './admin.css'
 
 const menuSections = [
@@ -40,7 +41,7 @@ const menuSections = [
         items: [
             { icon: Package, label: 'Produtos', href: '/admin/produtos' },
             { icon: Truck, label: 'Frete', href: '/admin/ecommerce' },
-            { icon: Sparkles, label: 'Order Bumps', href: '/admin/ordem' },
+            { icon: PackagePlus, label: 'Order Bumps', href: '/admin/ordem' },
         ]
     },
     {
@@ -49,7 +50,7 @@ const menuSections = [
             { icon: Target, label: 'Pixels', href: '/admin/marketing' },
             { icon: Megaphone, label: 'Taboola', href: '/admin/taboola' },
             { icon: Mail, label: 'E-mails', href: '/admin/emails' },
-            { icon: Sparkles, label: 'Personalização', href: '/admin/personalizacao' },
+            { icon: Palette, label: 'Personalização', href: '/admin/personalizacao' },
         ]
     },
     {
@@ -65,18 +66,15 @@ const menuSections = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+    // Rotas filhas (ex.: /admin/pedidos/123) mantêm o item pai ativo
+    const isActiveRoute = (href: string) =>
+        href === '/admin' ? pathname === href : pathname === href || pathname.startsWith(href + '/')
 
     return (
         <div className="admin-layout" style={{ fontFamily: '"Space Grotesk", "Nunito", sans-serif' }}>
             <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
-            {/* Mobile Overlay */}
-            {isSidebarOpen && (
-                <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)} />
-            )}
-
-            <aside className={`sidebar ${isSidebarOpen ? 'mobile-open' : ''}`}>
+            <aside className="sidebar">
                 {/* Logo */}
                 <div className="sidebar-header">
                     <div className="sidebar-logo">
@@ -91,26 +89,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             alt="PagFlow"
                         />
                     </div>
-                    <button className="sidebar-close-btn" onClick={() => setIsSidebarOpen(false)}>
-                        <X size={18} />
-                    </button>
                 </div>
 
                 {/* Navigation */}
-                <nav className="sidebar-nav">
+                <nav className="sidebar-nav" aria-label="Menu do admin">
                     {menuSections.map((section) => (
                         <div key={section.label} className="sidebar-section">
                             <span className="sidebar-section-label">{section.label}</span>
                             {section.items.map((item) => {
-                                const isActive = pathname === item.href
+                                const isActive = isActiveRoute(item.href)
                                 return (
                                     <Link
                                         key={item.href}
                                         href={item.href}
                                         className={`sidebar-link ${isActive ? 'active' : ''}`}
-                                        onClick={() => setIsSidebarOpen(false)}
+                                        aria-current={isActive ? 'page' : undefined}
+                                        aria-label={item.label}
+                                        title={item.label}
                                     >
-                                        <item.icon size={18} strokeWidth={isActive ? 2.2 : 1.8} />
+                                        <item.icon size={18} strokeWidth={isActive ? 2.2 : 1.8} aria-hidden />
                                         <span>{item.label}</span>
                                     </Link>
                                 )
@@ -122,14 +119,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 {/* Footer */}
                 <div className="sidebar-footer">
                     <div className="sidebar-user">
-                        <div className="sidebar-user-avatar">AD</div>
+                        <div className="sidebar-user-avatar" aria-hidden>AD</div>
                         <div className="sidebar-user-info">
                             <span className="sidebar-user-name">Admin</span>
-                            <span className="sidebar-user-role">Premium</span>
+                            <span className="sidebar-user-role">Administrador</span>
                         </div>
-                        <Link href="/" title="Sair" className="sidebar-logout">
-                            <LogOut size={16} />
-                        </Link>
+                        <form action={logoutAction} className="sidebar-logout-form">
+                            <button type="submit" className="sidebar-logout" title="Sair" aria-label="Sair do admin">
+                                <LogOut size={16} aria-hidden />
+                            </button>
+                        </form>
                     </div>
                 </div>
             </aside>
