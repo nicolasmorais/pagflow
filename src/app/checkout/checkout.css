@@ -1360,3 +1360,159 @@ input::placeholder{color:#CCCCCC;font-weight:500}
     height: 18px;
     color: var(--green);
 }
+/* ─────────────────────────────────────────────
+   PIX — tela de pagamento (QR / copia e cola)
+   Usa os tokens do checkout: --green segue a cor primária configurada.
+   ───────────────────────────────────────────── */
+.pq{
+  --pq-tint: color-mix(in srgb, var(--green) 9%, #fff);
+  --pq-ink: var(--text);
+  --pq-soft: #4B5563;
+  width:100%;max-width:520px;margin:0 auto;
+  padding:20px 16px 112px;
+  display:flex;flex-direction:column;gap:14px;
+  color:var(--pq-ink);
+}
+.pq strong{font-weight:800}
+
+/* Cabeçalho */
+.pq-head{text-align:center;padding:8px 4px 4px}
+.pq-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--orange-light);color:#9A4A0F;
+  font-size:13px;font-weight:800;padding:6px 12px;border-radius:99px;
+  margin-bottom:14px;
+}
+.pq-dot{width:8px;height:8px;border-radius:50%;background:var(--orange)}
+.pq-eyebrow{font-size:14px;font-weight:700;color:var(--pq-soft);margin:0 0 2px}
+.pq-amount{font-size:40px;line-height:1.1;font-weight:800;letter-spacing:-.02em;margin:0 0 10px;font-variant-numeric:tabular-nums}
+.pq-title{font-size:26px;line-height:1.25;font-weight:800;letter-spacing:-.01em;margin:0 0 8px}
+.pq-lede{font-size:16px;line-height:1.55;color:var(--pq-soft);margin:0 auto;max-width:40ch}
+
+.pq-mark{
+  width:64px;height:64px;border-radius:50%;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;
+}
+.pq-mark svg{width:32px;height:32px}
+.pq-mark-ok{background:var(--green);color:#fff}
+.pq-mark-warn{background:var(--orange-light);color:var(--orange)}
+
+/* Timer */
+.pq-timer{
+  background:var(--white);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px 0;overflow:hidden;
+}
+.pq-timer-row{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:15px;font-weight:700;color:var(--pq-soft);padding-bottom:12px}
+.pq-timer-row strong{font-size:22px;color:var(--pq-ink);font-variant-numeric:tabular-nums}
+.pq-timer-bar{height:4px;background:var(--border);margin:0 -16px}
+.pq-timer-bar div{height:100%;background:var(--green);transition:width 1s linear}
+.pq-timer.is-urgent{border-color:color-mix(in srgb, var(--red) 35%, #fff)}
+.pq-timer.is-urgent .pq-timer-row strong{color:var(--red)}
+.pq-timer.is-urgent .pq-timer-bar div{background:var(--red)}
+
+/* Cards */
+.pq-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px 18px}
+.pq-h2{font-size:18px;font-weight:800;margin:0 0 14px}
+
+.pq-steps{list-style:none;margin:0 0 18px;padding:0;display:flex;flex-direction:column;gap:12px}
+.pq-steps li{display:flex;align-items:flex-start;gap:12px}
+.pq-steps span{
+  flex:none;width:28px;height:28px;border-radius:50%;
+  background:var(--pq-tint);color:var(--green-dark);
+  font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center;
+}
+.pq-steps p{margin:0;padding-top:2px;font-size:16px;line-height:1.5}
+
+/* Botões */
+.pq-btn{
+  width:100%;min-height:60px;padding:16px 20px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--green);color:#fff;border:none;border-radius:var(--radius);
+  font-size:18px;font-weight:800;cursor:pointer;
+  transition:filter .15s, transform .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.pq-btn svg{width:22px;height:22px}
+.pq-btn:hover{filter:brightness(1.06)}
+.pq-btn:active{transform:translateY(1px)}
+.pq-btn:disabled{opacity:.65;cursor:wait}
+.pq-btn.is-copied{background:var(--green-dark)}
+.pq-btn:focus-visible,.pq-link:focus-visible,.pq-qr-toggle:focus-visible{outline:3px solid color-mix(in srgb, var(--green) 45%, #fff);outline-offset:2px}
+
+.pq-link{
+  background:none;border:none;padding:8px 4px;min-height:44px;
+  color:var(--green-dark);font-size:15px;font-weight:800;
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+}
+.pq-link:disabled{opacity:.6;cursor:wait}
+
+/* Código copia e cola */
+.pq-code{
+  margin-top:12px;padding:12px 14px;
+  background:var(--bg);border:1px dashed #CBD0D6;border-radius:var(--radius-sm);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace !important;
+  font-size:13px;line-height:1.5;color:var(--pq-soft);
+  word-break:break-all;user-select:all;-webkit-user-select:all;
+  max-height:92px;overflow:auto;
+}
+.pq-note{margin:10px 0 0;font-size:14px;line-height:1.5;color:var(--pq-soft);text-align:center}
+.pq-note-warn{color:#9A4A0F}
+
+/* QR: recolhido no celular (quem paga no mesmo aparelho usa copia e cola) */
+.pq-qr-toggle{
+  width:100%;margin-top:16px;padding:12px;min-height:48px;
+  background:none;border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:15px;font-weight:700;color:var(--pq-ink);cursor:pointer;
+}
+.pq-qr{display:none;flex-direction:column;align-items:center;gap:10px;padding-top:16px}
+.pq-qr.is-open{display:flex}
+.pq-qr-frame{
+  width:220px;height:220px;padding:12px;background:#fff;
+  border:1px solid var(--border);border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;color:var(--light);font-size:13px;
+}
+.pq-qr-frame img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.pq-qr-caption{margin:0;font-size:15px;color:var(--pq-soft);text-align:center}
+
+/* Verificação */
+.pq-check{
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  padding:4px 0;font-size:15px;color:var(--pq-soft);font-weight:600;
+}
+.pq-check-row{display:flex;align-items:center;gap:10px}
+.pq-btn-ghost{
+  min-height:48px;padding:10px 22px;border-radius:var(--radius-sm);
+  background:var(--white);border:1.5px solid var(--border);
+  color:var(--pq-ink);font-size:15px;font-weight:800;cursor:pointer;
+}
+.pq-btn-ghost:disabled{opacity:.6;cursor:wait}
+.pq-btn-ghost:focus-visible{outline:3px solid color-mix(in srgb, var(--green) 45%, #fff);outline-offset:2px}
+.pq-spinner{
+  width:40px;height:40px;margin:0 auto 16px;border-radius:50%;
+  border:3px solid var(--border);border-top-color:var(--green);
+  animation:pq-spin 1s linear infinite;
+}
+.pq-spinner-sm{width:16px;height:16px;margin:0;border-width:2px}
+@keyframes pq-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.pq-spinner{animation-duration:3s}.pq-timer-bar div{transition:none}}
+
+/* Resumo */
+.pq-summary{margin:0;display:flex;flex-direction:column;gap:10px}
+.pq-summary div{display:flex;justify-content:space-between;align-items:baseline;gap:16px}
+.pq-summary dt{font-size:15px;color:var(--pq-soft);font-weight:600;flex:none}
+.pq-summary dd{margin:0;font-size:15px;font-weight:800;text-align:right;min-width:0;overflow-wrap:anywhere}
+.pq-summary div:last-child{padding-top:10px;border-top:1px solid var(--border)}
+
+.pq-foot{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 0;font-size:14px;color:var(--pq-soft);font-weight:600}
+.pq-foot svg{width:16px;height:16px;color:var(--green)}
+
+.pq-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Desktop: QR sempre visível, ao lado das instruções */
+@media (min-width: 720px){
+  .pq{max-width:680px;padding-top:32px}
+  .pq-pay{display:grid;grid-template-columns:1fr 240px;gap:28px;align-items:start;padding:24px}
+  .pq-qr,.pq-qr.is-open{display:flex;padding-top:0;grid-column:2;grid-row:1}
+  .pq-copy{grid-column:1;grid-row:1}
+  .pq-qr-toggle{display:none}
+}

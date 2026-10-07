@@ -3,7 +3,10 @@
 import { useState, useEffect } from 'react'
 import { reportWebVitals } from '@/lib/web-vitals-reporter'
 import PixParceladoSuccess from './PixParceladoSuccess'
+import PixPayment from './PixPayment'
 import './checkout.css'
+
+const PIX_TTL = 10 * 60;
 
 export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
     const [step, setStep] = useState(1);
@@ -14,6 +17,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [pixExpired, setPixExpired] = useState(false);
     const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
     const [pixLoading, setPixLoading] = useState(false);
+    const [pixPaid, setPixPaid] = useState(false);
+    const [pixChecking, setPixChecking] = useState(false);
     const [declined, setDeclined] = useState(false);
     const [declinedOrderId, setDeclinedOrderId] = useState('');
     const [step1Loading, setStep1Loading] = useState(false);
@@ -36,7 +41,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const parcelasMax = parcelasOpcoes[parcelasOpcoes.length - 1] ?? 6;
     const [parcelas, setParcelas] = useState<number>(() => parcelasMax);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    const [copied, setCopied] = useState(false);
     const [cardData, setCardData] = useState({ number: '', name: '', exp: '', cvv: '', installments: 1 });
     const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
     const [cardTokenizing, setCardTokenizing] = useState(false);
@@ -47,7 +51,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         const stepParam = params.get('step');
         const previewParam = params.get('preview');
 
-        const fakeDados = { nome: 'João da Silva', email: 'teste@pagflow.com', telefone: '(11) 91234-5678', cpf: '' };
+        const fakeDados = { nome: 'João da Silva', email: 'teste@pagflow.com', telefone: '(11) 91234-5678', cpf: '', nascimento: '' };
         const fakeEndereco = { cep: '01310-100', rua: 'Av. Paulista', numero: '1000', complemento: 'Apto 101', bairro: 'Bela Vista', cidade: 'São Paulo', estado: 'SP', destinatario: 'João da Silva' };
         const fakeQr = { qrCode: '00020126580014br.gov.bcb.pix013688735ef-c3ea-420c-a616-6a4fc9d061a520400005303986', qrCodeBase64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' };
 
@@ -68,9 +72,17 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             setDados(fakeDados);
             setPaymentMethod('card');
             setDone(true);
-        } else if (previewParam === 'pix-pago' || testMode === 'pix') {
+        } else if (previewParam === 'pix-pago') {
+            setDados(fakeDados);
             setPaymentMethod('pix');
             setPixData(fakeQr);
+            setPixPaid(true);
+            setDone(true);
+        } else if (previewParam === 'pix-qr' || testMode === 'pix') {
+            setDados(fakeDados);
+            setPaymentMethod('pix');
+            setPixData(fakeQr);
+            setTimeLeft(PIX_TTL);
             setDone(true);
         } else if (testMode === 'card') {
             setPaymentMethod('card');
@@ -261,25 +273,71 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         return () => clearInterval(timer);
     }, []);
 
-    // ── PIX: Polling de status + Expiração do timer ──
-    useEffect(() => {
-        if (!done || paymentMethod !== 'pix' || !currentOrderId || pixExpired) return;
-
-        const pollInterval = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/order-status/${currentOrderId}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.paymentStatus === 'pago') {
-                        clearInterval(pollInterval);
-                        window.location.reload(); // Recarrega para mostrar confirmação
-                    }
+    // ── PIX: Polling de status ──
+    const checkPixStatus = async () => {
+        if (!currentOrderId) return false;
+        try {
+            const res = await fetch(`/api/order-status/${currentOrderId}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data.paymentStatus === 'pago') {
+                    setPixPaid(true);
+                    window.scrollTo(0, 0);
+                    return true;
                 }
-            } catch { }
-        }, 5000); // Poll a cada 5 segundos
+            }
+        } catch { }
+        return false;
+    };
 
+    const checkPixNow = async () => {
+        setPixChecking(true);
+        await checkPixStatus();
+        // Feedback mínimo perceptível mesmo quando a resposta é instantânea
+        setTimeout(() => setPixChecking(false), 600);
+    };
+
+    useEffect(() => {
+        if (!done || paymentMethod !== 'pix' || !currentOrderId || pixPaid) return;
+        // Continua consultando mesmo após expirar: o cliente pode ter pago no último segundo
+        const pollInterval = setInterval(checkPixStatus, 5000);
         return () => clearInterval(pollInterval);
-    }, [done, paymentMethod, currentOrderId, pixExpired]);
+    }, [done, paymentMethod, currentOrderId, pixPaid]);
+
+    const regenerarPix = async () => {
+        setPixLoading(true);
+        try {
+            const res = await fetch('/api/process-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    method: 'pix',
+                    orderId: currentOrderId,
+                    orderData: {
+                        ...dados,
+                        ...endereco,
+                        price: finalPrice,
+                        shippingPrice: shipping?.price || 0,
+                        productId: product?.id || 'default',
+                        selectedBumpIds: selectedBumps,
+                    },
+                })
+            });
+            const result = await res.json();
+            if (result.success && result.qrCodeBase64) {
+                setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
+                setTimeLeft(PIX_TTL);
+                setPixExpired(false);
+                setCurrentOrderId(result.orderId || currentOrderId);
+            } else {
+                alert(result.error || "Erro ao gerar novo PIX. Tente novamente.");
+            }
+        } catch {
+            alert("Erro de conexão. Tente novamente.");
+        } finally {
+            setPixLoading(false);
+        }
+    };
 
     // ── PIX: Timer expirou → marcar como expirado ──
     useEffect(() => {
@@ -646,7 +704,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 setCurrentOrderId(result.orderId || null);
                 if (result.qrCodeBase64) {
                     setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
-                    setTimeLeft(10 * 60);
+                    setTimeLeft(PIX_TTL);
                     setPixExpired(false);
                     setDone(true);
                 } else if (paymentMethod === 'pix') {
@@ -963,340 +1021,22 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             ) : done ? (
                 <div className="pix-page-wrapper">
                     {paymentMethod === 'pix' ? (
-                        <div style={{
-                            background: '#FBF7EF', minHeight: '100vh',
-                            fontFamily: "'Manrope', sans-serif",
-                        }}>
-                            <div style={{ maxWidth: 520, margin: '0 auto', padding: '20px 18px 48px' }}>
-                                {/* PIX EXPIRADO */}
-                                {pixExpired ? (
-                                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                        <div style={{
-                                            width: '74px', height: '74px', borderRadius: '50%',
-                                            background: '#FDECEA', margin: '0 auto 16px',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        }}>
-                                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#B83030" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                                            </svg>
-                                        </div>
-                                        <div style={{ fontSize: '25px', fontWeight: 800, color: '#241F16', marginBottom: '8px', fontFamily: "'Manrope', sans-serif" }}>
-                                            PIX expirado
-                                        </div>
-                                        <div style={{ fontSize: '16px', color: '#4A4436', marginBottom: '24px' }}>
-                                            O tempo para pagamento acabou. Gere um novo PIX para continuar.
-                                        </div>
-                                        <button
-                                            onClick={async () => {
-                                                setPixLoading(true);
-                                                setPixExpired(false);
-                                                try {
-                                                    const res = await fetch('/api/process-payment', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({
-                                                            method: 'pix',
-                                                            orderId: currentOrderId,
-                                                            orderData: {
-                                                                ...dados,
-                                                                ...endereco,
-                                                                price: finalPrice,
-                                                                shippingPrice: shipping?.price || 0,
-                                                                productId: product?.id || 'default',
-                                                                selectedBumpIds: selectedBumps,
-                                                            },
-                                                        })
-                                                    });
-                                                    const result = await res.json();
-                                                    if (result.success && result.qrCodeBase64) {
-                                                        setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
-                                                        setTimeLeft(10 * 60);
-                                                        setCurrentOrderId(result.orderId || currentOrderId);
-                                                    } else {
-                                                        alert(result.error || "Erro ao gerar novo PIX. Tente novamente.");
-                                                        setPixExpired(true);
-                                                    }
-                                                } catch {
-                                                    alert("Erro de conexão. Tente novamente.");
-                                                    setPixExpired(true);
-                                                } finally {
-                                                    setPixLoading(false);
-                                                }
-                                            }}
-                                            disabled={pixLoading}
-                                            style={{
-                                                background: '#0B5D45', color: '#fff', border: 'none',
-                                                borderRadius: '14px', padding: '20px 32px',
-                                                fontSize: '18px', fontWeight: 800,
-                                                fontFamily: "'Manrope', sans-serif",
-                                                cursor: pixLoading ? 'wait' : 'pointer',
-                                                opacity: pixLoading ? 0.7 : 1,
-                                                width: '100%', maxWidth: '320px',
-                                            }}
-                                        >
-                                            {pixLoading ? 'Gerando...' : 'Gerar novo PIX'}
-                                        </button>
-                                    </div>
-                                ) : !pixData ? (
-                                    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-                                        <div style={{
-                                            width: '74px', height: '74px', borderRadius: '50%',
-                                            background: '#E4F3EB', margin: '0 auto 16px',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        }}>
-                                            <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#0B5D45" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
-                                            </svg>
-                                        </div>
-                                        <div style={{ fontSize: '25px', fontWeight: 800, color: '#241F16', marginBottom: '8px', fontFamily: "'Manrope', sans-serif" }}>
-                                            Processando pagamento...
-                                        </div>
-                                        <div style={{ fontSize: '16px', color: '#4A4436', marginBottom: '24px' }}>
-                                            Estamos gerando seu PIX. Se não aparecer em instantes, clique abaixo para tentar novamente.
-                                        </div>
-                                        <button
-                                            onClick={async () => {
-                                                setPixLoading(true);
-                                                try {
-                                                    const res = await fetch('/api/process-payment', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({
-                                                            method: 'pix',
-                                                            orderId: currentOrderId,
-                                                            orderData: {
-                                                                ...dados,
-                                                                ...endereco,
-                                                                price: finalPrice,
-                                                                shippingPrice: shipping?.price || 0,
-                                                                productId: product?.id || 'default',
-                                                                selectedBumpIds: selectedBumps,
-                                                            },
-                                                        })
-                                                    });
-                                                    const result = await res.json();
-                                                    if (result.success && result.qrCodeBase64) {
-                                                        setPixData({ qrCode: result.qrCode, qrCodeBase64: result.qrCodeBase64 });
-                                                        setTimeLeft(10 * 60);
-                                                        setCurrentOrderId(result.orderId || currentOrderId);
-                                                    } else {
-                                                        alert(result.error || "Erro ao gerar PIX. Tente novamente.");
-                                                    }
-                                                } catch {
-                                                    alert("Erro de conexão. Tente novamente.");
-                                                } finally {
-                                                    setPixLoading(false);
-                                                }
-                                            }}
-                                            disabled={pixLoading}
-                                            style={{
-                                                background: '#0B5D45', color: '#fff', border: 'none',
-                                                borderRadius: '14px', padding: '20px 32px',
-                                                fontSize: '18px', fontWeight: 800,
-                                                fontFamily: "'Manrope', sans-serif",
-                                                cursor: pixLoading ? 'wait' : 'pointer',
-                                                opacity: pixLoading ? 0.7 : 1,
-                                                width: '100%', maxWidth: '320px',
-                                            }}
-                                        >
-                                            {pixLoading ? 'Gerando...' : 'Tentar gerar PIX novamente'}
-                                        </button>
-                                    </div>
-                                ) : (
-                                <>
-                                {/* STATUS */}
-                                <div style={{ textAlign: 'center', marginBottom: '26px' }}>
-                                    <div style={{
-                                        width: 74, height: 74, margin: '0 auto 16px',
-                                        background: '#0B5D45', borderRadius: '50%',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                    </div>
-                                    <h1 style={{ fontSize: '25px', fontWeight: 800, lineHeight: 1.35, margin: '0 0 10px', color: '#241F16', fontFamily: "'Manrope', sans-serif" }}>
-                                        Seu pedido está em separação
-                                    </h1>
-                                    <p style={{ fontSize: '19px', lineHeight: 1.5, margin: 0, color: '#4A4436', fontWeight: 400 }}>
-                                        Falta só o pagamento para enviarmos até você.
-                                    </p>
-                                </div>
-
-                                {/* QR CODE CARD */}
-                                <div style={{
-                                    background: '#FFFFFF', border: '2px solid #E7DFCC',
-                                    borderRadius: '18px', padding: '22px 20px', marginBottom: '22px',
-                                }}>
-                                    <p style={{ textAlign: 'center', fontSize: '19px', fontWeight: 700, margin: '0 0 18px' }}>
-                                        Como pagar com PIX
-                                    </p>
-
-                                    {/* COUNTDOWN TIMER */}
-                                    <div style={{
-                                        background: '#FBF7EF', border: '2px solid #D8CBA8',
-                                        borderRadius: '14px', padding: '16px 20px', marginBottom: '18px',
-                                        textAlign: 'center', position: 'relative', overflow: 'hidden',
-                                    }}>
-                                        <div style={{ fontSize: '15px', fontWeight: 700, color: '#241F16', marginBottom: '10px' }}>
-                                            Pague o PIX em até
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '10px' }}>
-                                            {(() => {
-                                                const mins = Math.floor(timeLeft / 60);
-                                                const secs = timeLeft % 60;
-                                                const isUrgent = timeLeft <= 120;
-                                                const digitStyle = {
-                                                    background: isUrgent ? '#FDECEA' : '#FFFFFF',
-                                                    color: isUrgent ? '#B83030' : '#241F16',
-                                                    borderRadius: '8px', padding: '8px 10px',
-                                                    fontSize: '28px', fontWeight: 800,
-                                                    fontFamily: "'Manrope', sans-serif", lineHeight: 1,
-                                                    minWidth: '44px', textAlign: 'center' as const,
-                                                    animation: timeLeft <= 60 ? 'blink 1s step-end infinite' : 'none',
-                                                    border: isUrgent ? '1px solid #FDECEA' : '1px solid #E7DFCC',
-                                                };
-                                                const sepStyle = { fontSize: '24px', fontWeight: 800, color: isUrgent ? '#B83030' : '#241F16', lineHeight: 1 };
-                                                return (
-                                                    <>
-                                                        <span style={digitStyle}>{String(mins).padStart(2, '0')}</span>
-                                                        <span style={sepStyle}>:</span>
-                                                        <span style={digitStyle}>{String(secs).padStart(2, '0')}</span>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-                                        <div style={{ fontSize: '13px', fontWeight: 500, color: '#4A4436' }}>
-                                            Se o tempo acabar, seu pedido será cancelado e o produto será liberado para outra pessoa
-                                        </div>
-                                        <div style={{
-                                            position: 'absolute', bottom: 0, left: 0,
-                                            height: '3px', width: `${(timeLeft / 600) * 100}%`,
-                                            background: timeLeft <= 120 ? '#B83030' : '#0B5D45',
-                                            transition: 'width 1s linear', borderRadius: '0 0 14px 14px',
-                                        }} />
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
-                                        <div style={{
-                                            width: 220, height: 220, background: '#FBF7EF',
-                                            border: '2px solid #D8CBA8', borderRadius: '14px',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px',
-                                        }}>
-                                            {pixData?.qrCodeBase64 ? (
-                                                <img src={`data:image/jpeg;base64,${pixData.qrCodeBase64}`} alt="QR Code Pix" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                            ) : (
-                                                <div style={{ color: '#ccc', fontSize: '12px' }}>Gerando QR Code...</div>
-                                            )}
-                                        </div>
-                                    </div>
-                                    <p style={{ textAlign: 'center', fontSize: '15px', color: '#4A4436', margin: '8px 0 0' }}>
-                                        Abra o aplicativo do seu banco e escaneie este código
-                                    </p>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '24px 0 16px' }}>
-                                        <hr style={{ flex: 1, border: 'none', borderTop: '2px solid #E7DFCC' }} />
-                                        <span style={{ fontSize: '15px', fontWeight: 700, color: '#4A4436', whiteSpace: 'nowrap' }}>ou pague copiando o código</span>
-                                        <hr style={{ flex: 1, border: 'none', borderTop: '2px solid #E7DFCC' }} />
-                                    </div>
-
-                                    <div style={{
-                                        background: '#FBF7EF', border: '2px dashed #D8CBA8',
-                                        borderRadius: '12px', padding: '14px',
-                                        fontFamily: 'monospace', fontSize: '14px', color: '#4A4436',
-                                        wordBreak: 'break-all', lineHeight: 1.5, marginBottom: '16px',
-                                    }}>
-                                        {pixData?.qrCode || 'Gerando código PIX...'}
-                                    </div>
-
-                                    <button
-                                        style={{
-                                            width: '100%', background: copied ? '#093F30' : '#0B5D45',
-                                            color: '#fff', border: 'none', borderRadius: '14px',
-                                            padding: '20px', fontSize: '20px', fontWeight: 800,
-                                            fontFamily: "'Manrope', sans-serif",
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            gap: '10px', cursor: 'pointer', minHeight: '64px',
-                                            transition: 'background .18s',
-                                        }}
-                                        onClick={() => {
-                                            if (pixData?.qrCode) {
-                                                navigator.clipboard.writeText(pixData.qrCode);
-                                                setCopied(true);
-                                                setTimeout(() => setCopied(false), 3000);
-                                            }
-                                        }}
-                                    >
-                                        {copied ? (
-                                            <>
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                                Código copiado!
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-                                                Copiar código PIX
-                                            </>
-                                        )}
-                                    </button>
-                                    <p style={{ textAlign: 'center', fontSize: '15px', color: '#4A4436', margin: '12px 0 0' }}>
-                                        Toque no botão, depois cole o código no aplicativo do seu banco
-                                    </p>
-                                </div>
-
-                                {/* NEXT STEPS */}
-                                <div style={{
-                                    background: '#FFFFFF', border: '2px solid #E7DFCC',
-                                    borderRadius: '18px', padding: '22px 20px', marginBottom: '22px',
-                                }}>
-                                    <p style={{ fontSize: '19px', fontWeight: 800, margin: '0 0 16px' }}>O que acontece depois do pagamento</p>
-                                    <div style={{ display: 'flex', gap: '14px', marginBottom: '18px' }}>
-                                        <span style={{ flex: 'none', width: 36, height: 36, borderRadius: '50%', background: '#E4F3EB', color: '#093F30', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>1</span>
-                                        <p style={{ fontSize: '17px', lineHeight: 1.5, color: '#241F16', paddingTop: '5px', margin: 0 }}>
-                                            <strong>Você recebe um e-mail de confirmação</strong> em poucos minutos, assim que identificarmos o pagamento.
-                                        </p>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '14px', marginBottom: '18px' }}>
-                                        <span style={{ flex: 'none', width: 36, height: 36, borderRadius: '50%', background: '#E4F3EB', color: '#093F30', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>2</span>
-                                        <p style={{ fontSize: '17px', lineHeight: 1.5, color: '#241F16', paddingTop: '5px', margin: 0 }}>
-                                            <strong>Seu pedido é enviado no mesmo dia</strong> para pagamentos feitos até às 15h.
-                                        </p>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '14px' }}>
-                                        <span style={{ flex: 'none', width: 36, height: 36, borderRadius: '50%', background: '#E4F3EB', color: '#093F30', fontWeight: 800, fontSize: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>3</span>
-                                        <p style={{ fontSize: '17px', lineHeight: 1.5, color: '#241F16', paddingTop: '5px', margin: 0 }}>
-                                            <strong>Você acompanha a entrega</strong> pelo código de rastreio que enviamos por e-mail.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                {/* TRUST */}
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', justifyContent: 'center', marginBottom: '22px' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '15px', color: '#4A4436', fontWeight: 700 }}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B5D45" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                                        PIX oficial do Banco Central
-                                    </span>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '15px', color: '#4A4436', fontWeight: 700 }}>
-                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B5D45" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                                        Seus dados protegidos
-                                    </span>
-                                </div>
-
-                                </>
-                                )}
-                            </div>
-
-                            {/* TOAST */}
-                            <div style={{
-                                position: 'fixed', bottom: 24, left: '50%',
-                                transform: `translateX(-50%) ${copied ? 'translateY(0)' : 'translateY(20px)'}`,
-                                background: '#241F16', color: '#fff',
-                                padding: '12px 24px', borderRadius: '99px',
-                                fontSize: '15px', fontWeight: 700,
-                                opacity: copied ? 1 : 0, transition: 'all .25s',
-                                whiteSpace: 'nowrap', zIndex: 99, pointerEvents: 'none',
-                            }}>✓ Código copiado!</div>
-                        </div>
+                        <PixPayment
+                            qrCode={pixData?.qrCode || null}
+                            qrCodeBase64={pixData?.qrCodeBase64 || null}
+                            amount={finalPrice}
+                            orderId={currentOrderId}
+                            productName={product?.name || 'Produto'}
+                            email={dados.email}
+                            timeLeft={timeLeft}
+                            totalTime={PIX_TTL}
+                            expired={pixExpired}
+                            paid={pixPaid}
+                            regenerating={pixLoading}
+                            checking={pixChecking}
+                            onRegenerate={regenerarPix}
+                            onCheckNow={checkPixNow}
+                        />
                     ) : paymentMethod === 'pix_automatico' ? (
                         <PixParceladoSuccess
                             qrCodeBase64={subData?.qrCodeBase64 || ''}
