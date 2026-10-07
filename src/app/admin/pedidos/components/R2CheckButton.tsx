@@ -39,13 +39,13 @@ export default function R2CheckButton({ orderId }: { orderId: string }) {
     }
 
     const colorMap = {
-        idle: { bg: '#f1f5f9', color: '#64748b', border: '#e2e8f0' },
-        checking: { bg: '#eff6ff', color: '#3b82f6', border: '#bfdbfe' },
-        exists: { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
-        missing: { bg: '#fef3c7', color: '#d97706', border: '#fde68a' },
-        error: { bg: '#fee2e2', color: '#dc2626', border: '#fecaca' },
-        uploading: { bg: '#eff6ff', color: '#3b82f6', border: '#bfdbfe' },
-        uploaded: { bg: '#f0fdf4', color: '#16a34a', border: '#bbf7d0' },
+        idle: { bg: '#FFFFFF', color: '#6E7180', border: '#E5E7EF' },
+        checking: { bg: '#E7F1F8', color: '#2C5C86', border: '#C3DAEC' },
+        exists: { bg: '#E3F4EA', color: '#1E7A52', border: '#BFE3CE' },
+        missing: { bg: '#FEF3C7', color: '#92400E', border: '#F6DB8E' },
+        error: { bg: '#FBEAE8', color: '#B23B32', border: '#F3CFCB' },
+        uploading: { bg: '#E7F1F8', color: '#2C5C86', border: '#C3DAEC' },
+        uploaded: { bg: '#E3F4EA', color: '#1E7A52', border: '#BFE3CE' },
     }
 
     const s = colorMap[status]
@@ -75,8 +75,9 @@ export default function R2CheckButton({ orderId }: { orderId: string }) {
         <button
             onClick={status === 'missing' || status === 'error' ? forceUpload : check}
             title={tooltip}
+            aria-label={tooltip}
             style={{
-                width: '30px', height: '30px', borderRadius: '8px',
+                width: '32px', height: '32px', borderRadius: '9px',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: s.bg, color: s.color, border: `1px solid ${s.border}`,
                 cursor: 'pointer', transition: 'all 0.15s',

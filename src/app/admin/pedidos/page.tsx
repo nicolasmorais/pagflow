@@ -1,15 +1,11 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
-import { Trash2, Phone, Package, ExternalLink } from 'lucide-react'
+import { Trash2, Phone, Package, ExternalLink, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import Link from 'next/link'
-import PaymentStatusSelect from './components/PaymentStatusSelect'
-import OrderStatusSelect from './components/OrderStatusSelect'
 import DeleteOrderButton from './components/DeleteOrderButton'
 import OrderRow from './components/OrderRow'
 import R2VerifyAllButton from './components/R2VerifyAllButton'
 import R2BackupAllButton from './components/R2BackupAllButton'
-import SalesCard from './components/SalesCard'
-import ConversionCard from './components/ConversionCard'
 
 const fmt = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 import OrdersFilterBar from './components/OrdersFilterBar'
@@ -120,7 +116,7 @@ export default async function OrdersPage({
     } catch (e) {
         return (
             <div style={{ padding: '60px', textAlign: 'center' }}>
-                <h2 style={{ color: '#B23B32', fontWeight: 700, fontFamily: "'Fraunces', serif" }}>Erro ao carregar pedidos</h2>
+                <h2 style={{ color: '#B23B32', fontWeight: 700 }}>Erro ao carregar pedidos</h2>
                 <p style={{ color: '#6E7180' }}>Tente recarregar a página.</p>
             </div>
         )
@@ -232,199 +228,188 @@ export default async function OrdersPage({
         } catch (e) { }
     }
     const previousSalesCount = previousOrders.length
-    const previousSalesRevenue = previousOrders.reduce((s, o) => s + (o.totalPrice || 0), 0)
 
-    // ── Métricas adicionais ──
-    const previousPaidCount = previousOrders.filter(o => o.paymentStatus === 'pago').length
-    const ordersGrowth = previousSalesCount > 0 ? ((currentSalesCount - previousSalesCount) / previousSalesCount) * 100 : currentSalesCount > 0 ? 100 : 0
-    const paidGrowth = previousPaidCount > 0 ? ((paidCount - previousPaidCount) / previousPaidCount) * 100 : paidCount > 0 ? 100 : 0
-    const revenueGrowth = previousSalesRevenue > 0 ? ((currentSalesRevenue - previousSalesRevenue) / previousSalesRevenue) * 100 : currentSalesRevenue > 0 ? 100 : 0
+    // ── Métricas ──
+    // "Faturamento" conta só pedidos pagos, como na dashboard. Antes somava
+    // também recusados e aguardando, e não batia com a dashboard.
+    const paidRevenue = orders.filter(o => o.paymentStatus === 'pago').reduce((s, o) => s + (o.totalPrice || 0), 0)
+    const pendingCount = orders.filter(o => ['aguardando', 'processando'].includes(o.paymentStatus)).length
+    const rejectedCount = orders.filter(o => o.paymentStatus === 'recusado').length
+    const previousPaid = previousOrders.filter(o => o.paymentStatus === 'pago')
+    const previousPaidCount = previousPaid.length
+    const previousPaidRevenue = previousPaid.reduce((s, o) => s + (o.totalPrice || 0), 0)
+    const hasComparison = filter !== 'vida'
     const conversionRate = currentSalesCount > 0 ? (paidCount / currentSalesCount) * 100 : 0
 
+    // ── Agrupamento por dia (horário de Brasília) ──
+    const dayKey = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+    const todayKey = dayKey(new Date())
+    const yesterdayKey = dayKey(new Date(Date.now() - 86_400_000))
+    const dayGroups: { key: string; label: string; orders: any[]; paidRevenue: number }[] = []
+    for (const o of orders) {
+        const key = dayKey(new Date(o.createdAt))
+        let group = dayGroups[dayGroups.length - 1]
+        if (!group || group.key !== key) {
+            const long = new Date(o.createdAt).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Sao_Paulo' })
+            const label = key === todayKey ? `Hoje, ${long.split(', ')[1] || long}`
+                : key === yesterdayKey ? `Ontem, ${long.split(', ')[1] || long}`
+                : long.charAt(0).toUpperCase() + long.slice(1)
+            group = { key, label, orders: [], paidRevenue: 0 }
+            dayGroups.push(group)
+        }
+        group.orders.push(o)
+        if (o.paymentStatus === 'pago') group.paidRevenue += o.totalPrice || 0
+    }
+
+    const methodLabel = (m: string) => m === 'pix' ? 'PIX' : m === 'pix_automatico' ? 'PIX Parcelado' : 'Cartão'
+    const timeBR = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })
+
     return (
-        <div style={{ width: '100%', paddingBottom: '60px' }}>
-            {/* Header */}
-            <header style={{ marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
-                    <div>
-                        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#14151F', margin: 0, fontFamily: "'Fraunces', serif", letterSpacing: '-0.01em' }}>Pedidos</h1>
-                        <p style={{ color: '#6E7180', fontSize: '13px', marginTop: '4px', fontWeight: 500 }}>
-                            Gerencie suas vendas e acompanhe o status dos pedidos.
-                        </p>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <Link
-                            href="/admin/pedidos/lixeira"
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                padding: '9px 16px', background: '#fff', color: '#6E7180',
-                                borderRadius: '9px', textDecoration: 'none', border: '1px solid #E5E7EF',
-                                fontSize: '13px', fontWeight: 600, transition: 'all 0.15s',
-                            }}
-                        >
-                            <Trash2 size={14} />
-                            Lixeira
-                        </Link>
-                        <R2VerifyAllButton orders={orders} />
-                        <R2BackupAllButton />
-                    </div>
+        <div className="orders-page">
+            {/* Cabeçalho */}
+            <header className="orders-head">
+                <div>
+                    <h1>Pedidos</h1>
+                    <p>
+                        {currentSalesCount === 1 ? '1 pedido' : `${currentSalesCount.toLocaleString('pt-BR')} pedidos`} no período
+                        {search && <> para “{search}”</>}
+                    </p>
                 </div>
-
-                {/* Summary Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-                    <SalesCard
-                        currentCount={currentSalesCount}
-                        currentRevenue={currentSalesRevenue}
-                        previousCount={previousSalesCount}
-                        previousRevenue={previousSalesRevenue}
-                        comparisonLabel={comparisonLabel}
-                    />
-                    <SummaryCard label="Pedidos" value={`${currentSalesCount}`} sub="pedidos no período" change={filter !== 'vida' ? { value: ordersGrowth, positive: ordersGrowth >= 0 } : undefined} />
-                    <SummaryCard label="Pagos" value={`${paidCount}`} sub={`${currentSalesCount > 0 ? Math.round((paidCount / currentSalesCount) * 100) : 0}% dos pedidos`} change={filter !== 'vida' ? { value: paidGrowth, positive: paidGrowth >= 0 } : undefined} />
-                    <ConversionCard rate={conversionRate} paidCount={paidCount} totalCount={currentSalesCount} />
-                    <SummaryCard label="Faturamento" value={`R$ ${fmt(currentSalesRevenue)}`} sub={comparisonLabel} change={filter !== 'vida' ? { value: revenueGrowth, positive: revenueGrowth >= 0 } : undefined} />
+                <div className="orders-head-actions">
+                    <Link href="/admin/pedidos/lixeira" className="orders-btn-ghost">
+                        <Trash2 size={14} aria-hidden />
+                        Lixeira
+                    </Link>
+                    <R2VerifyAllButton orders={orders} />
+                    <R2BackupAllButton />
                 </div>
-
-                {/* Filters */}
-                <OrdersFilterBar
-                    currentFilter={filter}
-                    currentPaymentStatus={status}
-                    currentPaymentMethod={method}
-                    currentOrderStatus={orderStatus}
-                    currentSearch={search}
-                    fromDate={fromDate}
-                    toDate={toDate}
-                />
             </header>
 
-            {/* Orders */}
+            {/* Resumo */}
+            <section className="dash-card orders-summary">
+                <div className="dash-stats orders-stats">
+                    <SummaryStat
+                        label="Faturamento pago"
+                        value={`R$ ${fmt(paidRevenue)}`}
+                        change={hasComparison ? growth(paidRevenue, previousPaidRevenue) : null}
+                        hint={currentSalesCount > 0 ? `de R$ ${fmt(currentSalesRevenue)} em pedidos` : undefined}
+                        large
+                    />
+                    <SummaryStat
+                        label="Pedidos"
+                        value={currentSalesCount.toLocaleString('pt-BR')}
+                        change={hasComparison ? growth(currentSalesCount, previousSalesCount) : null}
+                    />
+                    <SummaryStat
+                        label="Pagos"
+                        value={paidCount.toLocaleString('pt-BR')}
+                        change={hasComparison ? growth(paidCount, previousPaidCount) : null}
+                        hint={`${conversionRate.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}% de conversão`}
+                    />
+                    <SummaryStat label="Aguardando" value={pendingCount.toLocaleString('pt-BR')} tone={pendingCount > 0 ? 'warning' : undefined} />
+                    <SummaryStat label="Recusados" value={rejectedCount.toLocaleString('pt-BR')} tone={rejectedCount > 0 ? 'negative' : undefined} />
+                </div>
+                {hasComparison && <p className="orders-summary-note">Variações {comparisonLabel}</p>}
+            </section>
+
+            {/* Filtros */}
+            <OrdersFilterBar
+                currentFilter={filter}
+                currentPaymentStatus={status}
+                currentPaymentMethod={method}
+                currentOrderStatus={orderStatus}
+                currentSearch={search}
+                fromDate={fromDate}
+                toDate={toDate}
+            />
+
+            {/* Lista */}
             {orders.length === 0 ? (
-                <div style={{
-                    background: '#fff', border: '1px solid #E5E7EF', borderRadius: '14px',
-                    padding: '60px 40px', textAlign: 'center',
-                }}>
-                    <div style={{
-                        width: '56px', height: '56px', background: '#F5F6F9', borderRadius: '14px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
-                        border: '1px solid #E5E7EF',
-                    }}>
-                        <Package size={24} color="#6E7180" />
-                    </div>
-                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#14151F', margin: '0 0 8px', fontFamily: "'Fraunces', serif" }}>Nenhum pedido encontrado</h3>
-                    <p style={{ color: '#6E7180', fontSize: '13px', margin: 0 }}>Ajuste os filtros ou aguarde novas vendas.</p>
+                <div className="dash-card orders-empty">
+                    <div className="orders-empty-icon"><Package size={22} color="#6E7180" aria-hidden /></div>
+                    <h3>Nenhum pedido encontrado</h3>
+                    <p>Ajuste o período ou os filtros, ou aguarde novas vendas.</p>
                 </div>
             ) : (
                 <>
-                    {/* Desktop Table */}
-                    <div className="desktop-orders-table" style={{
-                        background: '#fff', border: '1px solid #E5E7EF',
-                        borderRadius: '14px', overflow: 'visible',
-                    }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    {/* Desktop */}
+                    <div className="desktop-orders-table dash-card orders-table-card">
+                        <table className="orders-table">
                             <thead>
                                 <tr>
-                                    {['Cliente', 'Produto', 'Valor', 'Pagamento', 'Logística', 'Data', 'Ações'].map((h, i) => (
-                                        <th key={i} style={{
-                                            padding: '14px 20px', fontSize: '10.5px', fontWeight: 700, color: '#6E7180',
-                                            textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: i === 6 ? 'right' : 'left',
-                                            background: '#F5F6F9', borderBottom: '1px solid #E5E7EF',
-                                        }}>{h}</th>
-                                    ))}
+                                    <th style={{ width: '64px' }}>Hora</th>
+                                    <th>Cliente</th>
+                                    <th>Produto</th>
+                                    <th className="num">Valor</th>
+                                    <th>Pagamento</th>
+                                    <th>Logística</th>
+                                    <th className="num">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {orders.map((order: any) => <OrderRow key={order.id} order={order} />)}
-                            </tbody>
+                            {dayGroups.map(g => (
+                                <tbody key={g.key}>
+                                    <tr className="orders-day-row">
+                                        <td colSpan={7}>
+                                            <span className="orders-day-label">{g.label}</span>
+                                            <span className="orders-day-meta">
+                                                {g.orders.length === 1 ? '1 pedido' : `${g.orders.length} pedidos`}
+                                                {g.paidRevenue > 0 && <> · <strong>R$ {fmt(g.paidRevenue)}</strong> pagos</>}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {g.orders.map((order: any) => <OrderRow key={order.id} order={order} />)}
+                                </tbody>
+                            ))}
                         </table>
                     </div>
 
-                    {/* Mobile Cards */}
+                    {/* Mobile */}
                     <div className="mobile-orders-grid">
-                        {orders.map((order: any) => {
-                            const pStatus = statusConfig[order.paymentStatus] || statusConfig.aguardando
-                            const date = new Date(order.createdAt)
-                            return (
-                                <div
-                                    key={order.id}
-                                    style={{
-                                        background: '#fff',
-                                        border: '1px solid #E5E7EF',
-                                        borderRadius: '14px',
-                                        overflow: 'hidden',
-                                    }}
-                                >
-                                    {/* Card Header */}
-                                    <div style={{
-                                        padding: '16px',
-                                        display: 'flex', alignItems: 'center', gap: '12px',
-                                        borderBottom: '1px solid #E5E7EF',
-                                    }}>
-                                        <div style={{
-                                            width: '40px', height: '40px', borderRadius: '10px',
-                                            background: '#F8F0DB', color: '#A9832C',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '15px', fontWeight: 700, flexShrink: 0,
-                                            fontFamily: "'Fraunces', serif",
-                                        }}>
-                                            {order.fullName?.charAt(0).toUpperCase() || '?'}
-                                        </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <p style={{ fontSize: '14px', fontWeight: 700, color: '#14151F', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {order.fullName}
-                                            </p>
-                                            <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#6E7180', fontWeight: 500 }}>
-                                                {order.product?.name || 'Produto'} · {order.paymentMethod === 'pix' ? 'PIX' : order.paymentMethod === 'pix_automatico' ? 'PIX Parcelado' : 'Cartão'}
-                                            </p>
-                                        </div>
-                                        <span style={{ fontSize: '16px', fontWeight: 700, color: '#14151F', fontFamily: "'Fraunces', serif", flexShrink: 0 }}>
-                                            R$ {fmt(order.totalPrice || 0)}
-                                        </span>
-                                    </div>
-
-                                    {/* Card Body */}
-                                    <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{
-                                                fontSize: '11px', fontWeight: 700,
-                                                background: pStatus.bg, color: pStatus.color,
-                                                padding: '4px 10px', borderRadius: '8px',
-                                            }}>
-                                                {pStatus.label}
-                                            </span>
-                                            <span style={{ fontSize: '11px', color: '#6E7180', fontWeight: 500 }}>
-                                                {date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '6px' }}>
-                                            <a
-                                                href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
-                                                target="_blank" rel="noreferrer"
-                                                style={{
-                                                    width: '32px', height: '32px', borderRadius: '9px',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    background: '#E3F4EA', color: '#1E7A52', textDecoration: 'none',
-                                                    border: '1px solid #C3E8D4',
-                                                }}
-                                            >
-                                                <Phone size={14} />
-                                            </a>
-                                            <Link
-                                                href={`/admin/pedidos/${order.id}`}
-                                                style={{
-                                                    width: '32px', height: '32px', borderRadius: '9px',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    background: '#F5F6F9', color: '#6E7180', textDecoration: 'none',
-                                                    border: '1px solid #E5E7EF',
-                                                }}
-                                            >
-                                                <ExternalLink size={14} />
-                                            </Link>
-                                            <DeleteOrderButton orderId={order.id} />
-                                        </div>
-                                    </div>
+                        {dayGroups.map(g => (
+                            <section key={g.key} className="orders-m-group">
+                                <div className="orders-m-day">
+                                    <span className="orders-day-label">{g.label}</span>
+                                    <span className="orders-day-meta">
+                                        {g.orders.length === 1 ? '1 pedido' : `${g.orders.length} pedidos`}
+                                        {g.paidRevenue > 0 && <> · R$ {fmt(g.paidRevenue)}</>}
+                                    </span>
                                 </div>
-                            )
-                        })}
+                                {g.orders.map((order: any) => {
+                                    const pStatus = statusConfig[order.paymentStatus] || statusConfig.aguardando
+                                    return (
+                                        <div key={order.id} className="orders-m-card">
+                                            <Link href={`/admin/pedidos/${order.id}`} className="orders-m-main">
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <p className="orders-m-name">{order.fullName || 'Sem nome'}</p>
+                                                    <p className="orders-m-sub">{order.product?.name || 'Produto'} · {methodLabel(order.paymentMethod)}</p>
+                                                </div>
+                                                <span className="orders-m-value">R$ {fmt(order.totalPrice || 0)}</span>
+                                            </Link>
+                                            <div className="orders-m-foot">
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span className="dash-badge" style={{ background: pStatus.bg, color: pStatus.color }}>{pStatus.label}</span>
+                                                    <span className="orders-m-time">{timeBR(new Date(order.createdAt))}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                                    <a
+                                                        href={`https://wa.me/${(order.phone || '').replace(/\D/g, '')}`}
+                                                        target="_blank" rel="noreferrer"
+                                                        className="orders-icon-btn is-whatsapp"
+                                                        aria-label={`WhatsApp de ${order.fullName || 'cliente'}`}
+                                                    >
+                                                        <Phone size={15} aria-hidden />
+                                                    </a>
+                                                    <Link href={`/admin/pedidos/${order.id}`} className="orders-icon-btn" aria-label="Ver detalhes do pedido">
+                                                        <ExternalLink size={15} aria-hidden />
+                                                    </Link>
+                                                    <DeleteOrderButton orderId={order.id} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </section>
+                        ))}
                     </div>
                 </>
             )}
@@ -432,39 +417,50 @@ export default async function OrdersPage({
     )
 }
 
-/* ── Summary Card ── */
-function SummaryCard({ label, value, sub, change }: {
-    label: string; value: string; sub: string
-    change?: { value: number; positive: boolean }
+function growth(current: number, previous: number): { value: string; positive: boolean } | null {
+    if (previous === 0 && current === 0) return null
+    if (previous === 0) return { value: 'novo', positive: true }
+    const p = ((current - previous) / previous) * 100
+    return { value: `${Math.abs(p).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}%`, positive: p >= 0 }
+}
+
+/* ── Número do resumo ── */
+function SummaryStat({ label, value, change, hint, tone, large }: {
+    label: string; value: string; hint?: string; large?: boolean
+    change?: { value: string; positive: boolean } | null
+    tone?: 'warning' | 'negative'
 }) {
+    const Arrow = change?.positive ? ArrowUpRight : ArrowDownRight
     return (
-        <div style={{
-            background: '#fff',
-            border: '1px solid #E5E7EF',
-            borderRadius: '14px',
-            padding: '16px 18px',
-        }}>
-            <p style={{ fontSize: '10.5px', fontWeight: 700, color: '#6E7180', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                {label}
+        <div className="dash-stat">
+            <p className="dash-stat-label">{label}</p>
+            <p
+                className="dash-stat-value"
+                style={{
+                    fontSize: large ? '28px' : undefined,
+                    color: tone === 'warning' ? '#92400E' : tone === 'negative' ? '#B23B32' : '#14151F',
+                }}
+            >
+                {value}
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <p style={{ fontSize: '22px', fontWeight: 700, color: '#14151F', margin: 0, letterSpacing: '-0.03em', fontFamily: "'Fraunces', serif" }}>
-                    {value}
-                </p>
-                {change && (
-                    <span style={{
-                        fontSize: '11px', fontWeight: 700,
-                        color: change.positive ? '#1E7A52' : '#B23B32',
-                        background: change.positive ? '#E3F4EA' : '#FBEAE8',
-                        padding: '3px 8px', borderRadius: '7px',
-                    }}>
-                        {change.positive ? '+' : ''}{change.value.toFixed(0)}%
-                    </span>
-                )}
-            </div>
-            <p style={{ fontSize: '11px', color: '#6E7180', margin: '4px 0 0', fontWeight: 500 }}>
-                {sub}
-            </p>
+            {(change || hint) && (
+                <div className="dash-stat-foot">
+                    {change && (
+                        <span
+                            className="dash-delta"
+                            style={{
+                                color: change.positive ? '#1E7A52' : '#B23B32',
+                                background: change.positive ? '#E3F4EA' : '#FBEAE8',
+                                fontSize: '11px',
+                            }}
+                        >
+                            <Arrow size={12} aria-hidden />
+                            {change.value}
+                        </span>
+                    )}
+                    {hint && <span>{hint}</span>}
+                </div>
+            )}
         </div>
     )
 }

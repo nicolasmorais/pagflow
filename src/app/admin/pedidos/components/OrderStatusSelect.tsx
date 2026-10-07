@@ -7,43 +7,43 @@ import { Package, Truck, CheckCircle2, XCircle, Clock, Loader2, ChevronDown } fr
 const STATUSES = [
     {
         value: 'pendente', label: 'Pendente', icon: Clock,
-        color: '#475569', bg: '#f1f5f9', border: '#cbd5e1',
-        dot: '#94a3b8', hoverBg: '#e2e8f0',
+        color: '#4B4E5C', bg: '#F1F2F6', border: '#DCDEE6',
+        dot: '#8A8D99', hoverBg: '#E7E9EF',
     },
     {
         value: 'processando', label: 'Processando', icon: Package,
-        color: '#5b21b6', bg: '#ede9fe', border: '#c4b5fd',
-        dot: '#8b5cf6', hoverBg: '#ddd6fe',
+        color: '#92400E', bg: '#FEF3C7', border: '#F6DB8E',
+        dot: '#D97706', hoverBg: '#FDEBB0',
     },
     {
         value: 'aguardando_envio', label: 'Aguardando Envio', icon: Package,
-        color: '#92400e', bg: '#fef3c7', border: '#fcd34d',
-        dot: '#f59e0b', hoverBg: '#fde68a',
+        color: '#92400E', bg: '#FEF3C7', border: '#F6DB8E',
+        dot: '#D97706', hoverBg: '#FDEBB0',
     },
     {
         value: 'cl_shopee', label: 'CL Shopee', icon: Truck,
-        color: '#ea580c', bg: '#fff7ed', border: '#fdba74',
-        dot: '#f97316', hoverBg: '#ffedd5',
+        color: '#92400E', bg: '#FEF3C7', border: '#F6DB8E',
+        dot: '#D97706', hoverBg: '#FDEBB0',
     },
     {
         value: 'enviado', label: 'Enviado', icon: Truck,
-        color: '#1e40af', bg: '#dbeafe', border: '#93c5fd',
-        dot: '#3b82f6', hoverBg: '#bfdbfe',
+        color: '#2C5C86', bg: '#E7F1F8', border: '#C3DAEC',
+        dot: '#2C5C86', hoverBg: '#D6E7F3',
     },
     {
         value: 'rastreio_enviado', label: 'Rastreio Enviado', icon: Truck,
-        color: '#0e7490', bg: '#ecfeff', border: '#67e8f9',
-        dot: '#06b6d4', hoverBg: '#cffafe',
+        color: '#2C5C86', bg: '#E7F1F8', border: '#C3DAEC',
+        dot: '#2C5C86', hoverBg: '#D6E7F3',
     },
     {
         value: 'entregue', label: 'Entregue', icon: CheckCircle2,
-        color: '#065f46', bg: '#d1fae5', border: '#6ee7b7',
-        dot: '#10b981', hoverBg: '#a7f3d0',
+        color: '#1E7A52', bg: '#E3F4EA', border: '#BFE3CE',
+        dot: '#1E7A52', hoverBg: '#D2EDDD',
     },
     {
         value: 'cancelado', label: 'Cancelado', icon: XCircle,
-        color: '#991b1b', bg: '#fee2e2', border: '#fca5a5',
-        dot: '#ef4444', hoverBg: '#fecaca',
+        color: '#B23B32', bg: '#FBEAE8', border: '#F3CFCB',
+        dot: '#B23B32', hoverBg: '#F6DCD9',
     },
 ]
 
@@ -89,11 +89,10 @@ export default function OrderStatusSelect({ orderId, initialStatus }: { orderId:
                     display: 'flex', alignItems: 'center', gap: '7px',
                     padding: '6px 12px', borderRadius: '20px',
                     background: current.bg,
-                    border: `1.5px solid ${current.border}`,
+                    border: `1px solid ${current.border}`,
                     cursor: loading ? 'wait' : 'pointer',
                     transition: 'all 0.15s', width: '100%',
                     opacity: loading ? 0.7 : 1,
-                    boxShadow: `0 1px 3px ${current.border}40`,
                 }}
             >
                 {loading ? (
@@ -101,7 +100,7 @@ export default function OrderStatusSelect({ orderId, initialStatus }: { orderId:
                 ) : (
                     <Icon size={14} color={current.color} strokeWidth={2.5} />
                 )}
-                <span style={{ fontSize: '11px', fontWeight: 800, color: current.color, flex: 1, textAlign: 'left', letterSpacing: '-0.01em' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: current.color, flex: 1, textAlign: 'left', letterSpacing: '-0.01em' }}>
                     {current.label}
                 </span>
                 <ChevronDown size={12} color={current.color} style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.15s', flexShrink: 0 }} />
@@ -110,7 +109,7 @@ export default function OrderStatusSelect({ orderId, initialStatus }: { orderId:
             {open && (
                 <div style={{
                     position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 50,
-                    background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px',
+                    background: '#fff', border: '1px solid #E5E7EF', borderRadius: '12px',
                     padding: '5px', minWidth: '180px',
                     boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
                     animation: 'fadeIn 0.12s ease-out',
@@ -133,12 +132,12 @@ export default function OrderStatusSelect({ orderId, initialStatus }: { orderId:
                             >
                                 <div style={{
                                     width: '26px', height: '26px', borderRadius: '8px',
-                                    background: isActive ? s.border + '60' : '#f1f5f9',
+                                    background: isActive ? s.border + '60' : '#F5F6F9',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                 }}>
-                                    <SIcon size={14} color={isActive ? s.color : '#94a3b8'} strokeWidth={2.2} />
+                                    <SIcon size={14} color={isActive ? s.color : '#6E7180'} strokeWidth={2.2} />
                                 </div>
-                                <span style={{ fontSize: '12px', fontWeight: isActive ? 800 : 600, color: isActive ? s.color : '#475569', flex: 1, textAlign: 'left' }}>
+                                <span style={{ fontSize: '12px', fontWeight: isActive ? 800 : 600, color: isActive ? s.color : '#14151F', flex: 1, textAlign: 'left' }}>
                                     {s.label}
                                 </span>
                                 {isActive && <CheckCircle2 size={15} color={s.color} strokeWidth={2.5} />}

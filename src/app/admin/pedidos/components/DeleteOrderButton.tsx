@@ -21,22 +21,11 @@ export default function DeleteOrderButton({ orderId }: { orderId: string }) {
         <form onSubmit={handleDelete}>
             <button
                 type="submit"
-                style={{
-                    width: '32px',
-                    height: '32px',
-                    background: '#fef2f2',
-                    borderRadius: '10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#ef4444',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                }}
-                title="Mover para Lixeira"
+                className="orders-icon-btn is-danger"
+                title="Mover para a lixeira"
+                aria-label="Mover pedido para a lixeira"
             >
-                <Trash2 size={14} />
+                <Trash2 size={14} aria-hidden />
             </button>
         </form>
     )
