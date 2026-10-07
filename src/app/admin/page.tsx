@@ -126,15 +126,6 @@ export default async function AdminPage({
         ...data,
     }))
 
-    // ── Hourly distribution ───────────────────────────────────────────────
-    const hourlyMap = new Map<string, number>()
-    for (let h = 0; h < 24; h++) hourlyMap.set(String(h).padStart(2, '0'), 0)
-    for (const o of allOrders) {
-        const h = new Date(o.createdAt).toLocaleString('pt-BR', { hour: '2-digit', hour12: false, timeZone: 'America/Sao_Paulo' })
-        hourlyMap.set(h, (hourlyMap.get(h) || 0) + 1)
-    }
-    const hourlyData = Array.from(hourlyMap.entries()).map(([hour, orders]) => ({ hour: `${hour}h`, orders }))
-
     // ── Hourly detail (paid/pending/rejected) + shift breakdown ────────────
     const hourlyDetailMap = new Map<string, { paid: number; pending: number; rejected: number; total: number; revenue: number }>()
     for (let h = 0; h < 24; h++) hourlyDetailMap.set(String(h).padStart(2, '0'), { paid: 0, pending: 0, rejected: 0, total: 0, revenue: 0 })
@@ -172,10 +163,8 @@ export default async function AdminPage({
         if (isRejected) shiftStat.rejected += 1
     }
 
-    const topHours = Array.from(hourlyDetailMap.entries())
+    const hourlyDetail = Array.from(hourlyDetailMap.entries())
         .map(([hour, d]) => ({ hour: `${hour}h`, ...d }))
-        .sort((a, b) => b.paid - a.paid || b.total - a.total)
-        .slice(0, 5)
 
     const shiftData = SHIFTS.map(s => ({ shift: s.key, label: s.label, range: s.range, ...shiftStatsMap.get(s.key)! }))
     const bestShift = shiftData.reduce((best, s) => (s.paid > best.paid ? s : best), shiftData[0])
@@ -372,9 +361,8 @@ export default async function AdminPage({
         topStates,
         statusBreakdown,
         bumpStats,
-        hourlyData,
         weekdayData,
-        topHours,
+        hourlyDetail,
         shiftData,
         bestShift,
         recentOrders,

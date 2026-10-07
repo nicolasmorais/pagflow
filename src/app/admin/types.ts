@@ -10,9 +10,8 @@ export type BumpStats = {
     bumpRevenue: number; nonBumpRevenue: number
     bumpAvgTicket: number; nonBumpAvgTicket: number
 }
-export type HourlyData = { hour: string; orders: number }
 export type WeekdayData = { day: string; revenue: number; orders: number }
-export type TopHourData = { hour: string; paid: number; pending: number; rejected: number; total: number; revenue: number }
+export type HourlyDetail = { hour: string; paid: number; pending: number; rejected: number; total: number; revenue: number }
 export type ShiftData = { shift: string; label: string; range: string; paid: number; pending: number; rejected: number; total: number; revenue: number }
 export type RecentOrder = {
     id: string; fullName: string; totalPrice: number
@@ -60,9 +59,8 @@ export type AnalyticsData = {
     topStates: StateData[]
     statusBreakdown: StatusBreakdown[]
     bumpStats: BumpStats
-    hourlyData: HourlyData[]
     weekdayData: WeekdayData[]
-    topHours: TopHourData[]
+    hourlyDetail: HourlyDetail[]
     shiftData: ShiftData[]
     bestShift: ShiftData
     recentOrders: RecentOrder[]
