@@ -95,8 +95,14 @@ export default async function AdminPage({
     }
 
     // ── Daily data (last 30 days) ─────────────────────────────────────────
+    // Busca própria: o gráfico promete "últimos 30 dias" e não pode depender
+    // do filtro de período (com "Hoje" ele ficava vazio).
     const thirtyDaysAgo = new Date(now)
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const last30Orders = await prisma.order.findMany({
+        where: { deletedAt: null, createdAt: { gte: new Date(thirtyDaysAgo.getTime() - 86_400_000) } },
+        select: { paymentStatus: true, totalPrice: true, createdAt: true },
+    })
 
     const dailyMap = new Map<string, { revenue: number; orders: number; paidOrders: number }>()
     for (let i = 29; i >= 0; i--) {
@@ -105,8 +111,7 @@ export default async function AdminPage({
         const key = formatDateStr(d)
         dailyMap.set(key, { revenue: 0, orders: 0, paidOrders: 0 })
     }
-    for (const order of allOrders) {
-        if (order.createdAt < thirtyDaysAgo) continue
+    for (const order of last30Orders) {
         const key = dateToBrazilDateStr(order.createdAt)
         if (!dailyMap.has(key)) continue
         const ex = dailyMap.get(key)!
@@ -176,11 +181,13 @@ export default async function AdminPage({
     const bestShift = shiftData.reduce((best, s) => (s.paid > best.paid ? s : best), shiftData[0])
 
     // ── Weekday distribution ──────────────────────────────────────────────
-    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab']
+    const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+    const weekdayIndex = new Map(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, i) => [d, i]))
+    const brWeekday = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'America/Sao_Paulo' })
     const weekdayMap = new Map<string, { revenue: number; orders: number }>()
     for (const d of dayNames) weekdayMap.set(d, { revenue: 0, orders: 0 })
     for (const o of allOrders) {
-        const d = dayNames[new Date(o.createdAt).getDay()]
+        const d = dayNames[weekdayIndex.get(brWeekday.format(o.createdAt)) ?? 0]
         const ex = weekdayMap.get(d)!
         weekdayMap.set(d, {
             revenue: ex.revenue + (o.paymentStatus === 'pago' ? (o.totalPrice || 0) : 0),
@@ -227,7 +234,11 @@ export default async function AdminPage({
     // ── Card brands ───────────────────────────────────────────────────────
     const cardBrandMap = new Map<string, number>()
     for (const o of paidOrders.filter(o => o.paymentMethod !== 'pix')) {
-        const brand = o.cardBrand?.toUpperCase() || 'OUTRO'
+        const raw = o.cardBrand?.trim().toUpperCase() || ''
+        const brand = !raw ? 'Não informada'
+            : raw.startsWith('MASTER') ? 'MASTERCARD'
+            : raw === 'AMERICAN EXPRESS' ? 'AMEX'
+            : raw
         cardBrandMap.set(brand, (cardBrandMap.get(brand) || 0) + 1)
     }
     const cardBrands = Array.from(cardBrandMap.entries())
@@ -261,9 +272,9 @@ export default async function AdminPage({
     // ── Status breakdown ──────────────────────────────────────────────────
     const totalAll = allOrders.length || 1
     const statusBreakdown = [
-        { status: 'pago', label: 'Pago', count: paidOrders.length, percentage: Math.round((paidOrders.length / totalAll) * 100), color: '#16a34a', bg: '#dcfce7' },
-        { status: 'aguardando', label: 'Aguardando', count: pendingOrders.length, percentage: Math.round((pendingOrders.length / totalAll) * 100), color: '#d97706', bg: '#fef3c7' },
-        { status: 'recusado', label: 'Recusado', count: rejectedOrders.length, percentage: Math.round((rejectedOrders.length / totalAll) * 100), color: '#dc2626', bg: '#fee2e2' },
+        { status: 'pago', label: 'Pago', count: paidOrders.length, percentage: Math.round((paidOrders.length / totalAll) * 100), color: '#1E7A52', bg: '#E3F4EA' },
+        { status: 'aguardando', label: 'Aguardando', count: pendingOrders.length, percentage: Math.round((pendingOrders.length / totalAll) * 100), color: '#D97706', bg: '#FEF3C7' },
+        { status: 'recusado', label: 'Recusado', count: rejectedOrders.length, percentage: Math.round((rejectedOrders.length / totalAll) * 100), color: '#B23B32', bg: '#FBEAE8' },
     ]
 
     // ── Bump stats ────────────────────────────────────────────────────────
@@ -388,11 +399,11 @@ export default async function AdminPage({
             }}>
                 <div className="page-title-section" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                     <div className="page-title-text">
-                        <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 700, color: '#14151F', margin: 0, letterSpacing: '-0.01em', fontFamily: "'Fraunces', serif" }}>
+                        <h1 style={{ fontSize: 'clamp(1.1rem, 4vw, 1.5rem)', fontWeight: 700, color: '#14151F', margin: 0, letterSpacing: '-0.02em' }}>
                             Centro de Análise
                         </h1>
                         <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#6E7180', fontWeight: 500 }}>
-                            Receita, conversão, métodos e origem do tráfego.
+                            Vendas, conversão e tráfego do período selecionado.
                         </p>
                     </div>
                 </div>
