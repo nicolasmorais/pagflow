@@ -23,6 +23,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [declinedOrderId, setDeclinedOrderId] = useState('');
     const [step1Loading, setStep1Loading] = useState(false);
     const [cepResolved, setCepResolved] = useState(false);
+    const [cepLoading, setCepLoading] = useState(false);
+    const [cepFound, setCepFound] = useState<boolean | null>(null);
 
     const [dados, setDados] = useState({ nome: '', email: '', telefone: '', cpf: '', nascimento: '' });
     const [endereco, setEndereco] = useState({ cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: 'SP', destinatario: '' });
@@ -359,6 +361,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         setEndereco(p => ({ ...p, cep: formatted }));
 
         if (cleanCEP.length === 8) {
+            setCepLoading(true);
+            setCepFound(null);
             try {
                 const response = await fetch(`https://viacep.com.br/ws/${cleanCEP}/json/`);
                 const data = await response.json();
@@ -371,13 +375,17 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         cidade: data.localidade,
                         estado: data.uf
                     }));
-                    setCepResolved(true);
+                    setCepFound(true);
                     setErrors(prev => { const n = { ...prev }; delete n.cep; return n; });
                 } else {
-                    setErrors(prev => ({ ...prev, cep: 'CEP não encontrado. Verifique e tente novamente.' }));
+                    setCepFound(false);
                 }
             } catch (e) {
-                setErrors(prev => ({ ...prev, cep: 'Erro ao buscar CEP. Tente novamente.' }));
+                setCepFound(false);
+            } finally {
+                // Mesmo sem achar o CEP, libera os campos para o cliente digitar o endereço à mão
+                setCepResolved(true);
+                setCepLoading(false);
             }
         }
     };
@@ -435,6 +443,32 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     };
 
+    // Opções clicáveis (entrega/pagamento) também funcionam pelo teclado e leitor de tela
+    const pickable = (selected: boolean, onPick: () => void) => ({
+        role: 'radio' as const,
+        'aria-checked': selected,
+        tabIndex: 0,
+        onClick: onPick,
+        onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPick(); } },
+    });
+
+    // Leva o cliente direto ao primeiro campo com erro (quem não vê bem não percebe o aviso fora da tela)
+    const focusFirstError = () => {
+        setTimeout(() => {
+            const el = document.querySelector<HTMLElement>('.screen.active .field.error input, .screen.active .field.error select');
+            if (!el) return;
+            el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            el.focus({ preventScroll: true });
+        }, 50);
+    };
+
+    // Ao chegar na etapa de entrega, o cursor já fica no CEP
+    useEffect(() => {
+        if (step === 2 && !endereco.cep) {
+            setTimeout(() => document.getElementById('ck-cep')?.focus({ preventScroll: true }), 50);
+        }
+    }, [step]);
+
     const validateStep1 = () => {
         let newErrors: Record<string, string> = {};
         if (!dados.nome) newErrors.nome = 'Informe seu nome completo';
@@ -463,7 +497,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
             // Formato básico: algo@algo.algo
             const basicRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
             if (!basicRegex.test(email)) {
-                newErrors.email = 'Formato de e-mail inválido';
+                newErrors.email = 'E-mail incompleto — confira se tem o @ e o final (ex: @gmail.com)';
             } else {
                 const [localPart, domain] = email.split('@');
                 // Verificar parte local
@@ -497,12 +531,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
 
         const cleanTel = dados.telefone.replace(/\D/g, '');
-        if (cleanTel.length < 10) newErrors.telefone = 'WhatsApp inválido';
+        if (cleanTel.length < 10) newErrors.telefone = 'Celular incompleto — digite o DDD e o número';
 
         if (!customization?.disableCpf) {
             const cleanCpf = dados.cpf.replace(/\D/g, '');
             if (cleanCpf.length > 0 && cleanCpf.length !== 11) {
-                newErrors.cpf = 'CPF inválido';
+                newErrors.cpf = 'CPF incompleto — confira os 11 números';
             }
         }
 
@@ -523,15 +557,16 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
             return true;
         }
+        focusFirstError();
         return false;
     };
 
     const validateStep2 = () => {
         let newErrors: Record<string, string> = {};
-        if (endereco.cep.replace(/\D/g, '').length !== 8) newErrors.cep = 'CEP inválido';
+        if (endereco.cep.replace(/\D/g, '').length !== 8) newErrors.cep = 'CEP incompleto — são 8 números';
         if (!endereco.rua) newErrors.rua = 'Informe a rua';
         if (!endereco.numero) newErrors.numero = 'Informe o número';
-        if (!endereco.complemento) newErrors.complemento = 'Informe o complemento';
+        if (!endereco.complemento) newErrors.complemento = 'Informe o complemento (se não tiver, escreva "Casa")';
         if (!endereco.bairro) newErrors.bairro = 'Informe o bairro';
         if (!endereco.cidade) newErrors.cidade = 'Informe a cidade';
         if (!endereco.estado) newErrors.estado = 'Selecione o estado';
@@ -550,6 +585,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
             return true;
         }
+        focusFirstError();
         return false;
     };
 
@@ -777,8 +813,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     }, [maxInstallments]);
 
-    const cardInputStyle = (hasError: boolean): React.CSSProperties => ({ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${hasError ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' });
-
     // Tokeniza cartão no Pagar.me e chama finalizar
     const finalizarCartao = async () => {
         const errs: Record<string, string> = {};
@@ -804,7 +838,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (!/^[A-Za-z]{2}$/.test(endereco.estado.trim())) errs.estado = 'UF inválida';
 
         setCardErrors(errs);
-        if (Object.keys(errs).length > 0) return;
+        if (Object.keys(errs).length > 0) { focusFirstError(); return; }
 
         setCardTokenizing(true);
         try {
@@ -1205,7 +1239,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             <div className="prod-img" style={{ fontSize: '18px' }}>🎁</div>
                                             <div className="prod-info">
                                                 <div className="prod-name">{bump.name}</div>
-                                                <div className="prod-qty">Order Bump</div>
+                                                <div className="prod-qty">Oferta adicionada</div>
                                             </div>
                                             <div className="prod-price">R$ {bump.price.toFixed(2).replace('.', ',')}</div>
                                         </div>
@@ -1236,32 +1270,32 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         <div className={`screen ${step === 1 ? 'active' : ''}`}>
                             <div className="card">
                                 {renderProgressBar()}
-                                <div className="step-title">Identificação</div>
-                                <div className="step-sub">Precisamos de algumas informações básicas para continuar.</div>
+                                <h1 className="step-title">Passo 1 — Seus dados</h1>
+                                <div className="step-sub">Preencha os campos abaixo para continuar.</div>
 
                                 <div className={`field ${errors.nome ? 'error' : ''}`}>
-                                    <label className="field-label">Seu Nome Completo *</label>
-                                    <input type="text" placeholder="Ex: Maria Aparecida Santos" value={dados.nome} onChange={e => { setDados({ ...dados, nome: e.target.value }); if (errors.nome) setErrors(prev => { const n = { ...prev }; delete n.nome; return n; }); }} />
-                                    {errors.nome && <div className="error-msg">⚠️ {errors.nome}</div>}
+                                    <label className="field-label" htmlFor="ck-nome">Seu nome completo</label>
+                                    <input id="ck-nome" type="text" name="name" autoComplete="name" autoCapitalize="words" placeholder="Ex: Maria Aparecida Santos" value={dados.nome} aria-invalid={!!errors.nome} onChange={e => { setDados({ ...dados, nome: e.target.value }); if (errors.nome) setErrors(prev => { const n = { ...prev }; delete n.nome; return n; }); }} />
+                                    {errors.nome && <div className="error-msg" role="alert">⚠️ {errors.nome}</div>}
                                 </div>
                                 <div className={`field ${errors.email ? 'error' : ''}`}>
-                                    <label className="field-label">Seu E-mail *</label>
-                                    <input type="email" placeholder="Ex: maria@email.com" value={dados.email} onChange={e => { setDados({ ...dados, email: e.target.value }); if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; }); }} />
-                                    {errors.email && <div className="error-msg">⚠️ {errors.email}</div>}
-                                    <div className="field-hint">Vamos enviar a confirmação do pedido para este e-mail</div>
+                                    <label className="field-label" htmlFor="ck-email">Seu e-mail</label>
+                                    <input id="ck-email" type="email" name="email" autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} placeholder="Ex: maria@gmail.com" value={dados.email} aria-invalid={!!errors.email} onChange={e => { setDados({ ...dados, email: e.target.value }); if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n; }); }} />
+                                    {errors.email && <div className="error-msg" role="alert">⚠️ {errors.email}</div>}
+                                    <div className="field-hint">Vamos enviar a confirmação do pedido para este e-mail.</div>
                                 </div>
                                 <div className={`field ${errors.telefone ? 'error' : ''}`}>
-                                    <label className="field-label">Seu Telefone *</label>
-                                    <input type="text" placeholder="(11) 91234-5678" maxLength={15} value={dados.telefone} onChange={e => handleMaskDados('telefone', e.target.value, formatTel)} />
-                                    {errors.telefone && <div className="error-msg">⚠️ {errors.telefone}</div>}
-                                    <div className="field-hint">Para avisar quando o produto sair para entrega</div>
+                                    <label className="field-label" htmlFor="ck-tel">Seu celular (WhatsApp)</label>
+                                    <input id="ck-tel" type="tel" name="tel" autoComplete="tel-national" inputMode="tel" placeholder="(11) 91234-5678" maxLength={15} value={dados.telefone} aria-invalid={!!errors.telefone} onChange={e => handleMaskDados('telefone', e.target.value, formatTel)} />
+                                    {errors.telefone && <div className="error-msg" role="alert">⚠️ {errors.telefone}</div>}
+                                    <div className="field-hint">Com DDD. Usamos só para avisar sobre a entrega.</div>
                                 </div>
                                 {!customization?.disableCpf && (
                                     <div className={`field ${errors.cpf ? 'error' : ''}`}>
-                                        <label className="field-label">CPF <span style={{ fontWeight: 400, fontSize: '13px', color: '#94a3b8' }}>(Obrigatório para cartão)</span></label>
-                                        <input type="text" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
-                                        {errors.cpf && <div className="error-msg">⚠️ {errors.cpf}</div>}
-                                        <div className="field-hint">Necessário apenas para emissão de nota fiscal</div>
+                                        <label className="field-label" htmlFor="ck-cpf">CPF <span className="opt">(opcional)</span></label>
+                                        <input id="ck-cpf" type="text" inputMode="numeric" placeholder="000.000.000-00" maxLength={14} value={dados.cpf} aria-invalid={!!errors.cpf} onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)} />
+                                        {errors.cpf && <div className="error-msg" role="alert">⚠️ {errors.cpf}</div>}
+                                        <div className="field-hint">Só é obrigatório se você for pagar com cartão.</div>
                                     </div>
                                 )}
 
@@ -1282,72 +1316,90 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     Voltar
                                 </button>
                                 {renderProgressBar()}
-                                <div className="step-title">Passo 2 — Endereço de Entrega</div>
+                                <h1 className="step-title">Passo 2 — Endereço de entrega</h1>
                                 <div className="step-sub">Para onde vamos enviar o seu produto?</div>
 
                                 <div className={`field ${errors.cep ? 'error' : ''}`}>
-                                    <label className="field-label">CEP *</label>
+                                    <label className="field-label" htmlFor="ck-cep">CEP</label>
                                     <div className="cep-row">
-                                        <input type="text" placeholder="00000-000" maxLength={9} value={endereco.cep} onChange={e => handleCEPChange(e.target.value)} autoFocus />
+                                        <input id="ck-cep" type="text" inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" maxLength={9} value={endereco.cep} aria-invalid={!!errors.cep} onChange={e => handleCEPChange(e.target.value)} />
                                     </div>
-                                    {errors.cep && <div className="error-msg">⚠️ {errors.cep}</div>}
+                                    {errors.cep && <div className="error-msg" role="alert">⚠️ {errors.cep}</div>}
+                                    {!cepResolved && !cepLoading && (
+                                        <div className="field-hint">
+                                            Digite os 8 números do CEP. Não sabe? <a href="https://buscacepinter.correios.com.br/app/endereco/index.php" target="_blank" rel="noreferrer">Consulte nos Correios</a>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {cepResolved && (
+                                {cepLoading && (
+                                    <div className="status-box info" role="status">Buscando seu endereço...</div>
+                                )}
+
+                                {cepResolved && !cepLoading && (
                                     <>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '8px', marginBottom: '16px', fontSize: '13px', fontWeight: 600, color: '#92400e' }}>
-                                            ✅ Endereço encontrado! Preencha os campos abaixo.
-                                        </div>
+                                        {cepFound ? (
+                                            <div className="status-box ok" role="status">
+                                                ✅ Endereço encontrado! Agora falta só o número e o complemento.
+                                            </div>
+                                        ) : (
+                                            <div className="status-box info" role="status">
+                                                Não encontramos este CEP automaticamente. Confira os números ou preencha o endereço abaixo.
+                                            </div>
+                                        )}
 
                                         <div className={`field ${errors.rua ? 'error' : ''}`}>
-                                            <label className="field-label">Rua ou Avenida *</label>
-                                            <input type="text" placeholder="Ex: Rua das Flores" value={endereco.rua} onChange={e => handleMaskEnd('rua', e.target.value, v => v)} />
-                                            {errors.rua && <div className="error-msg">⚠️ {errors.rua}</div>}
+                                            <label className="field-label" htmlFor="ck-rua">Rua ou avenida</label>
+                                            <input id="ck-rua" type="text" autoComplete="address-line1" placeholder="Ex: Rua das Flores" value={endereco.rua} aria-invalid={!!errors.rua} onChange={e => handleMaskEnd('rua', e.target.value, v => v)} />
+                                            {errors.rua && <div className="error-msg" role="alert">⚠️ {errors.rua}</div>}
                                         </div>
                                         <div className="two">
                                             <div className={`field ${errors.numero ? 'error' : ''}`}>
-                                                <label className="field-label">Número *</label>
-                                                <input type="text" placeholder="Ex: 123" value={endereco.numero} onChange={e => handleMaskEnd('numero', e.target.value, v => v)}
-                                                    style={endereco.numero ? { background: '#f0fdf4', border: '2px solid #22c55e', fontWeight: 600 } : { background: '#fffbeb', border: '2px solid #fbbf24', fontWeight: 600 }}
-                                                    autoFocus />
-                                                {errors.numero && <div className="error-msg">⚠️ {errors.numero}</div>}
+                                                <label className="field-label" htmlFor="ck-numero">Número</label>
+                                                <input id="ck-numero" type="text" inputMode="numeric" placeholder="Ex: 123" value={endereco.numero} aria-invalid={!!errors.numero} onChange={e => handleMaskEnd('numero', e.target.value, v => v)}
+                                                    style={endereco.numero ? { background: '#f0fdf4', border: '2px solid #22c55e', fontWeight: 600 } : { background: '#fffbeb', border: '2px solid #f59e0b', fontWeight: 600 }}
+                                                    autoFocus={!!cepFound} />
+                                                {errors.numero && <div className="error-msg" role="alert">⚠️ {errors.numero}</div>}
                                             </div>
                                             <div className={`field ${errors.complemento ? 'error' : ''}`}>
-                                                <label className="field-label">Complemento *</label>
-                                                <input type="text" placeholder="Apto, Bloco..." value={endereco.complemento} onChange={e => handleMaskEnd('complemento', e.target.value, v => v)}
-                                                    style={endereco.complemento ? { background: '#f0fdf4', border: '2px solid #22c55e', fontWeight: 600 } : { background: '#fffbeb', border: '2px solid #fbbf24', fontWeight: 600 }} />
-                                                {errors.complemento && <div className="error-msg">⚠️ {errors.complemento}</div>}
+                                                <label className="field-label" htmlFor="ck-compl">Complemento</label>
+                                                <input id="ck-compl" type="text" autoComplete="address-line2" placeholder="Apto, bloco ou Casa" value={endereco.complemento} aria-invalid={!!errors.complemento} onChange={e => handleMaskEnd('complemento', e.target.value, v => v)}
+                                                    style={endereco.complemento ? { background: '#f0fdf4', border: '2px solid #22c55e', fontWeight: 600 } : { background: '#fffbeb', border: '2px solid #f59e0b', fontWeight: 600 }} />
+                                                {errors.complemento && <div className="error-msg" role="alert">⚠️ {errors.complemento}</div>}
+                                                {!errors.complemento && <div className="field-hint">Mora em casa? Escreva "Casa".</div>}
                                             </div>
                                         </div>
                                         <div className="two">
                                             <div className={`field ${errors.bairro ? 'error' : ''}`}>
-                                                <label className="field-label">Bairro *</label>
-                                                <input type="text" placeholder="Nome do bairro" value={endereco.bairro} onChange={e => handleMaskEnd('bairro', e.target.value, v => v)} />
-                                                {errors.bairro && <div className="error-msg">⚠️ {errors.bairro}</div>}
+                                                <label className="field-label" htmlFor="ck-bairro">Bairro</label>
+                                                <input id="ck-bairro" type="text" placeholder="Nome do bairro" value={endereco.bairro} aria-invalid={!!errors.bairro} onChange={e => handleMaskEnd('bairro', e.target.value, v => v)} />
+                                                {errors.bairro && <div className="error-msg" role="alert">⚠️ {errors.bairro}</div>}
                                             </div>
                                             <div className={`field ${errors.cidade ? 'error' : ''}`}>
-                                                <label className="field-label">Cidade *</label>
-                                                <input type="text" placeholder="Ex: São Paulo" value={endereco.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
-                                                {errors.cidade && <div className="error-msg">⚠️ {errors.cidade}</div>}
+                                                <label className="field-label" htmlFor="ck-cidade">Cidade</label>
+                                                <input id="ck-cidade" type="text" autoComplete="address-level2" placeholder="Ex: São Paulo" value={endereco.cidade} aria-invalid={!!errors.cidade} onChange={e => handleMaskEnd('cidade', e.target.value, v => v)} />
+                                                {errors.cidade && <div className="error-msg" role="alert">⚠️ {errors.cidade}</div>}
                                             </div>
                                         </div>
                                         <div className={`field ${errors.estado ? 'error' : ''}`}>
-                                            <label className="field-label">Estado *</label>
-                                            <select value={endereco.estado} onChange={e => handleMaskEnd('estado', e.target.value, v => v)}>
+                                            <label className="field-label" htmlFor="ck-estado">Estado</label>
+                                            <select id="ck-estado" autoComplete="address-level1" value={endereco.estado} aria-invalid={!!errors.estado} onChange={e => handleMaskEnd('estado', e.target.value, v => v)}>
                                                 <option value="">Selecione o estado</option>
                                                 {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
                                                     <option key={uf} value={uf}>{uf}</option>
                                                 ))}
                                             </select>
-                                            {errors.estado && <div className="error-msg">⚠️ {errors.estado}</div>}
+                                            {errors.estado && <div className="error-msg" role="alert">⚠️ {errors.estado}</div>}
                                         </div>
 
-                                        <div className="section-label">🚚 Formas de Entrega</div>
+                                        <div className="section-label" id="ck-frete-label">🚚 Escolha a entrega</div>
+                                        <div role="radiogroup" aria-labelledby="ck-frete-label">
                                         {(shippingRules && shippingRules.length > 0 ? shippingRules : [
                                             { name: 'Entrega Econômica', price: 0, delivery_time: '7' }
                                         ]).map((opt: any, idx: number) => {
+                                            const isSel = shipping.price === opt.price && shipping.name === opt.name;
                                             return (
-                                                <div key={idx} className={`frete-opt ${shipping.price === opt.price && shipping.name === opt.name ? 'selected' : ''}`} onClick={() => setShipping(opt)}>
+                                                <div key={idx} className={`frete-opt ${isSel ? 'selected' : ''}`} role="radio" aria-checked={isSel} tabIndex={0} onClick={() => setShipping(opt)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShipping(opt); } }}>
                                                     <div className="frad"></div>
                                                     <div>
                                                         <div className="frete-name" style={{display:'flex', alignItems:'center'}}>{opt.name} {opt.price === 0 && <span className="tag-free">GRÁTIS</span>}</div>
@@ -1357,9 +1409,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 </div>
                                             );
                                         })}
+                                        </div>
 
                                         <button className="cta-btn" style={{ marginTop: '14px' }} onClick={validateStep2}>
-                                            Ir para Pagamento
+                                            Continuar para o Pagamento
                                         </button>
                                         <div className="cta-note">
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
@@ -1377,8 +1430,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     Voltar
                                 </button>
                                 {renderProgressBar()}
-                                <div className="step-title">Passo 3 — Pagamento</div>
-                                <div className="step-sub">Escolha como prefere pagar. É simples e seguro!</div>
+                                <h1 className="step-title">Passo 3 — Pagamento</h1>
+                                <div className="step-sub">Toque na forma de pagamento que você prefere.</div>
 
                                 {pixDiscountVal > 0 && (
                                     <div style={{
@@ -1390,7 +1443,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         display: 'flex',
                                         alignItems: 'flex-start',
                                         gap: '10px',
-                                        fontSize: '13.5px',
+                                        fontSize: '15px',
                                         color: '#065f46',
                                         fontWeight: 500,
                                         lineHeight: 1.5
@@ -1413,49 +1466,40 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </div>
                                         {availableBumps.filter((b: any) => b.isActive !== false).map((bump: any) => {
                                             const isSelected = selectedBumps.includes(bump.id);
+                                            const toggleBump = () => {
+                                                setSelectedBumps(prev =>
+                                                    isSelected
+                                                        ? prev.filter(id => id !== bump.id)
+                                                        : [...prev, bump.id]
+                                                );
+                                            };
                                             return (
                                                 <div
                                                     key={bump.id}
-                                                    onClick={() => {
-                                                        setSelectedBumps(prev =>
-                                                            isSelected
-                                                                ? prev.filter(id => id !== bump.id)
-                                                                : [...prev, bump.id]
-                                                        );
-                                                    }}
-                                                    style={{
-                                                        display: 'flex', alignItems: 'center', gap: '12px',
-                                                        padding: '14px 15px', border: `2px solid ${isSelected ? '#10b981' : '#e5e7eb'}`,
-                                                        borderRadius: '10px', cursor: 'pointer', marginBottom: '10px',
-                                                        background: isSelected ? '#ecfdf5' : '#fff',
-                                                        transition: 'all 0.15s',
-                                                    }}
+                                                    className={`bump-opt ${isSelected ? 'selected' : ''}`}
+                                                    role="checkbox"
+                                                    aria-checked={isSelected}
+                                                    tabIndex={0}
+                                                    onClick={toggleBump}
+                                                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleBump(); } }}
                                                 >
                                                     {bump.imageUrl && (
                                                         <img
                                                             src={bump.imageUrl}
                                                             alt={bump.name}
-                                                            style={{ width: 52, height: 52, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+                                                            style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
                                                         />
                                                     )}
                                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{bump.name}</div>
-                                                        <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{bump.description}</div>
-                                                    </div>
-                                                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                                                        <div style={{ fontSize: '15px', fontWeight: 800, color: '#059669' }}>
+                                                        <div className="bump-name">{bump.name}</div>
+                                                        {bump.description && <div className="bump-desc">{bump.description}</div>}
+                                                        <div className="bump-price" style={{ marginTop: 4 }}>
                                                             +R$ {bump.price.toFixed(2).replace('.', ',')}
                                                         </div>
                                                     </div>
-                                                    <div style={{
-                                                        width: 22, height: 22, borderRadius: 6, flexShrink: 0,
-                                                        border: `2px solid ${isSelected ? '#10b981' : '#d1d5db'}`,
-                                                        background: isSelected ? '#10b981' : '#fff',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        transition: 'all 0.15s',
-                                                    }}>
+                                                    <div className="bump-check">
                                                         {isSelected && (
-                                                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" width="14" height="14">
+                                                            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
                                                                 <polyline points="20 6 9 17 4 12"/>
                                                             </svg>
                                                         )}
@@ -1464,12 +1508,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             );
                                         })}
                                         {selectedBumps.length > 0 && (
-                                            <div style={{
-                                                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px',
-                                                padding: '10px 14px', marginBottom: '10px',
-                                                fontSize: '13px', fontWeight: 600, color: '#166534',
-                                                display: 'flex', alignItems: 'center', gap: '8px',
-                                            }}>
+                                            <div className="status-box ok" role="status" style={{ marginBottom: 10 }}>
                                                 ✅ {selectedBumps.length} oferta{selectedBumps.length > 1 ? 's' : ''} adicionada{selectedBumps.length > 1 ? 's' : ''} — Total: <strong>R$ {finalPrice.toFixed(2).replace('.', ',')}</strong>
                                             </div>
                                         )}
@@ -1478,10 +1517,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 )}
 
                                 {/* ── Opções de pagamento ── */}
-                                <div className="section-label" style={{ marginTop: '0', marginBottom: '10px' }}>💳 Forma de pagamento</div>
+                                <div className="section-label" id="ck-pay-label" style={{ marginTop: '0', marginBottom: '10px' }}>💳 Como você quer pagar?</div>
 
                                 {/* CARTÃO DE CRÉDITO */}
-                                <div className={`pay-opt ${paymentMethod === 'card' ? 'selected' : ''}`} onClick={() => setPaymentMethod('card')} style={{ marginBottom: 4 }}>
+                                <div className={`pay-opt ${paymentMethod === 'card' ? 'selected' : ''}`} {...pickable(paymentMethod === 'card', () => setPaymentMethod('card'))} style={{ marginBottom: 4 }}>
                                     <div className="prad" style={{ borderColor: paymentMethod === 'card' ? 'var(--green)' : undefined, background: paymentMethod === 'card' ? 'var(--green)' : undefined }}></div>
                                     <div className="pay-icon" style={{ color: '#6366f1' }}>
                                         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
@@ -1491,107 +1530,126 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div style={{ flex: 1 }}>
                                         <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                                             Cartão de Crédito
-                                            <span style={{ background: '#16a34a', color: '#fff', fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '0.04em', textTransform: 'uppercase' }}>em até 18x</span>
+                                            <span style={{ background: '#16a34a', color: '#fff', fontSize: 13, fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>em até 18x</span>
                                         </div>
-                                        <div className="pay-desc">Pagamento seguro e rápido</div>
+                                        <div className="pay-desc">Visa, Mastercard, Elo e outros</div>
                                     </div>
                                 </div>
 
                                 {paymentMethod === 'card' && (
-                                    <div style={{ background: '#fafafa', border: '1px solid #e5e7eb', borderRadius: 8, padding: '14px 14px 10px', marginBottom: 8 }}>
-                                        {/* Número do cartão */}
-                                        <div style={{ marginBottom: 8 }}>
+                                    <div className="card-fields">
+                                        <div className={`field ${cardErrors.number ? 'error' : ''}`}>
+                                            <label className="field-label" htmlFor="ck-cc-num">Número do cartão</label>
                                             <input
-                                                type="tel"
+                                                id="ck-cc-num"
+                                                type="text"
                                                 inputMode="numeric"
-                                                placeholder="Número do cartão"
+                                                autoComplete="cc-number"
+                                                placeholder="0000 0000 0000 0000"
                                                 maxLength={19}
                                                 value={cardData.number}
+                                                aria-invalid={!!cardErrors.number}
                                                 onChange={e => setCardData(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.number ? '#ef4444' : '#e5e7eb'}`, fontSize: 15, letterSpacing: '0.1em', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                                                style={{ letterSpacing: '0.06em' }}
                                             />
-                                            {cardErrors.number && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.number}</div>}
+                                            {cardErrors.number && <div className="error-msg" role="alert">⚠️ {cardErrors.number}</div>}
                                         </div>
 
-                                        {/* Nome no cartão */}
-                                        <div style={{ marginBottom: 8 }}>
+                                        <div className={`field ${cardErrors.name ? 'error' : ''}`}>
+                                            <label className="field-label" htmlFor="ck-cc-name">Nome impresso no cartão</label>
                                             <input
+                                                id="ck-cc-name"
                                                 type="text"
-                                                placeholder="Nome no cartão"
+                                                autoComplete="cc-name"
+                                                placeholder="Ex: MARIA A SANTOS"
                                                 value={cardData.name}
+                                                aria-invalid={!!cardErrors.name}
                                                 onChange={e => setCardData(p => ({ ...p, name: e.target.value.toUpperCase() }))}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.name ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                             />
-                                            {cardErrors.name && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.name}</div>}
+                                            {cardErrors.name && <div className="error-msg" role="alert">⚠️ {cardErrors.name}</div>}
                                         </div>
 
-                                        {/* Validade + CVV + CPF */}
-                                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                                            <div style={{ flex: 1 }}>
+                                        <div className="two">
+                                            <div className={`field ${cardErrors.exp ? 'error' : ''}`}>
+                                                <label className="field-label" htmlFor="ck-cc-exp">Validade</label>
                                                 <input
-                                                    type="tel"
+                                                    id="ck-cc-exp"
+                                                    type="text"
                                                     inputMode="numeric"
-                                                    placeholder="Validade MM/AA"
+                                                    autoComplete="cc-exp"
+                                                    placeholder="MM/AA"
                                                     maxLength={5}
                                                     value={cardData.exp}
+                                                    aria-invalid={!!cardErrors.exp}
                                                     onChange={e => setCardData(p => ({ ...p, exp: formatExpiry(e.target.value) }))}
-                                                    style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.exp ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                                 />
-                                                {cardErrors.exp && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.exp}</div>}
+                                                {cardErrors.exp && <div className="error-msg" role="alert">⚠️ {cardErrors.exp}</div>}
                                             </div>
-                                            <div style={{ flex: 1 }}>
+                                            <div className={`field ${cardErrors.cvv ? 'error' : ''}`}>
+                                                <label className="field-label" htmlFor="ck-cc-cvv">Código (CVV)</label>
                                                 <input
-                                                    type="tel"
+                                                    id="ck-cc-cvv"
+                                                    type="text"
                                                     inputMode="numeric"
+                                                    autoComplete="cc-csc"
                                                     placeholder="CVV"
                                                     maxLength={4}
                                                     value={cardData.cvv}
+                                                    aria-invalid={!!cardErrors.cvv}
                                                     onChange={e => setCardData(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
-                                                    style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.cvv ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
                                                 />
-                                                {cardErrors.cvv && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.cvv}</div>}
+                                                {cardErrors.cvv && <div className="error-msg" role="alert">⚠️ {cardErrors.cvv}</div>}
+                                                {!cardErrors.cvv && <div className="field-hint">3 números no verso do cartão</div>}
                                             </div>
                                         </div>
 
-                                        {/* CPF */}
-                                        <div style={{ marginBottom: 8 }}>
+                                        <div className={`field ${cardErrors.cpf ? 'error' : ''}`}>
+                                            <label className="field-label" htmlFor="ck-cc-cpf">CPF do dono do cartão</label>
                                             <input
-                                                type="text"
-                                                placeholder="CPF do titular"
-                                                maxLength={14}
-                                                value={dados.cpf}
-                                                onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.cpf ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
-                                            />
-                                            {cardErrors.cpf && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.cpf}</div>}
-                                        </div>
-
-                                        {/* Nascimento */}
-                                        <div style={{ marginBottom: 8 }}>
-                                            <input
+                                                id="ck-cc-cpf"
                                                 type="text"
                                                 inputMode="numeric"
-                                                placeholder="Data de nascimento (DD/MM/AAAA)"
+                                                placeholder="000.000.000-00"
+                                                maxLength={14}
+                                                value={dados.cpf}
+                                                aria-invalid={!!cardErrors.cpf}
+                                                onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
+                                            />
+                                            {cardErrors.cpf && <div className="error-msg" role="alert">⚠️ {cardErrors.cpf}</div>}
+                                        </div>
+
+                                        <div className={`field ${cardErrors.nascimento ? 'error' : ''}`}>
+                                            <label className="field-label" htmlFor="ck-cc-nasc">Data de nascimento</label>
+                                            <input
+                                                id="ck-cc-nasc"
+                                                type="text"
+                                                inputMode="numeric"
+                                                autoComplete="bday"
+                                                placeholder="DD/MM/AAAA"
                                                 maxLength={10}
                                                 value={dados.nascimento}
+                                                aria-invalid={!!cardErrors.nascimento}
                                                 onChange={e => { handleMaskDados('nascimento', e.target.value, formatDate); if (cardErrors.nascimento) setCardErrors(p => { const n = { ...p }; delete n.nascimento; return n; }); }}
-                                                style={cardInputStyle(!!cardErrors.nascimento)}
                                             />
-                                            {cardErrors.nascimento && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.nascimento}</div>}
+                                            {cardErrors.nascimento && <div className="error-msg" role="alert">⚠️ {cardErrors.nascimento}</div>}
                                         </div>
 
                                         {(() => {
                                             const addrErr = ['email', 'cep', 'rua', 'numero', 'bairro', 'cidade', 'estado'].map(k => cardErrors[k]).filter(Boolean);
                                             if (!addrErr.length) return null;
-                                            return <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 8 }}>⚠️ {addrErr.join(' · ')} — volte à etapa de entrega para completar.</div>;
+                                            return (
+                                                <div className="error-msg" role="alert" style={{ marginBottom: 14, display: 'block' }}>
+                                                    ⚠️ {addrErr.join(' · ')} — <button type="button" onClick={() => setStep(2)} style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit', textDecoration: 'underline', cursor: 'pointer' }}>voltar ao endereço para completar</button>.
+                                                </div>
+                                            );
                                         })()}
 
-                                        {/* Parcelas */}
-                                        <div style={{ marginBottom: 12 }}>
+                                        <div className="field">
+                                            <label className="field-label" htmlFor="ck-cc-inst">Número de parcelas</label>
                                             <select
+                                                id="ck-cc-inst"
                                                 value={cardData.installments}
                                                 onChange={e => setCardData(p => ({ ...p, installments: Number(e.target.value) }))}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
                                             >
                                                 {cardInstallmentOptions.map(({ n, val, hasInterest }) => (
                                                     <option key={n} value={n}>
@@ -1617,7 +1675,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 )}
 
                                 {/* PIX À VISTA */}
-                                <div className={`pay-opt ${paymentMethod === 'pix' ? 'selected' : ''}`} onClick={() => setPaymentMethod('pix')}>
+                                <div className={`pay-opt ${paymentMethod === 'pix' ? 'selected' : ''}`} {...pickable(paymentMethod === 'pix', () => setPaymentMethod('pix'))}>
                                     <div className="prad"></div>
                                     <div className="pay-icon" style={{color:'#00B69B'}}>
                                         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
@@ -1637,19 +1695,19 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         {/* Info row */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
                                             <svg viewBox="0 0 24 24" width="20" height="20" fill="#16a34a" style={{ flexShrink: 0 }}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
-                                            <span style={{ fontSize: 13, color: '#166534', lineHeight: 1.5 }}>
-                                                Confirmação em <strong>poucos minutos</strong> — pague pelo app do seu banco.
+                                            <span style={{ fontSize: 15, color: '#166534', lineHeight: 1.5 }}>
+                                                Na próxima tela aparece o código PIX. É só pagar pelo <strong>app do seu banco</strong> — a confirmação sai em poucos minutos.
                                             </span>
                                         </div>
                                         {/* Warning */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '11px 14px', background: '#fff7ed', borderRadius: 8, border: '1px solid #fed7aa' }}>
                                             <span style={{ fontSize: 17, flexShrink: 0 }}>⚠️</span>
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: '#c2410c', lineHeight: 1.5 }}>
+                                            <span style={{ fontSize: 14, fontWeight: 600, color: '#9a3412', lineHeight: 1.5 }}>
                                                 Não pagar o PIX pode negativar seu nome no SPC/Serasa.
                                             </span>
                                         </div>
                                         <button className="cta-btn" onClick={() => finalizar()} disabled={loading}>
-                                            {loading ? 'Processando...' : 'GERAR PIX'}
+                                            {loading ? 'Gerando seu PIX...' : 'Gerar código PIX'}
                                         </button>
                                         <div className="cta-note" style={{ marginTop: 12 }}>
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
@@ -1663,7 +1721,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <>
                                         <div
                                             className={`pay-opt ${paymentMethod === 'pix_automatico' ? 'selected' : ''}`}
-                                            onClick={() => setPaymentMethod('pix_automatico')}
+                                            {...pickable(paymentMethod === 'pix_automatico', () => setPaymentMethod('pix_automatico'))}
                                             style={{
                                                 borderColor: paymentMethod === 'pix_automatico' ? '#16a34a' : undefined,
                                                 background: paymentMethod === 'pix_automatico' ? '#f0fdf4' : undefined,
@@ -1700,7 +1758,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 fontFamily: "'Inter', system-ui, sans-serif",
                                             }}>
                                                 {/* Tira superior */}
-                                                <div style={{ background: '#32bcad', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                <div style={{ background: '#0f7f73', padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
                                                     <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
                                                         <path d="M16 3L29 10V22L16 29L3 22V10L16 3Z" fill="rgba(255,255,255,0.2)" stroke="white" strokeWidth="1.5"/>
                                                         <path d="M10 16L13.5 19.5L22 11" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -1709,7 +1767,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 </div>
                                                 {/* Corpo */}
                                                 <div style={{ padding: '20px 20px 0' }}>
-                                                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' as const, letterSpacing: '.06em', margin: '0 0 8px' }}>
+                                                    <label style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#6b7280', margin: '0 0 8px' }}>
                                                         Número de parcelas
                                                     </label>
                                                     {/* Select de parcelas */}
@@ -1725,7 +1783,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                                 borderRadius: 12,
                                                                 border: '2px solid #32bcad',
                                                                 background: '#edfaf8',
-                                                                fontSize: 15, fontWeight: 700, color: '#0f9d8c',
+                                                                fontSize: 16, fontWeight: 700, color: '#0f766e',
                                                                 fontFamily: 'inherit',
                                                                 cursor: 'pointer',
                                                                 outline: 'none',
@@ -1748,9 +1806,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#32bcad" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                                                             </svg>
-                                                            <span style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>Cronograma de cobranças</span>
+                                                            <span style={{ fontSize: 14, fontWeight: 700, color: '#374151' }}>Cronograma de cobranças</span>
                                                         </div>
-                                                        <p style={{ fontSize: 12, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.55 }}>
+                                                        <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 12px', lineHeight: 1.55 }}>
                                                             A <strong style={{ color: '#0f1623' }}>1ª parcela é cobrada hoje</strong> ao autorizar o Pix no seu banco. As demais são descontadas automaticamente a cada <strong style={{ color: '#0f1623' }}>7 dias</strong>, sem ação necessária.
                                                         </p>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -1772,23 +1830,23 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                                             border: `2px solid ${isFirst ? '#32bcad' : '#d1d5db'}`,
                                                                             color: isFirst ? '#fff' : '#6b7280',
                                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                            fontSize: 12, fontWeight: 700,
+                                                                            fontSize: 14, fontWeight: 700,
                                                                         }}>{i + 1}</div>
                                                                         {/* Data + rótulo */}
                                                                         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' as const }}>
-                                                                            <span style={{ fontSize: 13, fontWeight: 600, color: '#0f1623' }}>
+                                                                            <span style={{ fontSize: 15, fontWeight: 600, color: '#0f1623' }}>
                                                                                 {dia}/{mes}/{ano}
                                                                             </span>
                                                                             {isFirst ? (
-                                                                                <span style={{ fontSize: 10, fontWeight: 700, background: '#edfaf8', color: '#32bcad', padding: '2px 7px', borderRadius: 20, textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>
+                                                                                <span style={{ fontSize: 12, fontWeight: 700, background: '#edfaf8', color: '#0f766e', padding: '2px 8px', borderRadius: 20, textTransform: 'uppercase' as const, letterSpacing: '.05em' }}>
                                                                                     Hoje
                                                                                 </span>
                                                                             ) : (
-                                                                                <span style={{ fontSize: 11, color: '#9ca3af' }}>em {i * 7} dias</span>
+                                                                                <span style={{ fontSize: 13, color: '#6b7280' }}>em {i * 7} dias</span>
                                                                             )}
                                                                         </div>
                                                                         {/* Valor */}
-                                                                        <span style={{ fontSize: 13, fontWeight: 700, color: isFirst ? '#32bcad' : '#374151', whiteSpace: 'nowrap' as const }}>
+                                                                        <span style={{ fontSize: 15, fontWeight: 700, color: isFirst ? '#0f766e' : '#374151', whiteSpace: 'nowrap' as const }}>
                                                                             R$ {valorParcela.toFixed(2).replace('.', ',')}
                                                                         </span>
                                                                     </div>
@@ -1798,7 +1856,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                     </div>
                                                     {/* CPF */}
                                                     <div style={{ marginBottom: 14 }}>
-                                                        <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>CPF</label>
+                                                        <label style={{ display: 'block', fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 6 }}>CPF</label>
                                                         <input
                                                             type="text"
                                                             placeholder="000.000.000-00"
@@ -1814,7 +1872,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                                 fontFamily: 'inherit',
                                                             }}
                                                         />
-                                                        {errors.cpf && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>⚠️ {errors.cpf}</div>}
+                                                        {errors.cpf && <div style={{ fontSize: 14, color: '#ef4444', marginTop: 4 }}>⚠️ {errors.cpf}</div>}
                                                     </div>
                                                     {/* Botão CTA */}
                                                     <button
@@ -1827,7 +1885,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                         disabled={subLoading}
                                                         style={{
                                                             width: '100%', padding: '16px',
-                                                            background: subLoading ? '#9ca3af' : '#32bcad',
+                                                            background: subLoading ? '#9ca3af' : '#0f7f73',
                                                             color: '#fff', border: 'none', borderRadius: 14,
                                                             fontSize: 17, fontWeight: 700,
                                                             cursor: subLoading ? 'default' : 'pointer',
@@ -1838,7 +1896,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                         {subLoading ? 'Criando PIX Parcelado...' : 'Gerar Pix Parcelado'}
                                                     </button>
                                                     {/* Badge segurança */}
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 12, color: '#9ca3af', paddingBottom: 20 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 14, color: '#6b7280', paddingBottom: 20 }}>
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                                                         </svg>
@@ -1858,7 +1916,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                         <div style={{ display: 'flex', justifyContent: 'center', margin: '0 0 12px' }}>
                                                             <img src={`data:image/png;base64,${subData.qrCodeBase64}`} alt="QR PIX Parcelado" style={{ width: 200, height: 200, borderRadius: 10, border: '3px solid #bbf7d0' }} />
                                                         </div>
-                                                        <div style={{ background: '#dcfce7', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#14532d', textAlign: 'center' }}>
+                                                        <div style={{ background: '#dcfce7', borderRadius: 8, padding: '10px 14px', fontSize: 14, color: '#14532d', textAlign: 'center' }}>
                                                             Abra o app do banco → PIX → Escanear QR code
                                                         </div>
                                                     </>
@@ -1867,7 +1925,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                         <p style={{ color: '#14532d', fontWeight: 700, textAlign: 'center', margin: '0 0 10px' }}>
                                                             Autorize no app do banco
                                                         </p>
-                                                        <div style={{ background: '#dcfce7', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: '#14532d', lineHeight: 1.7 }}>
+                                                        <div style={{ background: '#dcfce7', borderRadius: 8, padding: '12px 14px', fontSize: 15, color: '#14532d', lineHeight: 1.7 }}>
                                                             Abra o app do banco → PIX → PIX Automático → autorizar solicitação pendente
                                                         </div>
                                                     </>
