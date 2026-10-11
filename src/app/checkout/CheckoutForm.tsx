@@ -788,23 +788,20 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     // Opções de parcelamento para cartão — independente do PIX Parcelado
     const CARD_MIN_INSTALLMENT = 9.9;
-    const CARD_FREE_INSTALLMENTS = 1;  // só 1x sem juros
-    // Taxa da adquirente por nº de parcelas, repassada inteira ao cliente (vendedor recebe o preço cheio). 2-5x usam a taxa de 6x.
+    // Taxa da Pagar.me por nº de parcelas, repassada inteira ao cliente (vendedor recebe o preço cheio), inclusive à vista.
     const CARD_INTEREST_BY_N: Record<number, number> = {
-        2: 0.1363, 3: 0.1363, 4: 0.1363, 5: 0.1363, 6: 0.1363,
+        1: 0.0419, 2: 0.0726, 3: 0.0940, 4: 0.1100, 5: 0.1233, 6: 0.1363,
         7: 0.1491, 8: 0.1617, 9: 0.1740, 10: 0.1860, 11: 0.1971, 12: 0.2095,
         13: 0.2104, 14: 0.2209, 15: 0.2284, 16: 0.2389, 17: 0.2494, 18: 0.2569,
     };
-    const calcInstallmentValue = (total: number, n: number): number => {
-        if (n <= CARD_FREE_INSTALLMENTS) return total / n;
-        return total / (1 - (CARD_INTEREST_BY_N[n] ?? 0)) / n;
-    };
+    const calcInstallmentValue = (total: number, n: number): number =>
+        total / (1 - (CARD_INTEREST_BY_N[n] ?? 0)) / n;
     const cardInstallmentOptions: { n: number; val: number; hasInterest: boolean }[] = (() => {
         const opts: { n: number; val: number; hasInterest: boolean }[] = [];
         for (let i = 1; i <= 18; i++) {
             const val = calcInstallmentValue(finalPrice, i);
             if (i === 1 || val >= CARD_MIN_INSTALLMENT) {
-                opts.push({ n: i, val, hasInterest: i > CARD_FREE_INSTALLMENTS });
+                opts.push({ n: i, val, hasInterest: i > 1 });
             }
         }
         return opts;
@@ -1657,7 +1654,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             >
                                                 {cardInstallmentOptions.map(({ n, val, hasInterest }) => (
                                                     <option key={n} value={n}>
-                                                        {n}x de R$ {val.toFixed(2).replace('.', ',')} {hasInterest ? '(com juros)' : '(sem juros)'}
+                                                        {n}x de R$ {val.toFixed(2).replace('.', ',')} {hasInterest ? '(com juros)' : '(à vista)'}
                                                     </option>
                                                 ))}
                                             </select>
