@@ -789,7 +789,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     // Opções de parcelamento para cartão — independente do PIX Parcelado
     const CARD_MIN_INSTALLMENT = 9.9;
     const CARD_FREE_INSTALLMENTS = 1;  // só 1x sem juros
-    // Acréscimo total por nº de parcelas (taxa da adquirente). 2-5x usam a taxa de 6x.
+    // Taxa da adquirente por nº de parcelas, repassada inteira ao cliente (vendedor recebe o preço cheio). 2-5x usam a taxa de 6x.
     const CARD_INTEREST_BY_N: Record<number, number> = {
         2: 0.1363, 3: 0.1363, 4: 0.1363, 5: 0.1363, 6: 0.1363,
         7: 0.1491, 8: 0.1617, 9: 0.1740, 10: 0.1860, 11: 0.1971, 12: 0.2095,
@@ -797,7 +797,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     };
     const calcInstallmentValue = (total: number, n: number): number => {
         if (n <= CARD_FREE_INSTALLMENTS) return total / n;
-        return total * (1 + (CARD_INTEREST_BY_N[n] ?? 0)) / n;
+        return total / (1 - (CARD_INTEREST_BY_N[n] ?? 0)) / n;
     };
     const cardInstallmentOptions: { n: number; val: number; hasInterest: boolean }[] = (() => {
         const opts: { n: number; val: number; hasInterest: boolean }[] = [];
