@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
+import { CARD_FEES_KEY, parseCardFees } from '@/lib/card-fees'
 import CheckoutForm from './CheckoutForm'
 import { Metadata } from 'next'
 import Script from 'next/script'
@@ -57,7 +58,8 @@ export default async function CheckoutPage({
                         'checkout_disable_cpf', 'checkout_store_name', 'checkout_disable_back',
                         'marketing_taboola_id', 'marketing_facebook_id', 'marketing_google_id',
                         'marketing_ga_id', 'marketing_google_conv_label',
-                        'checkout_disable_wa', 'checkout_support_email', 'checkout_support_phone'
+                        'checkout_disable_wa', 'checkout_support_email', 'checkout_support_phone',
+                        CARD_FEES_KEY
                     ]
                 }
             }
@@ -133,7 +135,8 @@ export default async function CheckoutPage({
         disableBack: settings.find((s: any) => s.key === 'checkout_disable_back')?.value === 'true',
         disableWa: settings.find((s: any) => s.key === 'checkout_disable_wa')?.value === 'true',
         supportEmail: settings.find((s: any) => s.key === 'checkout_support_email')?.value || '',
-        supportPhone: settings.find((s: any) => s.key === 'checkout_support_phone')?.value || ''
+        supportPhone: settings.find((s: any) => s.key === 'checkout_support_phone')?.value || '',
+        cardFees: parseCardFees(settings.find((s: any) => s.key === CARD_FEES_KEY)?.value)
     }
 
     // Pixels globais (fallback)

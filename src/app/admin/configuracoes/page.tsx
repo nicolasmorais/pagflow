@@ -1,8 +1,17 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Bell, Mail, Loader2, Info, Database } from 'lucide-react'
+import { Save, Bell, Mail, Loader2, Info, Database, CreditCard } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
+import { CARD_FEES_KEY, CARD_MAX_INSTALLMENTS, DEFAULT_CARD_FEES, parseCardFees, cardTotalWithFee, type CardFees } from '@/lib/card-fees'
+
+const INSTALLMENTS = Array.from({ length: CARD_MAX_INSTALLMENTS }, (_, i) => i + 1)
+const toInput = (fees: CardFees) => Object.fromEntries(INSTALLMENTS.map(n => [n, fees[n].toFixed(2).replace('.', ',')]))
+const parsePct = (s: string) => {
+    const v = Number(s.trim().replace(',', '.'))
+    return s.trim() !== '' && Number.isFinite(v) && v >= 0 && v < 100 ? v : null
+}
+const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default function ConfiguracoesPage() {
     const [loading, setLoading] = useState(true)
@@ -12,6 +21,11 @@ export default function ConfiguracoesPage() {
     const [adminEmail, setAdminEmail] = useState('')
     const [webhookUrl, setWebhookUrl] = useState('')
     const [notifySales, setNotifySales] = useState(false)
+    const [cardFees, setCardFees] = useState<Record<number, string>>(toInput(DEFAULT_CARD_FEES))
+    const [simPrice, setSimPrice] = useState('720')
+
+    const feeErrors = INSTALLMENTS.filter(n => parsePct(cardFees[n] ?? '') === null)
+    const simValue = Number(simPrice.replace(/\./g, '').replace(',', '.')) || 0
 
     useEffect(() => {
         async function loadSettings() {
@@ -19,9 +33,11 @@ export default function ConfiguracoesPage() {
                 const email = await getCustomization('notify_admin_email')
                 const webhook = await getCustomization('webhook_url')
                 const sales = await getCustomization('notify_sales_enabled')
+                const fees = await getCustomization(CARD_FEES_KEY)
                 if (email) setAdminEmail(email)
                 if (webhook) setWebhookUrl(webhook)
                 setNotifySales(sales === 'true')
+                setCardFees(toInput(parseCardFees(fees)))
             } catch (error) {
                 console.error("Failed to load settings:", error)
             } finally {
@@ -32,12 +48,17 @@ export default function ConfiguracoesPage() {
     }, [])
 
     const handleSave = async () => {
+        if (feeErrors.length > 0) {
+            setStatus({ type: 'error', message: `Taxa inválida em ${feeErrors.map(n => `${n}x`).join(', ')}. Use um número entre 0 e 99,99.` })
+            return
+        }
         setSaving(true)
         setStatus(null)
         try {
             await updateCustomization('notify_admin_email', adminEmail)
             await updateCustomization('webhook_url', webhookUrl)
             await updateCustomization('notify_sales_enabled', notifySales ? 'true' : 'false')
+            await updateCustomization(CARD_FEES_KEY, JSON.stringify(Object.fromEntries(INSTALLMENTS.map(n => [n, parsePct(cardFees[n])]))))
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
             setTimeout(() => setStatus(null), 3000)
@@ -187,6 +208,71 @@ export default function ConfiguracoesPage() {
                         </p>
                     </div>
                 </div>
+            </div>
+
+            <div style={{ padding: '24px', background: '#fff', borderRadius: '24px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)', marginTop: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
+                    <div style={{ padding: '8px', background: '#f0fdf4', borderRadius: '10px', color: '#10b981' }}>
+                        <CreditCard size={20} />
+                    </div>
+                    <div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>Taxas do cartão (Pagar.me)</h3>
+                        <p style={{ fontSize: '13px', color: '#64748b' }}>O cliente paga a taxa inteira. Você recebe o preço cheio em qualquer parcela.</p>
+                    </div>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px', padding: '14px 16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', marginBottom: '16px' }}>
+                    <label htmlFor="sim-price" style={{ fontSize: '14px', fontWeight: 600, color: '#334155' }}>Simular venda de R$</label>
+                    <input
+                        id="sim-price"
+                        inputMode="decimal"
+                        value={simPrice}
+                        onChange={(e) => setSimPrice(e.target.value)}
+                        style={{ width: '110px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '14px', background: '#fff', outline: 'none', fontVariantNumeric: 'tabular-nums' }}
+                    />
+                    <span style={{ fontSize: '13px', color: '#64748b' }}>
+                        Você recebe <strong style={{ color: '#1e293b' }}>{brl(simValue)}</strong>; a coluna à direita mostra quanto o cliente paga.
+                    </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', columnGap: '24px' }}>
+                    {INSTALLMENTS.map(n => {
+                        const pct = parsePct(cardFees[n] ?? '')
+                        return (
+                            <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                                <label htmlFor={`fee-${n}`} style={{ width: '64px', fontSize: '14px', fontWeight: 600, color: '#334155' }}>
+                                    {n === 1 ? 'À vista' : `${n}x`}
+                                </label>
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        id={`fee-${n}`}
+                                        inputMode="decimal"
+                                        value={cardFees[n] ?? ''}
+                                        aria-invalid={pct === null}
+                                        onChange={(e) => setCardFees(f => ({ ...f, [n]: e.target.value }))}
+                                        style={{
+                                            width: '84px', padding: '8px 26px 8px 10px', borderRadius: '8px', fontSize: '14px', outline: 'none',
+                                            textAlign: 'right', fontVariantNumeric: 'tabular-nums',
+                                            border: `1px solid ${pct === null ? '#fca5a5' : '#e2e8f0'}`, background: pct === null ? '#fef2f2' : '#fff'
+                                        }}
+                                    />
+                                    <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '13px', color: '#94a3b8', pointerEvents: 'none' }}>%</span>
+                                </div>
+                                <span style={{ marginLeft: 'auto', fontSize: '13px', color: '#64748b', fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                                    {pct === null ? '—' : brl(cardTotalWithFee(simValue, n, { [n]: pct }))}
+                                </span>
+                            </div>
+                        )
+                    })}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => setCardFees(toInput(DEFAULT_CARD_FEES))}
+                    style={{ marginTop: '14px', background: 'none', border: 'none', padding: 0, fontSize: '13px', fontWeight: 600, color: '#64748b', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                    Restaurar taxas padrão da Pagar.me
+                </button>
             </div>
 
             <div style={{ marginTop: '32px', display: 'flex', justifyContent: 'flex-end' }}>

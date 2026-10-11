@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { reportWebVitals } from '@/lib/web-vitals-reporter'
+import { CARD_MAX_INSTALLMENTS, DEFAULT_CARD_FEES, cardTotalWithFee, type CardFees } from '@/lib/card-fees'
 import PixParceladoSuccess from './PixParceladoSuccess'
 import PixPayment from './PixPayment'
 import './checkout.css'
@@ -788,17 +789,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
     // Opções de parcelamento para cartão — independente do PIX Parcelado
     const CARD_MIN_INSTALLMENT = 9.9;
-    // Taxa da Pagar.me por nº de parcelas, repassada inteira ao cliente (vendedor recebe o preço cheio), inclusive à vista.
-    const CARD_INTEREST_BY_N: Record<number, number> = {
-        1: 0.0419, 2: 0.0726, 3: 0.0940, 4: 0.1100, 5: 0.1233, 6: 0.1363,
-        7: 0.1491, 8: 0.1617, 9: 0.1740, 10: 0.1860, 11: 0.1971, 12: 0.2095,
-        13: 0.2104, 14: 0.2209, 15: 0.2284, 16: 0.2389, 17: 0.2494, 18: 0.2569,
-    };
+    // Taxa da Pagar.me (Admin → Configurações) repassada inteira ao cliente, inclusive à vista.
+    const cardFees: CardFees = customization?.cardFees ?? DEFAULT_CARD_FEES;
     const calcInstallmentValue = (total: number, n: number): number =>
-        total / (1 - (CARD_INTEREST_BY_N[n] ?? 0)) / n;
+        cardTotalWithFee(total, n, cardFees) / n;
     const cardInstallmentOptions: { n: number; val: number; hasInterest: boolean }[] = (() => {
         const opts: { n: number; val: number; hasInterest: boolean }[] = [];
-        for (let i = 1; i <= 18; i++) {
+        for (let i = 1; i <= CARD_MAX_INSTALLMENTS; i++) {
             const val = calcInstallmentValue(finalPrice, i);
             if (i === 1 || val >= CARD_MIN_INSTALLMENT) {
                 opts.push({ n: i, val, hasInterest: i > 1 });
