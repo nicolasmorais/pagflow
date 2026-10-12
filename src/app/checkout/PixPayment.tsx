@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import './PixPayment.css'
 
 interface Props {
     qrCode: string | null
