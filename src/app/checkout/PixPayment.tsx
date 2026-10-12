@@ -145,8 +145,8 @@ export default function PixPayment(props: Props) {
                 <p className="pq-eyebrow">Total a pagar</p>
                 <h1 className="pq-amount">{brl(amount)}</h1>
                 <p className="pq-lede">
-                    Seu pedido{orderId ? <> <strong>{shortId(orderId)}</strong></> : null} está reservado.
-                    A confirmação aparece nesta tela assim que o pagamento cair.
+                    Seu pedido{orderId ? <> <strong>{shortId(orderId)}</strong></> : null} já está em separação.
+                    Falta só o pagamento para enviarmos até você.
                 </p>
             </div>
 
@@ -155,6 +155,7 @@ export default function PixPayment(props: Props) {
                     <span>O código expira em</span>
                     <strong aria-live="off">{mmss(timeLeft)}</strong>
                 </div>
+                <p className="pq-timer-note">Se o tempo acabar, seu pedido é cancelado e o produto fica disponível para outra pessoa.</p>
                 <div className="pq-timer-bar"><div style={{ width: `${pct}%` }} /></div>
             </div>
 
@@ -202,6 +203,15 @@ export default function PixPayment(props: Props) {
             </div>
 
             <div className="pq-card">
+                <h2 className="pq-h2">O que acontece depois do pagamento</h2>
+                <ol className="pq-steps pq-steps-last">
+                    <li><span>1</span><p><strong>Você recebe um e-mail de confirmação</strong> em poucos minutos, assim que identificarmos o pagamento.</p></li>
+                    <li><span>2</span><p><strong>Seu pedido é enviado no mesmo dia</strong> para pagamentos feitos até as 15h.</p></li>
+                    <li><span>3</span><p><strong>Você acompanha a entrega</strong> pelo código de rastreio que enviamos por e-mail.</p></li>
+                </ol>
+            </div>
+
+            <div className="pq-card">
                 <dl className="pq-summary">
                     <div><dt>Produto</dt><dd>{productName}</dd></div>
                     <div><dt>Confirmação para</dt><dd>{email || '—'}</dd></div>
@@ -209,10 +219,16 @@ export default function PixPayment(props: Props) {
                 </dl>
             </div>
 
-            <p className="pq-foot">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
-                Pagamento pelo PIX oficial do Banco Central
-            </p>
+            <div className="pq-foot">
+                <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                    PIX oficial do Banco Central
+                </span>
+                <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+                    Seus dados protegidos
+                </span>
+            </div>
         </div>
     )
 }
