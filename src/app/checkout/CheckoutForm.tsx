@@ -1593,7 +1593,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             disabled={cardTokenizing || loading}
                                             style={{ marginBottom: 10, marginTop: 4 }}
                                         >
-                                            {cardTokenizing || loading ? 'Processando...' : `Pagar R$ ${(calcInstallmentValue(finalPrice, cardData.installments) * cardData.installments).toFixed(2).replace('.', ',')}`}
+                                            {cardTokenizing || loading ? 'Processando...' : 'Finalizar compra'}
                                         </button>
                                         <div className="cta-note">
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
