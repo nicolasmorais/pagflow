@@ -7,7 +7,7 @@ import PixParceladoSuccess from './PixParceladoSuccess'
 import PixPayment from './PixPayment'
 import './checkout.css'
 
-const PIX_TTL = 10 * 60;
+const PIX_TTL = 15 * 60;
 
 export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
     const [step, setStep] = useState(1);
@@ -1624,19 +1624,23 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
                                 {paymentMethod === 'pix' && (
                                     <div className="pix-box" style={{ padding: '18px 16px' }}>
-                                        {/* Info row */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, padding: '12px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="#16a34a" style={{ flexShrink: 0 }}><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/></svg>
-                                            <span style={{ fontSize: 13, color: '#166534', lineHeight: 1.5 }}>
-                                                Confirmação em <strong>poucos minutos</strong> — pague pelo app do seu banco.
-                                            </span>
+                                        <div className="px-info">
+                                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2z" /></svg>
+                                            <div>
+                                                <p className="px-info-title">PIX confirmado em menos de 2 minutos</p>
+                                                <p className="px-info-sub">Seu pedido entra na fila de envio na hora</p>
+                                            </div>
                                         </div>
+                                        <p className="px-meta">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+                                            Código válido por {PIX_TTL / 60} minutos · Estoque reservado
+                                        </p>
                                         <button className="cta-btn" onClick={() => finalizar()} disabled={loading}>
-                                            {loading ? 'Processando...' : 'GERAR PIX'}
+                                            {loading ? 'Processando...' : 'FINALIZAR COM PIX →'}
                                         </button>
                                         <div className="cta-note" style={{ marginTop: 12 }}>
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
-                                            Pagamento processado com segurança via Woovi
+                                            Pagamento processado com segurança via Pagar.me
                                         </div>
                                     </div>
                                 )}
