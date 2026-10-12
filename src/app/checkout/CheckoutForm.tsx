@@ -1464,10 +1464,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 {/* CARTÃO DE CRÉDITO */}
                                 <div className={`pay-opt ${paymentMethod === 'card' ? 'selected' : ''}`} onClick={() => setPaymentMethod('card')} style={{ marginBottom: 4 }}>
                                     <div className="prad" style={{ borderColor: paymentMethod === 'card' ? 'var(--green)' : undefined, background: paymentMethod === 'card' ? 'var(--green)' : undefined }}></div>
-                                    <div className="pay-icon" style={{ color: '#6366f1' }}>
-                                        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-                                            <path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/>
-                                        </svg>
+                                    <div className="pay-icon">
+                                        <img src="/icons/card.png" alt="" width={24} height={24} style={{ display: 'block' }} />
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <div className="pay-name" style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
