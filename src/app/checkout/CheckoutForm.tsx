@@ -415,18 +415,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         return clean.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     };
 
-    const formatDate = (v: string) => {
-        let d = v.replace(/\D/g, '').slice(0, 8);
-        if (d.length > 4) return d.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
-        if (d.length > 2) return d.replace(/(\d{2})(\d{1,2})/, '$1/$2');
-        return d;
-    };
-    const parseDateToISO = (v: string) => {
-        const parts = v.replace(/\D/g, '');
-        if (parts.length !== 8) return undefined;
-        return `${parts.slice(4)}-${parts.slice(2, 4)}-${parts.slice(0, 2)}`;
-    };
-
     const formatTel = (v: string) => {
         let clean = v.replace(/\D/g, '').slice(0, 11);
         if (clean.length <= 10) {
@@ -788,10 +776,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (cardData.cvv.length < 3) errs.cvv = 'Digite os números do verso';
         const cleanCpf = dados.cpf.replace(/\D/g, '');
         if (!cleanCpf || cleanCpf.length !== 11) errs.cpf = 'CPF obrigatório para cartão';
-        const nasc = parseDateToISO(dados.nascimento);
-        const nascDate = nasc ? new Date(nasc + 'T12:00:00') : null;
-        const age = nascDate ? (Date.now() - nascDate.getTime()) / (365.25 * 24 * 3600 * 1000) : NaN;
-        if (!nascDate || isNaN(age) || age < 16 || age > 110 || nascDate.toISOString().slice(0, 10) !== nasc) errs.nascimento = 'Data de nascimento inválida';
         if (!dados.email.trim()) errs.email = 'E-mail obrigatório para cartão';
         if (endereco.cep.replace(/\D/g, '').length !== 8) errs.cep = 'CEP obrigatório';
         if (!endereco.rua.trim()) errs.rua = 'Rua obrigatória';
@@ -1496,30 +1480,61 @@ export default function CheckoutForm({ product, customization, shippingRules = [
 
                                 {paymentMethod === 'card' && (
                                     <div className="cf">
-                                        <div className={`cf-field ${cardErrors.number ? 'has-error' : ''}`}>
-                                            <label className="cf-label" htmlFor="cf-number">Número do cartão</label>
-                                            <input
-                                                id="cf-number"
-                                                className="cf-input cf-input-num"
-                                                type="tel"
-                                                inputMode="numeric"
-                                                autoComplete="cc-number"
-                                                placeholder="0000 0000 0000 0000"
-                                                maxLength={19}
-                                                value={cardData.number}
-                                                onChange={e => setCardData(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
-                                                aria-invalid={!!cardErrors.number}
-                                            />
-                                            {cardErrors.number && <p className="cf-error" role="alert">{cardErrors.number}</p>}
+                                        <div className="cf-field">
+                                            <label className="cf-label" htmlFor="cf-number">Dados do cartão</label>
+                                            <div className="cf-group">
+                                                <input
+                                                    id="cf-number"
+                                                    className="cf-input cf-g-top cf-input-num"
+                                                    type="tel"
+                                                    inputMode="numeric"
+                                                    autoComplete="cc-number"
+                                                    placeholder="Número do cartão"
+                                                    maxLength={19}
+                                                    value={cardData.number}
+                                                    onChange={e => setCardData(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
+                                                    aria-invalid={!!cardErrors.number}
+                                                />
+                                                <div className="cf-g-row">
+                                                    <input
+                                                        className="cf-input cf-g-left"
+                                                        type="tel"
+                                                        inputMode="numeric"
+                                                        autoComplete="cc-exp"
+                                                        placeholder="Validade MM/AA"
+                                                        aria-label="Validade (mês e ano)"
+                                                        maxLength={5}
+                                                        value={cardData.exp}
+                                                        onChange={e => setCardData(p => ({ ...p, exp: formatExpiry(e.target.value) }))}
+                                                        aria-invalid={!!cardErrors.exp}
+                                                    />
+                                                    <input
+                                                        className="cf-input cf-g-right"
+                                                        type="tel"
+                                                        inputMode="numeric"
+                                                        autoComplete="cc-csc"
+                                                        placeholder="CVV"
+                                                        aria-label="Código de segurança (3 números no verso)"
+                                                        maxLength={4}
+                                                        value={cardData.cvv}
+                                                        onChange={e => setCardData(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
+                                                        aria-invalid={!!cardErrors.cvv}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {(cardErrors.number || cardErrors.exp || cardErrors.cvv) && (
+                                                <p className="cf-error" role="alert">{[cardErrors.number, cardErrors.exp, cardErrors.cvv].filter(Boolean).join(' · ')}</p>
+                                            )}
                                         </div>
 
-                                        <div className={`cf-field ${cardErrors.name ? 'has-error' : ''}`}>
-                                            <label className="cf-label" htmlFor="cf-name">Nome impresso no cartão</label>
+                                        <div className="cf-field">
+                                            <label className="cf-label" htmlFor="cf-name">Nome no cartão</label>
                                             <input
                                                 id="cf-name"
                                                 className="cf-input"
                                                 type="text"
                                                 autoComplete="cc-name"
+                                                placeholder="Como está impresso no cartão"
                                                 value={cardData.name}
                                                 onChange={e => setCardData(p => ({ ...p, name: e.target.value.toUpperCase() }))}
                                                 aria-invalid={!!cardErrors.name}
@@ -1527,47 +1542,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             {cardErrors.name && <p className="cf-error" role="alert">{cardErrors.name}</p>}
                                         </div>
 
-                                        <div className="cf-row">
-                                            <div className={`cf-field ${cardErrors.exp ? 'has-error' : ''}`}>
-                                                <label className="cf-label" htmlFor="cf-exp">Validade</label>
-                                                <input
-                                                    id="cf-exp"
-                                                    className="cf-input"
-                                                    type="tel"
-                                                    inputMode="numeric"
-                                                    autoComplete="cc-exp"
-                                                    placeholder="MM/AA"
-                                                    maxLength={5}
-                                                    value={cardData.exp}
-                                                    onChange={e => setCardData(p => ({ ...p, exp: formatExpiry(e.target.value) }))}
-                                                    aria-invalid={!!cardErrors.exp}
-                                                    aria-describedby="cf-exp-hint"
-                                                />
-                                                <p className="cf-hint" id="cf-exp-hint">Mês e ano</p>
-                                                {cardErrors.exp && <p className="cf-error" role="alert">{cardErrors.exp}</p>}
-                                            </div>
-                                            <div className={`cf-field ${cardErrors.cvv ? 'has-error' : ''}`}>
-                                                <label className="cf-label" htmlFor="cf-cvv">Código de segurança</label>
-                                                <input
-                                                    id="cf-cvv"
-                                                    className="cf-input"
-                                                    type="tel"
-                                                    inputMode="numeric"
-                                                    autoComplete="cc-csc"
-                                                    placeholder="123"
-                                                    maxLength={4}
-                                                    value={cardData.cvv}
-                                                    onChange={e => setCardData(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
-                                                    aria-invalid={!!cardErrors.cvv}
-                                                    aria-describedby="cf-cvv-hint"
-                                                />
-                                                <p className="cf-hint" id="cf-cvv-hint">3 números no verso</p>
-                                                {cardErrors.cvv && <p className="cf-error" role="alert">{cardErrors.cvv}</p>}
-                                            </div>
-                                        </div>
-
-                                        <div className={`cf-field ${cardErrors.cpf ? 'has-error' : ''}`}>
-                                            <label className="cf-label" htmlFor="cf-cpf">CPF do titular do cartão</label>
+                                        <div className="cf-field">
+                                            <label className="cf-label" htmlFor="cf-cpf">CPF do titular</label>
                                             <input
                                                 id="cf-cpf"
                                                 className="cf-input"
@@ -1580,23 +1556,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 aria-invalid={!!cardErrors.cpf}
                                             />
                                             {cardErrors.cpf && <p className="cf-error" role="alert">{cardErrors.cpf}</p>}
-                                        </div>
-
-                                        <div className={`cf-field ${cardErrors.nascimento ? 'has-error' : ''}`}>
-                                            <label className="cf-label" htmlFor="cf-birth">Data de nascimento do titular</label>
-                                            <input
-                                                id="cf-birth"
-                                                className="cf-input"
-                                                type="text"
-                                                inputMode="numeric"
-                                                autoComplete="bday"
-                                                placeholder="DD/MM/AAAA"
-                                                maxLength={10}
-                                                value={dados.nascimento}
-                                                onChange={e => { handleMaskDados('nascimento', e.target.value, formatDate); if (cardErrors.nascimento) setCardErrors(p => { const n = { ...p }; delete n.nascimento; return n; }); }}
-                                                aria-invalid={!!cardErrors.nascimento}
-                                            />
-                                            {cardErrors.nascimento && <p className="cf-error" role="alert">{cardErrors.nascimento}</p>}
                                         </div>
 
                                         {(() => {

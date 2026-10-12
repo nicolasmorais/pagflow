@@ -258,7 +258,6 @@ export async function POST(req: NextRequest) {
             if (!orderData.nome?.trim() && !orderData.fullName?.trim()) missing.push('nome');
             if (!orderData.email) missing.push('e-mail');
             if (cleanPhone.length < 10) missing.push('telefone');
-            if (!birthdate || isNaN(Date.parse(birthdate))) missing.push('data de nascimento');
             if (cepDigits.length !== 8) missing.push('CEP');
             if (!rua) missing.push('rua');
             if (!numero) missing.push('número');
