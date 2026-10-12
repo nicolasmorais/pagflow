@@ -1631,13 +1631,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 Confirmação em <strong>poucos minutos</strong> — pague pelo app do seu banco.
                                             </span>
                                         </div>
-                                        {/* Warning */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '11px 14px', background: '#fff7ed', borderRadius: 8, border: '1px solid #fed7aa' }}>
-                                            <span style={{ fontSize: 17, flexShrink: 0 }}>⚠️</span>
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: '#c2410c', lineHeight: 1.5 }}>
-                                                Não pagar o PIX pode negativar seu nome no SPC/Serasa.
-                                            </span>
-                                        </div>
                                         <button className="cta-btn" onClick={() => finalizar()} disabled={loading}>
                                             {loading ? 'Processando...' : 'GERAR PIX'}
                                         </button>
