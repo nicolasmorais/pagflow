@@ -775,7 +775,6 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         }
     }, [maxInstallments]);
 
-    const cardInputStyle = (hasError: boolean): React.CSSProperties => ({ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${hasError ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' });
 
     // Tokeniza cartão no Pagar.me e chama finalizar
     const finalizarCartao = async () => {
@@ -785,8 +784,8 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (!cardData.name.trim()) errs.name = 'Nome no cartão obrigatório';
         const expParts = cardData.exp.split('/');
         if (expParts.length !== 2 || expParts[0].length !== 2 || expParts[1].length !== 2)
-            errs.exp = 'Validade inválida (MM/AA)';
-        if (cardData.cvv.length < 3) errs.cvv = 'CVV inválido';
+            errs.exp = 'Validade inválida';
+        if (cardData.cvv.length < 3) errs.cvv = 'Digite os números do verso';
         const cleanCpf = dados.cpf.replace(/\D/g, '');
         if (!cleanCpf || cleanCpf.length !== 11) errs.cpf = 'CPF obrigatório para cartão';
         const nasc = parseDateToISO(dados.nascimento);
@@ -1496,100 +1495,123 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                 </div>
 
                                 {paymentMethod === 'card' && (
-                                    <div style={{ background: '#fafafa', border: '1px solid #e5e7eb', borderRadius: 8, padding: '14px 14px 10px', marginBottom: 8 }}>
-                                        {/* Número do cartão */}
-                                        <div style={{ marginBottom: 8 }}>
+                                    <div className="cf">
+                                        <div className={`cf-field ${cardErrors.number ? 'has-error' : ''}`}>
+                                            <label className="cf-label" htmlFor="cf-number">Número do cartão</label>
                                             <input
+                                                id="cf-number"
+                                                className="cf-input cf-input-num"
                                                 type="tel"
                                                 inputMode="numeric"
-                                                placeholder="Número do cartão"
+                                                autoComplete="cc-number"
+                                                placeholder="0000 0000 0000 0000"
                                                 maxLength={19}
                                                 value={cardData.number}
                                                 onChange={e => setCardData(p => ({ ...p, number: formatCardNumber(e.target.value) }))}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.number ? '#ef4444' : '#e5e7eb'}`, fontSize: 15, letterSpacing: '0.1em', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                                                aria-invalid={!!cardErrors.number}
                                             />
-                                            {cardErrors.number && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.number}</div>}
+                                            {cardErrors.number && <p className="cf-error" role="alert">{cardErrors.number}</p>}
                                         </div>
 
-                                        {/* Nome no cartão */}
-                                        <div style={{ marginBottom: 8 }}>
+                                        <div className={`cf-field ${cardErrors.name ? 'has-error' : ''}`}>
+                                            <label className="cf-label" htmlFor="cf-name">Nome impresso no cartão</label>
                                             <input
+                                                id="cf-name"
+                                                className="cf-input"
                                                 type="text"
-                                                placeholder="Nome no cartão"
+                                                autoComplete="cc-name"
                                                 value={cardData.name}
                                                 onChange={e => setCardData(p => ({ ...p, name: e.target.value.toUpperCase() }))}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.name ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                                                aria-invalid={!!cardErrors.name}
                                             />
-                                            {cardErrors.name && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.name}</div>}
+                                            {cardErrors.name && <p className="cf-error" role="alert">{cardErrors.name}</p>}
                                         </div>
 
-                                        {/* Validade + CVV + CPF */}
-                                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                                            <div style={{ flex: 1 }}>
+                                        <div className="cf-row">
+                                            <div className={`cf-field ${cardErrors.exp ? 'has-error' : ''}`}>
+                                                <label className="cf-label" htmlFor="cf-exp">Validade</label>
                                                 <input
+                                                    id="cf-exp"
+                                                    className="cf-input"
                                                     type="tel"
                                                     inputMode="numeric"
-                                                    placeholder="Validade MM/AA"
+                                                    autoComplete="cc-exp"
+                                                    placeholder="MM/AA"
                                                     maxLength={5}
                                                     value={cardData.exp}
                                                     onChange={e => setCardData(p => ({ ...p, exp: formatExpiry(e.target.value) }))}
-                                                    style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.exp ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                                                    aria-invalid={!!cardErrors.exp}
+                                                    aria-describedby="cf-exp-hint"
                                                 />
-                                                {cardErrors.exp && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.exp}</div>}
+                                                <p className="cf-hint" id="cf-exp-hint">Mês e ano</p>
+                                                {cardErrors.exp && <p className="cf-error" role="alert">{cardErrors.exp}</p>}
                                             </div>
-                                            <div style={{ flex: 1 }}>
+                                            <div className={`cf-field ${cardErrors.cvv ? 'has-error' : ''}`}>
+                                                <label className="cf-label" htmlFor="cf-cvv">Código de segurança</label>
                                                 <input
+                                                    id="cf-cvv"
+                                                    className="cf-input"
                                                     type="tel"
                                                     inputMode="numeric"
-                                                    placeholder="CVV"
+                                                    autoComplete="cc-csc"
+                                                    placeholder="123"
                                                     maxLength={4}
                                                     value={cardData.cvv}
                                                     onChange={e => setCardData(p => ({ ...p, cvv: e.target.value.replace(/\D/g, '') }))}
-                                                    style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.cvv ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                                                    aria-invalid={!!cardErrors.cvv}
+                                                    aria-describedby="cf-cvv-hint"
                                                 />
-                                                {cardErrors.cvv && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.cvv}</div>}
+                                                <p className="cf-hint" id="cf-cvv-hint">3 números no verso</p>
+                                                {cardErrors.cvv && <p className="cf-error" role="alert">{cardErrors.cvv}</p>}
                                             </div>
                                         </div>
 
-                                        {/* CPF */}
-                                        <div style={{ marginBottom: 8 }}>
+                                        <div className={`cf-field ${cardErrors.cpf ? 'has-error' : ''}`}>
+                                            <label className="cf-label" htmlFor="cf-cpf">CPF do titular do cartão</label>
                                             <input
+                                                id="cf-cpf"
+                                                className="cf-input"
                                                 type="text"
-                                                placeholder="CPF do titular"
+                                                inputMode="numeric"
+                                                placeholder="000.000.000-00"
                                                 maxLength={14}
                                                 value={dados.cpf}
                                                 onChange={e => handleMaskDados('cpf', e.target.value, formatCPF)}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: `1.5px solid ${cardErrors.cpf ? '#ef4444' : '#e5e7eb'}`, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#fff' }}
+                                                aria-invalid={!!cardErrors.cpf}
                                             />
-                                            {cardErrors.cpf && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.cpf}</div>}
+                                            {cardErrors.cpf && <p className="cf-error" role="alert">{cardErrors.cpf}</p>}
                                         </div>
 
-                                        {/* Nascimento */}
-                                        <div style={{ marginBottom: 8 }}>
+                                        <div className={`cf-field ${cardErrors.nascimento ? 'has-error' : ''}`}>
+                                            <label className="cf-label" htmlFor="cf-birth">Data de nascimento do titular</label>
                                             <input
+                                                id="cf-birth"
+                                                className="cf-input"
                                                 type="text"
                                                 inputMode="numeric"
-                                                placeholder="Data de nascimento (DD/MM/AAAA)"
+                                                autoComplete="bday"
+                                                placeholder="DD/MM/AAAA"
                                                 maxLength={10}
                                                 value={dados.nascimento}
                                                 onChange={e => { handleMaskDados('nascimento', e.target.value, formatDate); if (cardErrors.nascimento) setCardErrors(p => { const n = { ...p }; delete n.nascimento; return n; }); }}
-                                                style={cardInputStyle(!!cardErrors.nascimento)}
+                                                aria-invalid={!!cardErrors.nascimento}
                                             />
-                                            {cardErrors.nascimento && <div style={{ fontSize: 11, color: '#ef4444', marginTop: 3 }}>⚠️ {cardErrors.nascimento}</div>}
+                                            {cardErrors.nascimento && <p className="cf-error" role="alert">{cardErrors.nascimento}</p>}
                                         </div>
 
                                         {(() => {
                                             const addrErr = ['email', 'cep', 'rua', 'numero', 'bairro', 'cidade', 'estado'].map(k => cardErrors[k]).filter(Boolean);
                                             if (!addrErr.length) return null;
-                                            return <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 8 }}>⚠️ {addrErr.join(' · ')} — volte à etapa de entrega para completar.</div>;
+                                            return <p className="cf-error cf-error-block" role="alert">{addrErr.join(' · ')}. Volte à etapa de entrega para completar.</p>;
                                         })()}
 
-                                        {/* Parcelas */}
-                                        <div style={{ marginBottom: 12 }}>
+                                        <div className="cf-field">
+                                            <label className="cf-label" htmlFor="cf-installments">Parcelas</label>
                                             <select
+                                                id="cf-installments"
+                                                className="cf-input cf-select"
                                                 value={cardData.installments}
                                                 onChange={e => setCardData(p => ({ ...p, installments: Number(e.target.value) }))}
-                                                style={{ width: '100%', padding: '11px 12px', borderRadius: 6, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', background: '#fff', boxSizing: 'border-box' }}
                                             >
                                                 {cardInstallmentOptions.map(({ n, val, hasInterest }) => (
                                                     <option key={n} value={n}>
@@ -1603,9 +1625,9 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                             className="cta-btn"
                                             onClick={finalizarCartao}
                                             disabled={cardTokenizing || loading}
-                                            style={{ marginBottom: 10 }}
+                                            style={{ marginBottom: 10, marginTop: 4 }}
                                         >
-                                            {cardTokenizing || loading ? 'Processando...' : `Pagar R$ ${finalPrice.toFixed(2).replace('.', ',')}`}
+                                            {cardTokenizing || loading ? 'Processando...' : `Pagar R$ ${(calcInstallmentValue(finalPrice, cardData.installments) * cardData.installments).toFixed(2).replace('.', ',')}`}
                                         </button>
                                         <div className="cta-note">
                                             <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 1L3 4.5v5C3 13.6 6 17.3 10 18.5c4-1.2 7-4.9 7-9V4.5L10 1z"/></svg>
@@ -1622,11 +1644,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                     <div style={{flex:1}}>
                                         <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>
-                                            PIX à vista
-                                            <span className="pay-badge g">15% de desconto</span>
+                                            Pix
+                                            {pixDiscountVal > 0 && <span className="pay-badge g">{Math.round(pixDiscountVal * 100)}% de desconto</span>}
                                         </div>
                                         <div className="pay-desc">
-                                            R$ {finalPrice.toFixed(2).replace('.', ',')} — pagamento único <span style={{ color: '#16a34a', fontWeight: 700 }}>• 15% de desconto</span>
+                                            R$ {(subtotalBeforeDiscount * (1 - pixDiscountVal) + shipping.price).toFixed(2).replace('.', ',')} — pagamento único
                                         </div>
                                     </div>
                                 </div>
