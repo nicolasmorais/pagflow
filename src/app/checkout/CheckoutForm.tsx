@@ -165,7 +165,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         gtag('event', eventName, params);
     };
 
-    const pixDiscountVal = Number(customization?.pixDiscount || 0) / 100; // dynamic discount
+    const pixDiscountVal = Math.max(0, Number(customization?.pixDiscount || 0)) / 100; // desconto nunca negativo
     const basePrice = product?.price || 9;
 
     // Preço por parcela = pixTotal (preço PIX Parcelado) ÷ n
@@ -413,6 +413,18 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const formatCPF = (v: string) => {
         let clean = v.replace(/\D/g, '');
         return clean.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    };
+
+    const formatDate = (v: string) => {
+        let d = v.replace(/\D/g, '').slice(0, 8);
+        if (d.length > 4) return d.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+        if (d.length > 2) return d.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+        return d;
+    };
+    const parseDateToISO = (v: string) => {
+        const parts = v.replace(/\D/g, '');
+        if (parts.length !== 8) return undefined;
+        return `${parts.slice(4)}-${parts.slice(2, 4)}-${parts.slice(0, 2)}`;
     };
 
     const formatTel = (v: string) => {
@@ -776,6 +788,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         if (cardData.cvv.length < 3) errs.cvv = 'Digite os números do verso';
         const cleanCpf = dados.cpf.replace(/\D/g, '');
         if (!cleanCpf || cleanCpf.length !== 11) errs.cpf = 'CPF obrigatório para cartão';
+        const nasc = parseDateToISO(dados.nascimento);
+        const nascDate = nasc ? new Date(nasc + 'T12:00:00') : null;
+        const age = nascDate ? (Date.now() - nascDate.getTime()) / (365.25 * 24 * 3600 * 1000) : NaN;
+        if (!nascDate || isNaN(age) || age < 16 || age > 110 || nascDate.toISOString().slice(0, 10) !== nasc) errs.nascimento = 'Data de nascimento inválida';
         if (!dados.email.trim()) errs.email = 'E-mail obrigatório para cartão';
         if (endereco.cep.replace(/\D/g, '').length !== 8) errs.cep = 'CEP obrigatório';
         if (!endereco.rua.trim()) errs.rua = 'Rua obrigatória';
@@ -1565,6 +1581,23 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                                 aria-invalid={!!cardErrors.cpf}
                                             />
                                             {cardErrors.cpf && <p className="cf-error" role="alert">{cardErrors.cpf}</p>}
+                                        </div>
+
+                                        <div className="cf-field">
+                                            <label className="cf-label" htmlFor="cf-birth">Data de nascimento do titular</label>
+                                            <input
+                                                id="cf-birth"
+                                                className="cf-input"
+                                                type="text"
+                                                inputMode="numeric"
+                                                autoComplete="bday"
+                                                placeholder="DD/MM/AAAA"
+                                                maxLength={10}
+                                                value={dados.nascimento}
+                                                onChange={e => { handleMaskDados('nascimento', e.target.value, formatDate); if (cardErrors.nascimento) setCardErrors(p => { const n = { ...p }; delete n.nascimento; return n; }); }}
+                                                aria-invalid={!!cardErrors.nascimento}
+                                            />
+                                            {cardErrors.nascimento && <p className="cf-error" role="alert">{cardErrors.nascimento}</p>}
                                         </div>
 
                                         {(() => {

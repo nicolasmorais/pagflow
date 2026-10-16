@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
         // ── Recalcular preço no servidor (ignora preço enviado pelo cliente) ──
         const serverBasePrice = Number(product?.price) || 0;
-        const pixDiscountPct = Number(pixDiscountSetting?.value || 0) / 100;
+        const pixDiscountPct = Math.max(0, Number(pixDiscountSetting?.value || 0)) / 100;
         const serverShippingPrice = Number(orderData.shippingPrice) || 0;
         const subtotalBeforeDiscount = serverBasePrice + bumpsTotal;
         const serverPrice = method === 'pix'

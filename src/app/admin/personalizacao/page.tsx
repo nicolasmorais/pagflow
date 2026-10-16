@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone, TrendingUp, Store, Type, Percent, Shield, ArrowLeft, MessageCircle, Webhook, Eye } from 'lucide-react'
+import { Save, Image as ImageIcon, FileText, CheckCircle2, AlertCircle, Loader2, Palette, Megaphone, TrendingUp, Store, Type, Percent, Shield, ArrowLeft, MessageCircle, Webhook, Eye, LayoutTemplate, ExternalLink } from 'lucide-react'
 import { updateCustomization, getCustomization } from '@/app/actions'
 
 export default function PersonalizacaoPage() {
@@ -21,6 +21,7 @@ export default function PersonalizacaoPage() {
     const [disableBack, setDisableBack] = useState(false)
     const [disableWa, setDisableWa] = useState(false)
     const [webhookUrl, setWebhookUrl] = useState('')
+    const [checkoutVersion, setCheckoutVersion] = useState<'v1' | 'v2'>('v1')
 
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
@@ -71,6 +72,9 @@ export default function PersonalizacaoPage() {
                 setDisableBack(dBack === 'true')
                 setDisableWa(dWa === 'true')
 
+                const ver = await getCustomization('checkout_version')
+                setCheckoutVersion(ver === 'v2' ? 'v2' : 'v1')
+
                 const wUrl = await getCustomization('webhook_url')
                 setWebhookUrl(wUrl || '')
             } catch (error) {
@@ -106,6 +110,7 @@ export default function PersonalizacaoPage() {
             await updateCustomization('checkout_disable_back', disableBack ? 'true' : 'false')
             await updateCustomization('checkout_disable_wa', disableWa ? 'true' : 'false')
             await updateCustomization('webhook_url', webhookUrl)
+            await updateCustomization('checkout_version', checkoutVersion)
 
             setStatus({ type: 'success', message: 'Configurações salvas com sucesso!' })
             setTimeout(() => setStatus(null), 3000)
@@ -137,6 +142,54 @@ export default function PersonalizacaoPage() {
             </header>
 
             <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                {/* ── Versão do checkout ── */}
+                <Section icon={LayoutTemplate} title="Versão do Checkout" description="Escolha qual layout os clientes veem. A outra versão continua disponível.">
+                    <div role="radiogroup" aria-label="Versão do checkout" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                        {([
+                            { v: 'v1', title: 'Versão 1 — Clássica', desc: 'Checkout atual em 3 telas, com selos e barra de progresso.' },
+                            { v: 'v2', title: 'Versão 2 — Nova', desc: 'Página única com etapas, resumo com total sempre visível e endereço manual quando o CEP falha.' },
+                        ] as const).map(opt => {
+                            const on = checkoutVersion === opt.v
+                            return (
+                                <div key={opt.v} style={{
+                                    border: `1.5px solid ${on ? '#6366f1' : '#e2e8f0'}`,
+                                    background: on ? '#f5f7ff' : '#fff',
+                                    borderRadius: '14px', padding: '14px 16px',
+                                    display: 'flex', flexDirection: 'column', gap: '10px',
+                                }}>
+                                    <button
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={on}
+                                        onClick={() => setCheckoutVersion(opt.v)}
+                                        style={{ all: 'unset', cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'flex-start' }}
+                                    >
+                                        <span style={{
+                                            flex: 'none', width: '18px', height: '18px', borderRadius: '50%', marginTop: '2px',
+                                            border: on ? '5px solid #6366f1' : '2px solid #cbd5e1', boxSizing: 'border-box', background: '#fff',
+                                        }} />
+                                        <span>
+                                            <span style={{ display: 'block', fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{opt.title}</span>
+                                            <span style={{ display: 'block', fontSize: '12px', color: '#64748b', marginTop: '3px', lineHeight: 1.5 }}>{opt.desc}</span>
+                                        </span>
+                                    </button>
+                                    <a
+                                        href={`/checkout?v=${opt.v === 'v2' ? '2' : '1'}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#6366f1', textDecoration: 'none', marginLeft: '28px' }}
+                                    >
+                                        Visualizar <ExternalLink size={12} />
+                                    </a>
+                                </div>
+                            )
+                        })}
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, fontWeight: 500 }}>
+                        Dica: adicione <code>&amp;v=2</code> (ou <code>&amp;v=1</code>) ao link de qualquer produto para testar uma versão sem trocar para todos.
+                    </p>
+                </Section>
 
                 {/* ── Marca ── */}
                 <Section icon={Store} title="Marca" description="Nome e logo exibidos no checkout.">
@@ -239,6 +292,8 @@ export default function PersonalizacaoPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <input
                                     type="number"
+                                    min="0"
+                                    max="100"
                                     value={pixDiscount}
                                     onChange={(e) => setPixDiscount(e.target.value)}
                                     placeholder="0"
