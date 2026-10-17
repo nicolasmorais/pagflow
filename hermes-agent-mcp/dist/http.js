@@ -1,6 +1,9 @@
 #!/usr/bin/env node
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { createServer } from './server.js';
 import { prisma } from './prisma.js';
 const app = express();
 app.use(express.json());
@@ -17,6 +20,44 @@ function auth(req, res, next) {
 // ─── Health (sem auth) ───────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', name: 'hermes-pagflow', version: '2.0.0' });
+});
+// ─── MCP over Streamable HTTP ────────────────────────────────────────────────
+const mcpSessions = new Map();
+app.post('/mcp', auth, async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'];
+    let transport;
+    if (sessionId && mcpSessions.has(sessionId)) {
+        transport = mcpSessions.get(sessionId);
+    }
+    else {
+        let t;
+        t = new StreamableHTTPServerTransport({
+            sessionIdGenerator: () => randomUUID(),
+            onsessioninitialized: (id) => { mcpSessions.set(id, t); },
+        });
+        transport = t;
+        const server = createServer();
+        await server.connect(transport);
+    }
+    await transport.handleRequest(req, res, req.body);
+});
+app.get('/mcp', auth, async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'];
+    const transport = mcpSessions.get(sessionId);
+    if (!transport) {
+        res.status(404).json({ error: 'Session not found' });
+        return;
+    }
+    await transport.handleRequest(req, res);
+});
+app.delete('/mcp', auth, async (req, res) => {
+    const sessionId = req.headers['mcp-session-id'];
+    const transport = mcpSessions.get(sessionId);
+    if (transport) {
+        await transport.close();
+        mcpSessions.delete(sessionId);
+    }
+    res.status(200).end();
 });
 app.use('/api', auth);
 // ─── Helpers ─────────────────────────────────────────────────────────────────
