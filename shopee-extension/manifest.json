@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "PagFlow → Shopee",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Adiciona e exclui endereços de pedidos do PagFlow na Shopee",
   "permissions": ["storage", "tabs", "activeTab"],
   "host_permissions": [
     "https://shopee.com.br/*",
     "https://mcp.elabela.store/*",
+    "https://seguro.elabela.store/*",
     "https://pay.elabela.store/*"
   ],
   "action": {

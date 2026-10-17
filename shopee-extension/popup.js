@@ -1,4 +1,4 @@
-const DEFAULT_PAGFLOW_URL = 'https://pay.elabela.store'
+const DEFAULT_PAGFLOW_URL = 'https://seguro.elabela.store'
 const DEFAULT_API_URL = 'https://mcp.elabela.store'
 const DEFAULT_API_KEY = 'hermes-pagflow-key'
 
