@@ -81,7 +81,7 @@ function renderOrders(orders) {
   const done = orders.filter(o => processedIds.has(o.id))
 
   const total = orders.length
-  const pendingCount = pending.length
+  const pendingCount = pending.filter(hasAddress).length
   statusEl.innerHTML = `<strong>${pendingCount}</strong> pendente${pendingCount !== 1 ? 's' : ''} · ${total} total`
 
   if (orders.length === 0) {
