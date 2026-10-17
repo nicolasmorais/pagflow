@@ -27,7 +27,18 @@ async function loadConfig() {
 // Mesmo endpoint das extensões Copiador/Rastreio: usa o cookie de login do admin
 async function fetchOrders() {
   const url = `${cfg.pagflow}/api/admin/extension-orders?status=processando`
-  const res = await fetch(url, { credentials: 'include' })
+  // Falha de rede (ex.: PagFlow reiniciando num deploy): tenta de novo antes de desistir
+  let res
+  for (let attempt = 1; ; attempt++) {
+    try {
+      res = await fetch(url, { credentials: 'include' })
+      if (res.status < 500 || attempt === 4) break
+    } catch (e) {
+      if (attempt === 4) throw new Error(`Não consegui conectar ao PagFlow (${cfg.pagflow}). Ele pode estar reiniciando: espere 1 minuto e abra a extensão de novo.`)
+    }
+    document.getElementById('status-text').textContent = `PagFlow não respondeu, tentando de novo (${attempt}/3)...`
+    await new Promise(r => setTimeout(r, 3000))
+  }
   if (res.status === 401) {
     throw Object.assign(new Error('Login necessário'), { needsLogin: true })
   }
