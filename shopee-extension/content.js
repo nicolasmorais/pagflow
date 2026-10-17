@@ -40,7 +40,7 @@ async function fillAddressForm(order) {
   const nomeComQty = `${cliente.nome || ''} xx ${qty}`.trim()
 
   if (!addr.cep || !addr.numero) {
-    throw new Error('Pedido sem endereço completo vindo da API (CEP/número). Atualize o servidor mcp.elabela.store.')
+    throw new Error('Pedido sem endereço completo (falta CEP ou número). Confira o endereço do pedido no PagFlow.')
   }
 
   // 1. Abre o modal clicando em "Adicionar Endereço"

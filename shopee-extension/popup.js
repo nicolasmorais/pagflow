@@ -1,9 +1,12 @@
+const DEFAULT_PAGFLOW_URL = 'https://pay.elabela.store'
 const DEFAULT_API_URL = 'https://mcp.elabela.store'
 const DEFAULT_API_KEY = 'hermes-pagflow-key'
 
 let allOrders = []
 let processedIds = new Set()
-let cfg = { url: DEFAULT_API_URL, key: DEFAULT_API_KEY }
+// pagflow: de onde vêm os pedidos (login do admin no navegador)
+// url/key: API do MCP, usada só na quantidade por produto
+let cfg = { pagflow: DEFAULT_PAGFLOW_URL, url: DEFAULT_API_URL, key: DEFAULT_API_KEY }
 
 function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
@@ -11,7 +14,8 @@ function esc(value) {
 
 async function loadConfig() {
   return new Promise(resolve => {
-    chrome.storage.local.get(['apiUrl', 'apiKey', 'processedIds'], data => {
+    chrome.storage.local.get(['pagflowUrl', 'apiUrl', 'apiKey', 'processedIds'], data => {
+      if (data.pagflowUrl) cfg.pagflow = data.pagflowUrl
       if (data.apiUrl) cfg.url = data.apiUrl
       if (data.apiKey) cfg.key = data.apiKey
       if (data.processedIds) processedIds = new Set(data.processedIds)
@@ -20,12 +24,32 @@ async function loadConfig() {
   })
 }
 
+// Mesmo endpoint das extensões Copiador/Rastreio: usa o cookie de login do admin
 async function fetchOrders() {
-  const url = `${cfg.url}/api/orders?paymentStatus=pago&limit=50`
-  const res = await fetch(url, { headers: { 'x-api-key': cfg.key } })
+  const url = `${cfg.pagflow}/api/admin/extension-orders?status=processando`
+  const res = await fetch(url, { credentials: 'include' })
+  if (res.status === 401) {
+    throw new Error(`Faça login no painel do PagFlow (${cfg.pagflow}/admin) neste navegador e abra a extensão de novo.`)
+  }
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
-  return data.pedidos || []
+  return (data.orders || []).filter(o => o.paymentStatus === 'pago').map(toOrder)
+}
+
+// Converte o pedido do PagFlow para o formato que o resto da extensão usa
+function toOrder(o) {
+  return {
+    id: o.id,
+    cliente: { nome: o.fullName, email: o.email, telefone: o.phone, cpf: o.cpf },
+    endereco: {
+      cep: o.cep, rua: o.rua, numero: o.numero, complemento: o.complemento,
+      bairro: o.bairro, cidade: o.cidade, estado: o.estado,
+    },
+    produto: o.product?.name || '',
+    produto_quantidade: o.productQuantity || 1,
+    valor: o.totalPrice,
+    data: o.createdAt,
+  }
 }
 
 function formatDate(iso) {
@@ -84,8 +108,7 @@ function renderOrders(orders) {
   const missingAll = orders.length > 0 && orders.every(o => !hasAddress(o))
   const apiNotice = missingAll
     ? `<div class="state-msg error" style="padding:12px 8px;text-align:left;line-height:1.5">
-        A API não está enviando o endereço dos pedidos, então não dá para cadastrar na Shopee.<br/>
-        O servidor <b>mcp.elabela.store</b> está desatualizado: faça <b>Redeploy</b> do serviço <b>hermes-mcp</b> no Dokploy.
+        Nenhum desses pedidos tem endereço completo (CEP e número), então não dá para cadastrar na Shopee.
        </div>`
     : ''
 
@@ -291,6 +314,7 @@ async function init() {
   await loadConfig()
 
   // Settings form
+  document.getElementById('cfg-pagflow').value = cfg.pagflow
   document.getElementById('cfg-url').value = cfg.url
   document.getElementById('cfg-key').value = cfg.key
 
@@ -301,9 +325,10 @@ async function init() {
   })
 
   document.getElementById('save-settings').addEventListener('click', () => {
+    cfg.pagflow = document.getElementById('cfg-pagflow').value.trim().replace(/\/+$/, '') || DEFAULT_PAGFLOW_URL
     cfg.url = document.getElementById('cfg-url').value.trim() || DEFAULT_API_URL
     cfg.key = document.getElementById('cfg-key').value.trim() || DEFAULT_API_KEY
-    chrome.storage.local.set({ apiUrl: cfg.url, apiKey: cfg.key }, () => {
+    chrome.storage.local.set({ pagflowUrl: cfg.pagflow, apiUrl: cfg.url, apiKey: cfg.key }, () => {
       document.getElementById('settings-panel').classList.remove('open')
       loadAndRender()
     })

@@ -63,13 +63,27 @@ export async function GET(request: Request) {
                 createdAt: true,
                 trackingCode: true,
                 trackingUrl: true,
+                productId: true,
                 product: { select: { name: true } },
             },
             orderBy: { createdAt: 'desc' },
             take: 100,
         })
 
-        return NextResponse.json({ orders })
+        // Quantidade por produto (usada pela extensao da Shopee). Consulta separada:
+        // se a coluna ainda nao existir no banco, a lista de pedidos continua funcionando.
+        let quantities = new Map<string, number>()
+        try {
+            const ids = [...new Set(orders.map(o => o.productId).filter(Boolean))] as string[]
+            const products = await prisma.product.findMany({ where: { id: { in: ids } }, select: { id: true, quantity: true } })
+            quantities = new Map(products.map(p => [p.id, p.quantity]))
+        } catch (e) {
+            console.error('[extension-orders] Quantidade do produto indisponivel:', e)
+        }
+
+        return NextResponse.json({
+            orders: orders.map(o => ({ ...o, productQuantity: (o.productId && quantities.get(o.productId)) || 1 })),
+        })
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 })
     }
