@@ -7,10 +7,13 @@ services:
     restart: unless-stopped
     ports:
       - "3100:3100"
-    environment:
-      - DATABASE_URL
-      - API_KEY
-      - PORT
+    # O Dokploy grava o .env junto ao compose file; os caminhos sao
+    # resolvidos contra --project-directory (raiz do repo clonado).
+    env_file:
+      - path: ./hermes-agent-mcp/.env
+        required: false
+      - path: ./.env
+        required: false
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3100/health"]
       interval: 30s
