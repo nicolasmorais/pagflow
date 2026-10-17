@@ -39,6 +39,10 @@ async function fillAddressForm(order) {
   const qty = order.qty || 1
   const nomeComQty = `${cliente.nome || ''} xx ${qty}`.trim()
 
+  if (!addr.cep || !addr.numero) {
+    throw new Error('Pedido sem endereço completo vindo da API (CEP/número). Atualize o servidor mcp.elabela.store.')
+  }
+
   // 1. Abre o modal clicando em "Adicionar Endereço"
   const addBtn = await waitFor(() => findAddButton(), 10000)
   if (!addBtn) throw new Error('Botão Adicionar Endereço não encontrado')

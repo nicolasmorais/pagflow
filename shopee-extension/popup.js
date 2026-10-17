@@ -81,14 +81,37 @@ function renderOrders(orders) {
     return
   }
 
-  list.innerHTML = filtered.map(order => {
+  const missingAll = orders.length > 0 && orders.every(o => !hasAddress(o))
+  const apiNotice = missingAll
+    ? `<div class="state-msg error" style="padding:12px 8px;text-align:left;line-height:1.5">
+        A API não está enviando o endereço dos pedidos, então não dá para cadastrar na Shopee.<br/>
+        O servidor <b>mcp.elabela.store</b> está desatualizado: faça <b>Redeploy</b> do serviço <b>hermes-mcp</b> no Dokploy.
+       </div>`
+    : ''
+
+  list.innerHTML = apiNotice + filtered.map(order => {
+    const noAddr = !hasAddress(order)
     const isDone = processedIds.has(order.id)
     const addr = addrLine(order)
     const addrHtml = addr.split('\n').map(l => `<span>${esc(l)}</span>`).join('')
     const value = (order.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
     const qty = qtyOf(order)
-    const isSelected = !isDone && selectedOrders.has(order.id)
+    const isSelected = !isDone && !noAddr && selectedOrders.has(order.id)
     const id = esc(order.id)
+
+    if (noAddr && !isDone) {
+      return `
+      <div class="order-card processed" data-id="${id}">
+        <div class="order-top">
+          <div class="order-name">${esc(order.cliente?.nome || 'Sem nome')}</div>
+          <span class="order-badge badge-done">Sem endereço</span>
+        </div>
+        <div class="order-meta">
+          <span class="order-value">${value}</span>
+          <span class="order-date">${formatDate(order.data)}</span>
+        </div>
+      </div>`
+    }
 
     return `
       <div class="order-card${isDone ? ' processed' : ''}${isSelected ? ' selected' : ''}" data-id="${id}">
@@ -148,8 +171,12 @@ function qtyOf(order) {
   return qtyOverrides.get(order.id) ?? order.produto_quantidade ?? 1
 }
 
+function hasAddress(order) {
+  return !!(order.endereco && order.endereco.cep && order.endereco.numero)
+}
+
 function pendingOrders() {
-  return allOrders.filter(o => !processedIds.has(o.id))
+  return allOrders.filter(o => !processedIds.has(o.id) && hasAddress(o))
 }
 
 function updateBulkBar() {
@@ -185,7 +212,7 @@ function initBulkBar() {
 async function handleAddToShopee(orderIds) {
   const orders = orderIds
     .map(id => allOrders.find(o => o.id === id))
-    .filter(o => o && !processedIds.has(o.id))
+    .filter(o => o && !processedIds.has(o.id) && hasAddress(o))
     .map(o => ({ ...o, qty: qtyOf(o) }))
   if (!orders.length) return
 
