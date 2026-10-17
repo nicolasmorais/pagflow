@@ -105,6 +105,147 @@ async function fillAddressForm(order) {
   chrome.storage.local.remove('pendingOrder')
 }
 
+// ── Exclusão de endereços ────────────────────────────────────────────
+// A Shopee ofusca os nomes de classe, então tudo aqui se guia por texto.
+
+const PROTECTED_TAGS = [
+  { text: 'Endereço de Coleta', reason: 'Endereço de coleta' },
+  { text: 'Endereço de devolução', reason: 'Endereço de devolução' },
+]
+const PAGFLOW_MARKER = /\sxx\s*\d+\s*$/i
+
+const isDeleteBtn = el => el.tagName === 'BUTTON' && el.textContent.trim() === 'Excluir'
+const isEditBtn = el => el.tagName === 'BUTTON' && el.textContent.trim() === 'Editar'
+
+// Linha de endereço = maior ancestral do botão "Editar" que contém só um "Editar"
+function findAddressRows() {
+  const edits = Array.from(document.querySelectorAll('button')).filter(isEditBtn)
+  return edits.map(btn => {
+    let row = btn
+    while (
+      row.parentElement &&
+      Array.from(row.parentElement.querySelectorAll('button')).filter(isEditBtn).length === 1 &&
+      !Array.from(row.parentElement.querySelectorAll('button')).some(b => b.textContent.includes('Adicionar Endereço')) &&
+      !/Meus endereços/.test(row.parentElement.innerText.slice(0, 200))
+    ) {
+      row = row.parentElement
+    }
+    return row
+  })
+}
+
+function describeRow(row) {
+  const lines = row.innerText.split('\n').map(l => l.trim()).filter(Boolean)
+  const name = lines[0] || 'Sem nome'
+  const phone = lines.find(l => /^\(\+?\d+\)/.test(l)) || ''
+  const street = lines.find(l => l !== name && l !== phone && !['Editar', 'Excluir', '|', 'Definir como padrão'].includes(l) && !l.startsWith('+ ')) || ''
+  const deleteBtn = Array.from(row.querySelectorAll('button')).find(isDeleteBtn) || null
+  const tag = PROTECTED_TAGS.find(t => row.innerText.includes(t.text))
+
+  let protectedReason = null
+  if (!deleteBtn) protectedReason = 'Endereço padrão'
+  else if (tag) protectedReason = tag.reason
+
+  return {
+    key: [name, phone, street].join('|'),
+    name,
+    phone,
+    street,
+    fromPagflow: PAGFLOW_MARKER.test(name),
+    protectedReason,
+    row,
+    deleteBtn,
+  }
+}
+
+function scanAddresses() {
+  return findAddressRows().map(describeRow)
+}
+
+function findConfirmButton(excludeRow) {
+  const candidates = Array.from(document.querySelectorAll('button')).filter(b => {
+    const t = b.textContent.trim().toLowerCase()
+    if (!['excluir', 'confirmar', 'sim', 'ok', 'deletar', 'apagar'].includes(t)) return false
+    if (excludeRow && excludeRow.contains(b)) return false
+    if (b.closest && findAddressRows().some(r => r.contains(b))) return false
+    const rect = b.getBoundingClientRect()
+    return rect.width > 0 && rect.height > 0
+  })
+  return candidates[candidates.length - 1] || null
+}
+
+async function waitFor(fn, timeout = 6000, step = 150) {
+  const start = Date.now()
+  while (Date.now() - start < timeout) {
+    const v = fn()
+    if (v) return v
+    await sleep(step)
+  }
+  return null
+}
+
+async function deleteOne(key) {
+  const target = scanAddresses().find(a => a.key === key)
+  if (!target) return { ok: true, skipped: 'já não existe' }
+  if (target.protectedReason) return { ok: false, error: `Protegido: ${target.protectedReason}` }
+
+  target.deleteBtn.click()
+
+  // A Shopee pede confirmação num modal; se não pedir, o endereço some direto
+  const confirmBtn = await waitFor(() => findConfirmButton(target.row), 3000)
+  if (confirmBtn) confirmBtn.click()
+
+  const gone = await waitFor(() => !scanAddresses().some(a => a.key === key), 8000)
+  return gone ? { ok: true } : { ok: false, error: 'A Shopee não confirmou a exclusão' }
+}
+
+let deleting = false
+
+async function deleteAddresses(keys) {
+  if (deleting) return { ok: false, error: 'Já existe uma exclusão em andamento' }
+  deleting = true
+  const results = []
+  try {
+    for (let i = 0; i < keys.length; i++) {
+      const name = keys[i].split('|')[0]
+      chrome.runtime.sendMessage({ type: 'DELETE_PROGRESS', done: i, total: keys.length, name }).catch(() => {})
+      let res
+      try {
+        res = await deleteOne(keys[i])
+      } catch (e) {
+        res = { ok: false, error: e.message }
+      }
+      results.push({ key: keys[i], name, ...res })
+      await sleep(900)
+    }
+  } finally {
+    deleting = false
+  }
+  const summary = {
+    total: keys.length,
+    deleted: results.filter(r => r.ok && !r.skipped).length,
+    failed: results.filter(r => !r.ok),
+    finishedAt: Date.now(),
+  }
+  chrome.storage.local.set({ lastDeleteResult: summary })
+  chrome.runtime.sendMessage({ type: 'DELETE_DONE', summary }).catch(() => {})
+  return summary
+}
+
+chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  if (msg.type === 'SCAN_ADDRESSES') {
+    const list = scanAddresses().map(({ row, deleteBtn, ...rest }) => rest)
+    sendResponse({ ok: true, addresses: list, deleting })
+    return false
+  }
+  if (msg.type === 'DELETE_ADDRESSES') {
+    deleteAddresses(Array.isArray(msg.keys) ? msg.keys : [])
+    sendResponse({ ok: true, started: true })
+    return false
+  }
+  return false
+})
+
 // Entry point: verifica se há pedido pendente quando a página carrega
 chrome.storage.local.get(['pendingOrder'], async ({ pendingOrder }) => {
   if (!pendingOrder) return

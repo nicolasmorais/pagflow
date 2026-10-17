@@ -347,6 +347,132 @@
       cursor: pointer;
     }
     .save-btn:hover { background: var(--brand-dark); }
+
+    .header-actions { display: flex; align-items: center; gap: 2px; }
+    .settings-btn.active { color: var(--brand); background: #fff1ee; }
+
+    /* ── Painel de exclusão de endereços ── */
+    .addr-panel {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .addr-panel.open { display: flex; }
+    body.addr-mode .search-bar,
+    body.addr-mode .status-bar,
+    body.addr-mode .order-list,
+    body.addr-mode .settings-panel { display: none !important; }
+
+    .addr-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 16px 8px;
+      flex-shrink: 0;
+    }
+    .addr-title { font-size: 13px; font-weight: 600; }
+    .addr-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+    .link-btn {
+      background: none;
+      border: none;
+      padding: 2px 0;
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .link-btn:hover { text-decoration: underline; }
+    .addr-filters {
+      display: flex;
+      gap: 12px;
+      padding: 0 16px 6px;
+      flex-shrink: 0;
+    }
+    .addr-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 12px 8px;
+      min-height: 120px;
+      max-height: 340px;
+    }
+    .addr-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      padding: 9px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .addr-item + .addr-item { border-top: 1px solid var(--border); }
+    .addr-item:hover { background: var(--surface-2); }
+    .addr-item.locked { cursor: default; opacity: 0.6; }
+    .addr-item.locked:hover { background: none; }
+    .addr-item input { margin-top: 2px; accent-color: var(--brand); flex-shrink: 0; }
+    .addr-item-body { flex: 1; min-width: 0; }
+    .addr-item-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .addr-item-line {
+      font-size: 11px;
+      color: var(--text-2);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-top: 1px;
+    }
+    .addr-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin-left: 4px;
+      vertical-align: 1px;
+    }
+    .addr-tag.pf { background: #fff1ee; color: var(--brand-dark); }
+    .addr-tag.lock { background: #f0f0f0; color: #777; }
+    .addr-foot {
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .danger-btn {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      background: #dc2626;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .danger-btn:hover { background: #b91c1c; }
+    .danger-btn:disabled { background: #f0f0f0; color: #999; cursor: not-allowed; }
+    .addr-progress {
+      font-size: 11px;
+      color: var(--text-2);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .addr-progress.ok { color: var(--green); }
+    .addr-progress.err { color: #dc2626; }
+    .progress-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-fill { height: 100%; background: #dc2626; width: 0; transition: width 0.3s; }
   </style>
 </head>
 <body>
@@ -359,11 +485,38 @@
         <div class="header-subtitle">Pedidos pagos aguardando envio</div>
       </div>
     </div>
-    <button class="settings-btn" id="settings-toggle" title="Configurações">
+    <div class="header-actions">
+    <button class="settings-btn" id="addr-toggle" title="Excluir endereços da Shopee" aria-label="Excluir endereços da Shopee">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+      </svg>
+    </button>
+    <button class="settings-btn" id="settings-toggle" title="Configurações" aria-label="Configurações">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
       </svg>
     </button>
+    </div>
+  </div>
+
+  <div class="addr-panel" id="addr-panel">
+    <div class="addr-head">
+      <div>
+        <div class="addr-title">Excluir endereços da Shopee</div>
+        <div class="addr-sub" id="addr-sub">Lendo a página de endereços...</div>
+      </div>
+      <button class="link-btn" id="addr-back">Voltar</button>
+    </div>
+    <div class="addr-filters" id="addr-filters" style="display:none">
+      <button class="link-btn" data-select="all">Selecionar todos</button>
+      <button class="link-btn" data-select="pagflow">Só do PagFlow</button>
+      <button class="link-btn" data-select="none">Limpar seleção</button>
+    </div>
+    <div class="addr-list" id="addr-list"></div>
+    <div class="addr-foot">
+      <button class="danger-btn" id="addr-delete" disabled>Excluir selecionados</button>
+      <div class="addr-progress" id="addr-progress" role="status"></div>
+    </div>
   </div>
 
   <div class="search-bar">
