@@ -748,14 +748,7 @@ input::placeholder{color:#CCCCCC;font-weight:500}
     justify-content: center;
     gap: 8px;
     margin-bottom: 16px;
-    opacity: 0.6;
-    filter: grayscale(100%);
-    transition: all 0.2s;
-}
-
-.footer-payments:hover {
-    opacity: 1;
-    filter: grayscale(0%);
+    opacity: 0.9;
 }
 
 .footer-payments img {
