@@ -24,12 +24,12 @@ function waitForEl(selector, timeout = 8000) {
   })
 }
 
-// Formata telefone: remove tudo exceto dígitos, remove DDI +55
+// Formata telefone: só dígitos, sempre com o DDI 55 (a Shopee exige o código do país)
 function formatPhone(raw) {
   if (!raw) return ''
   const digits = raw.replace(/\D/g, '')
-  // Remove DDI 55 se o número tiver 13 dígitos
-  if (digits.length === 13 && digits.startsWith('55')) return digits.slice(2)
+  // DDD + número (10 ou 11 dígitos) ainda sem DDI
+  if (digits.length <= 11) return '55' + digits
   return digits
 }
 
