@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Bot, Copy, Check, Globe, Zap, Shield, Database } from 'lucide-react'
 
 const restEndpoints = [
@@ -56,18 +56,36 @@ const mcpConfig = `{
   }
 }`
 
+function btnStyle(active: boolean): React.CSSProperties {
+    return {
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: '26px', height: '26px', borderRadius: '6px', border: 'none',
+        background: active ? 'rgba(30,122,82,0.12)' : 'var(--surface-sunken)',
+        color: active ? 'var(--positive)' : 'var(--ink-muted)',
+        cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+    }
+}
+
+function btnStyleDark(active: boolean): React.CSSProperties {
+    return {
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: '26px', height: '26px', borderRadius: '6px', border: 'none',
+        background: active ? 'rgba(30,122,82,0.25)' : 'rgba(255,255,255,0.07)',
+        color: active ? '#34d399' : 'rgba(255,255,255,0.45)',
+        cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
+    }
+}
+
 export default function McpPage() {
-    const [copiedKey, setCopiedKey] = useState(false)
-    const [copiedConfig, setCopiedConfig] = useState(false)
-    const [copiedExample, setCopiedExample] = useState<string | null>(null)
+    const [copied, setCopied] = useState<string | null>(null)
     const [tab, setTab] = useState<'rest' | 'mcp'>('rest')
 
     const apiKey = 'hermes-pagflow-key'
 
-    function copy(text: string, setter: (v: boolean) => void) {
+    function copy(text: string, id: string) {
         navigator.clipboard.writeText(text)
-        setter(true)
-        setTimeout(() => setter(false), 2000)
+        setCopied(id)
+        setTimeout(() => setCopied(null), 2000)
     }
 
     return (
@@ -85,11 +103,11 @@ export default function McpPage() {
                             <Bot size={18} color="var(--ink)" strokeWidth={1.8} />
                         </div>
                         <h1 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.025em' }}>
-                            Hermes API
+                            MCP Agent
                         </h1>
                     </div>
                     <p style={{ margin: 0, fontSize: '14px', color: 'var(--ink-muted)' }}>
-                        Interface de dados do PagFlow — MCP tools e REST endpoints
+                        Interface de dados do PagFlow — tools e REST endpoints
                     </p>
                 </div>
                 <div style={{
@@ -135,40 +153,71 @@ export default function McpPage() {
                 ))}
             </div>
 
-            {/* API Key */}
-            <div style={{
-                background: 'var(--ink)', borderRadius: '14px', padding: '18px 22px',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                gap: '16px', flexWrap: 'wrap',
-            }}>
-                <div>
-                    <p style={{ margin: '0 0 6px', fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        API Key
-                    </p>
-                    <code style={{ fontSize: '15px', fontWeight: 700, color: '#fff', fontFamily: 'monospace', letterSpacing: '0.01em' }}>
-                        {apiKey}
-                    </code>
-                    <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(255,255,255,0.35)' }}>
-                        Envie no header{' '}
-                        <code style={{ background: 'rgba(255,255,255,0.09)', padding: '1px 5px', borderRadius: '4px', fontSize: '11px' }}>
-                            x-api-key
-                        </code>
-                    </p>
+            {/* Card de Conexão */}
+            <div className="dash-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--line)', background: 'var(--surface-sunken)' }}>
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--ink)' }}>Conexão</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--ink-muted)' }}>Dados para conectar o Claude a este servidor</p>
                 </div>
-                <button
-                    onClick={() => copy(apiKey, setCopiedKey)}
-                    style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        padding: '9px 16px', borderRadius: '9px', border: '1px solid rgba(255,255,255,0.12)',
-                        background: copiedKey ? 'rgba(30,122,82,0.25)' : 'rgba(255,255,255,0.07)',
-                        color: copiedKey ? '#34d399' : 'rgba(255,255,255,0.6)',
-                        fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                        transition: 'all 0.15s', flexShrink: 0,
-                    }}
-                >
-                    {copiedKey ? <Check size={13} /> : <Copy size={13} />}
-                    {copiedKey ? 'Copiado' : 'Copiar'}
-                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+
+                    {/* REST API */}
+                    <div style={{ padding: '18px 20px', borderRight: '1px solid var(--line)' }}>
+                        <p style={{ margin: '0 0 12px', fontSize: '11px', fontWeight: 700, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                            REST API
+                        </p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div>
+                                <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 600, color: 'var(--ink-muted)' }}>Base URL</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--surface-sunken)', border: '1px solid var(--line)', borderRadius: '8px', padding: '8px 12px' }}>
+                                    <code style={{ flex: 1, fontSize: '12px', fontWeight: 600, color: 'var(--ink)', fontFamily: 'monospace' }}>https://mcp.elabela.store</code>
+                                    <button onClick={() => copy('https://mcp.elabela.store', 'url')} style={btnStyle(copied === 'url')}>
+                                        {copied === 'url' ? <Check size={12} /> : <Copy size={12} />}
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <p style={{ margin: '0 0 4px', fontSize: '11px', fontWeight: 600, color: 'var(--ink-muted)' }}>API Key <span style={{ fontWeight: 400, color: 'var(--ink-muted)' }}>· header <code style={{ fontSize: '10px' }}>x-api-key</code></span></p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--ink)', border: '1px solid var(--ink)', borderRadius: '8px', padding: '8px 12px' }}>
+                                    <code style={{ flex: 1, fontSize: '12px', fontWeight: 700, color: '#fff', fontFamily: 'monospace' }}>{apiKey}</code>
+                                    <button onClick={() => copy(apiKey, 'key')} style={btnStyleDark(copied === 'key')}>
+                                        {copied === 'key' ? <Check size={12} /> : <Copy size={12} />}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Claude Code MCP */}
+                    <div style={{ padding: '18px 20px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <p style={{ margin: 0, fontSize: '11px', fontWeight: 700, color: 'var(--ink-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                                Claude Code · MCP
+                            </p>
+                            <button onClick={() => copy(mcpConfig, 'config')} style={{
+                                display: 'flex', alignItems: 'center', gap: '5px',
+                                padding: '5px 10px', borderRadius: '7px',
+                                border: '1px solid var(--line)', background: 'var(--surface)',
+                                color: copied === 'config' ? 'var(--positive)' : 'var(--ink-muted)',
+                                fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                                transition: 'all 0.15s',
+                            }}>
+                                {copied === 'config' ? <Check size={11} /> : <Copy size={11} />}
+                                {copied === 'config' ? 'Copiado' : 'Copiar'}
+                            </button>
+                        </div>
+                        <pre style={{
+                            margin: 0, padding: '12px 14px',
+                            background: 'var(--ink)', borderRadius: '9px',
+                            fontSize: '11px', color: 'rgba(255,255,255,0.7)',
+                            fontFamily: 'monospace', lineHeight: 1.65,
+                            overflow: 'auto', maxHeight: '160px',
+                        }}>{mcpConfig}</pre>
+                        <p style={{ margin: '8px 0 0', fontSize: '11px', color: 'var(--ink-muted)' }}>
+                            Cole em <code style={{ fontSize: '10px' }}>.claude/settings.json</code> e reinicie o Claude Code
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Tabs */}
@@ -310,58 +359,14 @@ export default function McpPage() {
                                 scrollbarWidth: 'none',
                             }}>{ex.cmd}</code>
                             <button
-                                onClick={() => copy(ex.cmd, (v) => setCopiedExample(v ? ex.label : null))}
-                                style={{
-                                    display: 'flex', alignItems: 'center', padding: '4px 8px',
-                                    borderRadius: '6px', border: 'none', cursor: 'pointer', flexShrink: 0,
-                                    background: copiedExample === ex.label ? 'rgba(30,122,82,0.25)' : 'rgba(255,255,255,0.07)',
-                                    color: copiedExample === ex.label ? '#34d399' : 'rgba(255,255,255,0.45)',
-                                    transition: 'all 0.15s',
-                                }}
+                                onClick={() => copy(ex.cmd, ex.label)}
+                                style={btnStyleDark(copied === ex.label)}
                             >
-                                {copiedExample === ex.label ? <Check size={12} /> : <Copy size={12} />}
+                                {copied === ex.label ? <Check size={12} /> : <Copy size={12} />}
                             </button>
                         </div>
                     </div>
                 ))}
-            </div>
-
-            {/* Config */}
-            <div className="dash-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{
-                    padding: '14px 20px', borderBottom: '1px solid var(--line)',
-                    background: 'var(--surface-sunken)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                }}>
-                    <div>
-                        <p style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--ink)' }}>Configuração Claude Code</p>
-                        <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--ink-muted)' }}>
-                            .claude/settings.json · projeto pagflow
-                        </p>
-                    </div>
-                    <button
-                        onClick={() => copy(mcpConfig, setCopiedConfig)}
-                        style={{
-                            display: 'flex', alignItems: 'center', gap: '5px',
-                            padding: '7px 13px', borderRadius: '8px',
-                            border: '1px solid var(--line)', background: 'var(--surface)',
-                            color: copiedConfig ? 'var(--positive)' : 'var(--ink-muted)',
-                            fontSize: '12px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                            transition: 'all 0.15s',
-                        }}
-                    >
-                        {copiedConfig ? <Check size={12} /> : <Copy size={12} />}
-                        {copiedConfig ? 'Copiado' : 'Copiar'}
-                    </button>
-                </div>
-                <div style={{ padding: '16px 20px' }}>
-                    <pre style={{
-                        margin: 0, padding: '14px 16px',
-                        background: 'var(--ink)', borderRadius: '10px',
-                        fontSize: '12px', color: 'rgba(255,255,255,0.75)',
-                        fontFamily: 'monospace', lineHeight: 1.7, overflow: 'auto',
-                    }}>{mcpConfig}</pre>
-                </div>
             </div>
 
         </div>
