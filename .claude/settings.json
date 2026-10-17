@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "hermes-pagflow": {
+      "command": "node",
+      "args": ["hermes-agent-mcp/dist/index.js"],
+      "cwd": "C:\\Users\\Administrator\\Documents\\apps novos - antigravity\\pagflow"
+    }
+  }
+}
