@@ -166,6 +166,7 @@ app.get('/api/orders', async (req, res) => {
         cliente: { nome: o.fullName, email: o.email, telefone: o.phone, cpf: o.cpf },
         endereco: { cep: o.cep, rua: o.rua, numero: o.numero, complemento: o.complemento, bairro: o.bairro, cidade: o.cidade, estado: o.estado },
         produto: o.product?.name || 'N/A',
+        hasBump: o.hasBump,
         valor: o.totalPrice,
         custo_produto: o.productCost,
         lucro: o.paymentStatus === 'pago' && o.netReceived ? +(o.netReceived - (o.productCost || 0)).toFixed(2) : null,

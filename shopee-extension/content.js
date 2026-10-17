@@ -36,6 +36,8 @@ function formatPhone(raw) {
 async function fillAddressForm(order) {
   const addr = order.endereco || {}
   const cliente = order.cliente || {}
+  const qty = order.qty || 1
+  const nomeComQty = `${cliente.nome || ''} xx ${qty}`.trim()
 
   // 1. Abre o modal clicando em "Adicionar Endereço"
   const allBtns = Array.from(document.querySelectorAll('button'))
@@ -54,8 +56,8 @@ async function fillAddressForm(order) {
   const numeroInput = document.querySelector('input[placeholder="Número"]')
   const complementoInput = document.querySelector('input[placeholder="Complemento"]')
 
-  // 3. Nome e telefone
-  setReactValue(nomeInput, cliente.nome || '')
+  // 3. Nome (com quantidade codificada) e telefone
+  setReactValue(nomeInput, nomeComQty)
   await sleep(100)
   setReactValue(telefoneInput, formatPhone(cliente.telefone))
   await sleep(100)

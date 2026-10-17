@@ -87,6 +87,8 @@ function renderOrders(orders) {
     const addrHtml = addr.split('\n').map(l => `<span>${l}</span>`).join('')
     const value = (order.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
+    const defaultQty = order.hasBump ? 2 : 1
+
     return `
       <div class="order-card${isDone ? ' processed' : ''}" data-id="${order.id}">
         <div class="order-top">
@@ -97,6 +99,10 @@ function renderOrders(orders) {
         <div class="order-meta">
           <span class="order-value">${value}</span>
           <span class="order-date">${formatDate(order.data)}</span>
+        </div>
+        <div class="qty-row">
+          <label class="qty-label">Qtd no nome (xx <span class="qty-preview">${defaultQty}</span>):</label>
+          <input class="qty-input" type="number" min="1" max="99" value="${defaultQty}" data-id="${order.id}" ${isDone ? 'disabled' : ''} />
         </div>
         <button class="add-btn${isDone ? ' done' : ''}" data-id="${order.id}" ${isDone ? 'disabled' : ''}>
           ${isDone ? '✓ Endereço adicionado' : 'Abrir Shopee e adicionar endereço'}
@@ -115,9 +121,13 @@ async function handleAddToShopee(orderId) {
   const order = allOrders.find(o => o.id === orderId)
   if (!order) return
 
-  // Store the order for the content script
+  // Lê a quantidade escolhida neste card
+  const qtyInput = document.querySelector(`.qty-input[data-id="${orderId}"]`)
+  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : (order.hasBump ? 2 : 1)
+
+  // Store the order + qty for the content script
   await new Promise(resolve => {
-    chrome.storage.local.set({ pendingOrder: order }, resolve)
+    chrome.storage.local.set({ pendingOrder: { ...order, qty } }, resolve)
   })
 
   // Open or focus Shopee address page

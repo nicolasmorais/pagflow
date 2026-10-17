@@ -219,6 +219,33 @@
       color: #16a34a;
     }
 
+    /* ── Qty row ── */
+    .qty-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .qty-label {
+      font-size: 11px;
+      color: var(--text-3);
+      white-space: nowrap;
+    }
+    .qty-preview { color: var(--brand); font-weight: 600; }
+    .qty-input {
+      width: 56px;
+      padding: 4px 6px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: center;
+      outline: none;
+    }
+    .qty-input:focus { border-color: var(--brand); }
+    .qty-input:disabled { background: #f5f5f5; color: #bbb; }
+
     /* ── Loading / Error ── */
     .state-msg {
       text-align: center;
