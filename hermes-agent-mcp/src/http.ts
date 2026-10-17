@@ -152,7 +152,7 @@ app.get('/api/orders', async (req, res) => {
     const [orders, total] = await Promise.all([
       prisma.order.findMany({
         where,
-        include: { product: { select: { name: true, price: true } } },
+        include: { product: { select: { name: true, price: true, quantity: true } } },
         orderBy: { createdAt: 'desc' },
         take, skip,
       }),
@@ -166,6 +166,7 @@ app.get('/api/orders', async (req, res) => {
         cliente: { nome: o.fullName, email: o.email, telefone: o.phone, cpf: o.cpf },
         endereco: { cep: o.cep, rua: o.rua, numero: o.numero, complemento: o.complemento, bairro: o.bairro, cidade: o.cidade, estado: o.estado },
         produto: o.product?.name || 'N/A',
+        produto_quantidade: o.product?.quantity ?? 1,
         hasBump: o.hasBump,
         selectedBumps: o.selectedBumps,
         valor: o.totalPrice,
@@ -256,10 +257,29 @@ app.get('/api/products', async (_req, res) => {
 
     res.json(products.map(p => ({
       id: p.id, nome: p.name, preco: p.price, custo: p.cost,
+      quantidade: p.quantity ?? 1,
       comissao: p.commission, loja: p.storeName,
       total_vendas: p._count.orders,
       receita_estimada: +(p.price * p._count.orders).toFixed(2),
     })))
+  } catch (e: any) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
+// ─── PATCH /api/products/:id ─────────────────────────────────────────────────
+
+app.patch('/api/products/:id', async (req, res) => {
+  try {
+    const { quantity } = req.body as { quantity?: number }
+    if (quantity === undefined || typeof quantity !== 'number' || quantity < 1) {
+      return res.status(400).json({ error: 'quantity deve ser número >= 1' })
+    }
+    const updated = await prisma.product.update({
+      where: { id: req.params.id },
+      data: { quantity },
+    })
+    res.json({ id: updated.id, nome: updated.name, quantidade: updated.quantity })
   } catch (e: any) {
     res.status(500).json({ error: e.message })
   }

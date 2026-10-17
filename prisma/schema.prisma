@@ -107,6 +107,7 @@ model Product {
   storeName     String?         @default("PagFlow")
   storeLogo     String?
   cost          Float           @default(0)
+  quantity      Int             @default(1)
   isDigital     Boolean         @default(false)
   accessLink    String?
   purchaseEventName String?

@@ -87,8 +87,7 @@ function renderOrders(orders) {
     const addrHtml = addr.split('\n').map(l => `<span>${l}</span>`).join('')
     const value = (order.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-    const bumpsCount = Array.isArray(order.selectedBumps) ? order.selectedBumps.length : (order.hasBump ? 1 : 0)
-    const defaultQty = 1 + bumpsCount
+    const defaultQty = order.produto_quantidade ?? 1
 
     return `
       <div class="order-card${isDone ? ' processed' : ''}" data-id="${order.id}">
@@ -124,8 +123,7 @@ async function handleAddToShopee(orderId) {
 
   // Lê a quantidade escolhida neste card
   const qtyInput = document.querySelector(`.qty-input[data-id="${orderId}"]`)
-  const bumpsCount = Array.isArray(order.selectedBumps) ? order.selectedBumps.length : (order.hasBump ? 1 : 0)
-  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1 + bumpsCount
+  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : (order.produto_quantidade ?? 1)
 
   // Store the order + qty for the content script
   await new Promise(resolve => {
@@ -156,6 +154,58 @@ async function handleAddToShopee(orderId) {
   window.close()
 }
 
+async function fetchProducts() {
+  const res = await fetch(`${cfg.url}/api/products`, { headers: { 'x-api-key': cfg.key } })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return res.json()
+}
+
+async function saveProductQty(productId, qty, btn) {
+  btn.textContent = '...'
+  btn.disabled = true
+  try {
+    const res = await fetch(`${cfg.url}/api/products/${productId}`, {
+      method: 'PATCH',
+      headers: { 'x-api-key': cfg.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: qty }),
+    })
+    if (!res.ok) throw new Error()
+    btn.textContent = '✓'
+    btn.classList.add('saved')
+    setTimeout(() => { btn.textContent = 'Salvar'; btn.classList.remove('saved'); btn.disabled = false }, 1500)
+    // Recarrega pedidos para refletir nova quantidade
+    await loadAndRender()
+  } catch {
+    btn.textContent = 'Erro'
+    btn.disabled = false
+  }
+}
+
+async function renderProductConfig() {
+  const container = document.getElementById('product-list-cfg')
+  try {
+    const products = await fetchProducts()
+    if (!products.length) { container.textContent = 'Nenhum produto'; return }
+    container.innerHTML = products.map(p => `
+      <div class="prod-row" data-pid="${p.id}">
+        <span class="prod-name" title="${p.nome}">${p.nome}</span>
+        <input class="prod-qty-input" type="number" min="1" max="99" value="${p.quantidade ?? 1}" data-pid="${p.id}" />
+        <button class="prod-save-btn" data-pid="${p.id}">Salvar</button>
+      </div>
+    `).join('')
+    container.querySelectorAll('.prod-save-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pid = btn.dataset.pid
+        const input = container.querySelector(`.prod-qty-input[data-pid="${pid}"]`)
+        const qty = parseInt(input.value) || 1
+        saveProductQty(pid, qty, btn)
+      })
+    })
+  } catch {
+    container.textContent = 'Erro ao carregar produtos'
+  }
+}
+
 async function init() {
   await loadConfig()
 
@@ -164,7 +214,9 @@ async function init() {
   document.getElementById('cfg-key').value = cfg.key
 
   document.getElementById('settings-toggle').addEventListener('click', () => {
-    document.getElementById('settings-panel').classList.toggle('open')
+    const panel = document.getElementById('settings-panel')
+    panel.classList.toggle('open')
+    if (panel.classList.contains('open')) renderProductConfig()
   })
 
   document.getElementById('save-settings').addEventListener('click', () => {
