@@ -87,7 +87,8 @@ function renderOrders(orders) {
     const addrHtml = addr.split('\n').map(l => `<span>${l}</span>`).join('')
     const value = (order.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
-    const defaultQty = order.hasBump ? 2 : 1
+    const bumpsCount = Array.isArray(order.selectedBumps) ? order.selectedBumps.length : (order.hasBump ? 1 : 0)
+    const defaultQty = 1 + bumpsCount
 
     return `
       <div class="order-card${isDone ? ' processed' : ''}" data-id="${order.id}">
@@ -123,7 +124,8 @@ async function handleAddToShopee(orderId) {
 
   // Lê a quantidade escolhida neste card
   const qtyInput = document.querySelector(`.qty-input[data-id="${orderId}"]`)
-  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : (order.hasBump ? 2 : 1)
+  const bumpsCount = Array.isArray(order.selectedBumps) ? order.selectedBumps.length : (order.hasBump ? 1 : 0)
+  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1 + bumpsCount
 
   // Store the order + qty for the content script
   await new Promise(resolve => {
