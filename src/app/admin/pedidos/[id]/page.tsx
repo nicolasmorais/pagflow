@@ -86,7 +86,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         Pedido
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                        <h1 style={{ fontSize: 'clamp(26px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.01em', margin: 0, fontFamily: "'IBM Plex Mono', monospace", fontVariantNumeric: 'tabular-nums' }}>
+                        <h1 style={{ fontSize: 'clamp(26px, 4vw, 32px)', fontWeight: 600, letterSpacing: '-0.01em', margin: 0, fontFamily: "'IBM Plex Mono', monospace", fontVariantNumeric: 'tabular-nums', color: '#14151F' }}>
                             #{order.id.slice(0, 8).toUpperCase()}
                         </h1>
                         <span style={{
@@ -266,7 +266,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
                         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', paddingTop: '12px', marginTop: '6px', borderTop: '2px solid #14151F' }}>
                             <span style={{ fontSize: '13.5px', fontWeight: 700, color: '#14151F' }}>Total</span>
-                            <span style={{ fontFamily: "'Fraunces', serif", fontSize: '24px', fontWeight: 600 }}>R$ {fmt(order.totalPrice || 0)}</span>
+                            <span style={{ fontFamily: "'Fraunces', serif", fontSize: '24px', fontWeight: 600, color: '#14151F' }}>R$ {fmt(order.totalPrice || 0)}</span>
                         </div>
 
                         {order.mpPaymentId && (
