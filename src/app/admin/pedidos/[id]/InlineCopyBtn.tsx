@@ -3,34 +3,26 @@
 import { useState } from 'react'
 import { Copy, Check } from 'lucide-react'
 
-export default function InlineCopyBtn({ text }: { text: string }) {
+export default function InlineCopyBtn({ text, label = 'Copiar' }: { text: string; label?: string }) {
     const [copied, setCopied] = useState(false)
 
-    const handleCopy = async (e: React.MouseEvent) => {
-        e.stopPropagation()
+    const handleCopy = async () => {
         try {
             await navigator.clipboard.writeText(text)
             setCopied(true)
-            setTimeout(() => setCopied(false), 1200)
+            setTimeout(() => setCopied(false), 1400)
         } catch { }
     }
 
     return (
         <button
+            type="button"
             onClick={handleCopy}
-            title="Copiar"
-            style={{
-                width: '26px', height: '26px', borderRadius: '7px',
-                border: '1px solid transparent', background: copied ? '#E3F4EA' : 'transparent',
-                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                flexShrink: 0, cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
-                color: copied ? '#1E7A52' : '#6E7180',
-            }}
+            className={`od-copy${copied ? ' is-done' : ''}`}
+            title={copied ? 'Copiado' : label}
+            aria-label={copied ? 'Copiado' : label}
         >
-            {copied
-                ? <Check size={12.5} strokeWidth={2.6} />
-                : <Copy size={12.5} strokeWidth={2} />
-            }
+            {copied ? <Check size={14} strokeWidth={2.4} aria-hidden /> : <Copy size={14} strokeWidth={2} aria-hidden />}
         </button>
     )
 }
