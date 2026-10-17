@@ -138,7 +138,7 @@ function describeRow(row) {
   const lines = row.innerText.split('\n').map(l => l.trim()).filter(Boolean)
   const name = lines[0] || 'Sem nome'
   const phone = lines.find(l => /^\(\+?\d+\)/.test(l)) || ''
-  const street = lines.find(l => l !== name && l !== phone && !['Editar', 'Excluir', '|', 'Definir como padrão'].includes(l) && !l.startsWith('+ ')) || ''
+  const street = lines.find(l => l !== name && l !== phone && !['Editar', 'Excluir', '|', 'Definir como padrão', 'Selecionar'].includes(l) && !l.startsWith('+ ')) || ''
   const deleteBtn = Array.from(row.querySelectorAll('button')).find(isDeleteBtn) || null
   const tag = PROTECTED_TAGS.find(t => row.innerText.includes(t.text))
 
@@ -201,7 +201,7 @@ async function deleteOne(key) {
 
 let deleting = false
 
-async function deleteAddresses(keys) {
+async function deleteAddresses(keys, onProgress) {
   if (deleting) return { ok: false, error: 'Já existe uma exclusão em andamento' }
   deleting = true
   const results = []
@@ -209,6 +209,7 @@ async function deleteAddresses(keys) {
     for (let i = 0; i < keys.length; i++) {
       const name = keys[i].split('|')[0]
       chrome.runtime.sendMessage({ type: 'DELETE_PROGRESS', done: i, total: keys.length, name }).catch(() => {})
+      if (onProgress) onProgress(i, keys.length, name)
       let res
       try {
         res = await deleteOne(keys[i])
@@ -239,12 +240,159 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return false
   }
   if (msg.type === 'DELETE_ADDRESSES') {
-    deleteAddresses(Array.isArray(msg.keys) ? msg.keys : [])
+    deleteAddresses(Array.isArray(msg.keys) ? msg.keys : [], pageProgress).then(pageDone)
     sendResponse({ ok: true, started: true })
     return false
   }
   return false
 })
+
+// ── Controles na própria página da Shopee ────────────────────────────
+
+const pageSelected = new Set()
+
+function injectStyles() {
+  if (document.getElementById('pf-style')) return
+  const style = document.createElement('style')
+  style.id = 'pf-style'
+  style.textContent = `
+    .pf-bar { display: inline-flex; align-items: center; gap: 10px; margin-right: 10px; }
+    .pf-bar-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 40px; padding: 0 14px; border-radius: 2px;
+      border: 1px solid #dc2626; background: #fff; color: #dc2626;
+      font-size: 14px; cursor: pointer; white-space: nowrap;
+    }
+    .pf-bar-btn:hover:not(:disabled) { background: #fef2f2; }
+    .pf-bar-btn:disabled { border-color: #ddd; color: #aaa; cursor: not-allowed; }
+    .pf-bar-btn.pf-busy { border-color: #dc2626; color: #dc2626; background: #fef2f2; }
+    .pf-bar-link { background: none; border: none; color: #555; font-size: 13px; cursor: pointer; padding: 0; white-space: nowrap; }
+    .pf-bar-link:hover { color: #ee4d2d; text-decoration: underline; }
+    .pf-check {
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-left: 12px; font-size: 13px; color: #555; cursor: pointer; user-select: none;
+    }
+    .pf-check input { width: 15px; height: 15px; accent-color: #dc2626; cursor: pointer; margin: 0; }
+    .pf-row-selected { background: #fff7f5; }
+  `
+  document.head.appendChild(style)
+}
+
+function findAddButton() {
+  return Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Adicionar Endereço') && !b.closest('.pf-bar'))
+}
+
+function setText(el, text) {
+  if (el.textContent !== text) el.textContent = text
+}
+
+function pageProgress(i, total, name) {
+  const btn = document.getElementById('pf-delete-btn')
+  if (!btn) return
+  btn.disabled = true
+  btn.classList.add('pf-busy')
+  setText(btn, `Excluindo ${i + 1} de ${total}: ${name}`)
+}
+
+function pageDone(summary) {
+  pageSelected.clear()
+  const btn = document.getElementById('pf-delete-btn')
+  if (btn) btn.classList.remove('pf-busy')
+  renderPageControls()
+  if (summary && summary.failed && summary.failed.length) {
+    alert(`PagFlow: ${summary.deleted} excluído(s), ${summary.failed.length} com erro.\n${summary.failed[0].name}: ${summary.failed[0].error || ''}`)
+  }
+}
+
+function renderPageControls() {
+  const addBtn = findAddButton()
+  if (!addBtn) return
+  injectStyles()
+
+  const addresses = scanAddresses()
+  const deletable = addresses.filter(a => !a.protectedReason)
+  const validKeys = new Set(deletable.map(a => a.key))
+  for (const k of [...pageSelected]) if (!validKeys.has(k)) pageSelected.delete(k)
+
+  // Barra ao lado de "Adicionar Endereço"
+  let bar = document.getElementById('pf-bar')
+  if (!bar) {
+    bar = document.createElement('span')
+    bar.id = 'pf-bar'
+    bar.className = 'pf-bar'
+    bar.innerHTML = `
+      <button type="button" class="pf-bar-link" id="pf-select-all"></button>
+      <button type="button" class="pf-bar-btn" id="pf-delete-btn"></button>`
+    addBtn.parentElement.insertBefore(bar, addBtn)
+
+    bar.querySelector('#pf-select-all').addEventListener('click', () => {
+      const all = scanAddresses().filter(a => !a.protectedReason)
+      const allSelected = all.length > 0 && all.every(a => pageSelected.has(a.key))
+      pageSelected.clear()
+      if (!allSelected) all.forEach(a => pageSelected.add(a.key))
+      renderPageControls()
+    })
+
+    bar.querySelector('#pf-delete-btn').addEventListener('click', async () => {
+      const keys = scanAddresses().filter(a => !a.protectedReason && pageSelected.has(a.key)).map(a => a.key)
+      if (!keys.length || deleting) return
+      const ok = confirm(`Excluir ${keys.length} endereço(s) selecionado(s)?\n\nIsso não pode ser desfeito. O endereço padrão e os de coleta/devolução não são tocados.`)
+      if (!ok) return
+      const summary = await deleteAddresses(keys, pageProgress)
+      pageDone(summary)
+    })
+  }
+
+  const selectAll = document.getElementById('pf-select-all')
+  const deleteBtn = document.getElementById('pf-delete-btn')
+  const allSelected = deletable.length > 0 && deletable.every(a => pageSelected.has(a.key))
+  setText(selectAll, allSelected ? 'Limpar seleção' : `Selecionar todos (${deletable.length})`)
+  selectAll.style.display = deletable.length ? '' : 'none'
+  if (!deleting) {
+    const n = pageSelected.size
+    setText(deleteBtn, n ? `Excluir selecionados (${n})` : 'Excluir selecionados')
+    deleteBtn.disabled = n === 0
+  }
+
+  // Caixa "Selecionar" em cada endereço excluível, ao lado de "Editar | Excluir"
+  for (const a of addresses) {
+    const existing = a.row.querySelector('.pf-check')
+    if (a.protectedReason) {
+      if (existing) existing.remove()
+      continue
+    }
+    const checked = pageSelected.has(a.key)
+    a.row.classList.toggle('pf-row-selected', checked)
+    if (existing) {
+      const cb = existing.querySelector('input')
+      cb.dataset.key = a.key
+      if (cb.checked !== checked) cb.checked = checked
+      cb.disabled = deleting
+      continue
+    }
+    const label = document.createElement('label')
+    label.className = 'pf-check'
+    label.innerHTML = '<input type="checkbox" /> Selecionar'
+    const cb = label.querySelector('input')
+    cb.dataset.key = a.key
+    cb.checked = checked
+    cb.disabled = deleting
+    cb.addEventListener('change', () => {
+      if (cb.checked) pageSelected.add(cb.dataset.key)
+      else pageSelected.delete(cb.dataset.key)
+      renderPageControls()
+    })
+    a.deleteBtn.parentElement.appendChild(label)
+  }
+}
+
+let renderTimer = null
+const pageObserver = new MutationObserver(() => {
+  clearTimeout(renderTimer)
+  renderTimer = setTimeout(renderPageControls, 300)
+})
+pageObserver.observe(document.body, { childList: true, subtree: true })
+renderPageControls()
 
 // Entry point: verifica se há pedido pendente quando a página carrega
 chrome.storage.local.get(['pendingOrder'], async ({ pendingOrder }) => {

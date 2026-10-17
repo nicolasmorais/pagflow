@@ -348,8 +348,24 @@
     }
     .save-btn:hover { background: var(--brand-dark); }
 
-    .header-actions { display: flex; align-items: center; gap: 2px; }
-    .settings-btn.active { color: var(--brand); background: #fff1ee; }
+    .header-actions { display: flex; align-items: center; gap: 6px; }
+    .addr-open-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 9px;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      background: #fff;
+      color: #dc2626;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .addr-open-btn:hover { background: #fef2f2; }
+    .addr-open-btn.active { background: #dc2626; border-color: #dc2626; color: #fff; }
 
     /* ── Painel de exclusão de endereços ── */
     .addr-panel {
@@ -486,10 +502,11 @@
       </div>
     </div>
     <div class="header-actions">
-    <button class="settings-btn" id="addr-toggle" title="Excluir endereços da Shopee" aria-label="Excluir endereços da Shopee">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+    <button class="addr-open-btn" id="addr-toggle" title="Excluir endereços da Shopee">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
       </svg>
+      Excluir endereços
     </button>
     <button class="settings-btn" id="settings-toggle" title="Configurações" aria-label="Configurações">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
