@@ -29,7 +29,7 @@ async function fetchOrders() {
   const url = `${cfg.pagflow}/api/admin/extension-orders?status=processando`
   const res = await fetch(url, { credentials: 'include' })
   if (res.status === 401) {
-    throw new Error(`Faça login no painel do PagFlow (${cfg.pagflow}/admin) neste navegador e abra a extensão de novo.`)
+    throw Object.assign(new Error('Login necessário'), { needsLogin: true })
   }
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   const data = await res.json()
@@ -564,6 +564,17 @@ async function loadAndRender() {
     allOrders = await fetchOrders()
     renderOrders(allOrders)
   } catch (e) {
+    if (e.needsLogin) {
+      list.innerHTML = `<div class="state-msg error">Você não está logado no PagFlow neste navegador.<br/><br/>
+        <button class="add-btn" id="pf-login">Entrar no PagFlow</button><br/><br/>
+        Depois de entrar, abra a extensão de novo.</div>`
+      document.getElementById('pf-login').addEventListener('click', () => {
+        chrome.tabs.create({ url: `${cfg.pagflow}/login` })
+        window.close()
+      })
+      statusEl.textContent = 'Login necessário'
+      return
+    }
     list.innerHTML = `<div class="state-msg error">Erro ao buscar pedidos:<br/>${esc(e.message)}<br/><br/>Verifique as configurações (⚙).</div>`
     statusEl.textContent = 'Erro na conexão'
   }
