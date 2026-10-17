@@ -431,6 +431,8 @@ export async function createProduct(formData: FormData): Promise<void> {
     const pixPrice = pixPriceRaw ? parseFloat(pixPriceRaw) : null
     const minInstallmentValueRaw = formData.get('minInstallmentValue') as string
     const minInstallmentValue = minInstallmentValueRaw ? parseFloat(minInstallmentValueRaw) : null
+    const quantityRaw = formData.get('quantity') as string
+    const quantity = quantityRaw ? Math.max(1, parseInt(quantityRaw)) : 1
 
     if (!imageUrl || imageUrl.trim() === '') {
         imageUrl = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1999&auto=format&fit=crop';
@@ -446,6 +448,7 @@ export async function createProduct(formData: FormData): Promise<void> {
             price: isNaN(price) ? 0 : price,
             imageUrl: imageUrl || null,
             cost: isNaN(cost) ? 0 : cost,
+            quantity,
             storeName: storeName || 'Elabela Store',
             storeLogo: storeLogo || null,
             purchaseEventName: purchaseEventName?.trim() || null,
@@ -486,6 +489,8 @@ export async function updateProduct(formData: FormData): Promise<void> {
     const pixPrice = pixPriceRaw ? parseFloat(pixPriceRaw) : null
     const minInstallmentValueRaw = formData.get('minInstallmentValue') as string
     const minInstallmentValue = minInstallmentValueRaw ? parseFloat(minInstallmentValueRaw) : null
+    const quantityRaw = formData.get('quantity') as string
+    const quantity = quantityRaw ? Math.max(1, parseInt(quantityRaw)) : 1
 
     if (!id || !name || isNaN(price)) {
         throw new Error('Preencha os campos obrigatórios')
@@ -504,6 +509,7 @@ export async function updateProduct(formData: FormData): Promise<void> {
             price: Number(price),
             imageUrl: imageUrl || null,
             cost: isNaN(cost) ? 0 : Number(cost),
+            quantity,
             storeName: storeName || 'Elabela Store',
             storeLogo: storeLogo || null,
             purchaseEventName: purchaseEventName?.trim() || null,

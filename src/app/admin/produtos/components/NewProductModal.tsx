@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { X, Plus, Package, DollarSign, Image as ImageIcon, Loader2, Store, Target, RefreshCw } from 'lucide-react'
+import { X, Plus, Package, DollarSign, Image as ImageIcon, Loader2, Store, Target, RefreshCw, ShoppingBag } from 'lucide-react'
 import { createProduct } from '@/app/actions'
 
 interface NewProductModalProps {
@@ -191,7 +191,7 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                         />
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '16px' }}>
                         <div className="form-group">
                             <label className="form-label">
                                 <DollarSign size={14} /> Preço (R$)
@@ -216,6 +216,19 @@ export default function NewProductModal({ onClose }: NewProductModalProps) {
                                 className="form-input"
                                 placeholder="0.00"
                                 required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">
+                                <ShoppingBag size={14} /> Qtd Shopee
+                            </label>
+                            <input
+                                name="quantity"
+                                type="number"
+                                min="1"
+                                className="form-input"
+                                placeholder="1"
+                                defaultValue={1}
                             />
                         </div>
                     </div>

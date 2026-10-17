@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
     ArrowLeft, Package, DollarSign, Image as ImageIcon,
-    Store, Target, RefreshCw, Loader2, Save,
+    Store, Target, RefreshCw, Loader2, Save, ShoppingBag,
 } from 'lucide-react'
 import { updateProduct } from '@/app/actions'
 
@@ -142,7 +142,7 @@ export default function EditProductForm({ product }: { product: any }) {
                                 />
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px', gap: 12, marginBottom: 16 }}>
                                 <div>
                                     <label style={labelStyle}><DollarSign size={13} /> Preço (R$)</label>
                                     <input name="price" type="number" step="0.01" style={inputStyle} defaultValue={product.price} required
@@ -153,6 +153,13 @@ export default function EditProductForm({ product }: { product: any }) {
                                 <div>
                                     <label style={labelStyle}><DollarSign size={13} /> Custo unitário (R$)</label>
                                     <input name="cost" type="number" step="0.01" style={inputStyle} defaultValue={product.cost || 0} required
+                                        onFocus={e => { e.target.style.borderColor = '#0f172a'; e.target.style.background = '#fff' }}
+                                        onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={labelStyle}><ShoppingBag size={13} /> Qtd Shopee</label>
+                                    <input name="quantity" type="number" min="1" style={inputStyle} defaultValue={product.quantity ?? 1} required
                                         onFocus={e => { e.target.style.borderColor = '#0f172a'; e.target.style.background = '#fff' }}
                                         onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.background = '#f8fafc' }}
                                     />
