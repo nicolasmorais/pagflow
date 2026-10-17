@@ -40,8 +40,7 @@ async function fillAddressForm(order) {
   const nomeComQty = `${cliente.nome || ''} xx ${qty}`.trim()
 
   // 1. Abre o modal clicando em "Adicionar Endereço"
-  const allBtns = Array.from(document.querySelectorAll('button'))
-  const addBtn = allBtns.find(b => b.textContent.trim().includes('Adicionar Endereço'))
+  const addBtn = await waitFor(() => findAddButton(), 10000)
   if (!addBtn) throw new Error('Botão Adicionar Endereço não encontrado')
   addBtn.click()
 
@@ -97,12 +96,17 @@ async function fillAddressForm(order) {
   if (!enviarBtn) throw new Error('Botão Enviar não encontrado')
   enviarBtn.click()
 
-  // 12. Notifica o popup que o endereço foi adicionado
-  await sleep(1500)
-  chrome.runtime.sendMessage({ type: 'ADDRESS_ADDED', orderId: order.id })
+  // 12. Só conta como adicionado quando o formulário fecha
+  const closed = await waitFor(() => !document.querySelector('input[placeholder="Nome Completo"]'), 12000)
+  if (!closed) {
+    closeAddressModal()
+    throw new Error('A Shopee não aceitou o endereço (confira CEP, telefone ou o limite de endereços)')
+  }
+}
 
-  // Remove o pedido pendente do storage
-  chrome.storage.local.remove('pendingOrder')
+function closeAddressModal() {
+  const cancel = Array.from(document.querySelectorAll('button')).find(b => ['Voltar', 'Cancelar'].includes(b.textContent.trim()))
+  if (cancel) cancel.click()
 }
 
 // ── Exclusão de endereços ────────────────────────────────────────────
@@ -203,6 +207,7 @@ let deleting = false
 
 async function deleteAddresses(keys, onProgress) {
   if (deleting) return { ok: false, error: 'Já existe uma exclusão em andamento' }
+  if (adding) return { ok: false, error: 'Aguarde terminar de adicionar os endereços' }
   deleting = true
   const results = []
   try {
@@ -394,18 +399,122 @@ const pageObserver = new MutationObserver(() => {
 pageObserver.observe(document.body, { childList: true, subtree: true })
 renderPageControls()
 
-// Entry point: verifica se há pedido pendente quando a página carrega
-chrome.storage.local.get(['pendingOrder'], async ({ pendingOrder }) => {
-  if (!pendingOrder) return
+// ── Fila de endereços para adicionar ─────────────────────────────────
 
-  // Aguarda a página estar pronta (React renderizado)
+let adding = false
+let stopRequested = false
+
+function showBanner(html, tone) {
+  let el = document.getElementById('pf-banner')
+  if (!el) {
+    el = document.createElement('div')
+    el.id = 'pf-banner'
+    el.style.cssText = 'position:fixed;left:20px;bottom:20px;z-index:2147483647;max-width:360px;padding:12px 14px;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);font:13px/1.45 -apple-system,Segoe UI,sans-serif;display:flex;align-items:center;gap:12px'
+    document.body.appendChild(el)
+  }
+  const tones = { run: ['#fff', '#212121', '#ee4d2d'], ok: ['#f0fdf4', '#166534', '#16a34a'], err: ['#fef2f2', '#991b1b', '#dc2626'] }
+  const [bg, fg, border] = tones[tone] || tones.run
+  el.style.background = bg
+  el.style.color = fg
+  el.style.border = `1px solid ${border}`
+  el.innerHTML = html
+}
+
+function hideBannerLater(ms) {
+  setTimeout(() => document.getElementById('pf-banner')?.remove(), ms)
+}
+
+const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+
+async function markProcessed(orderId) {
+  const { processedIds = [] } = await chrome.storage.local.get('processedIds')
+  if (!processedIds.includes(orderId)) {
+    await chrome.storage.local.set({ processedIds: [...processedIds, orderId] })
+  }
+  chrome.runtime.sendMessage({ type: 'ADDRESS_ADDED', orderId }).catch(() => {})
+}
+
+async function processQueue() {
+  if (adding || deleting) return
+  adding = true
+  stopRequested = false
+  let added = 0
+  let failed = null
+  let total = 0
+
   try {
-    await waitForEl('button')
+    const first = await chrome.storage.local.get('addQueue')
+    total = (first.addQueue || []).length
+    if (!total) return
+
+    for (let i = 0; i < total; i++) {
+      const { addQueue = [] } = await chrome.storage.local.get('addQueue')
+      if (!addQueue.length) break
+      if (stopRequested) {
+        await chrome.storage.local.set({ addQueue: [] })
+        break
+      }
+
+      const order = addQueue[0]
+      // Sai da fila antes de enviar: se a página recarregar no meio, não duplica
+      await chrome.storage.local.set({ addQueue: addQueue.slice(1) })
+
+      const name = order.cliente?.nome || 'Sem nome'
+      showBanner(
+        `<div style="flex:1"><b>PagFlow:</b> adicionando ${added + 1} de ${total}<br><span style="opacity:.75">${escHtml(name)}</span></div>
+         <button id="pf-stop" style="border:1px solid #ddd;background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font:inherit">Parar</button>`,
+        'run'
+      )
+      document.getElementById('pf-stop')?.addEventListener('click', () => {
+        stopRequested = true
+        const b = document.getElementById('pf-stop')
+        if (b) { b.textContent = 'Parando...'; b.disabled = true }
+      })
+
+      try {
+        await fillAddressForm(order)
+        await markProcessed(order.id)
+        added++
+      } catch (e) {
+        failed = { name, error: e.message }
+        await chrome.storage.local.set({ addQueue: [] })
+        break
+      }
+      await sleep(1500)
+    }
+  } finally {
+    adding = false
+  }
+
+  if (!total) return
+  const remaining = total - added - (failed ? 1 : 0)
+  if (failed) {
+    showBanner(`<div><b>PagFlow:</b> ${added} adicionado(s). Parou em <b>${escHtml(failed.name)}</b>:<br>${escHtml(failed.error)}${remaining > 0 ? `<br><span style="opacity:.75">${remaining} pedido(s) não foram enviados.</span>` : ''}</div>`, 'err')
+    hideBannerLater(15000)
+  } else if (stopRequested && remaining > 0) {
+    showBanner(`<div><b>PagFlow:</b> parado. ${added} adicionado(s), ${remaining} não enviado(s).</div>`, 'err')
+    hideBannerLater(8000)
+  } else {
+    showBanner(`<div><b>PagFlow:</b> ${added} endereço(s) adicionado(s) na Shopee.</div>`, 'ok')
+    hideBannerLater(6000)
+  }
+  chrome.runtime.sendMessage({ type: 'ADD_QUEUE_DONE', added, failed }).catch(() => {})
+}
+
+// Entry point: processa a fila quando a página carrega
+chrome.storage.local.get(['addQueue', 'pendingOrder'], async ({ addQueue, pendingOrder }) => {
+  // Compatibilidade com a versão antiga (um pedido por vez)
+  if (pendingOrder && !(addQueue && addQueue.length)) {
+    await chrome.storage.local.set({ addQueue: [pendingOrder] })
+    await chrome.storage.local.remove('pendingOrder')
+  } else if (!(addQueue && addQueue.length)) {
+    return
+  }
+  try {
+    await waitFor(() => findAddButton(), 15000)
     await sleep(800)
-    await fillAddressForm(pendingOrder)
+    await processQueue()
   } catch (e) {
     console.error('[PagFlow→Shopee]', e.message)
-    // Remove o pendente para não ficar em loop
-    chrome.storage.local.remove('pendingOrder')
   }
 })

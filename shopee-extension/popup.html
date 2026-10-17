@@ -348,6 +348,35 @@
     }
     .save-btn:hover { background: var(--brand-dark); }
 
+    /* ── Seleção de pedidos ── */
+    .order-pick {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      min-width: 0;
+      cursor: pointer;
+    }
+    .order-pick input {
+      width: 15px;
+      height: 15px;
+      margin-top: 1px;
+      flex-shrink: 0;
+      accent-color: var(--brand);
+      cursor: pointer;
+    }
+    .order-card.selected { border-color: var(--brand); background: #fffaf8; }
+    .bulk-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px 12px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .bulk-bar .add-btn { margin-top: 0; flex: 1; }
+    body.addr-mode .bulk-bar { display: none !important; }
+
     .header-actions { display: flex; align-items: center; gap: 6px; }
     .addr-open-btn {
       display: inline-flex;
@@ -498,7 +527,7 @@
       <div class="logo">P</div>
       <div>
         <h1>PagFlow → Shopee</h1>
-        <div class="header-subtitle">Pedidos pagos aguardando envio</div>
+        <div class="header-subtitle">Pedidos pagos</div>
       </div>
     </div>
     <div class="header-actions">
@@ -548,6 +577,11 @@
     <div class="state-msg">
       <div class="spinner"></div><br/>Buscando pedidos no PagFlow...
     </div>
+  </div>
+
+  <div class="bulk-bar" id="bulk-bar" style="display:none">
+    <button class="link-btn" id="bulk-all">Selecionar todos</button>
+    <button class="add-btn" id="bulk-add" disabled>Selecione pedidos</button>
   </div>
 
   <div class="settings-panel" id="settings-panel">

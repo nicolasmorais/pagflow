@@ -20,10 +20,6 @@ async function loadConfig() {
   })
 }
 
-function saveProcessed() {
-  chrome.storage.local.set({ processedIds: [...processedIds] })
-}
-
 async function fetchOrders() {
   const url = `${cfg.url}/api/orders?paymentStatus=pago&limit=50`
   const res = await fetch(url, { headers: { 'x-api-key': cfg.key } })
@@ -90,13 +86,16 @@ function renderOrders(orders) {
     const addr = addrLine(order)
     const addrHtml = addr.split('\n').map(l => `<span>${esc(l)}</span>`).join('')
     const value = (order.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-    const defaultQty = order.produto_quantidade ?? 1
+    const qty = qtyOf(order)
+    const isSelected = !isDone && selectedOrders.has(order.id)
+    const id = esc(order.id)
 
     return `
-      <div class="order-card${isDone ? ' processed' : ''}" data-id="${esc(order.id)}">
+      <div class="order-card${isDone ? ' processed' : ''}${isSelected ? ' selected' : ''}" data-id="${id}">
         <div class="order-top">
-          <div class="order-name">${esc(order.cliente?.nome || 'Sem nome')}</div>
+          ${isDone
+            ? `<div class="order-name">${esc(order.cliente?.nome || 'Sem nome')}</div>`
+            : `<label class="order-pick"><input type="checkbox" class="order-check" data-id="${id}" ${isSelected ? 'checked' : ''} /><span class="order-name">${esc(order.cliente?.nome || 'Sem nome')}</span></label>`}
           <span class="order-badge ${isDone ? 'badge-done' : 'badge-pago'}">${isDone ? 'Adicionado' : 'Pago'}</span>
         </div>
         <div class="order-addr">${addrHtml}</div>
@@ -105,55 +104,106 @@ function renderOrders(orders) {
           <span class="order-date">${formatDate(order.data)}</span>
         </div>
         <div class="qty-row">
-          <label class="qty-label">Qtd no nome (xx <span class="qty-preview">${defaultQty}</span>):</label>
-          <input class="qty-input" type="number" min="1" max="99" value="${defaultQty}" data-id="${order.id}" ${isDone ? 'disabled' : ''} />
+          <label class="qty-label">Qtd no nome (xx <span class="qty-preview">${qty}</span>):</label>
+          <input class="qty-input" type="number" min="1" max="99" value="${qty}" data-id="${id}" ${isDone ? 'disabled' : ''} />
         </div>
-        <button class="add-btn${isDone ? ' done' : ''}" data-id="${order.id}" ${isDone ? 'disabled' : ''}>
-          ${isDone ? '✓ Endereço adicionado' : 'Abrir Shopee e adicionar endereço'}
+        <button class="add-btn${isDone ? ' done' : ''}" data-id="${id}" ${isDone ? 'disabled' : ''}>
+          ${isDone ? '✓ Endereço adicionado' : 'Adicionar só este'}
         </button>
       </div>
     `
   }).join('')
 
-  // Attach button listeners
   list.querySelectorAll('.add-btn:not(:disabled)').forEach(btn => {
-    btn.addEventListener('click', () => handleAddToShopee(btn.dataset.id))
+    btn.addEventListener('click', () => handleAddToShopee([btn.dataset.id]))
+  })
+
+  list.querySelectorAll('.order-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) selectedOrders.add(cb.dataset.id)
+      else selectedOrders.delete(cb.dataset.id)
+      cb.closest('.order-card')?.classList.toggle('selected', cb.checked)
+      updateBulkBar()
+    })
+  })
+
+  list.querySelectorAll('.qty-input').forEach(input => {
+    input.addEventListener('input', () => {
+      const n = parseInt(input.value)
+      if (n >= 1) qtyOverrides.set(input.dataset.id, n)
+      const preview = input.closest('.qty-row')?.querySelector('.qty-preview')
+      if (preview && n >= 1) preview.textContent = n
+    })
+  })
+
+  updateBulkBar()
+}
+
+// ── Seleção em lote ──────────────────────────────────────────────────
+
+const selectedOrders = new Set()
+const qtyOverrides = new Map()
+
+function qtyOf(order) {
+  return qtyOverrides.get(order.id) ?? order.produto_quantidade ?? 1
+}
+
+function pendingOrders() {
+  return allOrders.filter(o => !processedIds.has(o.id))
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-bar')
+  const pending = pendingOrders()
+  for (const id of [...selectedOrders]) if (!pending.some(o => o.id === id)) selectedOrders.delete(id)
+
+  bar.style.display = pending.length ? 'flex' : 'none'
+  const allSelected = pending.length > 0 && pending.every(o => selectedOrders.has(o.id))
+  document.getElementById('bulk-all').textContent = allSelected ? 'Limpar' : `Selecionar todos (${pending.length})`
+
+  const n = selectedOrders.size
+  const btn = document.getElementById('bulk-add')
+  btn.disabled = n === 0
+  btn.textContent = n === 0 ? 'Selecione pedidos' : `Adicionar ${n} na Shopee`
+}
+
+function initBulkBar() {
+  document.getElementById('bulk-all').addEventListener('click', () => {
+    const pending = pendingOrders()
+    const allSelected = pending.every(o => selectedOrders.has(o.id))
+    selectedOrders.clear()
+    if (!allSelected) pending.forEach(o => selectedOrders.add(o.id))
+    renderOrders(allOrders)
+  })
+  document.getElementById('bulk-add').addEventListener('click', () => {
+    // Mantém a ordem da lista (mais recentes primeiro, como vem da API)
+    const ids = allOrders.filter(o => selectedOrders.has(o.id)).map(o => o.id)
+    handleAddToShopee(ids)
   })
 }
 
-async function handleAddToShopee(orderId) {
-  const order = allOrders.find(o => o.id === orderId)
-  if (!order) return
+async function handleAddToShopee(orderIds) {
+  const orders = orderIds
+    .map(id => allOrders.find(o => o.id === id))
+    .filter(o => o && !processedIds.has(o.id))
+    .map(o => ({ ...o, qty: qtyOf(o) }))
+  if (!orders.length) return
 
-  // Lê a quantidade escolhida neste card
-  const qtyInput = document.querySelector(`.qty-input[data-id="${orderId}"]`)
-  const qty = qtyInput ? parseInt(qtyInput.value) || 1 : (order.produto_quantidade ?? 1)
+  // Junta com o que ainda estiver na fila, sem repetir pedido
+  const { addQueue = [] } = await chrome.storage.local.get('addQueue')
+  const queued = new Set(addQueue.map(o => o.id))
+  const nextQueue = [...addQueue, ...orders.filter(o => !queued.has(o.id))]
+  await chrome.storage.local.set({ addQueue: nextQueue })
+  await chrome.storage.local.remove('pendingOrder')
 
-  // Store the order + qty for the content script
-  await new Promise(resolve => {
-    chrome.storage.local.set({ pendingOrder: { ...order, qty } }, resolve)
-  })
-
-  // Open or focus Shopee address page
-  chrome.tabs.query({ url: 'https://shopee.com.br/user/account/address*' }, tabs => {
-    if (tabs.length > 0) {
-      chrome.tabs.update(tabs[0].id, { active: true }, () => {
-        chrome.tabs.reload(tabs[0].id)
-      })
-    } else {
-      chrome.tabs.create({ url: 'https://shopee.com.br/user/account/address' })
-    }
-  })
-
-  // Listen for completion
-  chrome.runtime.onMessage.addListener(function listener(msg) {
-    if (msg.type === 'ADDRESS_ADDED' && msg.orderId === orderId) {
-      chrome.runtime.onMessage.removeListener(listener)
-      processedIds.add(orderId)
-      saveProcessed()
-      renderOrders(allOrders)
-    }
-  })
+  // Abre (ou recarrega) a página de endereços; o content script processa a fila
+  const tabs = await chrome.tabs.query({ url: 'https://shopee.com.br/user/account/address*' })
+  if (tabs.length > 0) {
+    await chrome.tabs.update(tabs[0].id, { active: true })
+    await chrome.tabs.reload(tabs[0].id)
+  } else {
+    await chrome.tabs.create({ url: 'https://shopee.com.br/user/account/address' })
+  }
 
   window.close()
 }
@@ -237,8 +287,23 @@ async function init() {
   })
 
   initAddressPanel()
+  initBulkBar()
+
+  // Recebe atualizações enquanto o popup estiver aberto
+  chrome.runtime.onMessage.addListener(msg => {
+    if (msg.type === 'ADDRESS_ADDED') {
+      processedIds.add(msg.orderId)
+      selectedOrders.delete(msg.orderId)
+      renderOrders(allOrders)
+    }
+  })
 
   await loadAndRender()
+
+  const { addQueue = [] } = await chrome.storage.local.get('addQueue')
+  if (addQueue.length) {
+    document.getElementById('status-text').innerHTML += ` · <strong>${addQueue.length}</strong> na fila da Shopee`
+  }
 }
 
 // ── Excluir endereços da Shopee ──────────────────────────────────────
