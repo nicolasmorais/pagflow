@@ -1,7 +1,7 @@
 services:
   hermes-mcp:
     build:
-      context: ..
+      context: .
       dockerfile: hermes-agent-mcp/Dockerfile
     container_name: hermes-mcp
     restart: unless-stopped
