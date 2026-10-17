@@ -95,17 +95,41 @@ async function fillAddressForm(order) {
     await sleep(300)
   }
 
-  // 11. Clica em Enviar
+  // 11. "Salvar Como": a Shopee exige escolher a etiqueta antes de enviar
+  await selectAddressLabel('Residencial')
+
+  // 12. Clica em Enviar
   const enviarBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'Enviar')
   if (!enviarBtn) throw new Error('Botão Enviar não encontrado')
   enviarBtn.click()
 
-  // 12. Só conta como adicionado quando o formulário fecha
+  // 13. Só conta como adicionado quando o formulário fecha
   const closed = await waitFor(() => !document.querySelector('input[placeholder="Nome Completo"]'), 12000)
   if (!closed) {
     closeAddressModal()
     throw new Error('A Shopee não aceitou o endereço (confira CEP, telefone ou o limite de endereços)')
   }
+}
+
+// Clica na opção de etiqueta ("Residencial"/"Comercial") do formulário de endereço.
+// A classe é ofuscada: acha o elemento mais interno com o texto exato e clica nele.
+async function selectAddressLabel(text) {
+  // Escopo: o formulário aberto (ancestral do campo "Nome Completo"), nunca a lista de endereços
+  let form = document.querySelector('input[placeholder="Nome Completo"]')
+  while (form && form.parentElement && !form.innerText?.includes(text)) form = form.parentElement
+  if (!form || form === document.body) form = null
+  const option = form && await waitFor(() => {
+    const matches = Array.from(form.querySelectorAll('button, div, span, label'))
+      .filter(el => el.textContent.trim() === text && el.offsetParent !== null)
+    return matches.find(el => !matches.some(other => other !== el && el.contains(other))) || null
+  }, 4000)
+  if (!option) {
+    // Formulário sem etiqueta: segue sem escolher
+    if (!/Salvar Como/i.test(document.body.innerText)) return
+    throw new Error(`Opção "${text}" não encontrada em "Salvar Como"`)
+  }
+  ;(option.closest('button, label, [role="radio"], [role="button"]') || option).click()
+  await sleep(300)
 }
 
 function closeAddressModal() {
