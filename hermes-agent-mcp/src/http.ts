@@ -164,6 +164,7 @@ app.get('/api/orders', async (req, res) => {
       pedidos: orders.map(o => ({
         id: o.id,
         cliente: { nome: o.fullName, email: o.email, telefone: o.phone, cpf: o.cpf },
+        endereco: { cep: o.cep, rua: o.rua, numero: o.numero, complemento: o.complemento, bairro: o.bairro, cidade: o.cidade, estado: o.estado },
         produto: o.product?.name || 'N/A',
         valor: o.totalPrice,
         custo_produto: o.productCost,

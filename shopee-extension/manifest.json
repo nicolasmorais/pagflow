@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "PagFlow → Shopee",
+  "version": "1.0.0",
+  "description": "Adiciona endereços de pedidos pagos do PagFlow na Shopee automaticamente",
+  "permissions": ["storage", "tabs", "activeTab"],
+  "host_permissions": [
+    "https://shopee.com.br/*",
+    "https://mcp.elabela.store/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "PagFlow → Shopee"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://shopee.com.br/user/account/address*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
