@@ -20,7 +20,8 @@ import {
     Bot,
     RefreshCw,
     PackagePlus,
-    Palette
+    Palette,
+    MailWarning
 } from 'lucide-react'
 import { logoutAction } from './auth-actions'
 import './admin.css'
@@ -50,6 +51,7 @@ const menuSections = [
             { icon: Target, label: 'Pixels', href: '/admin/marketing' },
             { icon: Megaphone, label: 'Taboola', href: '/admin/taboola' },
             { icon: Mail, label: 'E-mails', href: '/admin/emails' },
+            { icon: MailWarning, label: 'Comunicado reembolso', href: '/admin/comunicado' },
             { icon: Palette, label: 'Personalização', href: '/admin/personalizacao' },
         ]
     },
