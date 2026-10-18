@@ -1,6 +1,7 @@
 'use server'
 
 import { cookies } from 'next/headers'
+import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { resend } from '@/lib/resend'
 import { findRefundOrders } from './queries'
@@ -14,6 +15,41 @@ async function requireAdmin() {
 }
 
 const MAX_PER_CALL = 10
+
+// Pagamento do pedido vira "reembolsado" depois que o cliente recebe o comunicado
+async function markRefunded(orderId: string) {
+    const updated = await prisma.order.update({
+        where: { id: orderId },
+        data: { paymentStatus: 'reembolsado' },
+        include: { product: true },
+    })
+    try {
+        const { uploadOrderBackup } = await import('@/lib/r2')
+        await uploadOrderBackup(updated)
+    } catch (r2Err) {
+        console.error('[comunicado] Erro no backup R2:', r2Err)
+    }
+}
+
+// Para quem recebeu o comunicado antes dessa regra existir
+export async function markSentAsRefunded() {
+    await requireAdmin()
+    const pending = (await findRefundOrders()).filter(
+        o => o.paymentStatus === 'pago' && o.emailLogs.some(l => l.status === 'sent')
+    )
+    let updated = 0
+    for (const o of pending) {
+        try {
+            await markRefunded(o.id)
+            updated++
+        } catch (e) {
+            console.error('[comunicado] Falha ao marcar reembolsado:', o.id, e)
+        }
+    }
+    revalidatePath('/admin/comunicado')
+    revalidatePath('/admin/pedidos')
+    return { updated, total: pending.length }
+}
 
 export async function sendRefundNotices(orderIds: string[], descriptor: string) {
     await requireAdmin()
@@ -61,10 +97,19 @@ export async function sendRefundNotices(orderIds: string[], descriptor: string) 
             console.error('[comunicado] Falha ao registrar log:', logErr)
         }
 
+        if (!error) {
+            try {
+                await markRefunded(orderId)
+            } catch (e) {
+                console.error('[comunicado] E-mail enviado, mas falhou ao marcar reembolsado:', orderId, e)
+            }
+        }
+
         results.push(error ? { orderId, status: 'error', error } : { orderId, status: 'sent' })
         // Respeita o limite de envio do Resend
         await new Promise(r => setTimeout(r, 600))
     }
 
+    revalidatePath('/admin/pedidos')
     return { results }
 }

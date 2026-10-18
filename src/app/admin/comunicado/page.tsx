@@ -22,6 +22,7 @@ export default async function ComunicadoPage() {
         total: o.totalPrice,
         createdAt: o.createdAt.toISOString(),
         sentAt: o.emailLogs.find(l => l.status === 'sent')?.sentAt.toISOString() ?? null,
+        refunded: o.paymentStatus === 'reembolsado',
         lastError: o.emailLogs[0]?.status === 'error',
     }))
 

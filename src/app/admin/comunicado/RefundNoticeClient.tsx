@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { sendRefundNotices } from './actions'
+import { markSentAsRefunded, sendRefundNotices } from './actions'
 import { buildRefundNotice, fixEmail, looksLikeTest, looksMistyped } from './notice'
 
 type Row = {
@@ -13,6 +13,7 @@ type Row = {
     total: number
     createdAt: string
     sentAt: string | null
+    refunded: boolean
     lastError: boolean
 }
 
@@ -83,8 +84,35 @@ export default function RefundNoticeClient({ orders }: { orders: Row[] }) {
     const sentCount = Object.values(outcome).filter(o => o.status === 'sent').length
     const failCount = Object.values(outcome).filter(o => o.status !== 'sent').length
 
+    // Receberam o comunicado mas o pagamento ainda está "Pago"
+    const sentNotRefunded = orders.filter(o => o.sentAt && !o.refunded).length
+    const [marking, setMarking] = useState(false)
+
+    async function markRefunded() {
+        setMarking(true)
+        try {
+            const { updated, total } = await markSentAsRefunded()
+            if (updated < total) window.alert(`${updated} de ${total} marcados como Reembolsado. Tente de novo para os demais.`)
+        } catch (e: any) {
+            window.alert(`Não consegui atualizar: ${e?.message || 'erro desconhecido'}`)
+        } finally {
+            setMarking(false)
+            router.refresh()
+        }
+    }
+
     return (
         <>
+            {sentNotRefunded > 0 && (
+                <section className="dash-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <p className="od-hint" style={{ margin: 0 }}>
+                        {sentNotRefunded} pedido{sentNotRefunded > 1 ? 's' : ''} já recebe{sentNotRefunded > 1 ? 'ram' : 'u'} o comunicado e ainda {sentNotRefunded > 1 ? 'estão' : 'está'} como Pago.
+                    </p>
+                    <button className="od-btn is-primary is-small" disabled={marking || sending} onClick={markRefunded}>
+                        {marking ? 'Atualizando...' : 'Marcar como Reembolsado'}
+                    </button>
+                </section>
+            )}
             <div className="od-stats dash-stats">
                 <div className="dash-stat">
                     <span className="dash-stat-label">Pedidos no filtro</span>
@@ -172,7 +200,7 @@ export default function RefundNoticeClient({ orders }: { orders: Row[] }) {
                                                         </span>
                                                     ) : o.sentAt ? (
                                                         <span className="dash-badge" style={{ background: 'var(--positive-soft)', color: 'var(--positive)' }}>
-                                                            Enviado {date(o.sentAt)}
+                                                            Enviado {date(o.sentAt)}{o.refunded ? ' · Reembolsado' : ''}
                                                         </span>
                                                     ) : o.lastError ? (
                                                         <span className="dash-badge" style={{ background: 'var(--negative-soft)', color: 'var(--negative)' }}>
