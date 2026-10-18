@@ -3,38 +3,14 @@
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { resend } from '@/lib/resend'
-import { buildRefundNotice, CARD_METHODS, fixEmail, REFUND_NOTICE_TYPE, REFUND_PRODUCTS } from './template'
+import { findRefundOrders } from './queries'
+import { buildRefundNotice, fixEmail, REFUND_NOTICE_TYPE } from './notice'
 
 async function requireAdmin() {
     const cookieStore = await cookies()
     if (cookieStore.get('admin_auth')?.value !== 'authenticated') {
         throw new Error('Não autorizado')
     }
-}
-
-// Mesmo filtro da página: pago no cartão, ainda em processando, produto da lista
-export async function findRefundOrders() {
-    await requireAdmin()
-    return prisma.order.findMany({
-        where: {
-            deletedAt: null,
-            paymentStatus: 'pago',
-            status: 'processando',
-            paymentMethod: { in: CARD_METHODS },
-            OR: REFUND_PRODUCTS.map(p => ({ product: { name: { contains: p, mode: 'insensitive' as const } } })),
-        },
-        select: {
-            id: true,
-            fullName: true,
-            email: true,
-            totalPrice: true,
-            paymentMethod: true,
-            createdAt: true,
-            product: { select: { name: true } },
-            emailLogs: { where: { type: REFUND_NOTICE_TYPE }, select: { status: true, sentAt: true }, orderBy: { sentAt: 'desc' } },
-        },
-        orderBy: { createdAt: 'desc' },
-    })
 }
 
 const MAX_PER_CALL = 10

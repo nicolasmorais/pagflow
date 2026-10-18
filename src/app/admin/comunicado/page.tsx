@@ -1,8 +1,8 @@
 export const dynamic = 'force-dynamic'
 
-import { findRefundOrders } from './actions'
+import { findRefundOrders } from './queries'
 import RefundNoticeClient from './RefundNoticeClient'
-import { REFUND_PRODUCTS } from './template'
+import { REFUND_PRODUCTS } from './notice'
 
 export default async function ComunicadoPage() {
     let orders: Awaited<ReturnType<typeof findRefundOrders>> = []

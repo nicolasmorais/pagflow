@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { sendRefundNotices } from './actions'
-import { buildRefundNotice, fixEmail, looksLikeTest, looksMistyped } from './template'
+import { buildRefundNotice, fixEmail, looksLikeTest, looksMistyped } from './notice'
 
 type Row = {
     id: string
