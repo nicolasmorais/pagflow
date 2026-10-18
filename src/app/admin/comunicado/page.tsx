@@ -5,7 +5,14 @@ import RefundNoticeClient from './RefundNoticeClient'
 import { REFUND_PRODUCTS } from './template'
 
 export default async function ComunicadoPage() {
-    const orders = await findRefundOrders()
+    let orders: Awaited<ReturnType<typeof findRefundOrders>> = []
+    let loadError: string | null = null
+    try {
+        orders = await findRefundOrders()
+    } catch (e: any) {
+        console.error('[comunicado] Falha ao carregar pedidos:', e)
+        loadError = String(e?.message || e).slice(0, 600)
+    }
 
     const rows = orders.map(o => ({
         id: o.id,
@@ -28,7 +35,13 @@ export default async function ComunicadoPage() {
                     </p>
                 </div>
             </div>
-            <RefundNoticeClient orders={rows} />
+            {loadError ? (
+                <section className="dash-card">
+                    <p className="od-hint" style={{ color: 'var(--negative)' }}>Não consegui carregar os pedidos: {loadError}</p>
+                </section>
+            ) : (
+                <RefundNoticeClient orders={rows} />
+            )}
         </div>
     )
 }
