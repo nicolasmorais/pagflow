@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { sendRefundNotices } from './actions'
-import { buildRefundNotice, looksLikeTest, looksMistyped } from './template'
+import { buildRefundNotice, fixEmail, looksLikeTest, looksMistyped } from './template'
 
 type Row = {
     id: string
@@ -147,9 +147,12 @@ export default function RefundNoticeClient({ orders }: { orders: Row[] }) {
                                                 </td>
                                                 <td>
                                                     <strong>{o.fullName}</strong>
-                                                    <span className="dash-table-sub" style={typo ? { color: 'var(--negative)' } : undefined}>
-                                                        {o.email || 'sem e-mail'}{typo ? ' · e-mail parece errado' : ''}
-                                                    </span>
+                                                    <span className="dash-table-sub">{o.email || 'sem e-mail'}</span>
+                                                    {typo && (
+                                                        <span className="dash-table-sub" style={{ color: 'var(--positive)' }}>
+                                                            Vai para: {fixEmail(o.email)}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td>
                                                     {o.product}

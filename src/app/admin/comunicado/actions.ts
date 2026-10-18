@@ -3,7 +3,7 @@
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { resend } from '@/lib/resend'
-import { buildRefundNotice, CARD_METHODS, REFUND_NOTICE_TYPE, REFUND_PRODUCTS } from './template'
+import { buildRefundNotice, CARD_METHODS, fixEmail, REFUND_NOTICE_TYPE, REFUND_PRODUCTS } from './template'
 
 async function requireAdmin() {
     const cookieStore = await cookies()
@@ -68,7 +68,7 @@ export async function sendRefundNotices(orderIds: string[], descriptor: string) 
         try {
             const res = await resend.emails.send({
                 from: 'Elabela Store <noreply@elabela.store>',
-                to: [order.email],
+                to: [fixEmail(order.email)],
                 subject,
                 html,
             })

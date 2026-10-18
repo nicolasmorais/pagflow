@@ -6,9 +6,31 @@ export const REFUND_NOTICE_TYPE = 'refund_notice'
 // Produtos incluídos no comunicado (busca por trecho do nome, sem diferenciar maiúsculas)
 export const REFUND_PRODUCTS = ['DermaVit', 'LumiSkin', 'Vitamin C', 'Pele de Porcelana']
 
-// Domínios de e-mail com erro de digitação comum: o comunicado não chega
-const TYPO_DOMAIN = /@(gmsil|gmil|gmai|gamil|gnail|\dgmail|hotmal|hotmial|outlok)\.|\.con$|\.co$/i
-export const looksMistyped = (email: string) => !!email && TYPO_DOMAIN.test(email)
+// Domínios digitados errado no checkout → domínio certo. Corrige só no envio (o pedido não muda).
+const DOMAIN_FIXES: Record<string, string> = {
+    'gmsil.com': 'gmail.com',
+    'gmil.com': 'gmail.com',
+    'gmai.com': 'gmail.com',
+    'gamil.com': 'gmail.com',
+    'gnail.com': 'gmail.com',
+    'gmail.con': 'gmail.com',
+    'gmail.co': 'gmail.com',
+    'hotmal.com': 'hotmail.com',
+    'hotmial.com': 'hotmail.com',
+    'hotmail.con': 'hotmail.com',
+    'outlok.com': 'outlook.com',
+}
+
+export function fixEmail(email: string) {
+    const at = email.lastIndexOf('@')
+    if (at < 0) return email
+    const user = email.slice(0, at).trim()
+    let domain = email.slice(at + 1).trim().toLowerCase()
+    domain = domain.replace(/^\d+(gmail|hotmail|outlook)\./, '$1.') // ex.: 7gmail.com
+    return `${user}@${DOMAIN_FIXES[domain] ?? domain}`
+}
+
+export const looksMistyped = (email: string) => !!email && fixEmail(email) !== email.trim()
 
 // Pedidos de teste do próprio admin: começam desmarcados
 export const looksLikeTest = (name: string, product: string) =>
