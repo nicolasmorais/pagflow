@@ -1,9 +1,13 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import { CARD_FEES_KEY, parseCardFees } from '@/lib/card-fees'
-import CheckoutForm from './CheckoutForm'
+import nextDynamic from 'next/dynamic'
 import { Metadata } from 'next'
 import Script from 'next/script'
+
+// Import dinâmico: só o CSS/JS da versão escolhida é carregado
+const CheckoutForm = nextDynamic(() => import('./CheckoutForm'))
+const CheckoutV2 = nextDynamic(() => import('./v2/CheckoutV2'))
 
 export async function generateMetadata({
     searchParams
@@ -36,7 +40,7 @@ export async function generateMetadata({
 export default async function CheckoutPage({
     searchParams
 }: {
-    searchParams: Promise<{ p?: string }>
+    searchParams: Promise<{ p?: string; v?: string }>
 }) {
     const params = await searchParams
     const productId = params.p
@@ -51,7 +55,7 @@ export default async function CheckoutPage({
             where: {
                 key: {
                     in: [
-                        'checkout_logo', 'checkout_footer_text', 'checkout_primary_color',
+                        'checkout_version', 'checkout_logo', 'checkout_footer_text', 'checkout_primary_color',
                         'checkout_button_color', 'checkout_bg_color', 'checkout_alert_text',
                         'checkout_alert_bg_color', 'checkout_alert_color', 'checkout_pix_badge_text', 'checkout_pix_badge_color',
                         'checkout_pix_badge_bg', 'checkout_pix_discount', 'checkout_card_discount',
@@ -177,13 +181,18 @@ export default async function CheckoutPage({
     }));
 
 
+    // Versão do checkout: escolhida no admin; ?v=1 / ?v=2 força uma versão só nesta visita
+    const savedVersion = settings.find((s: any) => s.key === 'checkout_version')?.value === 'v2' ? 'v2' : 'v1'
+    const version = params.v === '2' ? 'v2' : params.v === '1' ? 'v1' : savedVersion
+    const Checkout = version === 'v2' ? CheckoutV2 : CheckoutForm
+
     return (
         <>
             <Script
                 src="https://t.contentsquare.net/uxa/da4f1c872e126.js"
                 strategy="afterInteractive"
             />
-            <CheckoutForm
+            <Checkout
                 product={product}
                 customization={customization}
                 shippingRules={mappedShippingRules}

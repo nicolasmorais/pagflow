@@ -1,0 +1,267 @@
+/* ─────────────────────────────────────────────
+   Checkout v2 — tudo escopado em .ck2
+   Os nomes de tokens (--green, --border…) batem com os da v1 para que
+   componentes compartilhados (PixPayment) funcionem nas duas versões.
+   ───────────────────────────────────────────── */
+.ck2{
+  --green:#1D9A52;
+  --green-dark:color-mix(in srgb, var(--green) 78%, #000);
+  --green-light:color-mix(in srgb, var(--green) 9%, #fff);
+  --bg:#F4F4F2;
+  --white:#FFFFFF;
+  --text:#1B1B1A;
+  --muted:#5B5F66;
+  --light:#8B8F96;
+  --border:#E3E3DF;
+  --border-strong:#CFCFC9;
+  --red:#B42318;
+  --red-light:#FEF0EE;
+  --orange:#C4580F;
+  --orange-light:#FEF3E8;
+  --radius:12px;
+  --radius-sm:8px;
+
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:16px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;
+}
+/* Resets com especificidade zero (:where) para não brigar com as classes abaixo */
+:where(.ck2) *,:where(.ck2) *::before,:where(.ck2) *::after{box-sizing:border-box}
+:where(.ck2) :where(h1,h2,h3,p,dl,dd,ul,ol,fieldset){margin:0;padding:0}
+:where(.ck2) fieldset{border:0;min-width:0}
+:where(.ck2) a{color:var(--green-dark)}
+:where(.ck2) button{font-family:inherit;line-height:inherit}
+
+/* Header */
+.ck2-header{background:var(--white);border-bottom:1px solid var(--border)}
+.ck2-header-in{max-width:1040px;margin:0 auto;padding:0 16px;height:60px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.ck2-logo img{max-height:36px;max-width:160px;display:block;object-fit:contain}
+.ck2-logo span{font-size:19px;font-weight:800;letter-spacing:-.02em}
+.ck2-secure{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
+.ck2-secure svg{width:15px;height:15px;color:var(--green)}
+.ck2-alert{text-align:center;padding:10px 16px;font-size:14px;font-weight:700}
+
+/* Resumo mobile */
+.ck2-msum{background:var(--white);border-bottom:1px solid var(--border)}
+.ck2-msum summary{
+  list-style:none;cursor:pointer;
+  max-width:1040px;margin:0 auto;padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  font-size:15px;font-weight:700;color:var(--green-dark);
+}
+.ck2-msum summary::-webkit-details-marker{display:none}
+.ck2-msum summary span::after{content:'';display:inline-block;width:7px;height:7px;margin-left:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-3px) rotate(45deg);transition:transform .15s}
+.ck2-msum[open] summary span::after{transform:translateY(0) rotate(225deg)}
+.ck2-msum summary strong{font-size:17px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}
+.ck2-msum-body{padding:4px 16px 18px;max-width:1040px;margin:0 auto}
+
+/* Layout */
+.ck2-main{width:100%;max-width:1040px;margin:0 auto;padding:16px 16px 40px;display:grid;gap:20px;align-items:start}
+.ck2-form{display:flex;flex-direction:column;gap:12px;min-width:0}
+.ck2-aside{display:none}
+
+@media (min-width: 900px){
+  .ck2-msum{display:none}
+  .ck2-main{grid-template-columns:minmax(0,1fr) 360px;gap:28px;padding-top:28px}
+  .ck2-aside{display:flex;flex-direction:column;gap:16px;position:sticky;top:20px}
+  .ck2-mtrust{display:none}
+}
+
+/* Cards / etapas */
+.ck2-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px 18px}
+.ck2-h3{font-size:16px;font-weight:800;margin-bottom:14px}
+
+.ck2-step{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.ck2-step.is-active{border-color:var(--border-strong);padding-bottom:22px}
+.ck2-step.is-next{background:transparent;border-style:dashed}
+.ck2-step.is-next h2{color:var(--light)}
+.ck2-step-head{display:flex;align-items:flex-start;gap:12px}
+.ck2-step-num{
+  flex:none;width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;
+}
+.ck2-step-num svg{width:15px;height:15px}
+.ck2-step-num.is-active{background:var(--text);color:#fff}
+.ck2-step-num.is-done{background:var(--green);color:#fff}
+.ck2-step-num.is-next{border:1.5px solid var(--border-strong);color:var(--light)}
+.ck2-step-titles{flex:1;min-width:0;padding-top:2px}
+.ck2-step-titles h2{font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1.3}
+.ck2-step-sum{margin-top:4px;font-size:14px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
+.ck2-edit{
+  flex:none;background:none;border:0;padding:4px 2px;min-height:36px;
+  font-size:14px;font-weight:800;color:var(--green-dark);
+  text-decoration:underline;text-underline-offset:3px;cursor:pointer;
+}
+.ck2-step-body{margin-top:18px;display:flex;flex-direction:column;gap:14px}
+
+/* Campos */
+.ck2-field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ck2-field label{font-size:14px;font-weight:700;color:var(--text)}
+.ck2-opt{font-weight:500;color:var(--light)}
+.ck2 .ck2-field input,
+.ck2 .ck2-field select{
+  width:100%;height:52px;padding:0 14px;margin:0;
+  background:var(--white);color:var(--text);
+  border:1.5px solid var(--border-strong);border-radius:var(--radius-sm);
+  font:600 16px/1.2 'Manrope',system-ui,sans-serif;
+  outline:none;box-shadow:none;appearance:none;-webkit-appearance:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+.ck2 .ck2-field select{
+  padding-right:40px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%235B5F66' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;
+}
+.ck2 .ck2-field input::placeholder{color:#B3B6BB;font-weight:500}
+.ck2 .ck2-field input:focus,
+.ck2 .ck2-field select:focus{border-color:var(--green);box-shadow:0 0 0 3px color-mix(in srgb, var(--green) 18%, transparent)}
+.ck2 .ck2-field.has-error input,
+.ck2 .ck2-field.has-error select{border-color:var(--red)}
+.ck2-err{font-size:14px;font-weight:600;color:var(--red)}
+.ck2-hint{font-size:13px;color:var(--muted)}
+.ck2-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ck2-row .ck2-num{max-width:none}
+@media (max-width: 380px){.ck2-row{grid-template-columns:1fr}}
+
+.ck2-cep-row{display:flex;align-items:center;gap:14px}
+.ck2-cep-row input{max-width:180px}
+.ck2-cep-row a{font-size:14px;font-weight:700;white-space:nowrap}
+.ck2-cep-msg{font-size:14px;color:var(--muted);margin-top:-4px}
+.ck2-cep-msg.is-warn{color:var(--orange)}
+
+.ck2-suggest{
+  display:flex;flex-direction:column;gap:10px;
+  padding:12px 14px;border-radius:var(--radius-sm);
+  background:var(--orange-light);font-size:15px;
+}
+.ck2-suggest div{display:flex;gap:8px;flex-wrap:wrap}
+.ck2-suggest button{
+  min-height:40px;padding:0 14px;border-radius:var(--radius-sm);cursor:pointer;
+  border:1.5px solid var(--border-strong);background:var(--white);font-size:14px;font-weight:700;color:var(--text);
+}
+.ck2-suggest button:first-child{background:var(--text);border-color:var(--text);color:#fff}
+
+/* Escolhas (frete, pagamento, bumps) */
+.ck2-choices{display:flex;flex-direction:column;gap:8px}
+.ck2-choices legend{font-size:15px;font-weight:800;margin-bottom:10px;padding:0}
+.ck2-choice{
+  position:relative;display:flex;align-items:center;gap:12px;
+  min-height:64px;padding:12px 14px;
+  background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);
+  cursor:pointer;transition:border-color .15s, background .15s;
+}
+.ck2-choice:hover{border-color:var(--border-strong)}
+.ck2-choice.is-on{border-color:var(--green);background:var(--green-light)}
+.ck2-choice input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.ck2-choice:has(input:focus-visible){outline:3px solid color-mix(in srgb, var(--green) 40%, transparent);outline-offset:2px}
+.ck2-radio{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--border-strong);background:var(--white);transition:all .15s}
+.ck2-choice.is-on .ck2-radio{border:6px solid var(--green)}
+.ck2-check{
+  flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--border-strong);background:var(--white);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.ck2-check svg{width:14px;height:14px}
+.ck2-choice.is-on .ck2-check{background:var(--green);border-color:var(--green)}
+.ck2-choice-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.ck2-choice-title{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ck2-choice-sub{font-size:13px;color:var(--muted);line-height:1.4}
+.ck2-choice-price{flex:none;text-align:right;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:flex-end}
+.ck2-choice-price s{font-size:12px;font-weight:600;color:var(--light)}
+.ck2-choice-price.is-free{color:var(--green-dark)}
+.ck2-badge{font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--green);color:#fff;letter-spacing:.01em}
+.ck2-pay-icon{flex:none;width:32px;height:32px;border-radius:8px;background:var(--bg);color:var(--muted);display:flex;align-items:center;justify-content:center}
+.ck2-pay-icon svg{width:18px;height:18px}
+.ck2-pay-icon.is-pix{color:#32BCAD;background:#E8F8F6}
+.ck2-bump-img{flex:none;width:48px;height:48px;border-radius:8px;object-fit:cover}
+
+.ck2-panel{
+  display:flex;flex-direction:column;gap:14px;
+  padding:16px;border-radius:var(--radius);background:var(--bg);
+}
+.ck2-bullets{list-style:none;display:flex;flex-direction:column;gap:8px}
+.ck2-bullets li{position:relative;padding-left:18px;font-size:15px;color:var(--muted);line-height:1.5}
+.ck2-bullets li::before{content:'';position:absolute;left:2px;top:9px;width:6px;height:6px;border-radius:50%;background:var(--green)}
+.ck2-interest{font-size:14px;color:var(--muted);line-height:1.5}
+.ck2-interest strong{color:var(--text)}
+.ck2-schedule{list-style:none;display:flex;flex-direction:column;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px 14px}
+.ck2-schedule li{display:flex;justify-content:space-between;padding:9px 0;font-size:14px;font-weight:600;border-bottom:1px dashed var(--border)}
+.ck2-schedule li:last-child{border-bottom:0}
+.ck2-schedule li:first-child{color:var(--green-dark);font-weight:800}
+
+/* Botões */
+.ck2-btn{
+  width:100%;min-height:56px;padding:14px 20px;margin-top:4px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--green);color:#fff;border:0;border-radius:var(--radius);
+  font-size:17px;font-weight:800;cursor:pointer;
+  transition:filter .15s, transform .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.ck2-btn:hover{filter:brightness(1.06)}
+.ck2-btn:active{transform:translateY(1px)}
+.ck2-btn:disabled{opacity:.7;cursor:wait}
+.ck2-btn:focus-visible,.ck2-edit:focus-visible,.ck2-suggest button:focus-visible{outline:3px solid color-mix(in srgb, var(--green) 40%, transparent);outline-offset:2px}
+.ck2-btn-pay{min-height:60px;font-size:18px}
+.ck2-btn-ghost{background:var(--white);color:var(--text);border:1.5px solid var(--border-strong)}
+.ck2-spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;animation:ck2-spin .8s linear infinite}
+@keyframes ck2-spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.ck2-spin{animation-duration:2.4s}}
+
+.ck2-payerr{padding:12px 14px;border-radius:var(--radius-sm);background:var(--red-light);color:var(--red);font-size:15px;font-weight:600;line-height:1.45}
+.ck2-secure-note{display:flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);margin-top:-4px}
+.ck2-secure-note svg{width:14px;height:14px;color:var(--green)}
+
+/* Resumo */
+.ck2-summary{display:flex;flex-direction:column}
+.ck2-prod{display:flex;align-items:center;gap:12px;padding-bottom:14px}
+.ck2-prod-img{flex:none;width:56px;height:56px;border-radius:var(--radius-sm);background:var(--bg);overflow:hidden;border:1px solid var(--border)}
+.ck2-prod-img img{width:100%;height:100%;object-fit:cover;display:block}
+.ck2-prod-info{flex:1;min-width:0}
+.ck2-prod-name{font-size:15px;font-weight:700;line-height:1.35}
+.ck2-prod-qty{font-size:13px;color:var(--muted)}
+.ck2-prod-price{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.ck2-line{display:flex;justify-content:space-between;gap:12px;font-size:14px;color:var(--muted);padding-bottom:10px}
+.ck2-totals{display:flex;flex-direction:column;gap:8px;padding-top:14px;border-top:1px solid var(--border)}
+.ck2-totals div{display:flex;justify-content:space-between;gap:12px;font-size:15px}
+.ck2-totals dt{color:var(--muted)}
+.ck2-totals dd{font-weight:700;font-variant-numeric:tabular-nums;text-align:right;display:flex;flex-direction:column}
+.ck2-totals dd small{font-size:12px;font-weight:600;color:var(--muted)}
+.ck2-free{color:var(--green-dark)}
+.ck2-discount dt,.ck2-discount dd{color:var(--green-dark)}
+.ck2-total{padding-top:10px;margin-top:4px;border-top:1px solid var(--border)}
+.ck2-total dt{color:var(--text);font-weight:800}
+.ck2-total dd{font-size:20px;font-weight:800}
+
+.ck2-trust{list-style:none;display:flex;flex-direction:column;gap:14px;padding:4px 4px 0}
+.ck2-trust li{display:flex;gap:12px;align-items:flex-start}
+.ck2-trust svg{flex:none;width:20px;height:20px;color:var(--green);margin-top:2px}
+.ck2-trust div{display:flex;flex-direction:column;gap:1px}
+.ck2-trust strong{font-size:14px;font-weight:800}
+.ck2-trust span{font-size:13px;color:var(--muted);line-height:1.45}
+
+/* Telas finais (cartão aprovado / recusado) */
+.ck2-final{width:100%;flex:1}
+.ck2-result{max-width:520px;margin:0 auto;padding:28px 16px 48px;display:flex;flex-direction:column;gap:14px}
+.ck2-result h1{font-size:26px;font-weight:800;letter-spacing:-.01em;text-align:center;line-height:1.25}
+.ck2-result-lede{font-size:16px;color:var(--muted);text-align:center;max-width:40ch;margin:0 auto 6px}
+.ck2-result-mark{width:64px;height:64px;border-radius:50%;margin:0 auto 4px;display:flex;align-items:center;justify-content:center}
+.ck2-result-mark svg{width:30px;height:30px}
+.ck2-result-mark.is-ok{background:var(--green);color:#fff}
+.ck2-result-mark.is-bad{background:var(--red-light);color:var(--red)}
+.ck2-result-meta{text-align:center;font-size:14px;color:var(--light)}
+.ck2-kv{display:flex;flex-direction:column;gap:10px}
+.ck2-kv div{display:flex;justify-content:space-between;gap:16px;font-size:15px}
+.ck2-kv dt{color:var(--muted)}
+.ck2-kv dd{font-weight:800;text-align:right;overflow-wrap:anywhere}
+.ck2-kv .is-total{padding-top:10px;border-top:1px solid var(--border)}
+.ck2-steps-list{padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:15px;line-height:1.5}
+
+/* Rodapé */
+.ck2-footer{max-width:1040px;width:100%;margin:0 auto;padding:8px 16px 32px;display:flex;flex-direction:column;gap:20px}
+.ck2-footer > p{font-size:12px;color:var(--light);text-align:center;line-height:1.6}
+.ck2-mtrust{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
