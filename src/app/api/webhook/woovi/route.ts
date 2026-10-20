@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendSubscriptionConfirmationEmail, sendAdminNotification } from "@/app/actions";
+import { sendSubscriptionConfirmationEmail, sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { WOOVI_STATUS_MAP } from "@/lib/woovi";
 
@@ -136,6 +136,7 @@ async function handlePixCharge(charge: any) {
         data: {
             paymentStatus: finalStatus,
             status: finalStatus === 'pago' ? 'processando' : order.status,
+            paidAt: finalStatus === 'pago' ? new Date() : undefined,
         }
     });
 

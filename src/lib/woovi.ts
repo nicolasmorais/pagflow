@@ -10,9 +10,10 @@ export interface WooviChargeRequest {
     correlationID: string;
     value: number; // em centavos
     comment?: string;
+    expiresIn?: number; // em segundos
     customer?: {
         name: string;
-        taxID: string;
+        taxID?: string;
         email: string;
         phone?: string;
     };
