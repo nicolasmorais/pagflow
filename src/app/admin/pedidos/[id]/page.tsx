@@ -132,7 +132,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <Stat
                         label="Total do pedido"
                         value={brl(total)}
-                        hint={methodLabel(order.paymentMethod, order.cardBrand, order.installments, order.installmentAmount)}
+                        hint={methodLabel(order.paymentMethod, order.cardBrand, order.installments, order.installmentAmount) + (order.couponCode ? ` · cupom ${order.couponCode}` : '')}
                         large
                     />
                     <Stat

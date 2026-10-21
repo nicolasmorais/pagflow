@@ -5,6 +5,7 @@ import { reportWebVitals } from '@/lib/web-vitals-reporter'
 import { CARD_MAX_INSTALLMENTS, DEFAULT_CARD_FEES, cardTotalWithFee, type CardFees } from '@/lib/card-fees'
 import PixParceladoSuccess from './PixParceladoSuccess'
 import PixPayment from './PixPayment'
+import ExitIntentCoupon, { ExitCouponBar, useExitCoupon } from './ExitIntentCoupon'
 import './checkout.css'
 
 const PIX_TTL = 15 * 60;
@@ -46,6 +47,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
     const [cardTokenizing, setCardTokenizing] = useState(false);
     const [selectedBumps, setSelectedBumps] = useState<string[]>([]);
+    const { coupon, setCoupon, secondsLeft: couponSecondsLeft } = useExitCoupon();
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const testMode = params.get('test');
@@ -177,9 +179,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         .reduce((sum: number, b: any) => sum + (b.price || 0), 0);
 
     const subtotalBeforeDiscount = basePrice + bumpsTotal;
+    // Cupom de saída não acumula com o desconto PIX: vale o maior
+    const couponPct = coupon ? coupon.pct / 100 : 0;
+    const pixPct = Math.max(pixDiscountVal, couponPct);
     const effectivePrice = (step === 3 && paymentMethod === 'pix')
-        ? (subtotalBeforeDiscount * (1 - pixDiscountVal) + shipping.price)
-        : (subtotalBeforeDiscount + shipping.price);
+        ? (subtotalBeforeDiscount * (1 - pixPct) + shipping.price)
+        : (subtotalBeforeDiscount * (1 - couponPct) + shipping.price);
+    const couponPayload = coupon ? { expiresAt: coupon.expiresAt, token: coupon.token } : undefined;
     const finalPrice = effectivePrice;
 
     useEffect(() => {
@@ -314,6 +320,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 body: JSON.stringify({
                     method: 'pix',
                     orderId: currentOrderId,
+                    coupon: couponPayload,
                     orderData: {
                         ...dados,
                         ...endereco,
@@ -331,6 +338,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 setPixExpired(false);
                 setCurrentOrderId(result.orderId || currentOrderId);
             } else {
+                if (result.couponExpired) setCoupon(null);
                 alert(result.error || "Erro ao gerar novo PIX. Tente novamente.");
             }
         } catch {
@@ -635,6 +643,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     totalWithInterest: pagarmeCardData.totalWithInterest,
                 } : undefined,
                 orderId: currentOrderId || null,
+                coupon: couponPayload,
                 orderData: {
                     ...dados,
                     ...endereco,
@@ -715,6 +724,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                     setDone(true);
                 }
             } else {
+                if (result.couponExpired) setCoupon(null);
                 alert("Erro: " + (result.error || "Tente novamente"));
                 throw new Error(result.error || "Erro de validação do pagamento");
             }
@@ -1168,6 +1178,13 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                 </div>
             ) : (
                 <>
+                    {coupon && <ExitCouponBar coupon={coupon} secondsLeft={couponSecondsLeft} />}
+                    <ExitIntentCoupon
+                        subtotal={subtotalBeforeDiscount}
+                        disabled={done || declined || !!coupon}
+                        onClaim={setCoupon}
+                        onEvent={trackFunnel}
+                    />
                     {customization?.alertText && (
                         <div className="header-strip" style={{ backgroundColor: customization.alertBg, color: customization.alertColor || '#111' }}>
                             {customization.alertText}
@@ -1208,6 +1225,12 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         </div>
                                     ))
                                 }
+                                {coupon && paymentMethod !== 'pix_automatico' && (
+                                    <div className="xc-sum-row">
+                                        <span>Cupom {coupon.code} ({coupon.pct}%)</span>
+                                        <span>− R$ {(subtotalBeforeDiscount * couponPct).toFixed(2).replace('.', ',')}</span>
+                                    </div>
+                                )}
                             </div>
                             <div className="trust-section">
                                 {[
@@ -1396,7 +1419,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                         <div>
                                             <strong>Atenção:</strong> Pagando por PIX sai por{' '}
                                             <strong style={{ color: '#059669' }}>
-                                                R$ {(subtotalBeforeDiscount * (1 - pixDiscountVal)).toFixed(2).replace('.', ',')}
+                                                R$ {(subtotalBeforeDiscount * (1 - pixPct)).toFixed(2).replace('.', ',')}
                                             </strong>
                                             <> + frete rápido <strong>GRÁTIS</strong> <span style={{ opacity: 0.85 }}>(chega em 5 dias úteis)</span> 🚀</>
                                         </div>
@@ -1646,10 +1669,10 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     <div style={{flex:1}}>
                                         <div className="pay-name" style={{display:'flex',alignItems:'center',gap:'6px'}}>
                                             Pix
-                                            {pixDiscountVal > 0 && <span className="pay-badge g">{Math.round(pixDiscountVal * 100)}% de desconto</span>}
+                                            {pixPct > 0 && <span className="pay-badge g">{Math.round(pixPct * 100)}% de desconto</span>}
                                         </div>
                                         <div className="pay-desc">
-                                            R$ {(subtotalBeforeDiscount * (1 - pixDiscountVal) + shipping.price).toFixed(2).replace('.', ',')} — pagamento único
+                                            R$ {(subtotalBeforeDiscount * (1 - pixPct) + shipping.price).toFixed(2).replace('.', ',')} — pagamento único
                                         </div>
                                     </div>
                                 </div>

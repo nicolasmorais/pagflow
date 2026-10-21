@@ -1549,3 +1549,75 @@ input::placeholder{color:#CCCCCC;font-weight:500}
 .pix-box .px-info-sub{margin:2px 0 0;font-size:14px;font-weight:500;color:#3F5B4C;line-height:1.4}
 .pix-box .px-meta{display:flex;align-items:center;justify-content:center;gap:7px;margin:14px 0;font-size:14px;font-weight:600;color:var(--muted);text-align:center}
 .px-meta svg{width:16px;height:16px;flex:none;color:var(--muted)}
+
+/* ── Cupom de saída (exit intent) ── */
+.xc-backdrop{
+  position:fixed;inset:0;z-index:200;background:rgba(17,17,17,.55);
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  animation:xc-fade .2s ease-out;
+}
+.xc-dialog{
+  position:relative;width:100%;max-width:400px;max-height:calc(100dvh - 32px);overflow-y:auto;
+  background:var(--white);border-radius:16px;padding:32px 24px 20px;text-align:center;
+  box-shadow:0 24px 60px rgba(0,0,0,.22);
+  animation:xc-rise .28s cubic-bezier(.2,.8,.2,1);
+}
+.xc-close{
+  position:absolute;top:8px;right:8px;width:44px;height:44px;
+  display:flex;align-items:center;justify-content:center;
+  background:none;border:none;border-radius:50%;color:var(--muted);cursor:pointer;
+}
+.xc-close svg{width:20px;height:20px}
+.xc-close:hover{color:var(--black);background:var(--bg)}
+.xc-close:focus-visible,.xc-skip:focus-visible,.xc-cta:focus-visible{outline:2px solid var(--black);outline-offset:2px}
+.xc-eyebrow{font-size:14px;font-weight:700;color:var(--muted);margin-bottom:6px}
+.xc-title{font-size:20px;font-weight:800;line-height:1.2;color:var(--black);letter-spacing:-.2px}
+.xc-pct{display:block;font-size:48px;font-weight:900;line-height:1;color:var(--green);letter-spacing:-1.5px;margin-bottom:4px}
+.xc-desc{font-size:15px;font-weight:500;line-height:1.5;color:var(--muted);margin:12px auto 0;max-width:32ch}
+.xc-price{display:flex;align-items:baseline;justify-content:center;gap:10px;margin-top:16px;font-variant-numeric:tabular-nums}
+.xc-price-old{font-size:15px;font-weight:600;color:var(--light);text-decoration:line-through}
+.xc-price-new{font-size:24px;font-weight:900;color:var(--black);letter-spacing:-.4px}
+.xc-ticket{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:20px 0 16px;padding:14px 16px;text-align:left;
+  background:var(--green-light);border:1.5px dashed var(--green);border-radius:var(--radius-sm);
+}
+.xc-ticket > div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.xc-ticket-label{font-size:12px;font-weight:700;color:var(--green-dark)}
+.xc-ticket-code{font-size:18px;font-weight:900;color:var(--black);letter-spacing:.06em}
+.xc-ticket-timer{text-align:right;align-items:flex-end}
+.xc-ticket-time{font-size:24px;font-weight:900;line-height:1.1;color:var(--red);font-variant-numeric:tabular-nums;letter-spacing:-.3px}
+.xc-cta{font-size:16px}
+.xc-skip{
+  display:block;width:100%;min-height:44px;margin-top:4px;
+  background:none;border:none;cursor:pointer;
+  font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;color:var(--muted);
+}
+.xc-skip:hover{color:var(--black)}
+
+.xc-bar{
+  position:sticky;top:64px;z-index:49;
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 12px;
+  padding:10px 16px;background:var(--black);color:var(--white);
+  font-size:14px;font-weight:600;text-align:center;font-variant-numeric:tabular-nums;
+}
+.xc-bar strong{font-weight:800}
+.xc-bar-timer strong{color:#FDBA74}
+
+.xc-sum-row{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  margin-top:8px;padding:12px 16px;
+  background:var(--green-light);border:1px solid var(--green);border-radius:var(--r);
+  font-size:14px;font-weight:700;color:var(--green-dark);font-variant-numeric:tabular-nums;
+}
+
+@media (max-width:560px){
+  .xc-backdrop{align-items:flex-end;padding:0}
+  .xc-dialog{max-width:none;border-radius:16px 16px 0 0;padding:28px 20px calc(16px + env(safe-area-inset-bottom));animation-name:xc-sheet}
+}
+@keyframes xc-fade{from{opacity:0}to{opacity:1}}
+@keyframes xc-rise{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes xc-sheet{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .xc-backdrop,.xc-dialog{animation:none}
+}

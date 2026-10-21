@@ -4,6 +4,7 @@ import { sendConfirmationEmail, sendAdminNotification, sendPixEmail } from "@/ap
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createCharge } from "@/lib/woovi";
 import { createCardOrder, mapPagarmeStatus } from "@/lib/pagarme";
+import { verifyExitCoupon, EXIT_COUPON_CODE } from "@/lib/exit-coupon";
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -80,9 +81,19 @@ export async function POST(req: NextRequest) {
         const pixDiscountPct = Math.max(0, Number(pixDiscountSetting?.value || 0)) / 100;
         const serverShippingPrice = Number(orderData.shippingPrice) || 0;
         const subtotalBeforeDiscount = serverBasePrice + bumpsTotal;
-        const serverPrice = method === 'pix'
-            ? Number((subtotalBeforeDiscount * (1 - pixDiscountPct) + serverShippingPrice).toFixed(2))
-            : Number((subtotalBeforeDiscount + serverShippingPrice).toFixed(2));
+
+        // Cupom de saída: não acumula com o desconto PIX, vale o maior
+        const couponPct = body.coupon ? verifyExitCoupon(body.coupon) : null;
+        if (body.coupon && couponPct === null) {
+            return NextResponse.json({
+                success: false,
+                couponExpired: true,
+                error: 'Seu cupom de desconto expirou. O valor foi atualizado — confira e tente novamente.'
+            }, { status: 400 });
+        }
+        const discountPct = Math.max(method === 'pix' ? pixDiscountPct : 0, couponPct ?? 0);
+        const couponApplied = couponPct !== null && couponPct >= discountPct && couponPct > 0;
+        const serverPrice = Number((subtotalBeforeDiscount * (1 - discountPct) + serverShippingPrice).toFixed(2));
 
         // 1. Preparar dados do pedido
         const orderDataToSave: any = {
@@ -117,6 +128,7 @@ export async function POST(req: NextRequest) {
             clickId: orderData.clickId || null,
             visitorId: orderData.visitorId || null,
             productCost: product?.cost || 0,
+            couponCode: couponApplied ? EXIT_COUPON_CODE : null,
             product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined,
         };
 

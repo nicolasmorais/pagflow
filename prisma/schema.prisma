@@ -53,6 +53,7 @@ model Order {
   utmId             String?
   utmCreativeName   String?
   productCost       Float      @default(0)
+  couponCode        String?
   deletedAt         DateTime?
   clickId           String?
   visitorId         String?
