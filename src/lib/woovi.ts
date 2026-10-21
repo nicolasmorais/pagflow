@@ -27,7 +27,19 @@ export interface WooviChargeResponse {
     paymentLinkUrl?: string;
 }
 
+// A Woovi recusa a cobrança se o comentário tiver emoji ("Emoji não é permitido no comentário").
+// Mantém só letras, números e pontuação simples — nomes de produto podem trazer emoji, ™ etc.
+function sanitizeComment(comment?: string): string | undefined {
+    if (!comment) return comment;
+    return comment
+        .replace(/[^\p{L}\p{N}\s.,:;()#|\/-]/gu, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim()
+        .slice(0, 140);
+}
+
 export async function createCharge(payload: WooviChargeRequest): Promise<WooviChargeResponse> {
+    payload = { ...payload, comment: sanitizeComment(payload.comment) };
     const appId = getAppId();
     console.log('[Woovi] createCharge:', JSON.stringify(payload));
     const res = await fetch(`${BASE_URL}/api/v1/charge`, {
