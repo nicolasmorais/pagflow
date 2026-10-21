@@ -85,7 +85,7 @@ export default async function ProvaSocialPage({
                 <div>
                     <h1>Notificações de compra</h1>
                     <p className="od-meta">
-                        Avisos no checkout com compras reais pagas: primeiro nome, cidade e há quanto tempo.
+                        Avisos no checkout com compras reais pagas: primeiro nome, cidade e produto.
                     </p>
                 </div>
                 <AnalyticsFilterForm currentFilter={currentFilter} fromDate={fromDate} toDate={toDate} />

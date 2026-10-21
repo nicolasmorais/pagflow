@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 
-// Notificações de compra no checkout ("Maria, de Goiânia/GO, comprou há 12 minutos").
+// Notificações de compra no checkout ("Maria, de Goiânia/GO, comprou DoriZen").
 // Só usa pedidos reais pagos: sem compra no período, nada aparece.
 export const SOCIAL_PROOF_KEY = 'social_proof_config';
 

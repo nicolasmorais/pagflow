@@ -13,15 +13,6 @@ export interface SocialProofItem {
 const SHOW_MS = 6000;
 const COUNT_KEY = 'pf_sp_count';
 
-export function timeAgo(iso: string, now = Date.now()): string {
-    const min = Math.max(0, Math.round((now - new Date(iso).getTime()) / 60000));
-    if (min < 2) return 'agora há pouco';
-    if (min < 60) return `há ${min} minutos`;
-    const h = Math.round(min / 60);
-    if (h < 24) return h === 1 ? 'há 1 hora' : `há ${h} horas`;
-    return h < 48 ? 'ontem' : `há ${Math.round(h / 24)} dias`;
-}
-
 /** Cartão visual — usado no checkout e na prévia do admin */
 export function SocialProofCard({ item, onClose, leaving }: { item: SocialProofItem; onClose?: () => void; leaving?: boolean }) {
     return (
@@ -32,7 +23,6 @@ export function SocialProofCard({ item, onClose, leaving }: { item: SocialProofI
             <div className="sp-body">
                 <p className="sp-title"><strong>{item.name}</strong>, de {item.place}</p>
                 <p className="sp-text">{item.product ? <>comprou <strong>{item.product}</strong></> : 'fez uma compra'}</p>
-                <p className="sp-meta">{timeAgo(item.paidAt)} · pagamento confirmado</p>
             </div>
             {onClose && (
                 <button type="button" className="sp-close" onClick={onClose} aria-label="Fechar notificação">
