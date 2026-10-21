@@ -7,11 +7,12 @@ import PixParceladoSuccess from './PixParceladoSuccess'
 import PixPayment from './PixPayment'
 import ExitIntentCoupon, { ExitCouponBar, useExitCoupon } from './ExitIntentCoupon'
 import SocialProofToast from './SocialProofToast'
+import CheckoutTestimonials from './CheckoutTestimonials'
 import './checkout.css'
 
 const PIX_TTL = 15 * 60;
 
-export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {} }: any) {
+export default function CheckoutForm({ product, customization, shippingRules = [], availableBumps = [], pixels = {}, testimonials = null }: any) {
     const [step, setStep] = useState(1);
     const [isSummaryOpen, setIsSummaryOpen] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -1255,6 +1256,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                                     </div>
                                 ))}
                             </div>
+                            {testimonials && <CheckoutTestimonials title={testimonials.title} items={testimonials.items} />}
                         </aside>
 
                         <div className="form-col">

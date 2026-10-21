@@ -1,0 +1,64 @@
+/* ── Depoimentos (checkout e prévia do admin) ── */
+.tst-section {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 18px;
+  font-family: 'Manrope', sans-serif;
+  color: #1E1E1E;
+}
+.tst-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.2px;
+  line-height: 1.3;
+}
+.tst-list { display: flex; flex-direction: column; }
+.tst-item {
+  margin: 0;
+  padding: 14px 0;
+  border-bottom: 1px solid #E5E7EB;
+}
+.tst-item:last-child { border-bottom: none; padding-bottom: 0; }
+.tst-stars { display: flex; gap: 2px; }
+.tst-stars svg { width: 14px; height: 14px; fill: #E5E7EB; }
+.tst-stars svg.is-on { fill: #F59E0B; }
+.tst-text {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+  color: #374151;
+  overflow-wrap: anywhere;
+}
+.tst-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.tst-avatar {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #F3F4F6;
+}
+.tst-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EBF7F1;
+  color: var(--green-dark, #136638);
+  font-size: 13px;
+  font-weight: 800;
+}
+.tst-name { display: block; font-size: 14px; font-weight: 700; line-height: 1.3; }
+.tst-location { display: block; font-size: 13px; font-weight: 500; color: #6B7280; line-height: 1.3; }
+
+@media (max-width: 900px) {
+  /* No celular o aside vira "display: contents": depoimentos depois do formulário e da garantia */
+  .tst-section { order: 2; width: 100%; }
+}

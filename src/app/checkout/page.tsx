@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma'
 import { CARD_FEES_KEY, parseCardFees } from '@/lib/card-fees'
+import { TESTIMONIALS_KEY, parseTestimonials, publicTestimonials } from '@/lib/testimonials'
 import nextDynamic from 'next/dynamic'
 import { Metadata } from 'next'
 import Script from 'next/script'
@@ -63,7 +64,8 @@ export default async function CheckoutPage({
                         'marketing_taboola_id', 'marketing_facebook_id', 'marketing_google_id',
                         'marketing_ga_id', 'marketing_google_conv_label',
                         'checkout_disable_wa', 'checkout_support_email', 'checkout_support_phone',
-                        CARD_FEES_KEY
+                        CARD_FEES_KEY,
+                        TESTIMONIALS_KEY
                     ]
                 }
             }
@@ -143,6 +145,8 @@ export default async function CheckoutPage({
         cardFees: parseCardFees(settings.find((s: any) => s.key === CARD_FEES_KEY)?.value)
     }
 
+    const testimonials = publicTestimonials(parseTestimonials(settings.find((s: any) => s.key === TESTIMONIALS_KEY)?.value))
+
     // Pixels globais (fallback)
     const globalPixels = {
         taboolaId: settings.find((s: any) => s.key === 'marketing_taboola_id')?.value || '',
@@ -198,6 +202,7 @@ export default async function CheckoutPage({
                 shippingRules={mappedShippingRules}
                 pixels={pixels}
                 availableBumps={mappedOrderBumps}
+                testimonials={testimonials}
             />
         </>
     )
