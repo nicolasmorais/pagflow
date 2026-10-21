@@ -21,7 +21,8 @@ import {
     RefreshCw,
     PackagePlus,
     Palette,
-    MailWarning
+    MailWarning,
+    TicketPercent
 } from 'lucide-react'
 import { logoutAction } from './auth-actions'
 import './admin.css'
@@ -52,6 +53,7 @@ const menuSections = [
             { icon: Megaphone, label: 'Taboola', href: '/admin/taboola' },
             { icon: Mail, label: 'E-mails', href: '/admin/emails' },
             { icon: MailWarning, label: 'Comunicado reembolso', href: '/admin/comunicado' },
+            { icon: TicketPercent, label: 'Cupom de saída', href: '/admin/cupom-saida' },
             { icon: Palette, label: 'Personalização', href: '/admin/personalizacao' },
         ]
     },
