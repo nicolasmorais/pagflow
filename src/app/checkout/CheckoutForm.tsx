@@ -6,6 +6,7 @@ import { CARD_MAX_INSTALLMENTS, DEFAULT_CARD_FEES, cardTotalWithFee, type CardFe
 import PixParceladoSuccess from './PixParceladoSuccess'
 import PixPayment from './PixPayment'
 import ExitIntentCoupon, { ExitCouponBar, useExitCoupon } from './ExitIntentCoupon'
+import SocialProofToast from './SocialProofToast'
 import './checkout.css'
 
 const PIX_TTL = 15 * 60;
@@ -1183,6 +1184,11 @@ export default function CheckoutForm({ product, customization, shippingRules = [
                         subtotal={subtotalBeforeDiscount}
                         disabled={done || declined || !!coupon}
                         onClaim={setCoupon}
+                        onEvent={trackFunnel}
+                    />
+                    <SocialProofToast
+                        productId={product?.id || undefined}
+                        paused={done || declined || loading}
                         onEvent={trackFunnel}
                     />
                     {customization?.alertText && (

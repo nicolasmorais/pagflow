@@ -1,0 +1,89 @@
+/* ── Notificações de compra (checkout e prévia do admin) ── */
+.sp-region {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 90;
+  width: min(340px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.sp-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 40px 14px 14px;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(17, 17, 17, .12);
+  font-family: 'Manrope', sans-serif;
+  color: #1E1E1E;
+  text-align: left;
+  pointer-events: auto;
+  animation: sp-in .32s cubic-bezier(.2, .8, .2, 1);
+}
+.sp-card.is-leaving {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity .28s ease, transform .28s ease;
+}
+.sp-icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #EBF7F1;
+  color: var(--green, #1D9A52);
+}
+.sp-icon svg { width: 18px; height: 18px; }
+.sp-body { min-width: 0; }
+.sp-body p { margin: 0; }
+.sp-title { font-size: 15px; font-weight: 600; line-height: 1.35; }
+.sp-title strong { font-weight: 800; }
+.sp-text {
+  margin-top: 1px !important;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #4B5563;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sp-text strong { font-weight: 700; color: #1E1E1E; }
+.sp-meta { margin-top: 4px !important; font-size: 12px; font-weight: 600; color: #6B7280; }
+.sp-close {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: #9CA3AF;
+  cursor: pointer;
+}
+.sp-close svg { width: 16px; height: 16px; }
+.sp-close:hover { color: #1E1E1E; }
+.sp-close:focus-visible { outline: 2px solid #1E1E1E; outline-offset: -4px; }
+
+@media (max-width: 640px) {
+  /* No celular fica no topo, longe do botão de pagar e do WhatsApp */
+  .sp-region { left: 16px; right: 16px; top: 72px; bottom: auto; width: auto; }
+  .sp-card { animation-name: sp-in-top; }
+  .sp-card.is-leaving { transform: translateY(-8px); }
+}
+@keyframes sp-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes sp-in-top { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sp-card { animation: none; }
+  .sp-card.is-leaving { transform: none; }
+}

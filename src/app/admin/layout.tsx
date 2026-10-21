@@ -22,7 +22,8 @@ import {
     PackagePlus,
     Palette,
     MailWarning,
-    TicketPercent
+    TicketPercent,
+    BellRing
 } from 'lucide-react'
 import { logoutAction } from './auth-actions'
 import './admin.css'
@@ -54,6 +55,7 @@ const menuSections = [
             { icon: Mail, label: 'E-mails', href: '/admin/emails' },
             { icon: MailWarning, label: 'Comunicado reembolso', href: '/admin/comunicado' },
             { icon: TicketPercent, label: 'Cupom de saída', href: '/admin/cupom-saida' },
+            { icon: BellRing, label: 'Notificações de compra', href: '/admin/prova-social' },
             { icon: Palette, label: 'Personalização', href: '/admin/personalizacao' },
         ]
     },
