@@ -3190,3 +3190,61 @@ h6 {
     outline-offset: 2px;
     border-radius: 2px;
 }
+.xc-settings {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px 12px;
+}
+.xc-settings-field {
+    position: relative;
+    display: inline-flex;
+}
+.od-input.xc-settings-input {
+    flex: none;
+    min-width: 0;
+    width: 104px;
+    padding-right: 30px;
+    font-size: 16px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.od-input.xc-settings-input[aria-invalid="true"] {
+    border-color: var(--negative);
+}
+.xc-settings-suffix {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink-muted);
+    pointer-events: none;
+}
+.xc-settings .od-btn {
+    min-height: 40px;
+    padding: 8px 16px;
+}
+.xc-settings-code {
+    font-size: 13px;
+    color: var(--ink-muted);
+}
+.xc-settings-code strong {
+    color: var(--ink);
+    letter-spacing: 0.04em;
+}
+.xc-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+.od-input.xc-settings-input { -moz-appearance: textfield; appearance: textfield; }
+.od-input.xc-settings-input::-webkit-outer-spin-button,
+.od-input.xc-settings-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

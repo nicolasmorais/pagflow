@@ -4,7 +4,7 @@ import { sendConfirmationEmail, sendAdminNotification, sendPixEmail } from "@/ap
 import { checkRateLimit } from "@/lib/rate-limit";
 import { createCharge } from "@/lib/woovi";
 import { createCardOrder, mapPagarmeStatus } from "@/lib/pagarme";
-import { verifyExitCoupon, EXIT_COUPON_CODE } from "@/lib/exit-coupon";
+import { verifyExitCoupon, exitCouponCode } from "@/lib/exit-coupon";
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
             clickId: orderData.clickId || null,
             visitorId: orderData.visitorId || null,
             productCost: product?.cost || 0,
-            couponCode: couponApplied ? EXIT_COUPON_CODE : null,
+            couponCode: couponApplied ? exitCouponCode(Math.round(couponPct! * 100)) : null,
             product: (product && orderData.productId && orderData.productId !== 'default' && orderData.productId !== '') ? { connect: { id: orderData.productId } } : undefined,
         };
 

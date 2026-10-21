@@ -4,8 +4,6 @@ import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export type CouponReportData = {
-    code: string
-    pct: number
     visitors: number
     shown: number
     claimed: number
@@ -118,7 +116,7 @@ export default function CouponReport({ data }: { data: CouponReportData }) {
                 </div>
                 <p className="dash-hero-context">
                     {paid > 0
-                        ? <>{plural(paid, 'pedido pago', 'pedidos pagos')} com {data.code} · {brl(data.discountGiven)} concedidos em desconto</>
+                        ? <>{plural(paid, 'pedido pago', 'pedidos pagos')} com o cupom · {brl(data.discountGiven)} concedidos em desconto</>
                         : 'Nenhum pedido pago com o cupom neste período.'}
                 </p>
                 <div className="dash-stats dash-stats-4">

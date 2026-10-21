@@ -2,9 +2,13 @@ export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
 import { getDateFilters, dateToBrazilDateStr } from '@/lib/date-utils'
-import { EXIT_COUPON_CODE, EXIT_COUPON_PCT } from '@/lib/exit-coupon'
+import {
+    getExitCouponPct, exitCouponCode, pctFromCouponCode,
+    EXIT_COUPON_DEFAULT_PCT, EXIT_COUPON_MIN_PCT, EXIT_COUPON_MAX_PCT,
+} from '@/lib/exit-coupon'
 import AnalyticsFilterForm from '../AnalyticsFilterForm'
 import CouponReport, { type CouponReportData } from './CouponReport'
+import CouponSettings from './CouponSettings'
 
 const POPUP_STEPS = ['cupom_saida_exibido', 'cupom_saida_ativado', 'cupom_saida_recusado'] as const
 
@@ -18,7 +22,8 @@ export default async function CupomSaidaPage({
     const currentFilter = params.filter || '7dias'
     const range = { gte: fromDateUTC, lte: toDateUTC }
 
-    const [events, pageViewVisitors, orders] = await Promise.all([
+    const [currentPct, events, pageViewVisitors, orders] = await Promise.all([
+        getExitCouponPct(),
         prisma.checkoutEvent.findMany({
             where: { createdAt: range, step: { in: [...POPUP_STEPS] } },
             select: { visitorId: true, step: true, createdAt: true },
@@ -31,7 +36,7 @@ export default async function CupomSaidaPage({
         prisma.order.findMany({
             where: { createdAt: range, deletedAt: null, couponCode: { not: null } },
             select: {
-                id: true, fullName: true, totalPrice: true, shippingPrice: true,
+                id: true, fullName: true, totalPrice: true, shippingPrice: true, couponCode: true,
                 paymentStatus: true, paymentMethod: true, createdAt: true,
             },
             orderBy: { createdAt: 'desc' },
@@ -42,10 +47,12 @@ export default async function CupomSaidaPage({
     const visitorsBy: Record<string, Set<string>> = Object.fromEntries(POPUP_STEPS.map(s => [s, new Set<string>()]))
     for (const e of events) visitorsBy[e.step].add(e.visitorId)
 
-    // O total já sai com desconto: subtotal × (1 − pct) + frete
-    const keepRatio = 1 - EXIT_COUPON_PCT / 100
-    const discountOf = (o: { totalPrice: number; shippingPrice: number }) =>
-        Math.max(0, (o.totalPrice - o.shippingPrice) / keepRatio - (o.totalPrice - o.shippingPrice))
+    // O total já sai com desconto: subtotal × (1 − pct) + frete. O pct vem do código salvo no pedido.
+    const discountOf = (o: { totalPrice: number; shippingPrice: number; couponCode: string | null }) => {
+        const keepRatio = 1 - (pctFromCouponCode(o.couponCode) ?? EXIT_COUPON_DEFAULT_PCT) / 100
+        const net = o.totalPrice - o.shippingPrice
+        return Math.max(0, net / keepRatio - net)
+    }
 
     const paid = orders.filter(o => o.paymentStatus === 'pago')
 
@@ -67,8 +74,6 @@ export default async function CupomSaidaPage({
     for (const o of paid) day(dateToBrazilDateStr(o.createdAt)).pagos += 1
 
     const data: CouponReportData = {
-        code: EXIT_COUPON_CODE,
-        pct: EXIT_COUPON_PCT,
         visitors: pageViewVisitors.length,
         shown: visitorsBy.cupom_saida_exibido.size,
         claimed: visitorsBy.cupom_saida_ativado.size,
@@ -95,11 +100,12 @@ export default async function CupomSaidaPage({
                 <div>
                     <h1>Cupom de saída</h1>
                     <p className="od-meta">
-                        Popup de {EXIT_COUPON_PCT}% ({EXIT_COUPON_CODE}) para quem tenta sair do checkout.
+                        Popup de {currentPct}% ({exitCouponCode(currentPct)}) para quem tenta sair do checkout.
                     </p>
                 </div>
                 <AnalyticsFilterForm currentFilter={currentFilter} fromDate={fromDate} toDate={toDate} />
             </div>
+            <CouponSettings pct={currentPct} min={EXIT_COUPON_MIN_PCT} max={EXIT_COUPON_MAX_PCT} />
             <CouponReport data={data} />
         </div>
     )

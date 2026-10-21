@@ -185,7 +185,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
     const effectivePrice = (step === 3 && paymentMethod === 'pix')
         ? (subtotalBeforeDiscount * (1 - pixPct) + shipping.price)
         : (subtotalBeforeDiscount * (1 - couponPct) + shipping.price);
-    const couponPayload = coupon ? { expiresAt: coupon.expiresAt, token: coupon.token } : undefined;
+    const couponPayload = coupon ? { pct: coupon.pct, expiresAt: coupon.expiresAt, token: coupon.token } : undefined;
     const finalPrice = effectivePrice;
 
     useEffect(() => {
