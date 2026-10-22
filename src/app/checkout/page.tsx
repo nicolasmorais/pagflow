@@ -9,6 +9,7 @@ import Script from 'next/script'
 // Import dinâmico: só o CSS/JS da versão escolhida é carregado
 const CheckoutForm = nextDynamic(() => import('./CheckoutForm'))
 const CheckoutV2 = nextDynamic(() => import('./v2/CheckoutV2'))
+const CheckoutV3 = nextDynamic(() => import('./v3/CheckoutV3'))
 
 export async function generateMetadata({
     searchParams
@@ -185,10 +186,14 @@ export default async function CheckoutPage({
     }));
 
 
-    // Versão do checkout: escolhida no admin; ?v=1 / ?v=2 força uma versão só nesta visita
-    const savedVersion = settings.find((s: any) => s.key === 'checkout_version')?.value === 'v2' ? 'v2' : 'v1'
-    const version = params.v === '2' ? 'v2' : params.v === '1' ? 'v1' : savedVersion
-    const Checkout = version === 'v2' ? CheckoutV2 : CheckoutForm
+    // Versão do checkout: escolhida no admin; ?v=1 / ?v=2 / ?v=3 força uma versão só nesta visita
+    const VERSIONS = { v1: CheckoutForm, v2: CheckoutV2, v3: CheckoutV3 } as const
+    type Version = keyof typeof VERSIONS
+    const isVersion = (v: unknown): v is Version => typeof v === 'string' && v in VERSIONS
+    const savedValue = settings.find((s: any) => s.key === 'checkout_version')?.value
+    const forcedValue = params.v ? `v${params.v}` : undefined
+    const version: Version = isVersion(forcedValue) ? forcedValue : isVersion(savedValue) ? savedValue : 'v1'
+    const Checkout = VERSIONS[version]
 
     return (
         <>

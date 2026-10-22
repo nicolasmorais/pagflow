@@ -1,0 +1,14 @@
+/* Checkout v3 — one page: mesmo visual da v1, com as três seções empilhadas */
+
+.op-section{scroll-margin-top:16px}
+
+.op-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:4px}
+.op-head .step-title{margin-top:4px}
+.op-num{
+  flex:none;width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+  background:var(--black);color:var(--white);border:2px solid var(--black);
+  transition:background .25s,border-color .25s
+}
+.op-num.done{background:var(--green);border-color:var(--green)}

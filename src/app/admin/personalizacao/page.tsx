@@ -21,7 +21,7 @@ export default function PersonalizacaoPage() {
     const [disableBack, setDisableBack] = useState(false)
     const [disableWa, setDisableWa] = useState(false)
     const [webhookUrl, setWebhookUrl] = useState('')
-    const [checkoutVersion, setCheckoutVersion] = useState<'v1' | 'v2'>('v1')
+    const [checkoutVersion, setCheckoutVersion] = useState<'v1' | 'v2' | 'v3'>('v1')
 
     // Alert Bar States
     const [alertText, setAlertText] = useState('')
@@ -73,7 +73,7 @@ export default function PersonalizacaoPage() {
                 setDisableWa(dWa === 'true')
 
                 const ver = await getCustomization('checkout_version')
-                setCheckoutVersion(ver === 'v2' ? 'v2' : 'v1')
+                setCheckoutVersion(ver === 'v2' || ver === 'v3' ? ver : 'v1')
 
                 const wUrl = await getCustomization('webhook_url')
                 setWebhookUrl(wUrl || '')
@@ -149,6 +149,7 @@ export default function PersonalizacaoPage() {
                         {([
                             { v: 'v1', title: 'Versão 1 — Clássica', desc: 'Checkout atual em 3 telas, com selos e barra de progresso.' },
                             { v: 'v2', title: 'Versão 2 — Nova', desc: 'Página única com etapas, resumo com total sempre visível e endereço manual quando o CEP falha.' },
+                            { v: 'v3', title: 'Versão 3 — One Page', desc: 'Mesmo visual da versão 1, com dados, entrega e pagamento todos na mesma página.' },
                         ] as const).map(opt => {
                             const on = checkoutVersion === opt.v
                             return (
@@ -175,7 +176,7 @@ export default function PersonalizacaoPage() {
                                         </span>
                                     </button>
                                     <a
-                                        href={`/checkout?v=${opt.v === 'v2' ? '2' : '1'}`}
+                                        href={`/checkout?v=${opt.v.slice(1)}`}
                                         target="_blank"
                                         rel="noreferrer"
                                         style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#6366f1', textDecoration: 'none', marginLeft: '28px' }}
@@ -187,7 +188,7 @@ export default function PersonalizacaoPage() {
                         })}
                     </div>
                     <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, fontWeight: 500 }}>
-                        Dica: adicione <code>&amp;v=2</code> (ou <code>&amp;v=1</code>) ao link de qualquer produto para testar uma versão sem trocar para todos.
+                        Dica: adicione <code>&amp;v=1</code>, <code>&amp;v=2</code> ou <code>&amp;v=3</code> ao link de qualquer produto para testar uma versão sem trocar para todos.
                     </p>
                 </Section>
 
