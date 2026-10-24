@@ -192,16 +192,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("[Webhook MP] Error:", error);
+        // MP não é mais o gateway em uso: o erro fica só no log, sem push pro admin
         logError('error', 'webhook', error instanceof Error ? error.message : 'Webhook error', error instanceof Error ? error.stack : undefined);
-
-        try {
-            const { sendAdminPush } = await import("@/lib/push-service");
-            await sendAdminPush(
-                "❌ Erro no Webhook",
-                `Webhook MP falhou: ${(error instanceof Error ? error.message : 'Erro desconhecido').substring(0, 100)}`,
-                "/admin/errors"
-            );
-        } catch { }
 
         return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
     }
