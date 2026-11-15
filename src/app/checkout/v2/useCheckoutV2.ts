@@ -205,11 +205,7 @@ export function useCheckoutV2({ product, customization, shippingRules, available
             const s = document.createElement('script'); s.id = id; s.async = true; s.src = src
             document.head.appendChild(s)
         }
-        ; (window as any)._tfa = (window as any)._tfa || []
-        if (pixels?.taboolaId && safe(pixels.taboolaId)) addScript('taboola-pixel', `https://cdn.taboola.com/libtr/${pixels.taboolaId}/tfa.js`)
-        for (const p of (pixels?.perProduct || []).filter((p: any) => p.type === 'taboola')) {
-            if (safe(p.pixelId)) addScript(`taboola-pixel-${p.pixelId}`, `https://cdn.taboola.com/libtr/${p.pixelId}/tfa.js`)
-        }
+        // Pixel da Taboola desligado: as conversões vão só por postback S2S (servidor). Nada de tfa.js no checkout.
         trackFunnel('page_view')
         reportWebVitals(visitorId())
 

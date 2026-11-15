@@ -195,32 +195,7 @@ export default function CheckoutForm({ product, customization, shippingRules = [
         // Validar IDs de pixel (apenas alfanumérico e hífen)
         const isValidPixelId = (id: string) => /^[a-zA-Z0-9_-]+$/.test(id);
 
-        // Taboola Base Script - Global
-        if (pixels?.taboolaId && isValidPixelId(pixels.taboolaId) && !document.getElementById('taboola-pixel')) {
-            const _tfa = (window as any)._tfa || [];
-            (window as any)._tfa = _tfa;
-            const s = document.createElement('script');
-            s.id = 'taboola-pixel';
-            s.async = true;
-            s.src = `https://cdn.taboola.com/libtr/${pixels.taboolaId}/tfa.js`;
-            document.head.appendChild(s);
-        }
-
-        // Taboola Base Script - Per-Product Pixels
-        if (pixels?.perProduct) {
-            const _tfa = (window as any)._tfa || [];
-            (window as any)._tfa = _tfa;
-            const taboolaPixels = pixels.perProduct.filter((p: any) => p.type === 'taboola')
-            for (const pixel of taboolaPixels) {
-                if (isValidPixelId(pixel.pixelId) && !document.getElementById(`taboola-pixel-${pixel.pixelId}`)) {
-                    const s = document.createElement('script');
-                    s.id = `taboola-pixel-${pixel.pixelId}`;
-                    s.async = true;
-                    s.src = `https://cdn.taboola.com/libtr/${pixel.pixelId}/tfa.js`;
-                    document.head.appendChild(s);
-                }
-            }
-        }
+        // Pixel da Taboola desligado: as conversões vão só por postback S2S (servidor). Nada de tfa.js no checkout.
 
         // Track start_checkout for all Taboola pixels
         // Produtos podem sobrescrever o evento padrão via product.startCheckoutEventName
