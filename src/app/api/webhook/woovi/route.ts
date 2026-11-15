@@ -36,7 +36,7 @@ async function handleApproved(body: any) {
         data: { paymentStatus: 'pago', status: 'processando', parcelasPagas: 1, mpPaymentId: globalID },
     });
 
-    await reportPaidOrder(order.id); // postback S2S make_purchase (1ª parcela paga)
+    if (order.paymentStatus !== 'pago') await reportPaidOrder(order.id); // postback S2S make_purchase só na virada para pago
     try { await sendSubscriptionConfirmationEmail(order.id); } catch (e) { console.error('[Webhook Woovi] Erro ao enviar email:', e); }
     try { await sendAdminNotification(order); } catch { }
 
