@@ -7,7 +7,7 @@ import { Metadata } from 'next'
 import Script from 'next/script'
 import { headers, cookies } from 'next/headers'
 import { after } from 'next/server'
-import { reportFunnel, cleanClickId, cleanAccount, CLICK_PARAM, CLICK_COOKIE, ACCOUNT_PARAM, ACCOUNT_COOKIE } from '@/lib/funnel-s2s'
+import { reportStartCheckout, cleanClickId, cleanAccount, CLICK_PARAM, CLICK_COOKIE, ACCOUNT_PARAM, ACCOUNT_COOKIE } from '@/lib/funnel-s2s'
 
 // Import dinâmico: só o CSS/JS da versão escolhida é carregado
 const CheckoutForm = nextDynamic(() => import('./CheckoutForm'))
@@ -111,7 +111,7 @@ export default async function CheckoutPage({
     }
 
     // Funil server-side da Taboola: chegou no checkout com click_id (da URL ou do cookie do domínio)
-    // → start_checkout, enviado depois da resposta para não atrasar a página.
+    // → postback S2S start_checkout direto para a Taboola, depois da resposta.
     if (dbProduct) {
         try {
             const sp = params as Record<string, string | string[] | undefined>
@@ -122,12 +122,9 @@ export default async function CheckoutPage({
             if (clickId && !prefetch) {
                 const account = cleanAccount(one(sp[ACCOUNT_PARAM])) || cleanAccount(c.get(ACCOUNT_COOKIE)?.value)
                 const userAgent = h.get('user-agent') || ''
-                const ip = (h.get('cf-connecting-ip') || h.get('x-forwarded-for') || h.get('x-real-ip') || '').split(',')[0].trim()
                 const eventName = (dbProduct as any).startCheckoutEventName || 'start_checkout'
-                after(() => reportFunnel({
-                    step: 'start_checkout', eventName, clickId, account, productId: dbProduct.id, userAgent, ip,
-                    utmCampaign: one(sp.utm_campaign), utmTerm: one(sp.utm_term), utmContent: one(sp.utm_content),
-                }).then(r => { if (!r.ok && r.error !== 'não configurado') console.warn('[s2s] start_checkout:', r.error) }))
+                // postback direto para a Taboola, depois da resposta (não atrasa o checkout)
+                after(() => reportStartCheckout({ clickId, account, eventName, productId: dbProduct.id, userAgent }))
             }
         } catch (e) {
             console.error('[s2s] start_checkout:', (e as Error)?.message || e)
