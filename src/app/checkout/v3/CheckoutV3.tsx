@@ -8,6 +8,7 @@ import PixPayment from '../PixPayment'
 import ExitIntentCoupon, { ExitCouponBar, useExitCoupon } from '../ExitIntentCoupon'
 import SocialProofToast from '../SocialProofToast'
 import CheckoutTestimonials from '../CheckoutTestimonials'
+import { getClickId } from '@/lib/click-id-client';
 import '../checkout.css'
 import './checkout-v3.css'
 
@@ -107,7 +108,7 @@ export default function CheckoutV3({ product, customization, shippingRules = [],
         if (typeof window === 'undefined') return {} as Record<string, string | null>;
         const p = new URLSearchParams(window.location.search);
         return {
-            clickId: p.get('tblci'),
+            clickId: getClickId(p),
             utmSource: p.get('utm_source'),
             utmMedium: p.get('utm_medium'),
             utmCampaign: p.get('utm_campaign'),
@@ -217,7 +218,7 @@ export default function CheckoutV3({ product, customization, shippingRules = [],
 
         // Track start_checkout for all Taboola pixels
         // Produtos podem sobrescrever o evento padrão via product.startCheckoutEventName
-        trackTaboolaEvent(product?.startCheckoutEventName || 'start_checkout');
+        // start_checkout e make_purchase da Taboola agora vão por postback S2S (servidor); o pixel base continua só com page_view — sem contar a venda duas vezes
         trackFunnel('page_view');
         reportWebVitals(getVisitorId());
 
@@ -611,7 +612,7 @@ export default function CheckoutV3({ product, customization, shippingRules = [],
                         shippingPrice: shipping?.price || 0,
                         selectedBumpIds: selectedBumps,
                         visitorId: getVisitorId(),
-                        clickId: new URLSearchParams(window.location.search).get('tblci'),
+                        clickId: getClickId(),
                         utmSource: new URLSearchParams(window.location.search).get('utm_source'),
                         utmMedium: new URLSearchParams(window.location.search).get('utm_medium'),
                         utmCampaign: new URLSearchParams(window.location.search).get('utm_campaign'),
@@ -622,7 +623,6 @@ export default function CheckoutV3({ product, customization, shippingRules = [],
             });
             const result = await res.json();
             if (result.success) {
-                trackTaboolaEvent(product?.purchaseEventName || 'make_purchase', { revenue: pixTotal, currency: 'BRL' });
                 trackGoogleEvent('purchase', {
                     transaction_id: result.orderId || crypto.randomUUID(),
                     value: pixTotal,
@@ -684,7 +684,7 @@ export default function CheckoutV3({ product, customization, shippingRules = [],
                     utmPlacement: searchParams.get('utm_placement'),
                     utmId: searchParams.get('utm_id'),
                     utmCreativeName: searchParams.get('utm_creative_name'),
-                    clickId: searchParams.get('tblci'),
+                    clickId: getClickId(searchParams),
                     visitorId: getVisitorId(),
                 },
             };
@@ -709,7 +709,7 @@ export default function CheckoutV3({ product, customization, shippingRules = [],
 
                 // Taboola: Track EVERY attempt (approved, declined, pending Pix)
                 // Produtos podem sobrescrever o evento padrão via product.purchaseEventName
-                trackTaboolaEvent(product?.purchaseEventName || 'make_purchase', { revenue: finalPrice, currency: 'BRL' });
+                // start_checkout e make_purchase da Taboola agora vão por postback S2S (servidor); o pixel base continua só com page_view — sem contar a venda duas vezes
 
                 // Google Analytics: purchase event
                 trackGoogleEvent('purchase', {

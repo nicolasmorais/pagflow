@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendSubscriptionConfirmationEmail, sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { WOOVI_STATUS_MAP } from "@/lib/woovi";
+import { reportPaidOrder } from '@/lib/funnel-s2s';
 
 async function logError(level: string, source: string, message: string, stack?: string) {
     try {
@@ -35,6 +36,7 @@ async function handleApproved(body: any) {
         data: { paymentStatus: 'pago', status: 'processando', parcelasPagas: 1, mpPaymentId: globalID },
     });
 
+    await reportPaidOrder(order.id); // postback S2S make_purchase (1ª parcela paga)
     try { await sendSubscriptionConfirmationEmail(order.id); } catch (e) { console.error('[Webhook Woovi] Erro ao enviar email:', e); }
     try { await sendAdminNotification(order); } catch { }
 
@@ -149,6 +151,7 @@ async function handlePixCharge(charge: any) {
     } catch { }
 
     if (finalStatus === 'pago') {
+        await reportPaidOrder(order.id); // postback S2S make_purchase
         try { await sendConfirmationEmail(order.id); } catch { }
         try { await sendAdminNotification(order); } catch { }
     }

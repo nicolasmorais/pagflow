@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendPixFollowupEmail } from "@/app/actions";
 import { getCharge, WOOVI_STATUS_MAP } from "@/lib/woovi";
+import { reportPaidOrder } from '@/lib/funnel-s2s';
 
 // Cron job: envia e-mails de follow-up para PIX pendente
 // Follow-up 1: 2 horas após criação
@@ -80,6 +81,7 @@ export async function GET(req: NextRequest) {
                         const { uploadOrderBackup } = await import("@/lib/r2");
                         await uploadOrderBackup(updated);
                     } catch { }
+                    await reportPaidOrder(updated.id); // postback S2S make_purchase
                     continue;
                 }
 

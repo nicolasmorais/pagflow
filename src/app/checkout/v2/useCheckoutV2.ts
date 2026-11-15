@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { reportWebVitals } from '@/lib/web-vitals-reporter'
 import { CARD_MAX_INSTALLMENTS, DEFAULT_CARD_FEES, cardTotalWithFee, type CardFees } from '@/lib/card-fees'
+import { getClickId } from '@/lib/click-id-client'
 
 // Lógica do checkout v2. Copiada (não compartilhada) da v1 de propósito:
 // a v1 continua intocada enquanto as duas versões coexistem.
@@ -157,7 +158,7 @@ export function useCheckoutV2({ product, customization, shippingRules, available
         return {
             utmSource: p.get('utm_source'), utmMedium: p.get('utm_medium'), utmCampaign: p.get('utm_campaign'),
             utmTerm: p.get('utm_term'), utmContent: p.get('utm_content'), utmPlacement: p.get('utm_placement'),
-            utmId: p.get('utm_id'), utmCreativeName: p.get('utm_creative_name'), clickId: p.get('tblci'),
+            utmId: p.get('utm_id'), utmCreativeName: p.get('utm_creative_name'), clickId: getClickId(p),
         }
     }
     const trackFunnel = (step: string, oid?: string) => {
@@ -188,7 +189,7 @@ export function useCheckoutV2({ product, customization, shippingRules, available
     }
     const gaItems = (price: number) => [{ item_id: product?.id || 'default', item_name: product?.name || 'Produto', price, quantity: 1 }]
     const trackPurchase = (oid: string | undefined, value: number, type: string) => {
-        taboola(product?.purchaseEventName || 'make_purchase', { revenue: value, currency: 'BRL' })
+        // start_checkout e make_purchase da Taboola agora vão por postback S2S (servidor); o pixel base continua só com page_view — sem contar a venda duas vezes
         gtag('purchase', { transaction_id: oid || crypto.randomUUID(), value, currency: 'BRL', payment_type: type, items: gaItems(product?.price || 0) })
         const safe = /^[a-zA-Z0-9_-]+$/
         if (pixels?.googleId && pixels?.googleAdsConvLabel && safe.test(pixels.googleId) && safe.test(pixels.googleAdsConvLabel)) {
@@ -209,7 +210,6 @@ export function useCheckoutV2({ product, customization, shippingRules, available
         for (const p of (pixels?.perProduct || []).filter((p: any) => p.type === 'taboola')) {
             if (safe(p.pixelId)) addScript(`taboola-pixel-${p.pixelId}`, `https://cdn.taboola.com/libtr/${p.pixelId}/tfa.js`)
         }
-        taboola(product?.startCheckoutEventName || 'start_checkout')
         trackFunnel('page_view')
         reportWebVitals(visitorId())
 

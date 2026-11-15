@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { createCharge } from "@/lib/woovi";
 import { createCardOrder, mapPagarmeStatus } from "@/lib/pagarme";
 import { verifyExitCoupon, exitCouponCode } from "@/lib/exit-coupon";
+import { reportPaidOrder } from '@/lib/funnel-s2s';
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -360,6 +361,7 @@ export async function POST(req: NextRequest) {
 
         // ── E-mails se aprovado (cartão) ──────────────────────────────────────
         if (finalStatus === 'pago') {
+            await reportPaidOrder(order.id); // postback S2S make_purchase (com trava por pedido)
             try {
                 await sendConfirmationEmail(order.id);
             } catch (emailError) {

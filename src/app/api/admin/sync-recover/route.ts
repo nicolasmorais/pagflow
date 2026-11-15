@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCharge, WOOVI_STATUS_MAP } from "@/lib/woovi";
 import { sendConfirmationEmail, sendAdminNotification } from "@/app/actions";
+import { reportPaidOrder } from '@/lib/funnel-s2s';
 
 async function recover(password: string | null) {
     const adminPassword = process.env.ADMIN_PASSWORD;
@@ -37,6 +38,7 @@ async function recover(password: string | null) {
                 });
 
                 if (newStatus === 'pago') {
+                    await reportPaidOrder(order.id); // postback S2S make_purchase
                     try { await sendConfirmationEmail(order.id); } catch { }
                     const full = await prisma.order.findUnique({ where: { id: order.id } });
                     if (full) try { await sendAdminNotification(full); } catch { }

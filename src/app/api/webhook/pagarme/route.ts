@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendConfirmationEmail, sendAdminNotification } from '@/app/actions';
+import { reportPaidOrder } from '@/lib/funnel-s2s';
 
 const PAGARME_STATUS_MAP: Record<string, string> = {
     paid: 'pago',
@@ -77,6 +78,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (newPaymentStatus === 'pago') {
+        await reportPaidOrder(order.id); // postback S2S make_purchase
         try { await sendConfirmationEmail(order.id); } catch (e) { console.error('[Pagar.me Webhook] email error', e); }
         try { await sendAdminNotification(order); } catch (e) { console.error('[Pagar.me Webhook] admin notify error', e); }
 

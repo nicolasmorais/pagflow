@@ -5,6 +5,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { createMpClient } from "@/lib/mercadopago";
 import { Payment } from "mercadopago";
 import crypto from "crypto";
+import { reportPaidOrder } from '@/lib/funnel-s2s';
 
 async function logError(level: string, source: string, message: string, stack?: string, metadata?: Record<string, any>) {
     try {
@@ -184,6 +185,7 @@ export async function POST(req: NextRequest) {
             }
 
             if (finalStatus === 'pago' && order.paymentStatus !== 'pago') {
+                await reportPaidOrder(order.id); // postback S2S make_purchase
                 try { await sendConfirmationEmail(order.id); } catch (e) { }
                 try { await sendAdminNotification(order); } catch (e) { }
             }

@@ -5,6 +5,9 @@ import { TESTIMONIALS_KEY, parseTestimonials, publicTestimonials } from '@/lib/t
 import nextDynamic from 'next/dynamic'
 import { Metadata } from 'next'
 import Script from 'next/script'
+import { headers, cookies } from 'next/headers'
+import { after } from 'next/server'
+import { reportFunnel, cleanClickId, cleanAccount, CLICK_PARAM, CLICK_COOKIE, ACCOUNT_PARAM, ACCOUNT_COOKIE } from '@/lib/funnel-s2s'
 
 // Import dinâmico: só o CSS/JS da versão escolhida é carregado
 const CheckoutForm = nextDynamic(() => import('./CheckoutForm'))
@@ -42,7 +45,7 @@ export async function generateMetadata({
 export default async function CheckoutPage({
     searchParams
 }: {
-    searchParams: Promise<{ p?: string; v?: string }>
+    searchParams: Promise<{ p?: string; v?: string; [key: string]: string | string[] | undefined }>
 }) {
     const params = await searchParams
     const productId = params.p
@@ -105,6 +108,30 @@ export default async function CheckoutPage({
                 </div>
             </div>
         )
+    }
+
+    // Funil server-side da Taboola: chegou no checkout com click_id (da URL ou do cookie do domínio)
+    // → start_checkout, enviado depois da resposta para não atrasar a página.
+    if (dbProduct) {
+        try {
+            const sp = params as Record<string, string | string[] | undefined>
+            const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? null
+            const [h, c] = await Promise.all([headers(), cookies()])
+            const prefetch = h.get('next-router-prefetch') || h.get('purpose') === 'prefetch' || h.get('sec-purpose')?.includes('prefetch')
+            const clickId = cleanClickId(one(sp[CLICK_PARAM])) || cleanClickId(c.get(CLICK_COOKIE)?.value)
+            if (clickId && !prefetch) {
+                const account = cleanAccount(one(sp[ACCOUNT_PARAM])) || cleanAccount(c.get(ACCOUNT_COOKIE)?.value)
+                const userAgent = h.get('user-agent') || ''
+                const ip = (h.get('cf-connecting-ip') || h.get('x-forwarded-for') || h.get('x-real-ip') || '').split(',')[0].trim()
+                const eventName = (dbProduct as any).startCheckoutEventName || 'start_checkout'
+                after(() => reportFunnel({
+                    step: 'start_checkout', eventName, clickId, account, productId: dbProduct.id, userAgent, ip,
+                    utmCampaign: one(sp.utm_campaign), utmTerm: one(sp.utm_term), utmContent: one(sp.utm_content),
+                }).then(r => { if (!r.ok && r.error !== 'não configurado') console.warn('[s2s] start_checkout:', r.error) }))
+            }
+        } catch (e) {
+            console.error('[s2s] start_checkout:', (e as Error)?.message || e)
+        }
     }
 
     let product = dbProduct;
