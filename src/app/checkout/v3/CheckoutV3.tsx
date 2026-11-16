@@ -8,7 +8,7 @@ import PixPayment from '../PixPayment'
 import ExitIntentCoupon, { ExitCouponBar, useExitCoupon } from '../ExitIntentCoupon'
 import SocialProofToast from '../SocialProofToast'
 import CheckoutTestimonials from '../CheckoutTestimonials'
-import { getClickId } from '@/lib/click-id-client';
+import { getClickId, getVisitorId } from '@/lib/click-id-client';
 import '../checkout.css'
 import './checkout-v3.css'
 
@@ -90,19 +90,6 @@ export default function CheckoutV3({ product, customization, shippingRules = [],
         }
     }, []);
 
-    const getVisitorId = () => {
-        if (typeof window === 'undefined') return '';
-        try {
-            let vid = window.localStorage.getItem('pf_vid');
-            if (!vid) {
-                vid = crypto.randomUUID();
-                window.localStorage.setItem('pf_vid', vid);
-            }
-            return vid;
-        } catch {
-            return '';
-        }
-    };
 
     const getUrlParams = () => {
         if (typeof window === 'undefined') return {} as Record<string, string | null>;

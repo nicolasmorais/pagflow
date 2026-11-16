@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { reportWebVitals } from '@/lib/web-vitals-reporter'
 import { CARD_MAX_INSTALLMENTS, DEFAULT_CARD_FEES, cardTotalWithFee, type CardFees } from '@/lib/card-fees'
-import { getClickId } from '@/lib/click-id-client'
+import { getClickId, getVisitorId } from '@/lib/click-id-client'
 
 // Lógica do checkout v2. Copiada (não compartilhada) da v1 de propósito:
 // a v1 continua intocada enquanto as duas versões coexistem.
@@ -145,13 +145,7 @@ export function useCheckoutV2({ product, customization, shippingRules, available
     const cardTotal = installmentOptions.find(o => o.n === card.installments)?.total ?? fullPrice
 
     // ── Tracking (mesmos eventos da v1) ──
-    const visitorId = () => {
-        try {
-            let vid = localStorage.getItem('pf_vid')
-            if (!vid) { vid = crypto.randomUUID(); localStorage.setItem('pf_vid', vid) }
-            return vid
-        } catch { return '' }
-    }
+    const visitorId = getVisitorId
     const qs = () => new URLSearchParams(typeof window === 'undefined' ? '' : window.location.search)
     const utm = () => {
         const p = qs()
